@@ -8662,6 +8662,26 @@ export type Database = {
           unique_uplines: number;
         }[];
       };
+      get_agency_performance_report: {
+        Args: {
+          p_agency_id?: string;
+          p_end_date?: string;
+          p_start_date?: string;
+        };
+        Returns: {
+          commissions_earned: number;
+          lapsed_premium: number;
+          month_label: string;
+          month_start: string;
+          net_premium_change: number;
+          new_agents: number;
+          new_policies: number;
+          new_premium: number;
+          policies_lapsed: number;
+          running_total_policies: number;
+          running_total_premium: number;
+        }[];
+      };
       get_agency_production_by_agent: {
         Args: { p_agency_id?: string };
         Returns: {
@@ -9111,6 +9131,22 @@ export type Database = {
           unique_uplines: number;
         }[];
       };
+      get_imo_performance_report: {
+        Args: { p_end_date?: string; p_start_date?: string };
+        Returns: {
+          commissions_earned: number;
+          lapsed_premium: number;
+          month_label: string;
+          month_start: string;
+          net_premium_change: number;
+          new_agents: number;
+          new_policies: number;
+          new_premium: number;
+          policies_lapsed: number;
+          running_total_policies: number;
+          running_total_premium: number;
+        }[];
+      };
       get_imo_production_by_agency: {
         Args: never;
         Returns: {
@@ -9507,6 +9543,43 @@ export type Database = {
           days_in_phase: number;
           phase_id: string;
           recruit_id: string;
+        }[];
+      };
+      get_team_comparison_report: {
+        Args: { p_end_date?: string; p_start_date?: string };
+        Returns: {
+          agency_code: string;
+          agency_id: string;
+          agency_name: string;
+          agent_count: number;
+          avg_premium_per_agent: number;
+          avg_premium_per_policy: number;
+          commissions_earned: number;
+          new_policies: number;
+          new_premium: number;
+          owner_name: string;
+          pct_of_imo_premium: number;
+          policies_lapsed: number;
+          rank_by_policies: number;
+          rank_by_premium: number;
+          retention_rate: number;
+        }[];
+      };
+      get_top_performers_report: {
+        Args: { p_end_date?: string; p_limit?: number; p_start_date?: string };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          agent_email: string;
+          agent_id: string;
+          agent_name: string;
+          avg_premium_per_policy: number;
+          commissions_earned: number;
+          contract_level: number;
+          new_policies: number;
+          new_premium: number;
+          rank_in_agency: number;
+          rank_in_imo: number;
         }[];
       };
       get_upline_chain: {
@@ -10012,6 +10085,14 @@ export type Database = {
       validate_invitation_eligibility: {
         Args: { p_invitee_email: string; p_inviter_id: string };
         Returns: Json;
+      };
+      validate_report_date_range: {
+        Args: {
+          p_end_date: string;
+          p_max_months?: number;
+          p_start_date: string;
+        };
+        Returns: undefined;
       };
       validate_schedule_recipients: {
         Args: { p_agency_id: string; p_imo_id: string; p_recipients: Json };

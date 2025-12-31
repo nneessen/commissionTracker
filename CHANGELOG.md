@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 08:50:21
+
+### Changed Files
+- `src/services/recruiting/repositories/RecruitChecklistProgressRepository.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251231_002_fix_checklist_progress_org_ids.sql`
+
+### Statistics
+```
+ 3 files changed, 8708 insertions(+), 8510 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-31 08:25:04
 
 ### Changed Files

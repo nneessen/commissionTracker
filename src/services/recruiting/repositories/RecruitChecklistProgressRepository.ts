@@ -198,7 +198,8 @@ export class RecruitChecklistProgressRepository extends BaseRepository<
   }
 
   /**
-   * Update status for a user's checklist item
+   * Update status for a user's checklist item.
+   * If the record doesn't exist, creates it with the given status.
    */
   async updateStatus(
     userId: string,
@@ -240,19 +241,51 @@ export class RecruitChecklistProgressRepository extends BaseRepository<
         updates.rejection_reason = options.rejectionReason;
     }
 
+    // Try to update existing record (don't use .single() to handle 0 or multiple rows)
     const { data, error } = await this.client
       .from(this.tableName)
       .update(updates)
       .eq("user_id", userId)
       .eq("checklist_item_id", checklistItemId)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       throw this.handleError(error, "updateStatus");
     }
 
-    return this.transformFromDB(data);
+    // If no rows were updated, the record doesn't exist - create it
+    if (!data || data.length === 0) {
+      console.log(
+        `[RecruitChecklistProgressRepository] No record found for user=${userId}, item=${checklistItemId}. Creating new record.`,
+      );
+
+      const createData = {
+        user_id: userId,
+        checklist_item_id: checklistItemId,
+        ...updates,
+      };
+
+      const { data: newData, error: createError } = await this.client
+        .from(this.tableName)
+        .insert(createData)
+        .select()
+        .single();
+
+      if (createError) {
+        throw this.handleError(createError, "updateStatus (create fallback)");
+      }
+
+      return this.transformFromDB(newData);
+    }
+
+    // If multiple rows exist (data integrity issue), log warning and use first
+    if (data.length > 1) {
+      console.warn(
+        `[RecruitChecklistProgressRepository] Multiple records (${data.length}) found for user=${userId}, item=${checklistItemId}. Using most recent.`,
+      );
+    }
+
+    return this.transformFromDB(data[0]);
   }
 
   /**
