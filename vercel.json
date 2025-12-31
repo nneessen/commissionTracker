@@ -2,13 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "framework": "vite",
-  "redirects": [
-    {
-      "source": "/join-:slug",
-      "destination": "/join/:slug",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/(.*)",

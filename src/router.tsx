@@ -422,10 +422,27 @@ const myPipelineRoute = createRoute({
 });
 
 // Public Join route - public recruiting funnel landing page (NO AUTH)
+// Standard route with slash: /join/the-standard
 const publicJoinRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "join/$recruiterId",
   component: PublicJoinPage,
+});
+
+// Alternative join route - catches /join-* pattern using splat
+// This handles URLs like /join-the-standard without redirect
+const publicJoinAltRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "$slug",
+  component: () => {
+    // Only render PublicJoinPage if the slug starts with "join-"
+    const pathname = window.location.pathname;
+    if (pathname.startsWith("/join-")) {
+      return <PublicJoinPage />;
+    }
+    // Otherwise, render nothing (let 404 handle it)
+    return null;
+  },
 });
 
 // Leads Queue route - manage incoming leads from public funnel
@@ -517,6 +534,7 @@ const privacyRoute = createRoute({
 });
 
 // Create the route tree - all routes are already linked via getParentRoute
+// Note: publicJoinAltRoute is at the end as a catch-all for /join-* URLs
 const routeTree = rootRoute.addChildren([
   indexRoute,
   dashboardRoute,
@@ -556,6 +574,7 @@ const routeTree = rootRoute.addChildren([
   slackNameLeaderboardRoute,
   termsRoute,
   privacyRoute,
+  publicJoinAltRoute, // Catch-all for /join-* pattern - must be last
 ]);
 
 // Create and export the router

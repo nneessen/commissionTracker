@@ -1,22 +1,44 @@
 // src/features/recruiting/pages/PublicJoinPage.tsx
 // Public landing page for recruiting funnel - v2
 
-import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
+import { useLocation } from "@tanstack/react-router";
 import { Loader2, AlertCircle, Building2 } from "lucide-react";
 import { usePublicRecruiterInfo } from "../hooks/useLeads";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LeadSubmissionConfirmation } from "../components/public/LeadSubmissionConfirmation";
 
+/**
+ * Extract recruiter slug from pathname
+ * Handles both /join/slug and /join-slug patterns
+ */
+function extractSlugFromPath(pathname: string): string | null {
+  // Pattern 1: /join/slug (standard route)
+  const slashMatch = pathname.match(/^\/join\/([^/]+)$/);
+  if (slashMatch) return slashMatch[1];
+
+  // Pattern 2: /join-slug (hyphenated URL)
+  const hyphenMatch = pathname.match(/^\/join-([^/]+)$/);
+  if (hyphenMatch) return hyphenMatch[1];
+
+  return null;
+}
+
 export function PublicJoinPage() {
-  const { recruiterId } = useParams({ from: "/join/$recruiterId" });
+  const location = useLocation();
+
+  // Extract slug from pathname - handles both /join/slug and /join-slug patterns
+  const recruiterId = useMemo(() => {
+    return extractSlugFromPath(location.pathname);
+  }, [location.pathname]);
+
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
 
   const {
     data: recruiterInfo,
     isLoading,
     error,
-  } = usePublicRecruiterInfo(recruiterId);
+  } = usePublicRecruiterInfo(recruiterId || "");
 
   // Loading state
   if (isLoading) {
@@ -152,7 +174,7 @@ export function PublicJoinPage() {
               </div>
 
               <LeadInterestForm
-                recruiterSlug={recruiterId}
+                recruiterSlug={recruiterId || ""}
                 onSuccess={(leadId) => setSubmittedLeadId(leadId)}
               />
             </div>
