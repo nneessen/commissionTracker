@@ -1,24 +1,24 @@
 // /home/nneessen/projects/commissionTracker/src/utils/policyCalculations.ts
 
-import {PaymentFrequency} from '../types/policy.types';
+import { PaymentFrequency } from "../types/policy.types";
 
 /**
  * Calculate annual premium from payment amount and frequency
  */
 export function calculateAnnualPremium(
   premium: number,
-  frequency: PaymentFrequency
+  frequency: PaymentFrequency,
 ): number {
   if (premium <= 0) return 0;
 
   switch (frequency) {
-    case 'monthly':
+    case "monthly":
       return premium * 12;
-    case 'quarterly':
+    case "quarterly":
       return premium * 4;
-    case 'semi-annual':
+    case "semi-annual":
       return premium * 2;
-    case 'annual':
+    case "annual":
       return premium;
     default:
       return premium;
@@ -30,22 +30,29 @@ export function calculateAnnualPremium(
  */
 export function calculatePaymentAmount(
   annualPremium: number,
-  frequency: PaymentFrequency
+  frequency: PaymentFrequency,
 ): number {
   if (annualPremium <= 0) return 0;
 
+  let result: number;
   switch (frequency) {
-    case 'monthly':
-      return annualPremium / 12;
-    case 'quarterly':
-      return annualPremium / 4;
-    case 'semi-annual':
-      return annualPremium / 2;
-    case 'annual':
-      return annualPremium;
+    case "monthly":
+      result = annualPremium / 12;
+      break;
+    case "quarterly":
+      result = annualPremium / 4;
+      break;
+    case "semi-annual":
+      result = annualPremium / 2;
+      break;
+    case "annual":
+      result = annualPremium;
+      break;
     default:
-      return annualPremium;
+      result = annualPremium;
   }
+  // Round to 2 decimal places to avoid floating-point precision issues
+  return Math.round(result * 100) / 100;
 }
 
 /**
@@ -68,7 +75,7 @@ export function calculatePaymentAmount(
 export function calculateExpectedCommission(
   annualPremium: number,
   commissionPercentage: number,
-  advanceMonths: number = 9
+  advanceMonths: number = 9,
 ): number {
   if (annualPremium <= 0 || commissionPercentage <= 0) return 0;
 
@@ -96,7 +103,7 @@ export function calculateExpectedCommission(
 export function calculateCommissionAdvance(
   annualPremium: number,
   commissionDecimal: number,
-  advanceMonths: number = 9
+  advanceMonths: number = 9,
 ): number {
   if (annualPremium <= 0 || commissionDecimal <= 0) return 0;
 
