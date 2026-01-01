@@ -4205,6 +4205,103 @@ export type Database = {
           },
         ];
       };
+      recruit_invitations: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          invite_token: string;
+          inviter_id: string;
+          last_resent_at: string | null;
+          message: string | null;
+          recruit_id: string;
+          resend_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          viewed_at: string | null;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          invite_token?: string;
+          inviter_id: string;
+          last_resent_at?: string | null;
+          message?: string | null;
+          recruit_id: string;
+          resend_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          viewed_at?: string | null;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invite_token?: string;
+          inviter_id?: string;
+          last_resent_at?: string | null;
+          message?: string | null;
+          recruit_id?: string;
+          resend_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          viewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recruit_invitations_inviter_id_fkey";
+            columns: ["inviter_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_inviter_id_fkey";
+            columns: ["inviter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_inviter_id_fkey";
+            columns: ["inviter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_recruit_id_fkey";
+            columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_recruit_id_fkey";
+            columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_recruit_id_fkey";
+            columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       recruit_phase_progress: {
         Row: {
           agency_id: string | null;
@@ -8565,6 +8662,10 @@ export type Database = {
         Args: { p_recipient_id?: string; p_workflow_id: string };
         Returns: boolean;
       };
+      cancel_recruit_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: Json;
+      };
       check_auth_identity: {
         Args: { check_email: string };
         Returns: {
@@ -8599,6 +8700,10 @@ export type Database = {
         }[];
       };
       check_is_imo_admin: { Args: never; Returns: boolean };
+      check_pending_invitation_exists: {
+        Args: { p_email: string; p_inviter_id: string };
+        Returns: boolean;
+      };
       check_team_size_limit: { Args: { p_user_id: string }; Returns: Json };
       check_user_template_limit: {
         Args: { user_uuid: string };
@@ -8749,6 +8854,10 @@ export type Database = {
           p_trigger_type: string;
         };
         Returns: string;
+      };
+      create_recruit_invitation: {
+        Args: { p_email: string; p_message?: string; p_recruit_id: string };
+        Returns: Json;
       };
       create_scheduled_report: {
         Args: {
@@ -9557,6 +9666,7 @@ export type Database = {
         }[];
       };
       get_pending_agency_request_count: { Args: never; Returns: number };
+      get_pending_invitations_count: { Args: never; Returns: number };
       get_pending_join_request_count: { Args: never; Returns: number };
       get_pipeline_template_for_user: {
         Args: {
@@ -9663,6 +9773,10 @@ export type Database = {
           p_product_id: string;
         };
         Returns: number;
+      };
+      get_public_invitation_by_token: {
+        Args: { p_token: string };
+        Returns: Json;
       };
       get_public_recruiter_info: {
         Args: { p_slug: string };
@@ -9928,6 +10042,10 @@ export type Database = {
           upline_id: string;
         }[];
       };
+      mark_invitation_sent: {
+        Args: { p_invitation_id: string };
+        Returns: Json;
+      };
       mark_policy_cancelled: {
         Args: {
           p_cancellation_date?: string;
@@ -10085,6 +10203,10 @@ export type Database = {
         Returns: Json;
       };
       release_alert_rules: { Args: { p_rule_ids: string[] }; Returns: number };
+      resend_recruit_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: Json;
+      };
       resolve_join_request_approver: {
         Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string };
         Returns: string;
@@ -10100,6 +10222,10 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
+      submit_recruit_registration: {
+        Args: { p_data: Json; p_token: string };
+        Returns: Json;
+      };
       submit_recruiting_lead:
         | {
             Args: {

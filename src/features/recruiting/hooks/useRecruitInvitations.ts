@@ -1,0 +1,406 @@
+// src/features/recruiting/hooks/useRecruitInvitations.ts
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { recruitInvitationService } from "@/services/recruiting/recruitInvitationService";
+import type {
+  RegistrationFormData,
+  InvitationValidationResult,
+} from "@/types/recruiting.types";
+
+// ============================================================================
+// AUTHENTICATED HOOKS (for recruiters)
+// ============================================================================
+
+/**
+ * Creates a new recruit with invitation and sends the email
+ */
+export function useCreateRecruitWithInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      email: string;
+      message?: string;
+      upline_id?: string;
+      first_name?: string;
+      last_name?: string;
+      phone?: string;
+      city?: string;
+      state?: string;
+      sendEmail?: boolean;
+    }) => {
+      const { sendEmail = true, ...options } = params;
+
+      // Create recruit and invitation
+      const result = await recruitInvitationService.createRecruitWithInvitation(
+        options.email,
+        options,
+      );
+
+      if (!result.success || !result.token) {
+        throw new Error(result.message);
+      }
+
+      // Send email if requested
+      if (sendEmail && result.invitation_id && result.token) {
+        // Get current user info for email
+        const {
+          data: { user },
+        } = await import("@/services/base/supabase").then((m) =>
+          m.supabase.auth.getUser(),
+        );
+        const { data: profile } = await import("@/services/base/supabase").then(
+          (m) =>
+            m.supabase
+              .from("user_profiles")
+              .select("first_name, last_name, email, phone")
+              .eq("id", user?.id || "")
+              .single(),
+        );
+
+        if (profile) {
+          const inviterName =
+            `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
+            "Your Recruiter";
+
+          await recruitInvitationService.sendInvitationEmail(
+            result.invitation_id,
+            result.token,
+            options.email,
+            options.first_name
+              ? `${options.first_name}${options.last_name ? ` ${options.last_name}` : ""}`
+              : null,
+            inviterName,
+            profile.email,
+            profile.phone,
+            options.message || null,
+          );
+        }
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      toast.success("Invitation sent successfully!", {
+        description: `Registration link sent to ${data.recruit_id ? "the recruit" : "email"}.`,
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({ queryKey: ["recruits"] });
+      queryClient.invalidateQueries({ queryKey: ["recruit-invitations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["pending-invitations-count"],
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Failed to create invitation:", error);
+      toast.error(
+        error.message || "Failed to send invitation. Please try again.",
+      );
+    },
+  });
+}
+
+/**
+ * Creates an invitation for an existing recruit
+ */
+export function useCreateInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      recruitId: string;
+      email: string;
+      message?: string;
+      sendEmail?: boolean;
+    }) => {
+      const { recruitId, email, message, sendEmail = true } = params;
+
+      const result = await recruitInvitationService.createInvitation(
+        recruitId,
+        email,
+        message,
+      );
+
+      if (!result.success || !result.token) {
+        throw new Error(result.message);
+      }
+
+      // Send email if requested
+      if (sendEmail && result.invitation_id && result.token) {
+        const {
+          data: { user },
+        } = await import("@/services/base/supabase").then((m) =>
+          m.supabase.auth.getUser(),
+        );
+        const { data: profile } = await import("@/services/base/supabase").then(
+          (m) =>
+            m.supabase
+              .from("user_profiles")
+              .select("first_name, last_name, email, phone")
+              .eq("id", user?.id || "")
+              .single(),
+        );
+
+        // Get recruit info
+        const { data: recruit } = await import("@/services/base/supabase").then(
+          (m) =>
+            m.supabase
+              .from("user_profiles")
+              .select("first_name, last_name")
+              .eq("id", recruitId)
+              .single(),
+        );
+
+        if (profile) {
+          const inviterName =
+            `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
+            "Your Recruiter";
+          const recruitName = recruit
+            ? `${recruit.first_name || ""}${recruit.last_name ? ` ${recruit.last_name}` : ""}`.trim() ||
+              null
+            : null;
+
+          await recruitInvitationService.sendInvitationEmail(
+            result.invitation_id,
+            result.token,
+            email,
+            recruitName,
+            inviterName,
+            profile.email,
+            profile.phone,
+            message || null,
+          );
+        }
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Invitation sent!");
+      queryClient.invalidateQueries({ queryKey: ["recruit-invitations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["pending-invitations-count"],
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Failed to create invitation:", error);
+      toast.error(error.message || "Failed to send invitation.");
+    },
+  });
+}
+
+/**
+ * Resends an invitation with a new token
+ */
+export function useResendInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      invitationId: string;
+      email: string;
+      recruitName?: string;
+      message?: string;
+    }) => {
+      const { invitationId, email, recruitName, message } = params;
+
+      const result =
+        await recruitInvitationService.resendInvitation(invitationId);
+
+      if (!result.success || !result.token) {
+        throw new Error(result.message);
+      }
+
+      // Send email with new token
+      const {
+        data: { user },
+      } = await import("@/services/base/supabase").then((m) =>
+        m.supabase.auth.getUser(),
+      );
+      const { data: profile } = await import("@/services/base/supabase").then(
+        (m) =>
+          m.supabase
+            .from("user_profiles")
+            .select("first_name, last_name, email, phone")
+            .eq("id", user?.id || "")
+            .single(),
+      );
+
+      if (profile) {
+        const inviterName =
+          `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
+          "Your Recruiter";
+
+        await recruitInvitationService.sendInvitationEmail(
+          invitationId,
+          result.token,
+          email,
+          recruitName || null,
+          inviterName,
+          profile.email,
+          profile.phone,
+          message || null,
+        );
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Invitation resent!");
+      queryClient.invalidateQueries({ queryKey: ["recruit-invitations"] });
+    },
+    onError: (error: Error) => {
+      console.error("Failed to resend invitation:", error);
+      toast.error(error.message || "Failed to resend invitation.");
+    },
+  });
+}
+
+/**
+ * Cancels an invitation
+ */
+export function useCancelInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invitationId: string) =>
+      recruitInvitationService.cancelInvitation(invitationId),
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Invitation cancelled.");
+        queryClient.invalidateQueries({ queryKey: ["recruit-invitations"] });
+        queryClient.invalidateQueries({
+          queryKey: ["pending-invitations-count"],
+        });
+      } else {
+        toast.error(data.message);
+      }
+    },
+    onError: (error: Error) => {
+      console.error("Failed to cancel invitation:", error);
+      toast.error("Failed to cancel invitation.");
+    },
+  });
+}
+
+/**
+ * Gets invitations for a specific recruit
+ */
+export function useInvitationsForRecruit(recruitId: string | undefined) {
+  return useQuery({
+    queryKey: ["recruit-invitations", recruitId],
+    queryFn: () =>
+      recruitId
+        ? recruitInvitationService.getInvitationsForRecruit(recruitId)
+        : Promise.resolve([]),
+    enabled: !!recruitId,
+  });
+}
+
+/**
+ * Gets the active invitation for a recruit
+ */
+export function useActiveInvitation(recruitId: string | undefined) {
+  return useQuery({
+    queryKey: ["recruit-invitations", recruitId, "active"],
+    queryFn: () =>
+      recruitId
+        ? recruitInvitationService.getActiveInvitation(recruitId)
+        : Promise.resolve(null),
+    enabled: !!recruitId,
+  });
+}
+
+/**
+ * Gets all pending invitations for the current user
+ */
+export function usePendingInvitations() {
+  return useQuery({
+    queryKey: ["recruit-invitations", "pending"],
+    queryFn: () => recruitInvitationService.getMyPendingInvitations(),
+  });
+}
+
+/**
+ * Gets pending invitations count for badge
+ */
+export function usePendingInvitationsCount() {
+  return useQuery({
+    queryKey: ["pending-invitations-count"],
+    queryFn: () => recruitInvitationService.getPendingInvitationsCount(),
+    refetchInterval: 60000, // Refresh every minute
+  });
+}
+
+// ============================================================================
+// PUBLIC HOOKS (no auth required - for registration page)
+// ============================================================================
+
+/**
+ * Validates an invitation token
+ */
+export function useInvitationByToken(token: string | undefined) {
+  return useQuery<InvitationValidationResult>({
+    queryKey: ["public-invitation", token],
+    queryFn: () =>
+      token
+        ? recruitInvitationService.validateToken(token)
+        : Promise.resolve({
+            valid: false,
+            error: "invitation_not_found" as const,
+            message: "No token provided",
+          }),
+    enabled: !!token,
+    staleTime: 0, // Always fresh - token status can change
+    retry: false, // Don't retry on invalid tokens
+  });
+}
+
+/**
+ * Submits the registration form
+ */
+export function useSubmitRegistration() {
+  return useMutation({
+    mutationFn: (params: { token: string; formData: RegistrationFormData }) =>
+      recruitInvitationService.submitRegistration(
+        params.token,
+        params.formData,
+      ),
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Registration submitted!", {
+          description: "Your recruiter will be in touch with next steps.",
+          duration: 5000,
+        });
+      }
+    },
+    onError: (error: Error) => {
+      console.error("Failed to submit registration:", error);
+      toast.error("Failed to submit registration. Please try again.");
+    },
+  });
+}
+
+// ============================================================================
+// COMBINED HOOK
+// ============================================================================
+
+export function useRecruitInvitations(recruitId?: string) {
+  const invitations = useInvitationsForRecruit(recruitId);
+  const activeInvitation = useActiveInvitation(recruitId);
+  const createWithInvite = useCreateRecruitWithInvitation();
+  const createInvite = useCreateInvitation();
+  const resendInvite = useResendInvitation();
+  const cancelInvite = useCancelInvitation();
+
+  return {
+    invitations: invitations.data || [],
+    activeInvitation: activeInvitation.data,
+    isLoading: invitations.isLoading || activeInvitation.isLoading,
+    createWithInvite,
+    createInvite,
+    resendInvite,
+    cancelInvite,
+  };
+}

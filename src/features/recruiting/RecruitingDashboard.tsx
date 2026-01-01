@@ -27,6 +27,7 @@ import { useActiveTemplate, usePhases } from "./hooks/usePipeline";
 import { RecruitListTable } from "./components/RecruitListTable";
 import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
 import { AddRecruitDialog } from "./components/AddRecruitDialog";
+import { SendInviteDialog } from "./components/SendInviteDialog";
 import { RecruitingErrorBoundary } from "./components/RecruitingErrorBoundary";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +67,7 @@ function RecruitingDashboardContent() {
     null,
   );
   const [addRecruitDialogOpen, setAddRecruitDialogOpen] = useState(false);
+  const [sendInviteDialogOpen, setSendInviteDialogOpen] = useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -243,6 +245,15 @@ function RecruitingDashboardContent() {
           </Button>
           <Button
             size="sm"
+            variant="outline"
+            onClick={() => setSendInviteDialogOpen(true)}
+            className="h-6 text-[10px] px-2"
+          >
+            <Mail className="h-3 w-3 mr-1" />
+            Send Invite
+          </Button>
+          <Button
+            size="sm"
             onClick={() => setAddRecruitDialogOpen(true)}
             className="h-6 text-[10px] px-2"
           >
@@ -358,6 +369,12 @@ function RecruitingDashboardContent() {
             setDetailSheetOpen(true);
           }
         }}
+      />
+
+      {/* Send Invite Dialog */}
+      <SendInviteDialog
+        open={sendInviteDialogOpen}
+        onOpenChange={setSendInviteDialogOpen}
       />
     </div>
   );

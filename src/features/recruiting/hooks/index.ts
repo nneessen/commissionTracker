@@ -8,3 +8,4 @@ export * from "./useRecruitActivity";
 export * from "./usePipeline";
 export * from "./useRecruitProgress";
 export * from "./useLeads";
+export * from "./useRecruitInvitations";

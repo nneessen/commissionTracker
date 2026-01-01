@@ -42,6 +42,7 @@ import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
 import { PublicJoinWrapper } from "./features/recruiting/pages/PublicJoinWrapper";
+import { PublicRegistrationPage } from "./features/recruiting/pages/PublicRegistrationPage";
 import { LeadsQueueDashboard } from "./features/recruiting/components/LeadsQueueDashboard";
 import { TrainingHubPage, TrainerDashboard } from "./features/training-hub";
 import { ContractingPage } from "./features/contracting/ContractingPage";
@@ -430,6 +431,13 @@ const publicJoinRoute = createRoute({
   component: PublicJoinPage,
 });
 
+// Public Registration route - self-registration via invite token (NO AUTH)
+const publicRegistrationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "register/$token",
+  component: PublicRegistrationPage,
+});
+
 // Alternative join route - catches /join-* pattern using catch-all
 // This handles URLs like /join-the-standard without redirect
 // Uses stable wrapper component (not inline function) so React Query works correctly
@@ -560,6 +568,7 @@ const routeTree = rootRoute.addChildren([
   workflowAdminRoute,
   myPipelineRoute,
   publicJoinRoute,
+  publicRegistrationRoute,
   leadsQueueRoute,
   trainingHubRoute,
   trainerDashboardRoute,

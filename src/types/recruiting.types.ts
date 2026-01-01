@@ -1072,3 +1072,123 @@ export const INTERACTIVE_CHECKLIST_TYPES: ChecklistItemType[] = [
   "quiz",
   "signature_required",
 ];
+
+// =============================================================================
+// Recruit Invitation Types
+// =============================================================================
+
+export type InvitationStatus =
+  | "pending"
+  | "sent"
+  | "viewed"
+  | "completed"
+  | "expired"
+  | "cancelled";
+
+export interface RecruitInvitation {
+  id: string;
+  recruit_id: string;
+  inviter_id: string;
+  invite_token: string;
+  email: string;
+  status: InvitationStatus;
+  expires_at: string;
+  sent_at: string | null;
+  viewed_at: string | null;
+  completed_at: string | null;
+  resend_count: number;
+  last_resent_at: string | null;
+  message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateInvitationInput {
+  recruit_id: string;
+  email: string;
+  message?: string;
+}
+
+export interface CreateInvitationResult {
+  success: boolean;
+  invitation_id?: string;
+  token?: string;
+  error?: string;
+  message: string;
+}
+
+export interface InviterInfo {
+  name: string;
+  email: string;
+  phone: string | null;
+}
+
+export interface PrefilledData {
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+}
+
+export interface InvitationValidationResult {
+  valid: boolean;
+  error?:
+    | "invitation_not_found"
+    | "invitation_cancelled"
+    | "invitation_completed"
+    | "invitation_expired";
+  message?: string;
+  invitation_id?: string;
+  recruit_id?: string;
+  email?: string;
+  expires_at?: string;
+  inviter?: InviterInfo;
+  prefilled?: PrefilledData;
+}
+
+export interface RegistrationFormData {
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  date_of_birth?: string;
+  street_address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  instagram_username?: string;
+  linkedin_username?: string;
+  facebook_handle?: string;
+  personal_website?: string;
+  referral_source?: string;
+}
+
+export interface RegistrationResult {
+  success: boolean;
+  recruit_id?: string;
+  error?: string;
+  message: string;
+  inviter?: InviterInfo;
+}
+
+// Invitation status display configuration
+export const INVITATION_STATUS_LABELS: Record<InvitationStatus, string> = {
+  pending: "Invite Pending",
+  sent: "Invite Sent",
+  viewed: "Invite Viewed",
+  completed: "Registration Complete",
+  expired: "Invite Expired",
+  cancelled: "Invite Cancelled",
+};
+
+export const INVITATION_STATUS_COLORS: Record<InvitationStatus, string> = {
+  pending:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  sent: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  viewed:
+    "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
+  completed:
+    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  expired: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
