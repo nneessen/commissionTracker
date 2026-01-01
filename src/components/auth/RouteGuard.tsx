@@ -9,6 +9,7 @@ import { useFeatureAccess, type FeatureKey } from "@/hooks/subscription";
 import { PendingApproval } from "@/features/auth/PendingApproval";
 import { PermissionDenied } from "@/features/auth";
 import { UpgradePrompt } from "@/components/subscription";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 import type { PermissionCode } from "@/types/permissions.types";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
 
@@ -104,9 +105,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg animate-pulse">
-            CT
-          </div>
+          <LogoSpinner size="xl" className="mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>

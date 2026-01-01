@@ -281,6 +281,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           </div>
 
           {/* Header */}
+
           <div className="mb-3 text-center lg:text-left">
             <h2
               className="text-lg font-bold text-foreground mb-1"

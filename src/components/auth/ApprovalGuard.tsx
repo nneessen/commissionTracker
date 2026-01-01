@@ -7,6 +7,7 @@ import { PendingApproval } from "../../features/auth/PendingApproval";
 import { DeniedAccess } from "../../features/auth/DeniedAccess";
 import { supabase } from "@/services/base/supabase";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 interface ApprovalGuardProps {
   children: React.ReactNode;
@@ -54,9 +55,7 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg animate-pulse">
-            CT
-          </div>
+          <LogoSpinner size="xl" className="mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>

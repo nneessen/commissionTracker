@@ -8,7 +8,7 @@ interface LogoSpinnerProps {
   className?: string;
 }
 
-const sizeMap = {
+const sizeClasses = {
   xs: "h-3 w-3",
   sm: "h-4 w-4",
   md: "h-5 w-5",
@@ -20,23 +20,29 @@ export const LogoSpinner: React.FC<LogoSpinnerProps> = ({
   size = "sm",
   className,
 }) => {
-  const sizeClass = sizeMap[size];
+  const sizeClass = sizeClasses[size];
 
   return (
-    <div className={cn("inline-block animate-logo-spin", sizeClass, className)}>
+    <div
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center animate-logo-spin",
+        sizeClass,
+        className,
+      )}
+    >
       {/* Dark logo for light mode */}
       <img
         src="/logos/LetterLogo.png"
         alt=""
         aria-hidden="true"
-        className="dark:hidden w-full h-full object-contain"
+        className={cn("dark:hidden", sizeClass)}
       />
       {/* Light logo for dark mode */}
       <img
         src="/logos/Light Letter Logo .png"
         alt=""
         aria-hidden="true"
-        className="hidden dark:block w-full h-full object-contain"
+        className={cn("hidden dark:block", sizeClass)}
       />
     </div>
   );

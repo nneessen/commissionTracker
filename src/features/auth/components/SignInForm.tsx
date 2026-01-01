@@ -36,6 +36,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           Email
         </Label>
         <Input
+          variant="outlined"
           id="email"
           type="email"
           placeholder="you@example.com"
@@ -70,6 +71,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           </Button>
         </div>
         <Input
+          variant="outlined"
           id="password"
           type="password"
           placeholder="Enter your password"

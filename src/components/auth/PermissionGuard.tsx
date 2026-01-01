@@ -1,8 +1,9 @@
-import React from 'react';
-import {useAuth} from '@/contexts/AuthContext';
-import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
-import type {PermissionCode} from '@/types/permissions.types';
-import {PermissionDenied} from '@/features/auth';
+import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import type { PermissionCode } from "@/types/permissions.types";
+import { PermissionDenied } from "@/features/auth";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 interface PermissionGuardProps {
   children: React.ReactNode;
@@ -59,9 +60,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg animate-pulse">
-            CT
-          </div>
+          <LogoSpinner size="xl" className="mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
