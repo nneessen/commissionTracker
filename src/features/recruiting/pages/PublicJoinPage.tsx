@@ -164,9 +164,14 @@ export function PublicJoinPage() {
             <div className="relative">
               <div className="absolute inset-0 bg-amber-500/20 rounded-xl blur-xl group-hover:bg-amber-500/30 transition-all duration-500" />
               <img
+                src="/logos/Light Letter Logo .png"
+                alt="The Standard"
+                className="relative h-14 w-14 drop-shadow-2xl dark:hidden"
+              />
+              <img
                 src="/logos/LetterLogo.png"
                 alt="The Standard"
-                className="relative h-14 w-14 invert dark:invert-0 drop-shadow-2xl"
+                className="relative h-14 w-14 drop-shadow-2xl hidden dark:block"
               />
             </div>
             <div className="flex flex-col">
@@ -291,7 +296,12 @@ export function PublicJoinPage() {
               <img
                 src="/logos/LetterLogo.png"
                 alt="The Standard"
-                className="h-10 w-10"
+                className="h-10 w-10 dark:hidden"
+              />
+              <img
+                src="/logos/Light Letter Logo .png"
+                alt="The Standard"
+                className="h-10 w-10 hidden dark:block"
               />
               <div className="flex flex-col">
                 <span
