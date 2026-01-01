@@ -1,6 +1,7 @@
 // src/features/policies/PolicyList.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 import {
   Edit,
   Trash2,
@@ -91,7 +92,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     direction: "desc",
   });
 
-  // Use server-side pagination hook
   const {
     policies,
     isLoading,
@@ -612,12 +612,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-12">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-zinc-400"></div>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Loading policies...
-                    </span>
-                  </div>
+                  <LogoSpinner size="xl" className="mr-2" />
+                  Your policies are loading...
                 </TableCell>
               </TableRow>
             ) : error ? (

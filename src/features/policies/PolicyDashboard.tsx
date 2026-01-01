@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PolicyDialog } from "./components/PolicyDialog";
 import { FirstSellerNamingDialog } from "./components/FirstSellerNamingDialog";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 import { PolicyList } from "./PolicyList";
 import {
   usePolicies,
@@ -34,7 +35,6 @@ export const PolicyDashboard: React.FC = () => {
 
   const { user } = useAuth();
 
-  // Check if user is first seller and should name the leaderboard
   const checkFirstSeller = async (userId: string) => {
     try {
       const { data, error } = await supabase.rpc("check_first_seller_naming", {
@@ -47,7 +47,6 @@ export const PolicyDashboard: React.FC = () => {
       }
 
       if (data && data.length > 0 && data[0].needs_naming) {
-        // User is first seller and leaderboard needs naming
         setFirstSellerDialog({
           open: true,
           logId: data[0].log_id,
@@ -58,13 +57,12 @@ export const PolicyDashboard: React.FC = () => {
       console.error("Error checking first seller:", err);
     }
   };
+
   const { isLoading, error, refetch } = usePolicies();
-  // Fetch the specific policy being edited - this is the reliable data source
   const { data: editingPolicy, isLoading: isEditingPolicyLoading } =
     usePolicy(editingPolicyId);
   useCarriers();
 
-  // Use CRUD mutation hooks
   const createPolicyMutation = useCreatePolicy();
   const updatePolicyMutation = useUpdatePolicy();
 
@@ -75,9 +73,10 @@ export const PolicyDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-20 text-zinc-500 dark:text-zinc-400">
+      <>
+        <LogoSpinner size="sm" className="mr-2" />
         Loading policies...
-      </div>
+      </>
     );
   }
 
