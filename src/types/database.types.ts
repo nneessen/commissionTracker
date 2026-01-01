@@ -4311,6 +4311,7 @@ export type Database = {
           converted_at: string | null;
           converted_recruit_id: string | null;
           created_at: string;
+          current_imo_name: string | null;
           discovery_call_scheduled: boolean | null;
           discovery_call_scheduled_at: string | null;
           discovery_call_url: string | null;
@@ -4321,12 +4322,14 @@ export type Database = {
           income_goals: string | null;
           insurance_experience: string;
           ip_address: unknown;
+          is_licensed: boolean | null;
           last_name: string;
           phone: string;
           recruiter_id: string;
           referrer_url: string | null;
           rejection_reason: string | null;
           reviewed_at: string | null;
+          specialties: string[] | null;
           state: string;
           status: string;
           submitted_at: string;
@@ -4336,9 +4339,6 @@ export type Database = {
           utm_medium: string | null;
           utm_source: string | null;
           why_interested: string;
-          is_licensed: boolean | null;
-          current_imo_name: string | null;
-          specialties: string[] | null;
         };
         Insert: {
           agency_id?: string | null;
@@ -4347,6 +4347,7 @@ export type Database = {
           converted_at?: string | null;
           converted_recruit_id?: string | null;
           created_at?: string;
+          current_imo_name?: string | null;
           discovery_call_scheduled?: boolean | null;
           discovery_call_scheduled_at?: string | null;
           discovery_call_url?: string | null;
@@ -4357,12 +4358,14 @@ export type Database = {
           income_goals?: string | null;
           insurance_experience: string;
           ip_address?: unknown;
+          is_licensed?: boolean | null;
           last_name: string;
           phone: string;
           recruiter_id: string;
           referrer_url?: string | null;
           rejection_reason?: string | null;
           reviewed_at?: string | null;
+          specialties?: string[] | null;
           state: string;
           status?: string;
           submitted_at?: string;
@@ -4372,9 +4375,6 @@ export type Database = {
           utm_medium?: string | null;
           utm_source?: string | null;
           why_interested: string;
-          is_licensed?: boolean | null;
-          current_imo_name?: string | null;
-          specialties?: string[] | null;
         };
         Update: {
           agency_id?: string | null;
@@ -4383,6 +4383,7 @@ export type Database = {
           converted_at?: string | null;
           converted_recruit_id?: string | null;
           created_at?: string;
+          current_imo_name?: string | null;
           discovery_call_scheduled?: boolean | null;
           discovery_call_scheduled_at?: string | null;
           discovery_call_url?: string | null;
@@ -4393,12 +4394,14 @@ export type Database = {
           income_goals?: string | null;
           insurance_experience?: string;
           ip_address?: unknown;
+          is_licensed?: boolean | null;
           last_name?: string;
           phone?: string;
           recruiter_id?: string;
           referrer_url?: string | null;
           rejection_reason?: string | null;
           reviewed_at?: string | null;
+          specialties?: string[] | null;
           state?: string;
           status?: string;
           submitted_at?: string;
@@ -4408,9 +4411,6 @@ export type Database = {
           utm_medium?: string | null;
           utm_source?: string | null;
           why_interested?: string;
-          is_licensed?: boolean | null;
-          current_imo_name?: string | null;
-          specialties?: string[] | null;
         };
         Relationships: [
           {
@@ -10100,31 +10100,54 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
-      submit_recruiting_lead: {
-        Args: {
-          p_availability: string;
-          p_city: string;
-          p_email: string;
-          p_first_name: string;
-          p_income_goals?: string;
-          p_insurance_experience?: string;
-          p_ip_address?: unknown;
-          p_last_name: string;
-          p_phone: string;
-          p_recruiter_slug: string;
-          p_referrer_url?: string;
-          p_state: string;
-          p_user_agent?: string;
-          p_utm_campaign?: string;
-          p_utm_medium?: string;
-          p_utm_source?: string;
-          p_why_interested?: string;
-          p_is_licensed?: boolean;
-          p_current_imo_name?: string;
-          p_specialties?: string[];
-        };
-        Returns: Json;
-      };
+      submit_recruiting_lead:
+        | {
+            Args: {
+              p_availability: string;
+              p_city: string;
+              p_email: string;
+              p_first_name: string;
+              p_income_goals?: string;
+              p_insurance_experience?: string;
+              p_ip_address?: unknown;
+              p_last_name: string;
+              p_phone: string;
+              p_recruiter_slug: string;
+              p_referrer_url?: string;
+              p_state: string;
+              p_user_agent?: string;
+              p_utm_campaign?: string;
+              p_utm_medium?: string;
+              p_utm_source?: string;
+              p_why_interested?: string;
+            };
+            Returns: Json;
+          }
+        | {
+            Args: {
+              p_availability: string;
+              p_city: string;
+              p_current_imo_name?: string;
+              p_email: string;
+              p_first_name: string;
+              p_income_goals?: string;
+              p_insurance_experience?: string;
+              p_ip_address?: unknown;
+              p_is_licensed?: boolean;
+              p_last_name: string;
+              p_phone: string;
+              p_recruiter_slug: string;
+              p_referrer_url?: string;
+              p_specialties?: string[];
+              p_state: string;
+              p_user_agent?: string;
+              p_utm_campaign?: string;
+              p_utm_medium?: string;
+              p_utm_source?: string;
+              p_why_interested?: string;
+            };
+            Returns: Json;
+          };
       test_rls_for_user: {
         Args: { test_user_id: string };
         Returns: {

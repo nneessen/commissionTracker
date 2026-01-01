@@ -7,6 +7,7 @@ import {
   useActualMetrics,
 } from "../../hooks/targets";
 import { useHistoricalAverages } from "../../hooks/targets/useHistoricalAverages";
+import { useUserCommissionProfile } from "../../hooks/commissions/useUserCommissionProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Edit2, Target, AlertCircle } from "lucide-react";
@@ -25,6 +26,7 @@ export function TargetsPage() {
   const actualMetrics = useActualMetrics();
   const updateTargets = useUpdateTargets();
   const { averages, isLoading: averagesLoading } = useHistoricalAverages();
+  const { data: commissionProfile } = useUserCommissionProfile();
 
   const [showInputDialog, setShowInputDialog] = useState(false);
   const [calculatedTargets, setCalculatedTargets] =
@@ -642,8 +644,48 @@ export function TargetsPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-zinc-500 dark:text-zinc-400">
+                    <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
                       Commission Rate
+                      {commissionProfile?.dataQuality === "HIGH" && (
+                        <span
+                          className="text-[9px] text-emerald-600 dark:text-emerald-400"
+                          title="Based on your sales mix - high confidence (20+ policies)"
+                        >
+                          ✓
+                        </span>
+                      )}
+                      {commissionProfile?.dataQuality === "MEDIUM" && (
+                        <span
+                          className="text-[9px] text-blue-600 dark:text-blue-400"
+                          title="Based on limited sales data - moderate confidence (10-19 policies)"
+                        >
+                          ℹ️
+                        </span>
+                      )}
+                      {commissionProfile?.dataQuality === "LOW" && (
+                        <span
+                          className="text-[9px] text-amber-600 dark:text-amber-400"
+                          title="Based on very limited sales data - low confidence (1-9 policies)"
+                        >
+                          ⚠
+                        </span>
+                      )}
+                      {commissionProfile?.dataQuality === "DEFAULT" && (
+                        <span
+                          className="text-[9px] text-amber-600 dark:text-amber-400"
+                          title="Using default rate - no recent policies found"
+                        >
+                          ⚠
+                        </span>
+                      )}
+                      {commissionProfile?.dataQuality === "NONE" && (
+                        <span
+                          className="text-[9px] text-red-600 dark:text-red-400"
+                          title="No commission data available"
+                        >
+                          ❌
+                        </span>
+                      )}
                     </span>
                     <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
                       {(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%
@@ -699,6 +741,46 @@ export function TargetsPage() {
                       {calculatedTargets.calculationMethod}
                     </span>
                   </div>
+                  {commissionProfile?.dataQuality === "HIGH" && (
+                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="text-[9px] text-emerald-600 dark:text-emerald-400">
+                        ✓ Commission rate calculated from your sales mix (high
+                        confidence)
+                      </div>
+                    </div>
+                  )}
+                  {commissionProfile?.dataQuality === "MEDIUM" && (
+                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="text-[9px] text-blue-600 dark:text-blue-400">
+                        ℹ️ Commission rate based on limited data. Add more
+                        policies for better accuracy.
+                      </div>
+                    </div>
+                  )}
+                  {commissionProfile?.dataQuality === "LOW" && (
+                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="text-[9px] text-amber-600 dark:text-amber-400">
+                        ⚠ Commission rate based on very limited data. Add more
+                        policies for accuracy.
+                      </div>
+                    </div>
+                  )}
+                  {commissionProfile?.dataQuality === "DEFAULT" && (
+                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="text-[9px] text-amber-600 dark:text-amber-400">
+                        ⚠ Commission rate is using defaults. Add policies to get
+                        your actual rate.
+                      </div>
+                    </div>
+                  )}
+                  {commissionProfile?.dataQuality === "NONE" && (
+                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="text-[9px] text-red-600 dark:text-red-400">
+                        ❌ No commission data available. Contact admin to
+                        configure rates.
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

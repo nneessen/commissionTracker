@@ -99,7 +99,13 @@ export interface ProductOption {
 
 // Data quality levels for commission rate calculations
 // NOTE: this is probably not really useful
-export type CommissionDataQuality = "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
+export type CommissionDataQuality =
+  | "HIGH"
+  | "MEDIUM"
+  | "LOW"
+  | "DEFAULT"
+  | "NONE"
+  | "INSUFFICIENT";
 
 // Individual product's contribution to weighted average
 export interface ProductCommissionBreakdown {
