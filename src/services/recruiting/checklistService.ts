@@ -18,7 +18,6 @@ import type {
   RecruitPhaseProgress,
   RecruitChecklistProgress,
   UpdateChecklistItemStatusInput,
-  OnboardingStatus,
 } from "@/types/recruiting.types";
 
 // Fire-and-forget helper for automation triggers (don't block main flow)
@@ -34,19 +33,13 @@ const checklistProgressRepository = new RecruitChecklistProgressRepository();
 const pipelinePhaseRepository = new PipelinePhaseRepository();
 const checklistItemRepository = new PhaseChecklistItemRepository();
 
-// Convert phase name to onboarding status key
-const phaseNameToStatus = (phaseName: string): OnboardingStatus => {
-  const normalized = phaseName.toLowerCase().replace(/[- ]/g, "_");
-  const mapping: Record<string, OnboardingStatus> = {
-    interview_1: "interview_1",
-    zoom_interview: "zoom_interview",
-    pre_licensing: "pre_licensing",
-    exam: "exam",
-    npn_received: "npn_received",
-    contracting: "contracting",
-    bootcamp: "bootcamp",
-  };
-  return mapping[normalized] || "interview_1";
+/**
+ * Normalize phase name to status key format.
+ * Converts "Interview 1" -> "interview_1", "Pre-Licensing" -> "pre_licensing", etc.
+ * No hardcoded mapping - works with any phase name from the database.
+ */
+const normalizePhaseNameToStatus = (phaseName: string): string => {
+  return phaseName.toLowerCase().replace(/[- ]/g, "_");
 };
 
 // Sync cache to prevent redundant sync checks (TTL: 30 seconds)
@@ -201,7 +194,7 @@ export const checklistService = {
       await this.initializeChecklistProgress(userId, phases[0].id);
 
       // Update user's onboarding status and template to match first phase
-      const firstPhaseStatus = phaseNameToStatus(phases[0].phaseName);
+      const firstPhaseStatus = normalizePhaseNameToStatus(phases[0].phaseName);
       await supabase
         .from("user_profiles")
         .update({
@@ -361,7 +354,7 @@ export const checklistService = {
     );
 
     // Update user_profiles with new phase and status
-    const nextPhaseStatus = phaseNameToStatus(nextPhase.phaseName);
+    const nextPhaseStatus = normalizePhaseNameToStatus(nextPhase.phaseName);
     await supabase
       .from("user_profiles")
       .update({
@@ -452,7 +445,7 @@ export const checklistService = {
       .eq("phase_id", phaseId);
 
     // Update user_profiles with the reverted phase's status
-    const revertedPhaseStatus = phaseNameToStatus(phase.phaseName);
+    const revertedPhaseStatus = normalizePhaseNameToStatus(phase.phaseName);
     await supabase
       .from("user_profiles")
       .update({

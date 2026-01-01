@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { usePhases } from "@/features/recruiting/hooks/usePipeline";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
-import { ONBOARDING_STATUS_COLORS } from "@/types/recruiting.types";
+import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
@@ -346,9 +346,9 @@ export function RecruitListTable({
                         variant="secondary"
                         className={`text-[9px] px-1.5 py-0 h-4 ${
                           recruit.onboarding_status
-                            ? ONBOARDING_STATUS_COLORS[
+                            ? TERMINAL_STATUS_COLORS[
                                 recruit.onboarding_status
-                              ]
+                              ] || "bg-blue-100 text-blue-800"
                             : ""
                         }`}
                       >

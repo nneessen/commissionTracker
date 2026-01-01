@@ -28,19 +28,10 @@ export type AgentStatus = Database["public"]["Enums"]["agent_status"];
 /** Approval status values */
 export type ApprovalStatus = "pending" | "approved" | "denied";
 
-/** Onboarding status values (matches database check constraint) */
-export type OnboardingStatus =
-  | "lead"
-  | "active"
-  | "interview_1"
-  | "zoom_interview"
-  | "pre_licensing"
-  | "exam"
-  | "npn_received"
-  | "contracting"
-  | "bootcamp"
-  | "completed"
-  | "dropped";
+// NOTE: OnboardingStatus is NO LONGER a static type.
+// Onboarding statuses are dynamic and come from the pipeline_phases table
+// based on the recruit's assigned pipeline_template_id.
+// Import TerminalStatus from recruiting.types.ts for terminal states (completed, dropped, etc.)
 
 // =============================================================================
 // USERPROFILE - Primary Interface (extends database row)

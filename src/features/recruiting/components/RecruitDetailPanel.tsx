@@ -67,7 +67,7 @@ import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { useRecruitEmails } from "../hooks/useRecruitEmails";
 import { useRecruitActivityLog } from "../hooks/useRecruitActivity";
-import { ONBOARDING_STATUS_COLORS } from "@/types/recruiting.types";
+import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -368,7 +368,8 @@ export function RecruitDetailPanel({
                 className={cn(
                   "text-[10px] px-1.5 py-0 h-4",
                   recruit.onboarding_status
-                    ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status]
+                    ? TERMINAL_STATUS_COLORS[recruit.onboarding_status] ||
+                        "bg-blue-100 text-blue-800"
                     : "",
                 )}
               >

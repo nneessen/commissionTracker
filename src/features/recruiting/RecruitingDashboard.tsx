@@ -23,6 +23,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useRecruits, usePendingLeadsCount } from "./hooks";
+import { useActiveTemplate, usePhases } from "./hooks/usePipeline";
 import { RecruitListTable } from "./components/RecruitListTable";
 import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
 import { AddRecruitDialog } from "./components/AddRecruitDialog";
@@ -51,10 +52,22 @@ type RecruitWithRelations = UserProfile & {
   } | null;
 };
 
+/**
+ * Normalize phase name to status key format.
+ * E.g., "Interview 1" -> "interview_1"
+ */
+const normalizeToStatus = (phaseName: string): string => {
+  return phaseName.toLowerCase().replace(/[- ]/g, "_");
+};
+
 function RecruitingDashboardContent() {
   const { user } = useAuth();
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits();
   const { data: pendingLeadsCount } = usePendingLeadsCount();
+
+  // Fetch phases from active pipeline template (dynamic, not hardcoded)
+  const { data: activeTemplate } = useActiveTemplate();
+  const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
 
   const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(
     null,
@@ -96,19 +109,17 @@ function RecruitingDashboardContent() {
   ).filter((recruit) => recruit.id !== user?.id);
 
   // Calculate stats from recruits data directly
-  const activePhases = [
-    "interview_1",
-    "zoom_interview",
-    "pre_licensing",
-    "exam",
-    "npn_received",
-    "contracting",
-    "bootcamp",
-  ];
+  // Active phases come from the pipeline_phases table, normalized to status keys
+  const activePhaseStatuses = pipelinePhases.map((phase) =>
+    normalizeToStatus(phase.phase_name),
+  );
   const stats = {
     total: recruits.length,
-    active: recruits.filter(
-      (r) => r.onboarding_status && activePhases.includes(r.onboarding_status),
+    active: recruits.filter((r) =>
+      r.onboarding_status && activePhaseStatuses.length > 0
+        ? activePhaseStatuses.includes(r.onboarding_status)
+        : r.onboarding_status !== "completed" &&
+          r.onboarding_status !== "dropped",
     ).length,
     completed: recruits.filter((r) => r.onboarding_status === "completed")
       .length,

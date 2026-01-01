@@ -6,6 +6,10 @@ import { Lock, Users, UserPlus, Bell } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { HierarchyStats } from "@/types/hierarchy.types";
 import type { RecruitingStats } from "@/hooks/recruiting/useRecruitingStats";
+import {
+  useActiveTemplate,
+  usePhases,
+} from "@/features/recruiting/hooks/usePipeline";
 
 interface TeamRecruitingSectionProps {
   hierarchyStats?: HierarchyStats | null;
@@ -27,9 +31,7 @@ const MetricItem: React.FC<MetricItemProps> = ({ label, value, highlight }) => (
     <span
       className={cn(
         "font-mono font-semibold",
-        highlight
-          ? "text-[hsl(var(--success))]"
-          : "text-foreground",
+        highlight ? "text-[hsl(var(--success))]" : "text-foreground",
       )}
     >
       {value}
@@ -76,20 +78,28 @@ const TeamDetailsPanel: React.FC<{
 );
 
 /**
+ * Normalize phase name to status key format.
+ * E.g., "Interview 1" -> "interview_1"
+ */
+const normalizeToStatus = (phaseName: string): string => {
+  return phaseName.toLowerCase().replace(/[- ]/g, "_");
+};
+
+/**
  * Recruiting Pipeline Panel - Middle column (larger)
  */
 const RecruitingPipelinePanel: React.FC<{
   recruitingStats?: RecruitingStats | null;
 }> = ({ recruitingStats }) => {
-  const phases = [
-    { key: "interview_1", label: "Interview" },
-    { key: "zoom_interview", label: "Zoom Interview" },
-    { key: "pre_licensing", label: "Pre-Licensing" },
-    { key: "exam", label: "Exam" },
-    { key: "npn_received", label: "NPN Received" },
-    { key: "contracting", label: "Contracting" },
-    { key: "bootcamp", label: "Bootcamp" },
-  ];
+  // Fetch phases from active pipeline template (dynamic, not hardcoded)
+  const { data: activeTemplate } = useActiveTemplate();
+  const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
+
+  // Build phases array from database
+  const phases = pipelinePhases.map((phase) => ({
+    key: normalizeToStatus(phase.phase_name),
+    label: phase.phase_name,
+  }));
 
   return (
     <div className="bg-card rounded-lg border border-border p-3 h-full">
@@ -106,25 +116,33 @@ const RecruitingPipelinePanel: React.FC<{
           <div className="text-base sm:text-lg font-bold text-foreground">
             {recruitingStats?.total ?? 0}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Total</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Total
+          </div>
         </div>
         <div className="text-center">
           <div className="text-base sm:text-lg font-bold text-[hsl(var(--info))]">
             {recruitingStats?.active ?? 0}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Active</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Active
+          </div>
         </div>
         <div className="text-center">
           <div className="text-base sm:text-lg font-bold text-[hsl(var(--success))]">
             {recruitingStats?.completed ?? 0}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Completed</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Completed
+          </div>
         </div>
         <div className="text-center">
           <div className="text-base sm:text-lg font-bold text-muted-foreground">
             {recruitingStats?.dropped ?? 0}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Dropped</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Dropped
+          </div>
         </div>
       </div>
 
@@ -139,7 +157,9 @@ const RecruitingPipelinePanel: React.FC<{
               key={phase.key}
               className="flex justify-between items-center text-[10px]"
             >
-              <span className="text-muted-foreground truncate">{phase.label}</span>
+              <span className="text-muted-foreground truncate">
+                {phase.label}
+              </span>
               <span className="font-mono font-medium text-foreground ml-1">
                 {recruitingStats?.byPhase?.[phase.key] ?? 0}
               </span>
@@ -169,12 +189,8 @@ const MessagesNotificationsPanel: React.FC<{
       {/* Unread Notifications */}
       <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
         <div>
-          <div className="text-[10px] text-muted-foreground">
-            Notifications
-          </div>
-          <div className="text-xs font-medium text-foreground">
-            Unread
-          </div>
+          <div className="text-[10px] text-muted-foreground">Notifications</div>
+          <div className="text-xs font-medium text-foreground">Unread</div>
         </div>
         <div
           className={cn(
@@ -191,12 +207,8 @@ const MessagesNotificationsPanel: React.FC<{
       {/* Unread Messages */}
       <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
         <div>
-          <div className="text-[10px] text-muted-foreground">
-            Messages
-          </div>
-          <div className="text-xs font-medium text-foreground">
-            Unread
-          </div>
+          <div className="text-[10px] text-muted-foreground">Messages</div>
+          <div className="text-xs font-medium text-foreground">Unread</div>
         </div>
         <div
           className={cn(

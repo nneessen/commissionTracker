@@ -169,18 +169,13 @@ export function shouldSkipPipeline(
   return status === "not_applicable";
 }
 
-// Status color mappings for UI badges
-export const ONBOARDING_STATUS_COLORS: Record<string, string> = {
-  potential_recruit: "bg-pink-100 text-grey-800",
-  interview_1: "bg-blue-100 text-blue-800",
-  interview_2: "bg-blue-100 text-blue-800",
-  contracting: "bg-purple-100 text-purple-800",
-  licensing: "bg-yellow-100 text-yellow-800",
-  training: "bg-orange-100 text-orange-800",
+// Terminal status colors - for completed/dropped/withdrawn states (not pipeline phases)
+export const TERMINAL_STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-800",
-  completed: "bg-green-100 text-green-800",
-  blocked: "bg-red-100 text-red-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  dropped: "bg-red-100 text-red-800",
   withdrawn: "bg-gray-100 text-gray-800",
+  blocked: "bg-red-100 text-red-800",
 };
 
 export const CHECKLIST_STATUS_COLORS: Record<string, string> = {
@@ -198,27 +193,12 @@ export const CHECKLIST_STATUS_COLORS: Record<string, string> = {
 // Additional Types (migrated from recruiting.ts)
 // =============================================================================
 
-// OnboardingStatus mirrors pipeline phases
-export type OnboardingStatus =
-  | "interview_1"
-  | "zoom_interview"
-  | "pre_licensing"
-  | "exam"
-  | "npn_received"
-  | "contracting"
-  | "bootcamp"
-  | "completed"
-  | "dropped";
+// NOTE: OnboardingStatus and PhaseName are NO LONGER hardcoded types.
+// Statuses come from pipeline_phases table based on the recruit's pipeline_template_id.
+// Use string type and validate against the actual phases from the database.
 
-// PhaseName matches database pipeline_phases.phase_name values
-export type PhaseName =
-  | "Interview 1"
-  | "Zoom Interview"
-  | "Pre-Licensing"
-  | "Exam"
-  | "NPN Received"
-  | "Contracting"
-  | "Bootcamp";
+// Terminal states that exist outside of pipeline phases
+export type TerminalStatus = "active" | "completed" | "dropped" | "withdrawn";
 
 export type PhaseStatus =
   | "not_started"
@@ -285,7 +265,7 @@ export type ActivityAction =
 export interface OnboardingPhase {
   id: string;
   user_id: string;
-  phase_name: PhaseName;
+  phase_name: string; // Dynamic - comes from pipeline_phases table
   phase_order: number;
   status: PhaseStatus;
   started_at: string | null;
@@ -353,8 +333,8 @@ export interface UserActivityLog {
 }
 
 export interface RecruitFilters {
-  onboarding_status?: OnboardingStatus[];
-  current_phase?: PhaseName[];
+  onboarding_status?: string[]; // Dynamic - phase names from pipeline_phases
+  current_phase?: string[]; // Dynamic - phase names from pipeline_phases
   recruiter_id?: string;
   assigned_upline_id?: string;
   search?: string;
@@ -385,7 +365,7 @@ export interface UpdateRecruitInput {
   license_number?: string;
   npn?: string;
   license_expiration?: string;
-  onboarding_status?: OnboardingStatus;
+  onboarding_status?: string; // Dynamic - phase name from pipeline_phases
 }
 
 export interface UpdatePhaseInput {
@@ -470,16 +450,8 @@ export interface UpdateChecklistItemStatusInput {
   metadata?: Record<string, any>;
 }
 
-// Display name mappings
-export const PHASE_DISPLAY_NAMES: Record<PhaseName, string> = {
-  "Interview 1": "Interview 1",
-  "Zoom Interview": "Zoom Interview",
-  "Pre-Licensing": "Pre-Licensing",
-  Exam: "Exam",
-  "NPN Received": "NPN Received",
-  Contracting: "Contracting",
-  Bootcamp: "Bootcamp",
-};
+// NOTE: PHASE_DISPLAY_NAMES removed - phase names come from pipeline_phases table
+// Use phase.phase_name directly from the database
 
 export const CHECKLIST_ITEM_TYPE_DISPLAY_NAMES: Record<
   ChecklistItemType,

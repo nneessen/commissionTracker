@@ -1,13 +1,25 @@
 // src/features/recruiting/components/FilterDialog.tsx
 
-import React from 'react';
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Checkbox} from '@/components/ui/checkbox';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {DateRangePicker} from '@/components/ui/date-range-picker';
-import {Label} from '@/components/ui/label';
-import {PHASE_DISPLAY_NAMES, OnboardingStatus, PhaseName} from '@/types/recruiting.types';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Label } from "@/components/ui/label";
+import type { PipelinePhase } from "@/types/recruiting.types";
 
 export interface DateRange {
   from: Date | undefined;
@@ -15,8 +27,8 @@ export interface DateRange {
 }
 
 export interface RecruitFilters {
-  phases?: PhaseName[];
-  statuses?: OnboardingStatus[];
+  phases?: string[]; // Dynamic - phase names from pipeline_phases
+  statuses?: string[]; // Dynamic - normalized status keys (e.g., "interview_1")
   recruiterId?: string;
   uplineId?: string;
   referralSource?: string;
@@ -36,22 +48,23 @@ interface FilterDialogProps {
   recruiters: FilterOption[];
   uplines: FilterOption[];
   referralSources: string[];
+  /** Pipeline phases - fetched from database, not hardcoded */
+  pipelinePhases?: PipelinePhase[];
 }
 
-// Statuses mirror the pipeline phases + completed/dropped
-const STATUSES: { value: OnboardingStatus; label: string }[] = [
-  { value: 'interview_1', label: 'Interview 1' },
-  { value: 'zoom_interview', label: 'Zoom Interview' },
-  { value: 'pre_licensing', label: 'Pre-Licensing' },
-  { value: 'exam', label: 'Exam' },
-  { value: 'npn_received', label: 'NPN Received' },
-  { value: 'contracting', label: 'Contracting' },
-  { value: 'bootcamp', label: 'Bootcamp' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'dropped', label: 'Dropped' },
+// Terminal statuses that exist outside of pipeline phases
+const TERMINAL_STATUSES = [
+  { value: "completed", label: "Completed" },
+  { value: "dropped", label: "Dropped" },
 ];
 
-const PHASES = Object.entries(PHASE_DISPLAY_NAMES) as [PhaseName, string][];
+/**
+ * Normalize phase name to status key format.
+ * E.g., "Interview 1" -> "interview_1"
+ */
+const normalizeToStatus = (phaseName: string): string => {
+  return phaseName.toLowerCase().replace(/[- ]/g, "_");
+};
 
 export function FilterDialog({
   open,
@@ -61,21 +74,37 @@ export function FilterDialog({
   recruiters,
   uplines,
   referralSources,
+  pipelinePhases = [],
 }: FilterDialogProps) {
-  const handlePhaseToggle = (phase: PhaseName) => {
+  // Build status options from pipeline phases + terminal statuses
+  const statusOptions = [
+    ...pipelinePhases.map((phase) => ({
+      value: normalizeToStatus(phase.phase_name),
+      label: phase.phase_name,
+    })),
+    ...TERMINAL_STATUSES,
+  ];
+
+  const handlePhaseToggle = (phaseName: string) => {
     const currentPhases = filters.phases || [];
-    const newPhases = currentPhases.includes(phase)
-      ? currentPhases.filter((p) => p !== phase)
-      : [...currentPhases, phase];
-    onFiltersChange({ ...filters, phases: newPhases.length ? newPhases : undefined });
+    const newPhases = currentPhases.includes(phaseName)
+      ? currentPhases.filter((p) => p !== phaseName)
+      : [...currentPhases, phaseName];
+    onFiltersChange({
+      ...filters,
+      phases: newPhases.length ? newPhases : undefined,
+    });
   };
 
-  const handleStatusToggle = (status: OnboardingStatus) => {
+  const handleStatusToggle = (status: string) => {
     const currentStatuses = filters.statuses || [];
     const newStatuses = currentStatuses.includes(status)
       ? currentStatuses.filter((s) => s !== status)
       : [...currentStatuses, status];
-    onFiltersChange({ ...filters, statuses: newStatuses.length ? newStatuses : undefined });
+    onFiltersChange({
+      ...filters,
+      statuses: newStatuses.length ? newStatuses : undefined,
+    });
   };
 
   const handleClearAll = () => {
@@ -105,33 +134,39 @@ export function FilterDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Phase Filter */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Phase</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {PHASES.map(([value, label]) => (
-                <div key={value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`phase-${value}`}
-                    checked={filters.phases?.includes(value) || false}
-                    onCheckedChange={() => handlePhaseToggle(value)}
-                  />
-                  <label
-                    htmlFor={`phase-${value}`}
-                    className="text-xs cursor-pointer"
-                  >
-                    {label}
-                  </label>
-                </div>
-              ))}
+          {/* Phase Filter - Dynamic from pipeline_phases */}
+          {pipelinePhases.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Phase</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {pipelinePhases.map((phase) => (
+                  <div key={phase.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`phase-${phase.id}`}
+                      checked={
+                        filters.phases?.includes(phase.phase_name) || false
+                      }
+                      onCheckedChange={() =>
+                        handlePhaseToggle(phase.phase_name)
+                      }
+                    />
+                    <label
+                      htmlFor={`phase-${phase.id}`}
+                      className="text-xs cursor-pointer"
+                    >
+                      {phase.phase_name}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Status Filter */}
+          {/* Status Filter - Dynamic from pipeline phases + terminal statuses */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Status (Phase)</Label>
+            <Label className="text-sm font-medium">Status</Label>
             <div className="grid grid-cols-3 gap-2">
-              {STATUSES.map(({ value, label }) => (
+              {statusOptions.map(({ value, label }) => (
                 <div key={value} className="flex items-center space-x-2">
                   <Checkbox
                     id={`status-${value}`}
@@ -153,11 +188,11 @@ export function FilterDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Recruiter</Label>
             <Select
-              value={filters.recruiterId || 'all'}
+              value={filters.recruiterId || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  recruiterId: value === 'all' ? undefined : value,
+                  recruiterId: value === "all" ? undefined : value,
                 })
               }
             >
@@ -179,11 +214,11 @@ export function FilterDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Upline</Label>
             <Select
-              value={filters.uplineId || 'all'}
+              value={filters.uplineId || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  uplineId: value === 'all' ? undefined : value,
+                  uplineId: value === "all" ? undefined : value,
                 })
               }
             >
@@ -205,11 +240,11 @@ export function FilterDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Referral Source</Label>
             <Select
-              value={filters.referralSource || 'all'}
+              value={filters.referralSource || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  referralSource: value === 'all' ? undefined : value,
+                  referralSource: value === "all" ? undefined : value,
                 })
               }
             >

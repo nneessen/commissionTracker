@@ -39,7 +39,7 @@ import { hasStaffRole } from "@/constants/roles";
 import { downloadCSV } from "@/utils/exportHelpers";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { ONBOARDING_STATUS_COLORS } from "@/types/recruiting.types";
+import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 
 interface RecruitingTabProps {
   searchQuery: string;
@@ -173,8 +173,9 @@ export function RecruitingTab({ searchQuery }: RecruitingTabProps) {
   const getPhaseColor = (status: string | null | undefined): string => {
     if (!status)
       return "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+    // Use terminal status colors for completed/dropped, else default to blue for pipeline phases
     const colorClass =
-      ONBOARDING_STATUS_COLORS[status as keyof typeof ONBOARDING_STATUS_COLORS];
+      TERMINAL_STATUS_COLORS[status] || "bg-blue-100 text-blue-800";
     return (
       colorClass ||
       "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"

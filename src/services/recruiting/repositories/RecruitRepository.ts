@@ -247,8 +247,14 @@ export class RecruitRepository extends BaseRepository<
   /**
    * Get recruiting statistics
    * FIXED: Only query users with recruit role
+   * @param recruiterId - Optional recruiter ID to filter by
+   * @param activePhaseStatuses - Phase status strings (normalized, e.g., "interview_1") to count as "active"
+   *                              These should come from pipeline_phases table, not hardcoded.
    */
-  async getStats(recruiterId?: string): Promise<{
+  async getStats(
+    recruiterId?: string,
+    activePhaseStatuses?: string[],
+  ): Promise<{
     total: number;
     active: number;
     completed: number;
@@ -283,28 +289,30 @@ export class RecruitRepository extends BaseRepository<
       return true;
     });
 
-    const activePhases = [
-      "interview_1",
-      "zoom_interview",
-      "pre_licensing",
-      "exam",
-      "npn_received",
-      "contracting",
-      "bootcamp",
-    ];
+    // Count "active" recruits: those whose status matches any of the active phase statuses
+    // Terminal statuses (completed, dropped) are handled separately
+    const activeCount = activePhaseStatuses
+      ? recruits.filter(
+          (r) =>
+            r.onboarding_status &&
+            activePhaseStatuses.includes(r.onboarding_status),
+        ).length
+      : recruits.filter(
+          (r) =>
+            r.onboarding_status &&
+            r.onboarding_status !== "completed" &&
+            r.onboarding_status !== "dropped",
+        ).length;
 
     return {
       total: recruits.length,
-      active: recruits.filter(
-        (r) =>
-          r.onboarding_status && activePhases.includes(r.onboarding_status),
-      ).length,
+      active: activeCount,
       completed: recruits.filter((r) => r.onboarding_status === "completed")
         .length,
       dropped: recruits.filter((r) => r.onboarding_status === "dropped").length,
       byPhase: recruits.reduce(
         (acc, recruit) => {
-          const status = recruit.onboarding_status || "interview_1";
+          const status = recruit.onboarding_status || "unknown";
           acc[status] = (acc[status] || 0) + 1;
           return acc;
         },
