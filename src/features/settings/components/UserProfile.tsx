@@ -56,9 +56,7 @@ export function UserProfile() {
     !hasRole("admin" as RoleName) &&
     !userRoleData?.is_admin;
 
-  const [contractLevel, setContractLevel] = useState<string>(
-    user?.contract_level?.toString() || "100",
-  );
+  const [contractLevel, setContractLevel] = useState<string>("");
   const [uplineEmail, setUplineEmail] = useState<string>("");
   const [currentUplineEmail, setCurrentUplineEmail] = useState<string>("");
   const [validationError, setValidationError] = useState<string>("");
@@ -73,16 +71,26 @@ export function UserProfile() {
   const [showSlugSuccess, setShowSlugSuccess] = useState(false);
   const [slugCopied, setSlugCopied] = useState(false);
 
-  // Load current upline email and recruiter slug on mount
+  // Load current user profile data on mount
   useEffect(() => {
     const loadUserInfo = async () => {
       if (!user?.id) return;
 
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("upline_id, recruiter_slug")
+        .select("upline_id, recruiter_slug, contract_level")
         .eq("id", user.id)
         .single();
+
+      // Load contract level from DB (source of truth)
+      if (
+        profile?.contract_level !== undefined &&
+        profile?.contract_level !== null
+      ) {
+        setContractLevel(profile.contract_level.toString());
+      } else {
+        setContractLevel("100"); // Default if not set in DB
+      }
 
       // Load recruiter slug
       if (profile?.recruiter_slug) {
