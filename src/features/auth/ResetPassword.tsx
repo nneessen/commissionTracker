@@ -99,21 +99,21 @@ export const ResetPassword: React.FC = () => {
     <div className="min-h-screen flex bg-background">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-foreground relative overflow-hidden">
-        {/* Geometric background pattern */}
-        <div className="absolute inset-0 opacity-[0.03]">
+        {/* Refined grid pattern */}
+        <div className="absolute inset-0 opacity-[0.04]">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern
                 id="grid"
-                width="60"
-                height="60"
+                width="40"
+                height="40"
                 patternUnits="userSpaceOnUse"
               >
                 <path
-                  d="M 60 0 L 0 0 0 60"
+                  d="M 40 0 L 0 0 0 40"
                   fill="none"
                   stroke="white"
-                  strokeWidth="1"
+                  strokeWidth="0.5"
                 />
               </pattern>
             </defs>
@@ -121,47 +121,65 @@ export const ResetPassword: React.FC = () => {
           </svg>
         </div>
 
+        {/* Animated glow orbs */}
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-1/4 -right-20 w-80 h-80 bg-amber-400/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
-          {/* Logo and brand */}
-          <div>
-            <div className="flex items-center gap-4 mb-4">
+        <div className="relative z-10 flex flex-col justify-between p-8 xl:p-10 w-full">
+          {/* Enhanced logo with glow and subtitle */}
+          <div className="flex items-center gap-4 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-500/20 rounded-xl blur-xl group-hover:bg-amber-500/30 transition-all duration-500" />
               <img
                 src="/logos/Light Letter Logo .png"
                 alt="The Standard"
-                className="h-12 w-12 dark:hidden"
+                className="relative h-14 w-14 drop-shadow-2xl dark:hidden"
               />
               <img
                 src="/logos/LetterLogo.png"
                 alt="The Standard"
-                className="h-12 w-12 hidden dark:block"
+                className="relative h-14 w-14 drop-shadow-2xl hidden dark:block"
               />
-              <span className="text-background text-2xl font-semibold tracking-tight">
+            </div>
+            <div className="flex flex-col">
+              <span
+                className="text-white dark:text-black text-2xl font-bold tracking-wide"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
                 THE STANDARD
+              </span>
+              <span className="text-amber-400 text-[10px] uppercase tracking-[0.3em] font-medium">
+                Financial Group
               </span>
             </div>
           </div>
 
           {/* Middle - Main messaging */}
-          <div className="space-y-6">
-            <div className="w-20 h-20 rounded-2xl bg-background/10 flex items-center justify-center">
-              <KeyRound className="h-10 w-10 text-background" />
+          <div className="space-y-4">
+            <div className="w-7 h-7 rounded bg-white/10 dark:bg-black/10 flex items-center justify-center">
+              <KeyRound className="h-3.5 w-3.5 text-white dark:text-black" />
             </div>
-            <h1 className="text-4xl xl:text-5xl font-bold text-background leading-tight">
-              Secure your
+            <h1
+              className="text-4xl xl:text-5xl font-bold leading-tight"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              <span className="text-white dark:text-black">Secure your</span>
               <br />
-              <span className="text-background/70">account.</span>
+              <span className="text-white/70 dark:text-black/70">account.</span>
             </h1>
-            <p className="text-background/60 text-lg max-w-md">
+            <p className="text-white/80 dark:text-black/70 text-sm max-w-md leading-relaxed">
               Create a new password to regain access to your agency dashboard
               and continue managing your business.
             </p>
           </div>
 
           {/* Bottom */}
-          <div className="text-background/40 text-sm">
-            © {new Date().getFullYear()} The Standard Holdings. All rights
-            reserved.
+          <div className="text-white/50 dark:text-black/50 text-xs">
+            © {new Date().getFullYear()} The Standard Financial Group
           </div>
         </div>
       </div>
@@ -169,119 +187,136 @@ export const ResetPassword: React.FC = () => {
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-[400px]">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
-            <img
-              src="/logos/LetterLogo.png"
-              alt="The Standard"
-              className="h-10 w-10 dark:hidden"
-            />
-            <img
-              src="/logos/Light Letter Logo .png"
-              alt="The Standard"
-              className="h-10 w-10 hidden dark:block"
-            />
-            <span className="text-foreground text-xl font-semibold tracking-tight">
-              THE STANDARD
-            </span>
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex flex-col items-center mb-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logos/LetterLogo.png"
+                alt="The Standard"
+                className="h-10 w-10 dark:hidden"
+              />
+              <img
+                src="/logos/Light Letter Logo .png"
+                alt="The Standard"
+                className="h-10 w-10 hidden dark:block"
+              />
+              <div className="flex flex-col">
+                <span
+                  className="text-foreground text-xl font-bold tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
+                  THE STANDARD
+                </span>
+                <span className="text-amber-500 text-[9px] uppercase tracking-[0.25em] font-medium">
+                  Financial Group
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-2">
+          <div className="mb-3 text-center lg:text-left">
+            <h2
+              className="text-lg font-bold text-foreground mb-1"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
               Reset your password
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Enter your new password below
             </p>
           </div>
 
-          {/* Messages */}
-          <div className="space-y-4 mb-6">
-            {success && (
-              <AuthSuccessMessage message="Password updated successfully! Redirecting to dashboard..." />
-            )}
-            {error && (
-              <AuthErrorDisplay
-                error={error}
-                mode="signin"
-                onSwitchToSignup={() => {}}
-              />
-            )}
-          </div>
-
-          {/* Form */}
-          {hasToken && !success && (
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              {/* Password Input */}
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  New password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your new password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  autoComplete="new-password"
-                  className="h-11"
+          {/* Form Card with frosted glass effect */}
+          <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl p-4">
+            {/* Messages */}
+            <div className="space-y-4 mb-6">
+              {success && (
+                <AuthSuccessMessage message="Password updated successfully! Redirecting to dashboard..." />
+              )}
+              {error && (
+                <AuthErrorDisplay
+                  error={error}
+                  mode="signin"
+                  onSwitchToSignup={() => {}}
                 />
-              </div>
+              )}
+            </div>
 
-              {/* Confirm Password Input */}
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-medium"
+            {/* Form */}
+            {hasToken && !success && (
+              <form className="space-y-3" onSubmit={handleSubmit}>
+                {/* Password Input */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    New password
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    autoComplete="new-password"
+                    className="h-9"
+                  />
+                </div>
+
+                {/* Confirm Password Input */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-sm font-medium"
+                  >
+                    Confirm new password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    autoComplete="new-password"
+                    className="h-9"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  variant="warning"
+                  disabled={loading}
+                  className="w-full h-9 text-sm font-medium mt-2"
                 >
-                  Confirm new password
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  autoComplete="new-password"
-                  className="h-11"
-                />
-              </div>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating password...
+                    </>
+                  ) : (
+                    "Update password"
+                  )}
+                </Button>
+              </form>
+            )}
 
-              {/* Submit Button */}
+            {/* Back to login */}
+            <div className="mt-6">
               <Button
-                type="submit"
+                type="button"
+                onClick={() => navigate({ to: "/login" })}
+                variant="ghost"
                 disabled={loading}
-                className="w-full h-11 text-sm font-medium mt-2"
+                className="w-full h-10"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating password...
-                  </>
-                ) : (
-                  "Update password"
-                )}
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to login
               </Button>
-            </form>
-          )}
-
-          {/* Back to login */}
-          <div className="mt-6">
-            <Button
-              type="button"
-              onClick={() => navigate({ to: "/login" })}
-              variant="ghost"
-              disabled={loading}
-              className="w-full h-10"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to login
-            </Button>
+            </div>
           </div>
         </div>
       </div>

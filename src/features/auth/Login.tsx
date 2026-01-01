@@ -138,21 +138,21 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     <div className="min-h-screen flex bg-background">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-foreground relative overflow-hidden">
-        {/* Geometric background pattern */}
-        <div className="absolute inset-0 opacity-[0.03]">
+        {/* Refined grid pattern */}
+        <div className="absolute inset-0 opacity-[0.04]">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern
                 id="grid"
-                width="60"
-                height="60"
+                width="40"
+                height="40"
                 patternUnits="userSpaceOnUse"
               >
                 <path
-                  d="M 60 0 L 0 0 0 60"
+                  d="M 40 0 L 0 0 0 40"
                   fill="none"
                   stroke="white"
-                  strokeWidth="1"
+                  strokeWidth="0.5"
                 />
               </pattern>
             </defs>
@@ -160,79 +160,92 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           </svg>
         </div>
 
-        {/* Diagonal accent lines */}
-        <div className="absolute top-0 right-0 w-96 h-96 opacity-10">
-          <div className="absolute top-20 right-0 w-[600px] h-px bg-gradient-to-l from-background via-background/50 to-transparent rotate-[-35deg] origin-right" />
-          <div className="absolute top-40 right-0 w-[500px] h-px bg-gradient-to-l from-background via-background/30 to-transparent rotate-[-35deg] origin-right" />
-          <div className="absolute top-60 right-0 w-[400px] h-px bg-gradient-to-l from-background via-background/20 to-transparent rotate-[-35deg] origin-right" />
-        </div>
+        {/* Animated glow orbs */}
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-1/4 -right-20 w-80 h-80 bg-amber-400/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
-          {/* Logo and brand */}
-          <div>
-            <div className="flex items-center gap-4 mb-4">
+        <div className="relative z-10 flex flex-col justify-between p-8 xl:p-10 w-full">
+          {/* Enhanced logo with glow and subtitle */}
+          <div className="flex items-center gap-4 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-500/20 rounded-xl blur-xl group-hover:bg-amber-500/30 transition-all duration-500" />
               <img
                 src="/logos/Light Letter Logo .png"
                 alt="The Standard"
-                className="h-12 w-12 dark:hidden"
+                className="relative h-14 w-14 drop-shadow-2xl dark:hidden"
               />
               <img
                 src="/logos/LetterLogo.png"
                 alt="The Standard"
-                className="h-12 w-12 hidden dark:block"
+                className="relative h-14 w-14 drop-shadow-2xl hidden dark:block"
               />
-              <span className="text-background text-2xl font-semibold tracking-tight">
+            </div>
+            <div className="flex flex-col">
+              <span
+                className="text-white dark:text-black text-2xl font-bold tracking-wide"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
                 THE STANDARD
+              </span>
+              <span className="text-amber-400 text-[10px] uppercase tracking-[0.3em] font-medium">
+                Financial Group
               </span>
             </div>
           </div>
 
           {/* Middle - Main messaging */}
-          <div className="space-y-8">
+          <div className="space-y-4">
             <div>
-              <h1 className="text-4xl xl:text-5xl font-bold text-background leading-tight mb-4">
-                Your agency,
+              <h1
+                className="text-4xl xl:text-5xl font-bold leading-tight mb-3"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                <span className="text-white dark:text-black">Your agency,</span>
                 <br />
-                <span className="text-background/70">fully optimized.</span>
+                <span className="text-white/70 dark:text-black/70">
+                  fully optimized.
+                </span>
               </h1>
-              <p className="text-background/60 text-lg max-w-md">
+              <p className="text-white/80 dark:text-black/70 text-sm max-w-md leading-relaxed">
                 Track commissions, manage recruits, and grow your insurance
                 business with powerful analytics and automation.
               </p>
             </div>
 
             {/* Feature highlights */}
-            <div className="grid gap-4 max-w-md">
-              <div className="flex items-center gap-4 text-background/80">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-background/10">
-                  <TrendingUp className="h-5 w-5" />
+            <div className="grid gap-2 max-w-md">
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <TrendingUp className="h-3.5 w-3.5" />
                 </div>
-                <span className="text-sm">
+                <span className="text-xs">
                   Real-time commission tracking & forecasting
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-background/80">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-background/10">
-                  <Users className="h-5 w-5" />
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <Users className="h-3.5 w-3.5" />
                 </div>
-                <span className="text-sm">
+                <span className="text-xs">
                   Complete recruiting pipeline management
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-background/80">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-background/10">
-                  <Shield className="h-5 w-5" />
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <Shield className="h-3.5 w-3.5" />
                 </div>
-                <span className="text-sm">Secure, role-based team access</span>
+                <span className="text-xs">Secure, role-based team access</span>
               </div>
             </div>
           </div>
 
           {/* Bottom */}
-          <div className="text-background/40 text-sm">
-            © {new Date().getFullYear()} The Standard Holdings. All rights
-            reserved.
+          <div className="text-white/50 dark:text-black/50 text-xs">
+            © {new Date().getFullYear()} The Standard Financial Group
           </div>
         </div>
       </div>
@@ -240,102 +253,118 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-[400px]">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
-            <img
-              src="/logos/LetterLogo.png"
-              alt="The Standard"
-              className="h-10 w-10 dark:hidden"
-            />
-            <img
-              src="/logos/Light Letter Logo .png"
-              alt="The Standard"
-              className="h-10 w-10 hidden dark:block"
-            />
-            <span className="text-foreground text-xl font-semibold tracking-tight">
-              THE STANDARD
-            </span>
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex flex-col items-center mb-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logos/LetterLogo.png"
+                alt="The Standard"
+                className="h-10 w-10 dark:hidden"
+              />
+              <img
+                src="/logos/Light Letter Logo .png"
+                alt="The Standard"
+                className="h-10 w-10 hidden dark:block"
+              />
+              <div className="flex flex-col">
+                <span
+                  className="text-foreground text-xl font-bold tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
+                  THE STANDARD
+                </span>
+                <span className="text-amber-500 text-[9px] uppercase tracking-[0.25em] font-medium">
+                  Financial Group
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-2">
+          <div className="mb-3 text-center lg:text-left">
+            <h2
+              className="text-lg font-bold text-foreground mb-1"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
               {getTitle()}
             </h2>
-            <p className="text-sm text-muted-foreground">{getSubtitle()}</p>
+            <p className="text-xs text-muted-foreground">{getSubtitle()}</p>
           </div>
 
-          {/* Messages */}
-          <div className="space-y-4 mb-6">
-            <AuthSuccessMessage message={message || ""} />
-            <AuthErrorDisplay
-              error={error || ""}
-              mode={mode}
-              onSwitchToSignup={() => {}}
-            />
-          </div>
-
-          {/* Forms */}
-          {mode === "signin" && (
-            <>
-              <SignInForm
-                email={email}
-                password={password}
-                loading={loading}
-                formErrors={formErrors}
-                onEmailChange={setEmail}
-                onPasswordChange={setPassword}
-                onSubmit={handleSubmit}
-                onForgotPassword={() => switchMode("reset")}
+          {/* Form Card with frosted glass effect */}
+          <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl p-4">
+            {/* Messages */}
+            <div className="space-y-4 mb-6">
+              <AuthSuccessMessage message={message || ""} />
+              <AuthErrorDisplay
+                error={error || ""}
+                mode={mode}
+                onSwitchToSignup={() => {}}
               />
+            </div>
 
-              <Alert className="mt-6 border-muted bg-muted/30">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <AlertDescription className="text-muted-foreground">
-                  This system is invitation-only. Contact your manager for
-                  access.
-                </AlertDescription>
-              </Alert>
-            </>
-          )}
+            {/* Forms */}
+            {mode === "signin" && (
+              <>
+                <SignInForm
+                  email={email}
+                  password={password}
+                  loading={loading}
+                  formErrors={formErrors}
+                  onEmailChange={setEmail}
+                  onPasswordChange={setPassword}
+                  onSubmit={handleSubmit}
+                  onForgotPassword={() => switchMode("reset")}
+                />
 
-          {mode === "reset" && (
-            <>
-              <ResetPasswordForm
-                email={email}
-                loading={loading}
-                formErrors={formErrors}
-                onEmailChange={setEmail}
-                onSubmit={handleSubmit}
-              />
+                <Alert className="mt-6 border-muted bg-muted/30">
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                  <AlertDescription className="text-muted-foreground">
+                    This system is invitation-only. Contact your manager for
+                    access.
+                  </AlertDescription>
+                </Alert>
+              </>
+            )}
 
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
+            {mode === "reset" && (
+              <>
+                <ResetPasswordForm
+                  email={email}
+                  loading={loading}
+                  formErrors={formErrors}
+                  onEmailChange={setEmail}
+                  onSubmit={handleSubmit}
+                />
+
+                <div className="mt-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-3 bg-background text-muted-foreground">
+                        Remember your password?
+                      </span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-3 bg-background text-muted-foreground">
-                      Remember your password?
-                    </span>
-                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => switchMode("signin")}
+                    variant="ghost"
+                    disabled={loading}
+                    className="w-full mt-4 text-sm font-medium"
+                  >
+                    Back to sign in
+                  </Button>
                 </div>
-
-                <Button
-                  type="button"
-                  onClick={() => switchMode("signin")}
-                  variant="ghost"
-                  disabled={loading}
-                  className="w-full mt-4 text-sm font-medium"
-                >
-                  Back to sign in
-                </Button>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
 
           {/* Footer */}
-          <p className="mt-8 text-center text-xs text-muted-foreground">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             By continuing, you agree to our{" "}
             <Link
               to="/terms"

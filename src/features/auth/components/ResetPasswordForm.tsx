@@ -23,7 +23,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   onSubmit,
 }) => {
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
+    <form className="space-y-3" onSubmit={onSubmit}>
       <div className="space-y-1.5">
         <Label htmlFor="email" className="text-sm font-medium">
           Email
@@ -37,7 +37,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           required
           disabled={loading}
           autoComplete="email"
-          className={`h-11 ${formErrors.email ? "border-destructive focus-visible:ring-destructive/50" : ""}`}
+          className={`h-9 ${formErrors.email ? "border-destructive focus-visible:ring-destructive/50" : ""}`}
         />
         {formErrors.email && (
           <div className="flex items-center gap-1.5 text-xs text-destructive mt-1">
@@ -49,8 +49,9 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
       <Button
         type="submit"
+        variant="warning"
         disabled={loading}
-        className="w-full h-11 text-sm font-medium mt-2"
+        className="w-full h-9 text-sm font-medium mt-2"
       >
         {loading ? (
           <>
