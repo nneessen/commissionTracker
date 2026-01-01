@@ -283,10 +283,10 @@ export function PublicJoinPage() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto">
+      <div className="flex-1 flex items-start lg:items-center justify-center p-4 pt-8 lg:p-6 overflow-y-auto">
         <div className="w-full max-w-[420px]">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex flex-col items-center mb-4">
+          <div className="lg:hidden flex flex-col items-center mb-6">
             <div className="flex items-center gap-3">
               <img
                 src="/logos/LetterLogo.png"
