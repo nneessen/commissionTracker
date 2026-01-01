@@ -18,18 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2, Mail, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
 import { useCreateRecruitWithInvitation } from "../hooks/useRecruitInvitations";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 
 // Form validation schema
 const inviteSchema = z.object({
@@ -66,26 +58,6 @@ export function SendInviteDialog({
   const { user } = useAuth();
   const createWithInvite = useCreateRecruitWithInvitation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch potential uplines (agents/admins/trainers who can be assigned as upline)
-  const { data: potentialUplines = [] } = useQuery({
-    queryKey: ["potential-uplines"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("id, first_name, last_name, email")
-        .or("roles.cs.{agent},roles.cs.{admin},roles.cs.{trainer}")
-        .eq("approval_status", "approved")
-        .order("first_name");
-
-      if (error) {
-        console.error("Error fetching uplines:", error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: open,
-  });
 
   const {
     register,
@@ -215,26 +187,15 @@ export function SendInviteDialog({
             >
               Assign Upline
             </Label>
-            <Select
-              value={watch("upline_id") || ""}
-              onValueChange={(value) => setValue("upline_id", value)}
-            >
-              <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                <SelectValue placeholder="Select upline (defaults to you)" />
-              </SelectTrigger>
-              <SelectContent>
-                {potentialUplines.map((upline) => (
-                  <SelectItem
-                    key={upline.id}
-                    value={upline.id}
-                    className="text-[11px]"
-                  >
-                    {upline.first_name} {upline.last_name}
-                    {upline.id === user?.id && " (You)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <UserSearchCombobox
+              value={watch("upline_id") || null}
+              onChange={(id) => setValue("upline_id", id || "")}
+              roles={["agent", "admin", "trainer"]}
+              approvalStatus="approved"
+              placeholder="Search for upline..."
+              showNoUplineOption={false}
+              className="h-7"
+            />
             <p className="text-[9px] text-zinc-400">
               The recruit will be assigned to this person as their upline.
             </p>

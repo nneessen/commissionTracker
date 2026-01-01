@@ -1,7 +1,8 @@
 // src/features/recruiting/pages/PublicRegistrationPage.tsx
 // Public registration page for recruit self-service - accessed via invite token
+// Redesigned with split-panel layout to match Login/PublicJoinPage
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +14,9 @@ import {
   User,
   MapPin,
   LinkIcon,
+  Shield,
+  FileText,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,33 +136,25 @@ export function PublicRegistrationPage() {
   } = useForm<FormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      first_name: invitation?.prefilled?.first_name || "",
-      last_name: invitation?.prefilled?.last_name || "",
-      phone: invitation?.prefilled?.phone || "",
-      city: invitation?.prefilled?.city || "",
-      state: invitation?.prefilled?.state || "",
+      first_name: "",
+      last_name: "",
+      phone: "",
+      city: "",
+      state: "",
     },
   });
 
   // Update form when prefilled data loads
-  if (invitation?.valid && invitation.prefilled) {
-    const prefilled = invitation.prefilled;
-    if (prefilled.first_name && !watch("first_name")) {
-      setValue("first_name", prefilled.first_name);
+  useEffect(() => {
+    if (invitation?.valid && invitation.prefilled) {
+      const prefilled = invitation.prefilled;
+      if (prefilled.first_name) setValue("first_name", prefilled.first_name);
+      if (prefilled.last_name) setValue("last_name", prefilled.last_name);
+      if (prefilled.phone) setValue("phone", prefilled.phone);
+      if (prefilled.city) setValue("city", prefilled.city);
+      if (prefilled.state) setValue("state", prefilled.state);
     }
-    if (prefilled.last_name && !watch("last_name")) {
-      setValue("last_name", prefilled.last_name);
-    }
-    if (prefilled.phone && !watch("phone")) {
-      setValue("phone", prefilled.phone);
-    }
-    if (prefilled.city && !watch("city")) {
-      setValue("city", prefilled.city);
-    }
-    if (prefilled.state && !watch("state")) {
-      setValue("state", prefilled.state);
-    }
-  }
+  }, [invitation, setValue]);
 
   const onSubmit = async (data: FormData) => {
     if (!token) return;
@@ -173,15 +169,163 @@ export function PublicRegistrationPage() {
     }
   };
 
+  // Left Panel Component (reused for loading/error/success states)
+  const LeftPanel = () => (
+    <div className="hidden lg:flex lg:w-1/2 xl:w-[50%] bg-foreground relative overflow-hidden">
+      {/* Grid pattern */}
+      <div className="absolute inset-0 opacity-[0.04]">
+        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern
+              id="grid"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 40 0 L 0 0 0 40"
+                fill="none"
+                stroke="white"
+                strokeWidth="0.5"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      {/* Animated glow orbs */}
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
+      <div
+        className="absolute bottom-1/4 -right-20 w-80 h-80 bg-amber-400/5 rounded-full blur-3xl animate-pulse"
+        style={{ animationDelay: "1s" }}
+      />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col justify-between p-8 xl:p-10 w-full h-full">
+        {/* Logo */}
+        <div className="flex items-center gap-4 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-amber-500/20 rounded-xl blur-xl group-hover:bg-amber-500/30 transition-all duration-500" />
+            <img
+              src="/logos/Light Letter Logo .png"
+              alt="The Standard"
+              className="relative h-14 w-14 drop-shadow-2xl dark:hidden"
+            />
+            <img
+              src="/logos/LetterLogo.png"
+              alt="The Standard"
+              className="relative h-14 w-14 drop-shadow-2xl hidden dark:block"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span
+              className="text-white dark:text-black text-2xl font-bold tracking-wide"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              THE STANDARD
+            </span>
+            <span className="text-amber-400 text-[10px] uppercase tracking-[0.3em] font-medium">
+              Financial Group
+            </span>
+          </div>
+        </div>
+
+        {/* Main messaging */}
+        <div className="space-y-4">
+          <div>
+            <h1
+              className="text-4xl xl:text-5xl font-bold leading-tight mb-3"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              <span className="text-white dark:text-black">Welcome to</span>
+              <br />
+              <span className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 bg-clip-text text-transparent">
+                The Team
+              </span>
+            </h1>
+            <p className="text-white/80 dark:text-black/70 text-sm max-w-md leading-relaxed">
+              Complete your registration to get started with your insurance
+              career. We&apos;re excited to have you join our growing team.
+            </p>
+          </div>
+
+          {/* Feature highlights */}
+          <div className="grid gap-2 max-w-md">
+            <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+              <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                <TrendingUp className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-xs">
+                Comprehensive training & mentorship
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+              <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                <FileText className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-xs">
+                Industry-leading commission structure
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+              <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                <Shield className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-xs">Full support from day one</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-white/50 dark:text-black/50 text-xs">
+          &copy; {new Date().getFullYear()} The Standard Financial Group
+        </div>
+      </div>
+    </div>
+  );
+
+  // Mobile Logo Component
+  const MobileLogo = () => (
+    <div className="lg:hidden flex flex-col items-center mb-6">
+      <div className="flex items-center gap-3">
+        <img
+          src="/logos/LetterLogo.png"
+          alt="The Standard"
+          className="h-10 w-10 dark:hidden"
+        />
+        <img
+          src="/logos/Light Letter Logo .png"
+          alt="The Standard"
+          className="h-10 w-10 hidden dark:block"
+        />
+        <div className="flex flex-col">
+          <span
+            className="text-foreground text-xl font-bold tracking-wide"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            THE STANDARD
+          </span>
+          <span className="text-amber-500 text-[9px] uppercase tracking-[0.25em] font-medium">
+            Financial Group
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
-          <p className="text-sm text-muted-foreground mt-2">
-            Verifying your invitation...
-          </p>
+      <div className="min-h-screen flex bg-background">
+        <LeftPanel />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+            <p className="text-sm text-muted-foreground mt-2">
+              Verifying your invitation...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -194,41 +338,49 @@ export function PublicRegistrationPage() {
       invitation?.message || "This invitation link is invalid or has expired.";
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-slate-900 mb-2">
-            {errorType === "invitation_expired"
-              ? "Invitation Expired"
-              : errorType === "invitation_completed"
-                ? "Already Registered"
-                : errorType === "invitation_cancelled"
-                  ? "Invitation Cancelled"
-                  : "Link Not Found"}
-          </h1>
-          <p className="text-sm text-slate-600 mb-6">{errorMessage}</p>
+      <div className="min-h-screen flex bg-background">
+        <LeftPanel />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            <MobileLogo />
+            <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl p-6 text-center">
+              <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <h1 className="text-xl font-semibold text-foreground mb-2">
+                {errorType === "invitation_expired"
+                  ? "Invitation Expired"
+                  : errorType === "invitation_completed"
+                    ? "Already Registered"
+                    : errorType === "invitation_cancelled"
+                      ? "Invitation Cancelled"
+                      : "Link Not Found"}
+              </h1>
+              <p className="text-sm text-muted-foreground mb-6">
+                {errorMessage}
+              </p>
 
-          {invitation?.inviter && (
-            <div className="bg-slate-50 rounded-lg p-4 text-left">
-              <p className="text-xs font-medium text-slate-500 mb-2">
-                Contact your recruiter:
-              </p>
-              <p className="text-sm font-medium text-slate-900">
-                {invitation.inviter.name}
-              </p>
-              <a
-                href={`mailto:${invitation.inviter.email}`}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                {invitation.inviter.email}
-              </a>
-              {invitation.inviter.phone && (
-                <p className="text-sm text-slate-600">
-                  {invitation.inviter.phone}
-                </p>
+              {invitation?.inviter && (
+                <div className="bg-muted/50 rounded-lg p-4 text-left">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Contact your recruiter:
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {invitation.inviter.name}
+                  </p>
+                  <a
+                    href={`mailto:${invitation.inviter.email}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {invitation.inviter.email}
+                  </a>
+                  {invitation.inviter.phone && (
+                    <p className="text-sm text-muted-foreground">
+                      {invitation.inviter.phone}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     );
@@ -237,40 +389,46 @@ export function PublicRegistrationPage() {
   // Success state
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
-          </div>
-          <h1 className="text-xl font-semibold text-slate-900 mb-2">
-            Registration Complete!
-          </h1>
-          <p className="text-sm text-slate-600 mb-6">
-            Thank you for completing your registration. Your recruiter will be
-            in touch with next steps.
-          </p>
+      <div className="min-h-screen flex bg-background">
+        <LeftPanel />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            <MobileLogo />
+            <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl p-6 text-center">
+              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <h1 className="text-xl font-semibold text-foreground mb-2">
+                Registration Complete!
+              </h1>
+              <p className="text-sm text-muted-foreground mb-6">
+                Thank you for completing your registration. Your recruiter will
+                be in touch with next steps.
+              </p>
 
-          {invitation.inviter && (
-            <div className="bg-slate-50 rounded-lg p-4 text-left">
-              <p className="text-xs font-medium text-slate-500 mb-2">
-                Your recruiter:
-              </p>
-              <p className="text-sm font-medium text-slate-900">
-                {invitation.inviter.name}
-              </p>
-              <a
-                href={`mailto:${invitation.inviter.email}`}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                {invitation.inviter.email}
-              </a>
-              {invitation.inviter.phone && (
-                <p className="text-sm text-slate-600">
-                  {invitation.inviter.phone}
-                </p>
+              {invitation.inviter && (
+                <div className="bg-muted/50 rounded-lg p-4 text-left">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Your recruiter:
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {invitation.inviter.name}
+                  </p>
+                  <a
+                    href={`mailto:${invitation.inviter.email}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {invitation.inviter.email}
+                  </a>
+                  {invitation.inviter.phone && (
+                    <p className="text-sm text-muted-foreground">
+                      {invitation.inviter.phone}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     );
@@ -278,302 +436,303 @@ export function PublicRegistrationPage() {
 
   // Registration form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Complete Your Registration
-          </h1>
-          <p className="text-sm text-slate-600">
-            {invitation.inviter?.name} has invited you to join The Standard.
-            Please fill out your information below.
-          </p>
-        </div>
+    <div className="min-h-screen flex bg-background">
+      <LeftPanel />
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            {/* Personal Information */}
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <User className="h-4 w-4 text-slate-400" />
-                Personal Information
-              </h2>
+      {/* Right Panel - Form */}
+      <div className="flex-1 flex items-start lg:items-center justify-center p-4 pt-8 lg:p-6 overflow-y-auto">
+        <div className="w-full max-w-lg">
+          <MobileLogo />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="first_name" className="text-xs">
-                    First Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="first_name"
-                    {...register("first_name")}
-                    className="mt-1"
-                    placeholder="John"
-                  />
-                  {errors.first_name && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.first_name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="last_name" className="text-xs">
-                    Last Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="last_name"
-                    {...register("last_name")}
-                    className="mt-1"
-                    placeholder="Doe"
-                  />
-                  {errors.last_name && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.last_name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="text-xs">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    value={invitation.email || ""}
-                    disabled
-                    className="mt-1 bg-slate-50"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Email cannot be changed
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="phone" className="text-xs">
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone"
-                    {...register("phone")}
-                    className="mt-1"
-                    placeholder="(555) 123-4567"
-                    type="tel"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="date_of_birth" className="text-xs">
-                    Date of Birth
-                  </Label>
-                  <Input
-                    id="date_of_birth"
-                    {...register("date_of_birth")}
-                    className="mt-1"
-                    type="date"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-slate-400" />
-                Address
-              </h2>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label htmlFor="street_address" className="text-xs">
-                    Street Address
-                  </Label>
-                  <Input
-                    id="street_address"
-                    {...register("street_address")}
-                    className="mt-1"
-                    placeholder="123 Main Street"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="col-span-2">
-                    <Label htmlFor="city" className="text-xs">
-                      City
-                    </Label>
-                    <Input
-                      id="city"
-                      {...register("city")}
-                      className="mt-1"
-                      placeholder="City"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="state" className="text-xs">
-                      State
-                    </Label>
-                    <Select
-                      value={watch("state") || ""}
-                      onValueChange={(value) => setValue("state", value)}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="State" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {US_STATES.map((state) => (
-                          <SelectItem key={state.value} value={state.value}>
-                            {state.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="zip" className="text-xs">
-                      ZIP Code
-                    </Label>
-                    <Input
-                      id="zip"
-                      {...register("zip")}
-                      className="mt-1"
-                      placeholder="12345"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Media */}
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <LinkIcon className="h-4 w-4 text-slate-400" />
-                Social Media (Optional)
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="instagram_username" className="text-xs">
-                    Instagram Username
-                  </Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                      @
-                    </span>
-                    <Input
-                      id="instagram_username"
-                      {...register("instagram_username")}
-                      className="pl-7"
-                      placeholder="username"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="linkedin_username" className="text-xs">
-                    LinkedIn Username
-                  </Label>
-                  <Input
-                    id="linkedin_username"
-                    {...register("linkedin_username")}
-                    className="mt-1"
-                    placeholder="john-doe"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="facebook_handle" className="text-xs">
-                    Facebook
-                  </Label>
-                  <Input
-                    id="facebook_handle"
-                    {...register("facebook_handle")}
-                    className="mt-1"
-                    placeholder="username or profile URL"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="personal_website" className="text-xs">
-                    Personal Website
-                  </Label>
-                  <Input
-                    id="personal_website"
-                    {...register("personal_website")}
-                    className="mt-1"
-                    placeholder="https://yoursite.com"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Referral Source */}
-            <div className="p-6">
-              <h2 className="text-sm font-semibold text-slate-900 mb-4">
-                How did you hear about us?
-              </h2>
-
-              <Select
-                value={watch("referral_source") || ""}
-                onValueChange={(value) => setValue("referral_source", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an option" />
-                </SelectTrigger>
-                <SelectContent>
-                  {REFERRAL_SOURCES.map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="mt-6">
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isSubmitting || submitRegistration.isPending}
+          {/* Header */}
+          <div className="mb-3 text-center lg:text-left">
+            <h2
+              className="text-lg font-bold text-foreground mb-1"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              {isSubmitting || submitRegistration.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                "Complete Registration"
-              )}
-            </Button>
+              Complete Your Registration
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {invitation.inviter?.name} has invited you to join The Standard.
+            </p>
           </div>
 
-          {/* Inviter Info Footer */}
-          {invitation.inviter && (
-            <div className="mt-6 text-center">
-              <p className="text-xs text-slate-500">
-                Questions? Contact {invitation.inviter.name} at{" "}
-                <a
-                  href={`mailto:${invitation.inviter.email}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {invitation.inviter.email}
-                </a>
-              </p>
-            </div>
-          )}
-        </form>
+          {/* Form Card */}
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl overflow-hidden">
+              {/* Personal Information */}
+              <div className="p-4 border-b border-border/50">
+                <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  Personal Information
+                </h3>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} The Standard HQ. All rights
-            reserved.
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="first_name" className="text-[10px]">
+                      First Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="first_name"
+                      {...register("first_name")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="John"
+                    />
+                    {errors.first_name && (
+                      <p className="text-[10px] text-destructive mt-0.5">
+                        {errors.first_name.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="last_name" className="text-[10px]">
+                      Last Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="last_name"
+                      {...register("last_name")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="Doe"
+                    />
+                    {errors.last_name && (
+                      <p className="text-[10px] text-destructive mt-0.5">
+                        {errors.last_name.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email" className="text-[10px]">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      value={invitation.email || ""}
+                      disabled
+                      className="mt-1 h-8 text-xs bg-muted/50"
+                    />
+                    <p className="text-[9px] text-muted-foreground mt-0.5">
+                      Email cannot be changed
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone" className="text-[10px]">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      {...register("phone")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="(555) 123-4567"
+                      type="tel"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="date_of_birth" className="text-[10px]">
+                      Date of Birth
+                    </Label>
+                    <Input
+                      id="date_of_birth"
+                      {...register("date_of_birth")}
+                      className="mt-1 h-8 text-xs"
+                      type="date"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="p-4 border-b border-border/50">
+                <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                  Address
+                </h3>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <Label htmlFor="street_address" className="text-[10px]">
+                      Street Address
+                    </Label>
+                    <Input
+                      id="street_address"
+                      {...register("street_address")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="col-span-2">
+                      <Label htmlFor="city" className="text-[10px]">
+                        City
+                      </Label>
+                      <Input
+                        id="city"
+                        {...register("city")}
+                        className="mt-1 h-8 text-xs"
+                        placeholder="City"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="state" className="text-[10px]">
+                        State
+                      </Label>
+                      <Select
+                        value={watch("state") || ""}
+                        onValueChange={(value) => setValue("state", value)}
+                      >
+                        <SelectTrigger className="mt-1 h-8 text-xs">
+                          <SelectValue placeholder="State" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {US_STATES.map((state) => (
+                            <SelectItem key={state.value} value={state.value}>
+                              {state.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="zip" className="text-[10px]">
+                        ZIP Code
+                      </Label>
+                      <Input
+                        id="zip"
+                        {...register("zip")}
+                        className="mt-1 h-8 text-xs"
+                        placeholder="12345"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media */}
+              <div className="p-4 border-b border-border/50">
+                <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  Social Media (Optional)
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="instagram_username" className="text-[10px]">
+                      Instagram Username
+                    </Label>
+                    <div className="relative mt-1">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                        @
+                      </span>
+                      <Input
+                        id="instagram_username"
+                        {...register("instagram_username")}
+                        className="h-8 text-xs pl-6"
+                        placeholder="username"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="linkedin_username" className="text-[10px]">
+                      LinkedIn Username
+                    </Label>
+                    <Input
+                      id="linkedin_username"
+                      {...register("linkedin_username")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="john-doe"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="facebook_handle" className="text-[10px]">
+                      Facebook
+                    </Label>
+                    <Input
+                      id="facebook_handle"
+                      {...register("facebook_handle")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="username or profile URL"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="personal_website" className="text-[10px]">
+                      Personal Website
+                    </Label>
+                    <Input
+                      id="personal_website"
+                      {...register("personal_website")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="https://yoursite.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Referral Source */}
+              <div className="p-4">
+                <h3 className="text-xs font-semibold text-foreground mb-3">
+                  How did you hear about us?
+                </h3>
+
+                <Select
+                  value={watch("referral_source") || ""}
+                  onValueChange={(value) => setValue("referral_source", value)}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REFERRAL_SOURCES.map((source) => (
+                      <SelectItem key={source} value={source}>
+                        {source}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="mt-4">
+              <Button
+                type="submit"
+                className="w-full h-9 text-sm"
+                disabled={isSubmitting || submitRegistration.isPending}
+              >
+                {isSubmitting || submitRegistration.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Complete Registration"
+                )}
+              </Button>
+            </div>
+          </form>
+
+          {/* Footer */}
+          <p className="mt-3 text-center text-[10px] text-muted-foreground">
+            Questions? Contact {invitation.inviter?.name} at{" "}
+            <a
+              href={`mailto:${invitation.inviter?.email}`}
+              className="text-primary hover:underline"
+            >
+              {invitation.inviter?.email}
+            </a>
+          </p>
+
+          {/* Mobile footer */}
+          <p className="lg:hidden mt-4 text-center text-[10px] text-muted-foreground">
+            &copy; {new Date().getFullYear()} The Standard Financial Group
           </p>
         </div>
       </div>

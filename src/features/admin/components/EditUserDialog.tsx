@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
-import { useAllUsers, useDeleteUser } from "@/hooks/admin/useUserApproval";
+import { useDeleteUser } from "@/hooks/admin/useUserApproval";
 import {
   userApprovalService,
   VALID_CONTRACT_LEVELS,
@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
-import { getDisplayName } from "@/types/user.types";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 import { useImo } from "@/contexts/ImoContext";
 import {
   useAllActiveImos,
@@ -108,7 +108,6 @@ export default function EditUserDialog({
 }: EditUserDialogProps) {
   const queryClient = useQueryClient();
   const { data: roles } = useAllRolesWithPermissions();
-  const { data: allUsers } = useAllUsers();
   const deleteUserMutation = useDeleteUser();
 
   // IMO/Agency hooks
@@ -158,14 +157,10 @@ export default function EditUserDialog({
   const [reassignUplineId, setReassignUplineId] = useState<string | null>(null);
   const [checkingDependencies, setCheckingDependencies] = useState(false);
   const [downlineCount, setDownlineCount] = useState(0);
-  const [potentialUplines, setPotentialUplines] = useState<
-    Array<{ id: string; first_name: string; last_name: string; email: string }>
-  >([]);
 
   useEffect(() => {
     if (!showDeleteConfirm || !user) {
       setDownlineCount(0);
-      setPotentialUplines([]);
       setReassignUplineId(null);
       setCheckingDependencies(false);
       return;
@@ -189,19 +184,6 @@ export default function EditUserDialog({
 
         if (!isActive) return;
         setDownlineCount(count || 0);
-
-        if (count && count > 0) {
-          const { data: uplines, error: uplinesError } = await supabase
-            .from("user_profiles")
-            .select("id, first_name, last_name, email")
-            .neq("id", user.id)
-            .order("first_name");
-
-          if (uplinesError) {
-            console.error("Error fetching uplines:", uplinesError);
-          }
-          if (isActive) setPotentialUplines(uplines || []);
-        }
       } catch (error) {
         console.error("Error checking downlines:", error);
         if (isActive) setDownlineCount(0);
@@ -517,11 +499,6 @@ export default function EditUserDialog({
     }
   };
 
-  const approvedUplines =
-    allUsers?.filter(
-      (u) => u.approval_status === "approved" && u.id !== user?.id,
-    ) ?? [];
-
   if (!user) return null;
 
   // Close main dialog when showing confirmation dialogs to prevent dual overlays
@@ -659,33 +636,21 @@ export default function EditUserDialog({
                     <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
                       Upline
                     </Label>
-                    <Select
-                      value={formData.upline_id || "none"}
-                      onValueChange={(value) =>
+                    <UserSearchCombobox
+                      value={formData.upline_id}
+                      onChange={(id) =>
                         setFormData((prev) => ({
                           ...prev,
-                          upline_id: value === "none" ? null : value,
+                          upline_id: id,
                         }))
                       }
-                    >
-                      <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                        <SelectValue placeholder="No upline" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none" className="text-[11px]">
-                          No upline
-                        </SelectItem>
-                        {approvedUplines.map((u) => (
-                          <SelectItem
-                            key={u.id}
-                            value={u.id}
-                            className="text-[11px]"
-                          >
-                            {getDisplayName(u)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      excludeIds={user ? [user.id] : []}
+                      approvalStatus="approved"
+                      placeholder="Search for upline..."
+                      showNoUplineOption={true}
+                      noUplineLabel="No upline"
+                      className="h-7"
+                    />
                   </div>
                   <div>
                     <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
@@ -1285,33 +1250,20 @@ export default function EditUserDialog({
                           {downlineCount} downline{downlineCount > 1 ? "s" : ""}{" "}
                           must be reassigned
                         </p>
-                        {potentialUplines.length > 0 && (
-                          <div className="mt-1.5">
-                            <p className="text-[10px] text-amber-600 dark:text-amber-500 mb-1">
-                              Select new upline:
-                            </p>
-                            <Select
-                              value={reassignUplineId || ""}
-                              onValueChange={setReassignUplineId}
-                            >
-                              <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-amber-200 dark:border-amber-800">
-                                <SelectValue placeholder="Select new upline..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {potentialUplines.map((upline) => (
-                                  <SelectItem
-                                    key={upline.id}
-                                    value={upline.id}
-                                    className="text-[11px]"
-                                  >
-                                    {upline.first_name} {upline.last_name} (
-                                    {upline.email})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
+                        <div className="mt-1.5">
+                          <p className="text-[10px] text-amber-600 dark:text-amber-500 mb-1">
+                            Select new upline:
+                          </p>
+                          <UserSearchCombobox
+                            value={reassignUplineId}
+                            onChange={setReassignUplineId}
+                            excludeIds={user ? [user.id] : []}
+                            approvalStatus="approved"
+                            placeholder="Search for new upline..."
+                            showNoUplineOption={false}
+                            className="h-7"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

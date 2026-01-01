@@ -27,10 +27,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCreateRecruit } from "../hooks/useRecruitMutations";
 import { useInitializeRecruitProgress } from "../hooks/useRecruitProgress";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { Loader2, UserPlus } from "lucide-react";
-import type { RoleName } from "@/types/permissions.types";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 import type { AgentStatus, LicensingInfo } from "@/types/recruiting.types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -179,34 +178,6 @@ export function AddRecruitDialog({
   const createRecruitMutation = useCreateRecruit();
   const initializeProgressMutation = useInitializeRecruitProgress();
   const [activeTab, setActiveTab] = useState("basic");
-
-  // Fetch potential uplines (users with agent, admin, trainer, or upline_manager roles)
-  // TODO: isn't this considered bad?
-  const { data: potentialUplines } = useQuery({
-    queryKey: ["potential-uplines"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("id, first_name, last_name, email, roles")
-        .order("first_name", { ascending: true });
-
-      if (error) throw error;
-
-      // Filter users who have agent, admin, trainer, or upline_manager roles
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- user profile type
-      return (data || []).filter((u: any) => {
-        const roles = u.roles as RoleName[];
-        return (
-          roles &&
-          (roles.includes("agent" as RoleName) ||
-            roles.includes("admin" as RoleName) ||
-            roles.includes("trainer" as RoleName) ||
-            roles.includes("upline_manager" as RoleName))
-        );
-      });
-    },
-    enabled: open, // Only fetch when dialog is open
-  });
 
   const form = useForm({
     defaultValues: {
@@ -812,25 +783,15 @@ export function AddRecruitDialog({
                     <Label htmlFor="upline_id" className="text-[11px]">
                       Assign Upline/Trainer
                     </Label>
-                    <Select
-                      value={field.state.value ?? ""}
-                      onValueChange={(value) =>
-                        field.handleChange(value === "none" ? "" : value)
-                      }
-                    >
-                      <SelectTrigger id="upline_id">
-                        <SelectValue placeholder="Select upline (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- upline user profile */}
-                        {potentialUplines?.map((upline: any) => (
-                          <SelectItem key={upline.id} value={upline.id}>
-                            {upline.first_name} {upline.last_name} (
-                            {upline.email})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <UserSearchCombobox
+                      value={field.state.value || null}
+                      onChange={(id) => field.handleChange(id || "")}
+                      roles={["agent", "admin", "trainer", "upline_manager"]}
+                      approvalStatus="approved"
+                      placeholder="Search for upline..."
+                      showNoUplineOption={true}
+                      noUplineLabel="Assign later"
+                    />
                     <p className="text-[10px] text-muted-foreground">
                       Upline/trainer who will manage this recruit's onboarding.
                       Leave blank to assign later.

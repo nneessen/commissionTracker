@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-01 18:47:41
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/CONTINUATION_user_search_combobox.md`
+- `src/features/admin/components/AddUserDialog.tsx`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/hierarchy/components/HierarchyManagement.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.optimized.tsx`
+- `src/features/recruiting/components/FilterDialog.tsx`
+- `src/features/recruiting/components/SendInviteDialog.tsx`
+- `src/features/recruiting/pages/PublicRegistrationPage.tsx`
+
+### Statistics
+```
+ 11 files changed, 653 insertions(+), 908 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-01 18:47:13
+
+### Changed Files
+- `plans/active/CONTINUATION_user_search_combobox.md`
+- `src/features/admin/components/AddUserDialog.tsx`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/hierarchy/components/HierarchyManagement.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.optimized.tsx`
+- `src/features/recruiting/components/FilterDialog.tsx`
+- `src/features/recruiting/components/SendInviteDialog.tsx`
+- `src/features/recruiting/pages/PublicRegistrationPage.tsx`
+
+### Statistics
+```
+ 9 files changed, 629 insertions(+), 901 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-01 17:51:06
 
 ### Changed Files

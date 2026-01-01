@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Label } from "@/components/ui/label";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 import type { PipelinePhase } from "@/types/recruiting.types";
 import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
@@ -47,7 +48,6 @@ interface FilterDialogProps {
   filters: RecruitFilters;
   onFiltersChange: (filters: RecruitFilters) => void;
   recruiters: FilterOption[];
-  uplines: FilterOption[];
   referralSources: string[];
   /** Pipeline phases - fetched from database, not hardcoded */
   pipelinePhases?: PipelinePhase[];
@@ -65,7 +65,6 @@ export function FilterDialog({
   filters,
   onFiltersChange,
   recruiters,
-  uplines,
   referralSources,
   pipelinePhases = [],
 }: FilterDialogProps) {
@@ -206,27 +205,20 @@ export function FilterDialog({
           {/* Upline Filter */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Upline</Label>
-            <Select
-              value={filters.uplineId || "all"}
-              onValueChange={(value) =>
+            <UserSearchCombobox
+              value={filters.uplineId || null}
+              onChange={(id) =>
                 onFiltersChange({
                   ...filters,
-                  uplineId: value === "all" ? undefined : value,
+                  uplineId: id || undefined,
                 })
               }
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="All uplines" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All uplines</SelectItem>
-                {uplines.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              approvalStatus="approved"
+              placeholder="Search for upline..."
+              showNoUplineOption={true}
+              noUplineLabel="All uplines"
+              className="h-8"
+            />
           </div>
 
           {/* Referral Source Filter */}

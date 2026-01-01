@@ -1,6 +1,6 @@
 // DeleteRecruitDialog - HARD DELETE only (no soft delete/archive)
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,13 +13,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { AlertTriangle, Loader2, Trash2, RefreshCw, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -29,6 +22,7 @@ import {
 import { supabase } from "@/services/base/supabase";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 
 interface DeleteRecruitDialogProps {
   recruit: UserProfile | null;
@@ -75,36 +69,25 @@ export function DeleteRecruitDialogOptimized({
     gcTime: 0,
   });
 
-  // Fetch potential uplines for reassignment
-  const { data: potentialUplines } = useQuery({
-    queryKey: ["potentialUplines", recruit?.id, dependencies?.downline_count],
+  // Fetch downline IDs for exclusion from upline search
+  const { data: downlineIds } = useQuery({
+    queryKey: ["downlineIds", recruit?.id],
     queryFn: async () => {
       if (!recruit) return [];
-
       const { data: downlines } = await supabase
         .from("user_profiles")
         .select("id")
         .eq("upline_id", recruit.id);
-
-      const downlineIds = downlines?.map((d) => d.id) || [];
-
-      let query = supabase
-        .from("user_profiles")
-        .select("id, first_name, last_name, email, agent_status")
-        .neq("id", recruit.id)
-        .or("agent_status.eq.licensed,is_admin.eq.true")
-        .or("is_deleted.is.null,is_deleted.eq.false")
-        .order("first_name");
-
-      if (downlineIds.length > 0) {
-        query = query.not("id", "in", `(${downlineIds.join(",")})`);
-      }
-
-      const { data } = await query;
-      return data || [];
+      return downlines?.map((d) => d.id) || [];
     },
     enabled: open && !!recruit && (dependencies?.downline_count ?? 0) > 0,
   });
+
+  // Compute exclude IDs for upline search (recruit + their downlines)
+  const excludeIdsForUplineSearch = useMemo(() => {
+    if (!recruit) return [];
+    return [recruit.id, ...(downlineIds || [])];
+  }, [recruit, downlineIds]);
 
   // Cleanup on close
   useEffect(() => {
@@ -245,34 +228,19 @@ export function DeleteRecruitDialogOptimized({
                           Has {dependencies.downline_count} downline
                           {dependencies.downline_count > 1 ? "s" : ""}
                         </p>
-                        {potentialUplines && potentialUplines.length > 0 ? (
-                          <div className="space-y-0.5">
-                            <p className="text-[10px]">Reassign to:</p>
-                            <Select
-                              value={reassignUplineId || ""}
-                              onValueChange={setReassignUplineId}
-                            >
-                              <SelectTrigger className="h-6 text-[11px]">
-                                <SelectValue placeholder="Select new upline" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {potentialUplines.map((upline) => (
-                                  <SelectItem
-                                    key={upline.id}
-                                    value={upline.id}
-                                    className="text-[11px]"
-                                  >
-                                    {upline.first_name} {upline.last_name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : (
-                          <p className="text-[10px]">
-                            No eligible uplines. Handle downlines first.
-                          </p>
-                        )}
+                        <div className="space-y-0.5">
+                          <p className="text-[10px]">Reassign to:</p>
+                          <UserSearchCombobox
+                            value={reassignUplineId}
+                            onChange={setReassignUplineId}
+                            excludeIds={excludeIdsForUplineSearch}
+                            roles={["agent", "admin"]}
+                            approvalStatus="approved"
+                            placeholder="Search for new upline..."
+                            showNoUplineOption={false}
+                            className="h-6"
+                          />
+                        </div>
                       </AlertDescription>
                     </Alert>
                   )}

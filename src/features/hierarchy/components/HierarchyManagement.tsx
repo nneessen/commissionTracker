@@ -1,7 +1,8 @@
 // src/features/hierarchy/components/HierarchyManagement.tsx
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Shield, AlertCircle, Edit } from "lucide-react";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +60,15 @@ function EditHierarchyDialog({
   const [reason, setReason] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Compute exclude IDs: agent itself + all downlines (to prevent circular references)
+  const excludeIds = useMemo(() => {
+    if (!agent) return [];
+    const downlineIds = allAgents
+      .filter((a) => (a.hierarchy_path || "").includes(agent.id))
+      .map((a) => a.id);
+    return [agent.id, ...downlineIds];
+  }, [agent, allAgents]);
+
   const handleSave = async () => {
     if (!agent) return;
 
@@ -79,12 +89,6 @@ function EditHierarchyDialog({
     }
   };
 
-  // Filter out the agent itself and its downlines to prevent circular references
-  const availableUplines = allAgents.filter(
-    (a) =>
-      a.id !== agent?.id && !(a.hierarchy_path || "").includes(agent?.id || ""),
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -98,19 +102,16 @@ function EditHierarchyDialog({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="upline">Upline Agent</Label>
-            <select
-              id="upline"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={selectedUplineId || ""}
-              onChange={(e) => setSelectedUplineId(e.target.value || null)}
-            >
-              <option value="">No Upline (Root Agent)</option>
-              {availableUplines.map((upline) => (
-                <option key={upline.id} value={upline.id}>
-                  {upline.email} (Level {upline.hierarchy_depth})
-                </option>
-              ))}
-            </select>
+            <UserSearchCombobox
+              value={selectedUplineId}
+              onChange={setSelectedUplineId}
+              excludeIds={excludeIds}
+              approvalStatus="approved"
+              placeholder="Search for upline..."
+              showNoUplineOption={true}
+              noUplineLabel="No Upline (Root Agent)"
+              className="h-9"
+            />
           </div>
 
           <div className="space-y-2">

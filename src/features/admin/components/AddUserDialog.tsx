@@ -12,19 +12,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -33,23 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
 import { useAllActiveImos, useAgenciesByImo } from "@/hooks/imo/useImoQueries";
 import { useImo } from "@/contexts/ImoContext";
-import {
-  Mail,
-  User,
-  Phone,
-  Users,
-  Check,
-  ChevronsUpDown,
-  Building2,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Mail, User, Phone, Building2 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { ApprovalStatus } from "@/types/user.types";
-import { getDisplayName } from "@/types/user.types";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
+import { UserSearchCombobox } from "@/components/user-search-combobox";
 
 interface AddUserDialogProps {
   open: boolean;
@@ -89,7 +66,6 @@ export default function AddUserDialog({
   onSave,
 }: AddUserDialogProps) {
   const { data: roles } = useAllRolesWithPermissions();
-  const { data: allUsers } = useAllUsers();
 
   // IMO/Agency hooks
   const { isSuperAdmin, isImoAdmin, imo: currentImo } = useImo();
@@ -100,7 +76,6 @@ export default function AddUserDialog({
 
   const [formData, setFormData] = useState<NewUserData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [uplineOpen, setUplineOpen] = useState(false);
 
   // Initialize selected IMO from context for IMO admins
   useMemo(() => {
@@ -187,19 +162,6 @@ export default function AddUserDialog({
       };
     });
   };
-
-  // Only show approved users as potential uplines
-  const approvedUplines = useMemo(
-    () => allUsers?.filter((u) => u.approval_status === "approved") ?? [],
-    [allUsers],
-  );
-
-  // Get selected upline display name
-  const selectedUplineName = useMemo(() => {
-    if (!formData.upline_id) return null;
-    const upline = approvedUplines.find((u) => u.id === formData.upline_id);
-    return upline ? getDisplayName(upline) : null;
-  }, [formData.upline_id, approvedUplines]);
 
   return (
     <Dialog
@@ -316,82 +278,20 @@ export default function AddUserDialog({
               <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Upline
               </Label>
-              <Popover open={uplineOpen} onOpenChange={setUplineOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={uplineOpen}
-                    className="h-7 w-full justify-between text-[11px] pl-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 font-normal"
-                  >
-                    <Users className="absolute left-2 h-3 w-3 text-zinc-400" />
-                    <span className="truncate">
-                      {selectedUplineName || "No upline"}
-                    </span>
-                    <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[250px] p-0 z-[100]" align="start">
-                  <Command>
-                    <CommandInput
-                      placeholder="Search upline..."
-                      className="h-8 text-[11px]"
-                    />
-                    <CommandList>
-                      <CommandEmpty className="py-3 text-[11px]">
-                        No user found.
-                      </CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="none"
-                          onSelect={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              upline_id: null,
-                            }));
-                            setUplineOpen(false);
-                          }}
-                          className="text-[11px]"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-1.5 h-3 w-3",
-                              formData.upline_id === null
-                                ? "opacity-100"
-                                : "opacity-0",
-                            )}
-                          />
-                          No upline
-                        </CommandItem>
-                        {approvedUplines.map((user) => (
-                          <CommandItem
-                            key={user.id}
-                            value={getDisplayName(user)}
-                            onSelect={() => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                upline_id: user.id,
-                              }));
-                              setUplineOpen(false);
-                            }}
-                            className="text-[11px]"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-1.5 h-3 w-3",
-                                formData.upline_id === user.id
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                            {getDisplayName(user)}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <UserSearchCombobox
+                value={formData.upline_id ?? null}
+                onChange={(id) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    upline_id: id,
+                  }))
+                }
+                approvalStatus="approved"
+                placeholder="Search for upline..."
+                showNoUplineOption={true}
+                noUplineLabel="No upline"
+                className="h-7"
+              />
             </div>
           </div>
 
