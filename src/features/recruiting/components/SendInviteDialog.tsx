@@ -1,5 +1,6 @@
 // src/features/recruiting/components/SendInviteDialog.tsx
 // Dialog for sending self-registration invites to recruits
+// Redesigned with zinc palette and compact design
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -133,123 +134,169 @@ export function SendInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-600" />
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <DialogHeader className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+          <DialogTitle className="text-sm font-semibold flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
+            <Mail className="h-4 w-4" />
             Send Registration Invite
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
             Send an email invitation for the recruit to fill out their own
             registration information.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-4 py-3 space-y-3">
           {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">
+          <div className="space-y-1">
+            <Label
+              htmlFor="email"
+              className="text-[10px] text-zinc-500 dark:text-zinc-400"
+            >
               Email Address <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="recruit@example.com"
-              {...register("email")}
-              disabled={!!existingEmail}
-              className={existingEmail ? "bg-muted" : ""}
-            />
+            <div className="relative">
+              <Mail className="absolute left-2 top-1.5 h-3 w-3 text-zinc-400" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="recruit@example.com"
+                {...register("email")}
+                disabled={!!existingEmail}
+                className={`h-7 text-[11px] pl-7 ${
+                  existingEmail
+                    ? "bg-zinc-100 dark:bg-zinc-800"
+                    : "bg-white dark:bg-zinc-900"
+                } border-zinc-200 dark:border-zinc-700`}
+              />
+            </div>
             {errors.email && (
-              <p className="text-xs text-red-500">{errors.email.message}</p>
+              <p className="text-[10px] text-red-500">{errors.email.message}</p>
             )}
           </div>
 
           {/* Name (optional, for prefill) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">First Name</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label
+                htmlFor="first_name"
+                className="text-[10px] text-zinc-500 dark:text-zinc-400"
+              >
+                First Name
+              </Label>
               <Input
                 id="first_name"
                 placeholder="John"
                 {...register("first_name")}
+                className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name</Label>
+            <div className="space-y-1">
+              <Label
+                htmlFor="last_name"
+                className="text-[10px] text-zinc-500 dark:text-zinc-400"
+              >
+                Last Name
+              </Label>
               <Input
                 id="last_name"
                 placeholder="Doe"
                 {...register("last_name")}
+                className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
               />
             </div>
           </div>
 
           {/* Upline Assignment */}
-          <div className="space-y-2">
-            <Label htmlFor="upline_id">Assign Upline</Label>
+          <div className="space-y-1">
+            <Label
+              htmlFor="upline_id"
+              className="text-[10px] text-zinc-500 dark:text-zinc-400"
+            >
+              Assign Upline
+            </Label>
             <Select
               value={watch("upline_id") || ""}
               onValueChange={(value) => setValue("upline_id", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
                 <SelectValue placeholder="Select upline (defaults to you)" />
               </SelectTrigger>
               <SelectContent>
                 {potentialUplines.map((upline) => (
-                  <SelectItem key={upline.id} value={upline.id}>
+                  <SelectItem
+                    key={upline.id}
+                    value={upline.id}
+                    className="text-[11px]"
+                  >
                     {upline.first_name} {upline.last_name}
                     {upline.id === user?.id && " (You)"}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[9px] text-zinc-400">
               The recruit will be assigned to this person as their upline.
             </p>
           </div>
 
           {/* Personal Message */}
-          <div className="space-y-2">
-            <Label htmlFor="message">Personal Message (Optional)</Label>
+          <div className="space-y-1">
+            <Label
+              htmlFor="message"
+              className="text-[10px] text-zinc-500 dark:text-zinc-400"
+            >
+              Personal Message (Optional)
+            </Label>
             <Textarea
               id="message"
               placeholder="Add a personal note to include in the invitation email..."
               rows={3}
               {...register("message")}
-              className="resize-none"
+              className="resize-none text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
             />
             {errors.message && (
-              <p className="text-xs text-red-500">{errors.message.message}</p>
+              <p className="text-[10px] text-red-500">
+                {errors.message.message}
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[9px] text-zinc-400">
               {watch("message")?.length || 0}/500 characters
             </p>
           </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Invite
-                </>
-              )}
-            </Button>
-          </DialogFooter>
         </form>
+
+        <DialogFooter className="px-4 py-2.5 gap-1.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            size="sm"
+            className="h-6 text-[10px] px-2"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+            size="sm"
+            className="h-6 text-[10px] px-2"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="h-3 w-3 mr-1" />
+                Send Invite
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
