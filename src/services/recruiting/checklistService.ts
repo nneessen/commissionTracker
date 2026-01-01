@@ -19,6 +19,7 @@ import type {
   RecruitChecklistProgress,
   UpdateChecklistItemStatusInput,
 } from "@/types/recruiting.types";
+import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
 // Fire-and-forget helper for automation triggers (don't block main flow)
 const triggerAutomationAsync = (fn: () => Promise<void>) => {
@@ -32,15 +33,6 @@ const phaseProgressRepository = new RecruitPhaseProgressRepository();
 const checklistProgressRepository = new RecruitChecklistProgressRepository();
 const pipelinePhaseRepository = new PipelinePhaseRepository();
 const checklistItemRepository = new PhaseChecklistItemRepository();
-
-/**
- * Normalize phase name to status key format.
- * Converts "Interview 1" -> "interview_1", "Pre-Licensing" -> "pre_licensing", etc.
- * No hardcoded mapping - works with any phase name from the database.
- */
-const normalizePhaseNameToStatus = (phaseName: string): string => {
-  return phaseName.toLowerCase().replace(/[- ]/g, "_");
-};
 
 // Sync cache to prevent redundant sync checks (TTL: 30 seconds)
 const SYNC_CACHE_TTL_MS = 30000;

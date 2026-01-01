@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-01 16:19:59
+
+### Changed Files
+- `plans/active/continuation-review-onboarding-status-refactor.md`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/dashboard/components/TeamRecruitingSection.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/FilterDialog.tsx`
+- `src/features/recruiting/components/RecruitListTable.tsx`
+- `src/lib/pipeline.ts`
+- `src/services/recruiting/checklistService.ts`
+
+### Statistics
+```
+ 8 files changed, 219 insertions(+), 72 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-01 15:54:03
 
 ### Changed Files

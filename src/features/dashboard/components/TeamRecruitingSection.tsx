@@ -10,6 +10,7 @@ import {
   useActiveTemplate,
   usePhases,
 } from "@/features/recruiting/hooks/usePipeline";
+import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
 interface TeamRecruitingSectionProps {
   hierarchyStats?: HierarchyStats | null;
@@ -78,14 +79,6 @@ const TeamDetailsPanel: React.FC<{
 );
 
 /**
- * Normalize phase name to status key format.
- * E.g., "Interview 1" -> "interview_1"
- */
-const normalizeToStatus = (phaseName: string): string => {
-  return phaseName.toLowerCase().replace(/[- ]/g, "_");
-};
-
-/**
  * Recruiting Pipeline Panel - Middle column (larger)
  */
 const RecruitingPipelinePanel: React.FC<{
@@ -97,7 +90,7 @@ const RecruitingPipelinePanel: React.FC<{
 
   // Build phases array from database
   const phases = pipelinePhases.map((phase) => ({
-    key: normalizeToStatus(phase.phase_name),
+    key: normalizePhaseNameToStatus(phase.phase_name),
     label: phase.phase_name,
   }));
 

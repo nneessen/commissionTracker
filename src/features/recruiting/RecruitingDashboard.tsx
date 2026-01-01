@@ -35,6 +35,7 @@ import { Link } from "@tanstack/react-router";
 import { downloadCSV } from "@/utils/exportHelpers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
+import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
@@ -50,14 +51,6 @@ type RecruitWithRelations = UserProfile & {
     last_name?: string;
     email: string;
   } | null;
-};
-
-/**
- * Normalize phase name to status key format.
- * E.g., "Interview 1" -> "interview_1"
- */
-const normalizeToStatus = (phaseName: string): string => {
-  return phaseName.toLowerCase().replace(/[- ]/g, "_");
 };
 
 function RecruitingDashboardContent() {
@@ -111,7 +104,7 @@ function RecruitingDashboardContent() {
   // Calculate stats from recruits data directly
   // Active phases come from the pipeline_phases table, normalized to status keys
   const activePhaseStatuses = pipelinePhases.map((phase) =>
-    normalizeToStatus(phase.phase_name),
+    normalizePhaseNameToStatus(phase.phase_name),
   );
   const stats = {
     total: recruits.length,

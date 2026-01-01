@@ -20,6 +20,7 @@ import {
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Label } from "@/components/ui/label";
 import type { PipelinePhase } from "@/types/recruiting.types";
+import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
 export interface DateRange {
   from: Date | undefined;
@@ -58,14 +59,6 @@ const TERMINAL_STATUSES = [
   { value: "dropped", label: "Dropped" },
 ];
 
-/**
- * Normalize phase name to status key format.
- * E.g., "Interview 1" -> "interview_1"
- */
-const normalizeToStatus = (phaseName: string): string => {
-  return phaseName.toLowerCase().replace(/[- ]/g, "_");
-};
-
 export function FilterDialog({
   open,
   onOpenChange,
@@ -79,7 +72,7 @@ export function FilterDialog({
   // Build status options from pipeline phases + terminal statuses
   const statusOptions = [
     ...pipelinePhases.map((phase) => ({
-      value: normalizeToStatus(phase.phase_name),
+      value: normalizePhaseNameToStatus(phase.phase_name),
       label: phase.phase_name,
     })),
     ...TERMINAL_STATUSES,

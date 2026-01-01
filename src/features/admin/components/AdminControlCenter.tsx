@@ -1,7 +1,7 @@
 // src/features/admin/components/AdminControlCenter.tsx
 // Redesigned with zinc palette and compact design patterns
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Shield,
@@ -88,6 +88,10 @@ import {
   useMyImoAgencies,
   useAllActiveAgencies,
 } from "@/hooks/imo/useImoQueries";
+import {
+  useActiveTemplate,
+  usePhases,
+} from "@/features/recruiting/hooks/usePipeline";
 
 export default function AdminControlCenter() {
   const [activeView, setActiveView] = useState<
@@ -160,6 +164,21 @@ export default function AdminControlCenter() {
   const canGraduateRecruits = currentUserProfile?.roles?.some((role) =>
     ["admin", "trainer", "contracting_manager"].includes(role as string),
   );
+
+  // Fetch pipeline phases for dynamic graduation eligibility check
+  const { data: activeTemplate } = useActiveTemplate();
+  const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
+
+  // Graduation-eligible phases: last 3 phases of the pipeline (typically final stages before becoming agent)
+  const graduationEligiblePhases = useMemo(() => {
+    if (pipelinePhases.length === 0) return [];
+    const sortedPhases = [...pipelinePhases].sort(
+      (a, b) => a.phase_order - b.phase_order,
+    );
+    // Take last 3 phases (or all if fewer than 3)
+    const lastThree = sortedPhases.slice(-3);
+    return lastThree.map((phase) => phase.phase_name);
+  }, [pipelinePhases]);
 
   // Hierarchy-based filtering for non-admin users
   const hierarchyFilteredUsers = isAdmin
@@ -932,11 +951,7 @@ export default function AdminControlCenter() {
                                 Edit
                               </Button>
                               {canGraduateRecruits &&
-                                [
-                                  "bootcamp",
-                                  "npn_received",
-                                  "contracting",
-                                ].includes(
+                                graduationEligiblePhases.includes(
                                   recruit.current_onboarding_phase || "",
                                 ) && (
                                   <Button

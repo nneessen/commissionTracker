@@ -22,9 +22,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
-import { usePhases } from "@/features/recruiting/hooks/usePipeline";
+import {
+  useActiveTemplate,
+  usePhases,
+} from "@/features/recruiting/hooks/usePipeline";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
+import { buildStatusOptions } from "@/lib/pipeline";
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
@@ -72,8 +76,12 @@ export function RecruitListTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Fetch phases for filter dropdown
-  const { data: phases } = usePhases(undefined);
+  // Fetch phases from active pipeline template (dynamic, not hardcoded)
+  const { data: activeTemplate } = useActiveTemplate();
+  const { data: phases = [] } = usePhases(activeTemplate?.id);
+
+  // Build dynamic status options from pipeline phases
+  const statusOptions = useMemo(() => buildStatusOptions(phases), [phases]);
 
   // Extract unique recruiters for filter dropdown
   const recruiters = useMemo(() => {
@@ -167,33 +175,11 @@ export function RecruitListTable({
             <SelectItem value="all" className="text-[11px]">
               All Status
             </SelectItem>
-            <SelectItem value="interview_1" className="text-[11px]">
-              Interview 1
-            </SelectItem>
-            <SelectItem value="zoom_interview" className="text-[11px]">
-              Zoom
-            </SelectItem>
-            <SelectItem value="pre_licensing" className="text-[11px]">
-              Pre-License
-            </SelectItem>
-            <SelectItem value="exam" className="text-[11px]">
-              Exam
-            </SelectItem>
-            <SelectItem value="npn_received" className="text-[11px]">
-              NPN
-            </SelectItem>
-            <SelectItem value="contracting" className="text-[11px]">
-              Contracting
-            </SelectItem>
-            <SelectItem value="bootcamp" className="text-[11px]">
-              Bootcamp
-            </SelectItem>
-            <SelectItem value="completed" className="text-[11px]">
-              Completed
-            </SelectItem>
-            <SelectItem value="dropped" className="text-[11px]">
-              Dropped
-            </SelectItem>
+            {statusOptions.map(({ value, label }) => (
+              <SelectItem key={value} value={value} className="text-[11px]">
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
