@@ -127,9 +127,14 @@ export const ResetPassword: React.FC = () => {
           <div>
             <div className="flex items-center gap-4 mb-4">
               <img
+                src="/logos/Light Letter Logo .png"
+                alt="The Standard"
+                className="h-12 w-12 dark:hidden"
+              />
+              <img
                 src="/logos/LetterLogo.png"
                 alt="The Standard"
-                className="h-12 w-12 invert"
+                className="h-12 w-12 hidden dark:block"
               />
               <span className="text-background text-2xl font-semibold tracking-tight">
                 THE STANDARD
@@ -169,7 +174,12 @@ export const ResetPassword: React.FC = () => {
             <img
               src="/logos/LetterLogo.png"
               alt="The Standard"
-              className="h-10 w-10"
+              className="h-10 w-10 dark:hidden"
+            />
+            <img
+              src="/logos/Light Letter Logo .png"
+              alt="The Standard"
+              className="h-10 w-10 hidden dark:block"
             />
             <span className="text-foreground text-xl font-semibold tracking-tight">
               THE STANDARD
