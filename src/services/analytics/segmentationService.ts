@@ -6,7 +6,7 @@ import { parseLocalDate } from "../../lib/date";
 /**
  * Client Segmentation Service
  *
- * Segments clients by value, identifies cross-sell opportunities,
+ * Segments clients by value, identifies renewal opportunities,
  * and calculates lifetime value metrics.
  */
 
@@ -24,8 +24,6 @@ export interface ClientSegment {
   firstPolicyDate: Date;
   latestPolicyDate: Date;
   monthsAsClient: number;
-  crossSellOpportunity: boolean;
-  crossSellScore: number; // 0-100
 }
 
 export interface ClientSegmentationSummary {
@@ -40,17 +38,7 @@ export interface ClientSegmentationSummary {
   totalPremiumByTier: Record<ClientValueTier, number>;
 }
 
-export interface CrossSellOpportunity {
-  clientId: string;
-  clientName: string;
-  currentPolicies: number;
-  currentProducts: string[];
-  totalPremium: number;
-  missingProducts: string[];
-  opportunityScore: number; // 0-100
-  recommendedProducts: string[];
-  estimatedValue: number;
-}
+export type RenewalRiskLevel = "high" | "medium" | "low";
 
 export interface ClientLifetimeValue {
   clientId: string;
@@ -114,10 +102,6 @@ export function segmentClientsByValue(
         (1000 * 60 * 60 * 24 * 30),
     );
 
-    // Cross-sell opportunity: client has 1 policy but could have more
-    const crossSellOpportunity = totalPolicies < 3;
-    const crossSellScore = calculateCrossSellScore(clientPolicies);
-
     const clientName = clientPolicies[0]?.client?.name || "Unknown";
 
     clientSegments.push({
@@ -132,8 +116,6 @@ export function segmentClientsByValue(
       firstPolicyDate,
       latestPolicyDate,
       monthsAsClient,
-      crossSellOpportunity,
-      crossSellScore,
     });
   });
 
@@ -191,97 +173,64 @@ export function segmentClientsByValue(
   };
 }
 
-/**
- * Calculate cross-sell opportunities
- * Identifies clients with potential for additional policies
- */
-export function calculateCrossSellOpportunities(
-  policies: Policy[],
-): CrossSellOpportunity[] {
-  const allProducts = [
-    "whole_life",
-    "term",
-    "universal_life",
-    "indexed_universal_life",
-    "accidental",
-    "final_expense",
-    "annuity",
-  ];
+export interface PolicyChargebackRisk {
+  policyId: string;
+  clientName: string;
+  product: string;
+  annualPremium: number;
+  effectiveDate: string;
+  monthsInContestability: number;
+  riskLevel: RenewalRiskLevel;
+}
 
-  // Group policies by client
-  const clientMap = new Map<string, Policy[]>();
+/**
+ * Calculate top chargeback risk policies
+ * Returns the 5 highest premium policies still in contestability period (24 months)
+ * These represent the most money at risk if the policy lapses
+ */
+export function calculatePolicyChargebackRisk(
+  policies: Policy[],
+  limit: number = 5,
+): PolicyChargebackRisk[] {
+  const now = new Date();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const CONTESTABILITY_MONTHS = 24;
+
+  const atRiskPolicies: PolicyChargebackRisk[] = [];
 
   policies.forEach((policy) => {
-    const clientKey = policy.client?.name || "unknown";
-    if (!clientMap.has(clientKey)) {
-      clientMap.set(clientKey, []);
-    }
-    clientMap.get(clientKey)!.push(policy);
-  });
+    // Only active policies in contestability period
+    if (policy.status !== "active") return;
 
-  const opportunities: CrossSellOpportunity[] = [];
-
-  clientMap.forEach((clientPolicies, clientId) => {
-    const currentProducts = [...new Set(clientPolicies.map((p) => p.product))];
-
-    const missingProducts = allProducts.filter(
-      (p) => !currentProducts.includes(p as any),
+    const effectiveDate = parseLocalDate(policy.effectiveDate);
+    const monthsSinceEffective = Math.floor(
+      (now.getTime() - effectiveDate.getTime()) / (DAY_MS * 30),
     );
 
-    // Only consider if client has less than all products
-    if (missingProducts.length > 0) {
-      const totalPremium = clientPolicies.reduce(
-        (sum, p) => sum + (p.annualPremium || 0),
-        0,
-      );
-      const avgPremium =
-        clientPolicies.length > 0 ? totalPremium / clientPolicies.length : 0;
+    if (monthsSinceEffective < CONTESTABILITY_MONTHS) {
+      let riskLevel: RenewalRiskLevel = "low";
+      if (monthsSinceEffective < 6) {
+        riskLevel = "high";
+      } else if (monthsSinceEffective < 12) {
+        riskLevel = "medium";
+      }
 
-      // Calculate opportunity score based on:
-      // 1. Current client value (higher value = higher score)
-      // 2. Number of missing products
-      // 3. Client tenure (longer = higher score)
-      const valueScore = Math.min(40, (totalPremium / 10000) * 40); // Max 40 points
-      const productScore = (missingProducts.length / allProducts.length) * 40; // Max 40 points
-      const tenureMonths = Math.floor(
-        (new Date().getTime() -
-          parseLocalDate(clientPolicies[0].effectiveDate).getTime()) /
-          (1000 * 60 * 60 * 24 * 30),
-      );
-      const tenureScore = Math.min(20, (tenureMonths / 12) * 20); // Max 20 points for 1+ year
-
-      const opportunityScore = Math.min(
-        100,
-        Math.round(valueScore + productScore + tenureScore),
-      );
-
-      // Recommend products based on current holdings
-      const recommendedProducts = getRecommendedProducts(
-        currentProducts,
-        missingProducts,
-      );
-
-      // Estimate value based on current average
-      const estimatedValue = avgPremium * recommendedProducts.length;
-
-      const clientName = clientPolicies[0]?.client?.name || "Unknown";
-
-      opportunities.push({
-        clientId,
-        clientName,
-        currentPolicies: clientPolicies.length,
-        currentProducts,
-        totalPremium,
-        missingProducts,
-        opportunityScore,
-        recommendedProducts,
-        estimatedValue,
+      atRiskPolicies.push({
+        policyId: policy.id,
+        clientName: policy.client?.name || "Unknown",
+        product: policy.product,
+        annualPremium: policy.annualPremium || 0,
+        effectiveDate: policy.effectiveDate,
+        monthsInContestability: monthsSinceEffective,
+        riskLevel,
       });
     }
   });
 
-  // Sort by opportunity score (descending)
-  return opportunities.sort((a, b) => b.opportunityScore - a.opportunityScore);
+  // Sort by premium descending (highest risk first) and take top N
+  return atRiskPolicies
+    .sort((a, b) => b.annualPremium - a.annualPremium)
+    .slice(0, limit);
 }
 
 /**
@@ -355,59 +304,4 @@ export function getClientLifetimeValue(
 
   // Sort by lifetime value (descending)
   return lifetimeValues.sort((a, b) => b.lifetimeValue - a.lifetimeValue);
-}
-
-/**
- * Helper: Calculate cross-sell score for a client
- */
-function calculateCrossSellScore(clientPolicies: Policy[]): number {
-  const hasMultiplePolicies = clientPolicies.length > 1;
-  const allActive = clientPolicies.every((p) => p.status === "active");
-  const highValue = clientPolicies.some((p) => (p.annualPremium || 0) > 5000);
-
-  let score = 0;
-  if (!hasMultiplePolicies) score += 40; // Higher score for single-policy clients
-  if (allActive) score += 30;
-  if (highValue) score += 20; // Reduced from 30 to prevent overflow
-
-  return Math.min(100, score);
-}
-
-/**
- * Helper: Get recommended products based on current holdings
- */
-function getRecommendedProducts(
-  currentProducts: string[],
-  missingProducts: string[],
-): string[] {
-  // Simple recommendation logic:
-  // - If has term, recommend whole_life
-  // - If has whole_life, recommend annuity
-  // - If has neither, recommend term (most common)
-
-  const recommendations: string[] = [];
-
-  if (
-    currentProducts.includes("term") &&
-    missingProducts.includes("whole_life")
-  ) {
-    recommendations.push("whole_life");
-  }
-
-  if (
-    currentProducts.includes("whole_life") &&
-    missingProducts.includes("annuity")
-  ) {
-    recommendations.push("annuity");
-  }
-
-  if (recommendations.length === 0 && missingProducts.includes("term")) {
-    recommendations.push("term");
-  }
-
-  // Add up to 2 more from missing products
-  const remaining = missingProducts.filter((p) => !recommendations.includes(p));
-  recommendations.push(...remaining.slice(0, 2));
-
-  return recommendations;
 }

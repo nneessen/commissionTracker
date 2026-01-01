@@ -16,7 +16,7 @@ import {
 /**
  * ClientSegmentation - Client value segmentation and opportunities
  *
- * Segments clients by value (High/Medium/Low) and identifies cross-sell opportunities
+ * Segments clients by value (High/Medium/Low) and identifies renewal opportunities
  */
 export function ClientSegmentation() {
   const { dateRange } = useAnalyticsDateRange();
@@ -42,7 +42,7 @@ export function ClientSegmentation() {
     return null;
   }
 
-  const { segments: segmentData, crossSell } = segmentation;
+  const { segments: segmentData, chargebackRisk } = segmentation;
   const totalRevenue =
     segmentData.totalPremiumByTier.high +
     segmentData.totalPremiumByTier.medium +
@@ -164,11 +164,11 @@ export function ClientSegmentation() {
         </TableBody>
       </Table>
 
-      {/* Cross-Sell Opportunities */}
-      {crossSell && crossSell.length > 0 && (
+      {/* Top Chargeback Risk - highest premium policies in contestability */}
+      {chargebackRisk && chargebackRisk.length > 0 && (
         <>
           <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1 mt-2">
-            Cross-Sell Targets
+            Top Chargeback Risk
           </div>
           <Table className="text-[11px]">
             <TableHeader>
@@ -177,21 +177,17 @@ export function ClientSegmentation() {
                   Client
                 </TableHead>
                 <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
-                  Has
+                  At Risk
                 </TableHead>
                 <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
-                  Missing
-                </TableHead>
-                <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
-                  Potential
+                  Age
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- cross-sell data type */}
-              {crossSell.slice(0, 3).map((row: any, idx: number) => (
+              {chargebackRisk.map((row) => (
                 <TableRow
-                  key={idx}
+                  key={row.policyId}
                   className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                 >
                   <TableCell className="p-1.5">
@@ -202,14 +198,22 @@ export function ClientSegmentation() {
                       {row.clientName}
                     </span>
                   </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
-                    {row.currentProducts.length}
+                  <TableCell className="p-1.5 text-right font-mono font-semibold text-red-600 dark:text-red-400">
+                    {formatCurrency(row.annualPremium)}
                   </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
-                    {row.missingProducts.length}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(row.estimatedValue)}
+                  <TableCell className="p-1.5 text-right">
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium",
+                        row.riskLevel === "high"
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          : row.riskLevel === "medium"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+                      )}
+                    >
+                      {row.monthsInContestability}mo
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}

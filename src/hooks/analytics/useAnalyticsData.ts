@@ -11,7 +11,7 @@ import {
   getEarningProgressByCohort,
   getCohortSummary,
   segmentClientsByValue,
-  calculateCrossSellOpportunities,
+  calculatePolicyChargebackRisk,
   getClientLifetimeValue,
   forecastRenewals,
   calculateChargebackRisk,
@@ -77,10 +77,10 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
     summary: getCohortSummary(policies, commissions),
   };
 
-  // Client Segmentation - client value and opportunities (React 19.1 optimizes automatically)
+  // Client Segmentation - client value and chargeback risk (React 19.1 optimizes automatically)
   const segmentationData = {
     segments: segmentClientsByValue(policies),
-    crossSell: calculateCrossSellOpportunities(policies),
+    chargebackRisk: calculatePolicyChargebackRisk(allPolicies, 5), // Top 5 highest premium at-risk
     ltv: getClientLifetimeValue(policies),
   };
 
