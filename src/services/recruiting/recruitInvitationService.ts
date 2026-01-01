@@ -210,9 +210,7 @@ export const recruitInvitationService = {
   /**
    * Resends an invitation (generates new token, resets expiration)
    */
-  async resendInvitation(
-    invitationId: string,
-  ): Promise<{
+  async resendInvitation(invitationId: string): Promise<{
     success: boolean;
     token?: string;
     error?: string;
@@ -422,7 +420,7 @@ export const recruitInvitationService = {
     try {
       // Build registration URL
       const baseUrl =
-        import.meta.env.VITE_APP_URL || "https://app.thestandardhq.com";
+        import.meta.env.VITE_APP_URL || "https://www.thestandardhq.com";
       const registrationUrl = `${baseUrl}/register/${token}`;
 
       // Build email body

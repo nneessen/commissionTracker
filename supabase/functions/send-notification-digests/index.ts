@@ -229,7 +229,7 @@ function formatDigestEmail(
 
         <!-- CTA -->
         <div style="padding: 20px; text-align: center;">
-          <a href="https://app.thestandardhq.com/notifications"
+          <a href="https://www.thestandardhq.com/notifications"
              style="display: inline-block; background: #1e3a5f; color: white; padding: 12px 24px;
                     border-radius: 6px; text-decoration: none; font-weight: 500;">
             View All Notifications

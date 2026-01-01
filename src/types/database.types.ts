@@ -10216,6 +10216,23 @@ export type Database = {
         Args: { p_workflow_id: string };
         Returns: string;
       };
+      search_users_for_assignment: {
+        Args: {
+          p_approval_status?: string;
+          p_exclude_ids?: string[];
+          p_limit?: number;
+          p_roles?: string[];
+          p_search_term?: string;
+        };
+        Returns: {
+          agent_status: string;
+          email: string;
+          first_name: string;
+          id: string;
+          last_name: string;
+          roles: string[];
+        }[];
+      };
       set_leaderboard_title: {
         Args: { p_log_id: string; p_title: string };
         Returns: boolean;
