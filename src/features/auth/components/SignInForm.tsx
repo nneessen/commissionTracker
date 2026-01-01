@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FormErrors } from "../hooks/useAuthValidation";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 interface SignInFormProps {
   email: string;
@@ -95,7 +96,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       >
         {loading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <LogoSpinner size="sm" className="mr-2" />
             Signing in...
           </>
         ) : (

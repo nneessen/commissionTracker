@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { logger } from "../../services/base/logger";
 import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
 import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
-import { Loader2, ArrowLeft, KeyRound } from "lucide-react";
+import { ArrowLeft, KeyRound } from "lucide-react";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 /**
  * ResetPassword - Handle password reset after user clicks email link
@@ -294,7 +295,7 @@ export const ResetPassword: React.FC = () => {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <LogoSpinner size="sm" className="mr-2" />
                       Updating password...
                     </>
                   ) : (

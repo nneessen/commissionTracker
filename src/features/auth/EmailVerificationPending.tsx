@@ -7,7 +7,8 @@ import { MAX_RESEND_ATTEMPTS } from "../../constants/auth.constants";
 import { useEmailVerification } from "./hooks/useEmailVerification";
 import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
 import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
-import { Mail, Loader2, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
+import { LogoSpinner } from "@/components/ui/logo-spinner";
 
 export const EmailVerificationPending: React.FC = () => {
   const {
@@ -192,7 +193,7 @@ export const EmailVerificationPending: React.FC = () => {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <LogoSpinner size="sm" className="mr-2" />
                     Sending...
                   </>
                 ) : (

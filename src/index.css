@@ -105,6 +105,18 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* Accessibility: Reduced motion support for logo spinner */
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-spin {
+    animation: logo-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes logo-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+}
+
 /* ==================== LAYOUT UTILITIES ==================== */
 @layer components {
   .page-header {
