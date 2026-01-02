@@ -112,9 +112,62 @@
   }
 
   @keyframes logo-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
+}
+
+/* ==================== MAIN CONTENT FONT SCALING ==================== */
+/* Override Tailwind text sizes within main content (~7-8% increase) */
+/* Standard Tailwind classes */
+.main-content .text-xs {
+  font-size: 13px !important;
+} /* was 12px */
+.main-content .text-sm {
+  font-size: 15px !important;
+} /* was 14px */
+.main-content .text-base {
+  font-size: 17px !important;
+} /* was 16px */
+.main-content .text-lg {
+  font-size: 19px !important;
+} /* was 18px */
+.main-content .text-xl {
+  font-size: 21px !important;
+} /* was 20px */
+.main-content .text-2xl {
+  font-size: 26px !important;
+} /* was 24px */
+.main-content .text-3xl {
+  font-size: 32px !important;
+} /* was 30px */
+.main-content .text-4xl {
+  font-size: 38px !important;
+} /* was 36px */
+
+/* Arbitrary pixel values used throughout the app */
+.main-content .text-\[8px\] {
+  font-size: 9px !important;
+}
+.main-content .text-\[9px\] {
+  font-size: 10px !important;
+}
+.main-content .text-\[10px\] {
+  font-size: 11px !important;
+}
+.main-content .text-\[11px\] {
+  font-size: 12px !important;
+}
+.main-content .text-\[12px\] {
+  font-size: 13px !important;
+}
+.main-content .text-\[13px\] {
+  font-size: 14px !important;
 }
 
 /* ==================== LAYOUT UTILITIES ==================== */
