@@ -337,6 +337,52 @@ class InvitationService {
         };
       }
 
+      // SECURITY FIX: Re-validate the invitation before resending
+      // This prevents resending to non-existent users or invalid invitees
+      // Pass invitation_id to exclude from "pending invitation exists" check
+      const validation = await this.repository.validateEligibility(
+        user.id,
+        invitation.invitee_email,
+        request.invitation_id, // Exclude this invitation from duplicate check
+      );
+
+      if (!validation.valid) {
+        // Auto-cancel the invalid invitation
+        try {
+          await this.repository.updateStatus(
+            request.invitation_id,
+            "cancelled",
+          );
+        } catch (cancelError) {
+          // Log but continue - the validation failure is the primary issue
+          logger.error(
+            "Failed to cancel invalid invitation",
+            {
+              invitationId: request.invitation_id,
+              cancelError:
+                cancelError instanceof Error
+                  ? cancelError.message
+                  : String(cancelError),
+            },
+            "InvitationService",
+          );
+        }
+        logger.warn(
+          "Invalid invitation cancelled on resend attempt",
+          {
+            invitationId: request.invitation_id,
+            inviteeEmail: invitation.invitee_email,
+            errors: validation.errors,
+          },
+          "InvitationService",
+        );
+        return {
+          success: false,
+          error:
+            validation.errors.join("; ") + ". Invitation has been cancelled.",
+        };
+      }
+
       // Check if invitation is expired
       const now = new Date();
       const expiresAt = new Date(invitation.expires_at);

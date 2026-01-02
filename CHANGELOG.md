@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-02 17:05:59
+
+### Changed Files
+- `src/services/hierarchy/InvitationRepository.ts`
+- `src/services/hierarchy/__tests__/invitationService.test.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260102_011_fix_invitation_security.sql`
+- `supabase/migrations/reverts/20260102_011_fix_invitation_security_revert.sql`
+
+### Statistics
+```
+ 6 files changed, 9462 insertions(+), 8969 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-02 16:33:14
 
 ### Changed Files

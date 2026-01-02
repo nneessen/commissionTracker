@@ -10546,7 +10546,11 @@ export type Database = {
         }[];
       };
       validate_invitation_eligibility: {
-        Args: { p_invitee_email: string; p_inviter_id: string };
+        Args: {
+          p_exclude_invitation_id?: string;
+          p_invitee_email: string;
+          p_inviter_id: string;
+        };
         Returns: Json;
       };
       validate_report_date_range: {

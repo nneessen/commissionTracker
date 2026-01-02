@@ -340,16 +340,19 @@ export class InvitationRepository extends BaseRepository<
 
   /**
    * Validate invitation eligibility via database RPC
+   * @param excludeInvitationId - Optional invitation ID to exclude from duplicate check (for resend)
    */
   async validateEligibility(
     inviterId: string,
     inviteeEmail: string,
+    excludeInvitationId?: string,
   ): Promise<InvitationValidationResult> {
     try {
       const { data, error } = await this.client
         .rpc("validate_invitation_eligibility", {
           p_inviter_id: inviterId,
           p_invitee_email: inviteeEmail.toLowerCase().trim(),
+          p_exclude_invitation_id: excludeInvitationId ?? null,
         })
         .single();
 

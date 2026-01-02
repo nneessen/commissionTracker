@@ -299,6 +299,32 @@ describe("InvitationRepository", () => {
         {
           p_inviter_id: "user-1",
           p_invitee_email: "invitee@example.com",
+          p_exclude_invitation_id: null,
+        },
+      );
+    });
+
+    it("should pass excludeInvitationId when provided (for resend)", async () => {
+      const rpcChain = createMockRpcChain();
+      rpcChain.single.mockResolvedValue({
+        data: { valid: true },
+        error: null,
+      });
+      vi.mocked(supabase.rpc).mockReturnValue(rpcChain as never);
+
+      const result = await repository.validateEligibility(
+        "user-1",
+        "invitee@example.com",
+        "inv-123", // excludeInvitationId
+      );
+
+      expect(result.valid).toBe(true);
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        "validate_invitation_eligibility",
+        {
+          p_inviter_id: "user-1",
+          p_invitee_email: "invitee@example.com",
+          p_exclude_invitation_id: "inv-123",
         },
       );
     });
@@ -318,6 +344,27 @@ describe("InvitationRepository", () => {
 
       expect(result.valid).toBe(false);
       expect(result.errors).toContain("User already has upline");
+    });
+
+    it("should return error when invitee does not exist (security fix)", async () => {
+      const rpcChain = createMockRpcChain();
+      rpcChain.single.mockResolvedValue({
+        data: {
+          valid: false,
+          error_message:
+            "User does not exist. Users must be created by an admin before they can be invited to a team.",
+        },
+        error: null,
+      });
+      vi.mocked(supabase.rpc).mockReturnValue(rpcChain as never);
+
+      const result = await repository.validateEligibility(
+        "user-1",
+        "nonexistent@example.com",
+      );
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0]).toContain("User does not exist");
     });
 
     it("should handle RPC error gracefully", async () => {
@@ -777,6 +824,14 @@ describe("InvitationService", () => {
         error: null,
       });
 
+      // Mock validation RPC for resend (security fix)
+      const rpcChain = createMockRpcChain();
+      rpcChain.single.mockResolvedValue({
+        data: { valid: true },
+        error: null,
+      });
+      vi.mocked(supabase.rpc).mockReturnValue(rpcChain as never);
+
       const updateChain = createMockChain();
       updateChain.eq.mockResolvedValue({ error: null });
 
@@ -802,6 +857,127 @@ describe("InvitationService", () => {
 
       expect(result.success).toBe(true);
       expect(emailService.sendEmail).toHaveBeenCalled();
+      // Verify validation was called with excludeInvitationId
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        "validate_invitation_eligibility",
+        expect.objectContaining({
+          p_inviter_id: "user-1",
+          p_invitee_email: "invitee@example.com",
+          p_exclude_invitation_id: "inv-1",
+        }),
+      );
+    });
+
+    it("should auto-cancel and return error when invitee no longer exists (security fix)", async () => {
+      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      } as never);
+
+      const findChain = createMockChain();
+      findChain.single.mockResolvedValue({
+        data: mockInvitation,
+        error: null,
+      });
+
+      // Mock validation RPC to return invalid (user doesn't exist)
+      const rpcChain = createMockRpcChain();
+      rpcChain.single.mockResolvedValue({
+        data: {
+          valid: false,
+          error_message:
+            "User does not exist. Users must be created by an admin before they can be invited to a team.",
+        },
+        error: null,
+      });
+      vi.mocked(supabase.rpc).mockReturnValue(rpcChain as never);
+
+      // Mock updateStatus for cancellation
+      const updateChain = createMockChain();
+      updateChain.single.mockResolvedValue({
+        data: { ...mockInvitation, status: "cancelled" },
+        error: null,
+      });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return findChain as never; // findPendingByInviterId
+        return updateChain as never; // updateStatus (cancel)
+      });
+
+      const result = await service.resendInvitation({ invitation_id: "inv-1" });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("User does not exist");
+      expect(result.error).toContain("has been cancelled");
+      expect(emailService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("should auto-cancel when invitee now has upline (security fix)", async () => {
+      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      } as never);
+
+      const findChain = createMockChain();
+      findChain.single.mockResolvedValue({
+        data: mockInvitation,
+        error: null,
+      });
+
+      // Mock validation RPC to return invalid (user has upline)
+      const rpcChain = createMockRpcChain();
+      rpcChain.single.mockResolvedValue({
+        data: {
+          valid: false,
+          error_message: "User already has an upline",
+        },
+        error: null,
+      });
+      vi.mocked(supabase.rpc).mockReturnValue(rpcChain as never);
+
+      // Mock updateStatus for cancellation
+      const updateChain = createMockChain();
+      updateChain.single.mockResolvedValue({
+        data: { ...mockInvitation, status: "cancelled" },
+        error: null,
+      });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return findChain as never; // findPendingByInviterId
+        return updateChain as never; // updateStatus (cancel)
+      });
+
+      const result = await service.resendInvitation({ invitation_id: "inv-1" });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("User already has an upline");
+      expect(result.error).toContain("has been cancelled");
+      expect(emailService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("should return error when invitation not found", async () => {
+      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      } as never);
+
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({
+        data: null,
+        error: { code: "PGRST116", message: "Not found" },
+      });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await service.resendInvitation({
+        invitation_id: "nonexistent",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("not found");
     });
   });
 
