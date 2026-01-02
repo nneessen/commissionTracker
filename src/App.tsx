@@ -28,6 +28,7 @@ function App() {
     "/privacy",
     "/join-",
     "/join/",
+    "/register/",
   ];
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),

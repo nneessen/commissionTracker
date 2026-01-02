@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Label } from "@/components/ui/label";
-import { UserSearchCombobox } from "@/components/user-search-combobox";
+import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import type { PipelinePhase } from "@/types/recruiting.types";
 import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 

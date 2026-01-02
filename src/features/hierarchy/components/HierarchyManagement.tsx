@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Shield, AlertCircle, Edit } from "lucide-react";
-import { UserSearchCombobox } from "@/components/user-search-combobox";
+import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

@@ -29,7 +29,7 @@ import { useInitializeRecruitProgress } from "../hooks/useRecruitProgress";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/base/supabase";
 import { Loader2, UserPlus } from "lucide-react";
-import { UserSearchCombobox } from "@/components/user-search-combobox";
+import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import type { AgentStatus, LicensingInfo } from "@/types/recruiting.types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";

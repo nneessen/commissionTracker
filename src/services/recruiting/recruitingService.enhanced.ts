@@ -1,48 +1,23 @@
 // /home/nneessen/projects/commissionTracker/src/services/recruiting/recruitingService.enhanced.ts
 // Enhanced recruiting service with delete dependency checking and downline reassignment
+//
+// TODO: THIS GOES AGAINST MY CODING GUIDELINES
+// the name of the file
+// the duplicate recruiting service files
+// why would this be in its own separate file instead of in
+// my exisiting recruitingService file?
+//
 
 import { supabase } from "../base/supabase";
 
 // ============================================
-// TYPES
-// ============================================
-export interface DeleteDependencies {
-  email_count: number;
-  document_count: number;
-  activity_count: number;
-  checklist_count: number;
-  downline_count: number;
-  policy_count: number;
-  commission_count: number;
-  can_delete: boolean;
-  deletion_warning: string | null;
-}
-
-// ============================================
 // ENHANCED SERVICE
 // ============================================
+// Note: The DeleteDependencies interface and getDeleteDependencies method
+// were removed because the user_delete_dependencies view was dropped
+// in migration 20251213_004_remove_soft_delete_artifacts.sql.
+// The system now uses admin_deleteuser() with CASCADE deletes only.
 export const enhancedRecruitingService = {
-  /**
-   * Get all delete dependencies for a user in a single efficient query
-   * Uses the user_delete_dependencies view
-   */
-  async getDeleteDependencies(
-    userId: string,
-  ): Promise<DeleteDependencies | null> {
-    const { data, error } = await supabase
-      .from("user_delete_dependencies")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching delete dependencies:", error);
-      return null;
-    }
-
-    return data as DeleteDependencies;
-  },
-
   /**
    * Reassign downlines from one upline to another
    * Use this before deleting a user who has downlines

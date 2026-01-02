@@ -26,7 +26,7 @@ import { Mail, User, Phone, Building2 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { ApprovalStatus } from "@/types/user.types";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
-import { UserSearchCombobox } from "@/components/user-search-combobox";
+import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 
 interface AddUserDialogProps {
   open: boolean;

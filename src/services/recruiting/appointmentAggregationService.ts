@@ -153,6 +153,7 @@ export const appointmentAggregationService = {
       );
   },
 
+  // TODO: the 3 filter methods above is repetive code. this can be one method instead which makes this file a bit cleaner
   /**
    * Get appointments happening today
    * @param appointments - Array of appointments

@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
-import { UserSearchCombobox } from "@/components/user-search-combobox";
+import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import { useImo } from "@/contexts/ImoContext";
 import {
   useAllActiveImos,

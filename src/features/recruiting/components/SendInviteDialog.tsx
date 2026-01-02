@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Mail, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateRecruitWithInvitation } from "../hooks/useRecruitInvitations";
-import { UserSearchCombobox } from "@/components/user-search-combobox";
+import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 
 // Form validation schema
 const inviteSchema = z.object({
