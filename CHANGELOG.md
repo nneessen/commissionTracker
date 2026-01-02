@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-02 12:37:11
+
+### Changed Files
+- `docs/billing/TEMPORARY_FREE_ACCESS.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/RecruitingPreviewBanner.tsx`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/lib/temporaryAccess.ts`
+
+### Statistics
+```
+ 6 files changed, 241 insertions(+), 7 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-02 12:13:56
 
 ### Changed Files

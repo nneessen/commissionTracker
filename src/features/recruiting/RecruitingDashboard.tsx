@@ -29,6 +29,8 @@ import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
 import { AddRecruitDialog } from "./components/AddRecruitDialog";
 import { SendInviteDialog } from "./components/SendInviteDialog";
 import { RecruitingErrorBoundary } from "./components/RecruitingErrorBoundary";
+import { RecruitingPreviewBanner } from "./components/RecruitingPreviewBanner";
+import { isSuperAdminEmail } from "@/lib/temporaryAccess";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -55,8 +57,11 @@ type RecruitWithRelations = UserProfile & {
 };
 
 function RecruitingDashboardContent() {
-  const { user } = useAuth();
+  const { user, supabaseUser } = useAuth();
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits();
+
+  // Check if current user is the super admin (nickneessen@thestandardhq.com)
+  const showPreviewBanner = !isSuperAdminEmail(supabaseUser?.email);
   const { data: pendingLeadsCount } = usePendingLeadsCount();
 
   // Fetch phases from active pipeline template (dynamic, not hardcoded)
@@ -162,6 +167,9 @@ function RecruitingDashboardContent() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      {/* Preview Warning Banner - shown to non-admin users */}
+      {showPreviewBanner && <RecruitingPreviewBanner />}
+
       {/* Compact Header with inline stats */}
       <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-5">

@@ -9,6 +9,7 @@ import {
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
 } from "./useOwnerDownlineAccess";
+import { shouldGrantTemporaryAccess } from "@/lib/temporaryAccess";
 
 // Roles that bypass subscription checks (staff roles)
 // Note: trainer and contracting_manager removed - they should have limited access
@@ -144,7 +145,12 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     const hasOwnerDownlineAccess =
       isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature);
 
-    const hasAccess = hasSubscriptionAccess || hasOwnerDownlineAccess;
+    // Temporary free access period (until Feb 1, 2026)
+    // Grants access to all features EXCEPT recruiting
+    const hasTemporaryAccess = shouldGrantTemporaryAccess(feature);
+
+    const hasAccess =
+      hasSubscriptionAccess || hasOwnerDownlineAccess || hasTemporaryAccess;
 
     return {
       hasAccess,
@@ -208,16 +214,18 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
 
     const planFeatures = subscription?.plan?.features;
 
-    // Check both subscription access and owner downline access
+    // Check subscription access, owner downline access, and temporary access
     const accessibleFeatures = features.filter(
       (f) =>
         planFeatures?.[f] ||
-        (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)),
+        (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) ||
+        shouldGrantTemporaryAccess(f),
     );
     const lockedFeatures = features.filter(
       (f) =>
         !planFeatures?.[f] &&
-        !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)),
+        !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
+        !shouldGrantTemporaryAccess(f),
     );
 
     return {
@@ -272,11 +280,12 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
 
     const planFeatures = subscription?.plan?.features;
 
-    // Check both subscription access and owner downline access
+    // Check subscription access, owner downline access, and temporary access
     const missingFeatures = features.filter(
       (f) =>
         !planFeatures?.[f] &&
-        !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)),
+        !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
+        !shouldGrantTemporaryAccess(f),
     );
 
     return {

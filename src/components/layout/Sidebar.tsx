@@ -43,6 +43,7 @@ import type { RoleName } from "@/types/permissions.types";
 import { NotificationDropdown } from "@/components/notifications";
 import { toast } from "sonner";
 import { useImo } from "@/contexts/ImoContext";
+import { shouldGrantTemporaryAccess } from "@/lib/temporaryAccess";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -235,6 +236,12 @@ export default function Sidebar({
 
     // Check if user is direct downline of owner and feature is granted
     if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature)) {
+      return true;
+    }
+
+    // Check temporary free access period (until Feb 1, 2026)
+    // Grants access to all features EXCEPT recruiting
+    if (shouldGrantTemporaryAccess(feature)) {
       return true;
     }
 
