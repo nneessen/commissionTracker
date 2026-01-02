@@ -809,7 +809,7 @@ serve(async (req) => {
       productName = "Life";
     }
 
-    let agentSlackMemberId = slackPrefsResult.data?.slack_member_id || null;
+    const _agentSlackMemberId = slackPrefsResult.data?.slack_member_id || null; // Unused - we look up per-workspace now
     const autoPostEnabled = slackPrefsResult.data?.auto_post_enabled ?? true;
 
     if (!autoPostEnabled) {
@@ -870,40 +870,25 @@ serve(async (req) => {
         const botToken = await decrypt(fullIntegration.bot_token_encrypted);
 
         // =====================================================================
-        // Look up Slack member ID if not already set
+        // Look up Slack member ID FOR THIS SPECIFIC WORKSPACE
+        // Slack user IDs are workspace-specific, so we must look up per-workspace
         // =====================================================================
-        if (!agentSlackMemberId && agentEmail) {
+        let workspaceSlackMemberId: string | null = null;
+
+        if (agentEmail) {
           const lookedUpId = await lookupSlackMemberByEmail(
             botToken,
             agentEmail,
           );
           if (lookedUpId) {
-            agentSlackMemberId = lookedUpId;
-            // Save it for future use
-            const { error: upsertError } = await supabase
-              .from("user_slack_preferences")
-              .upsert(
-                {
-                  user_id: agentId,
-                  imo_id: imoId,
-                  slack_member_id: lookedUpId,
-                  updated_at: new Date().toISOString(),
-                },
-                {
-                  onConflict: "user_id,imo_id",
-                },
-              );
-
-            if (upsertError) {
-              console.error(
-                `[slack-policy-notification] Failed to save Slack member ID for ${agentEmail}:`,
-                upsertError,
-              );
-            } else {
-              console.log(
-                `[slack-policy-notification] Saved Slack member ID for ${agentEmail}: ${lookedUpId}`,
-              );
-            }
+            workspaceSlackMemberId = lookedUpId;
+            console.log(
+              `[slack-policy-notification] Found Slack member ID for ${agentEmail} in ${integration.team_name}: ${lookedUpId}`,
+            );
+          } else {
+            console.log(
+              `[slack-policy-notification] Could not find Slack member ID for ${agentEmail} in ${integration.team_name} - using name`,
+            );
           }
         }
 
@@ -917,7 +902,7 @@ serve(async (req) => {
           carrierName,
           productName,
           effectiveDate || fallbackDate,
-          agentSlackMemberId,
+          workspaceSlackMemberId, // Use workspace-specific ID
           agentName,
         );
 
@@ -1033,7 +1018,7 @@ serve(async (req) => {
             carrierName,
             productName,
             agentName,
-            agentSlackMemberId,
+            agentSlackMemberId: workspaceSlackMemberId, // Store workspace-specific ID
             annualPremium,
             effectiveDate: effectiveDate || fallbackDate,
             agentId,
