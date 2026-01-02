@@ -194,6 +194,11 @@ export interface Commission {
   rate: number; // Commission rate as percentage (maps to DB 'rate' field)
   advanceMonths: number; // Number of months in advance (default 9, maps to DB 'advance_months')
 
+  // CAPPED ADVANCE (when carrier has advance cap)
+  originalAdvance?: number | null; // Full calculated advance before cap was applied
+  overageAmount?: number | null; // Amount exceeding cap, paid as-earned after recoupment
+  overageStartMonth?: number | null; // Month when overage payments begin
+
   // EARNING TRACKING (as client pays premiums) - Database field names
   monthsPaid: number; // How many premiums the client has paid (maps to DB 'months_paid')
   earnedAmount: number; // Portion of advance that's been earned (maps to DB 'earned_amount')

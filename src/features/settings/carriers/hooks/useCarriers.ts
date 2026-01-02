@@ -13,12 +13,15 @@ export interface CreateCarrierData {
   code?: string;
   is_active?: boolean;
   imo_id?: string;
+  advance_cap?: number | null;
 }
 
 export interface UpdateCarrierData {
   name?: string;
   code?: string;
   is_active?: boolean;
+  imo_id?: string;
+  advance_cap?: number | null;
 }
 
 export function useCarriers() {
@@ -46,6 +49,7 @@ export function useCarriers() {
         code: data.code,
         is_active: data.is_active ?? true,
         imo_id: data.imo_id,
+        advance_cap: data.advance_cap,
       };
       const result = await carrierService.createFromForm(formData);
       if (!result.success) throw new Error(result.error?.message);
@@ -74,6 +78,8 @@ export function useCarriers() {
         name: data.name,
         code: data.code,
         is_active: data.is_active,
+        imo_id: data.imo_id,
+        advance_cap: data.advance_cap,
       };
       const result = await carrierService.updateFromForm(id, formData);
       if (!result.success) throw new Error(result.error?.message);

@@ -30,6 +30,8 @@ export class CarrierRepository extends BaseRepository<
         dbRecord.commission_structure as Carrier["commission_structure"],
       contact_info: dbRecord.contact_info as Carrier["contact_info"],
       is_active: dbRecord.is_active as boolean | null,
+      imo_id: dbRecord.imo_id as string | null,
+      advance_cap: dbRecord.advance_cap as number | null,
       // Keep dates as strings for backward compatibility
       created_at: (dbRecord.created_at as string) || null,
       updated_at: (dbRecord.updated_at as string) || null,
@@ -56,6 +58,12 @@ export class CarrierRepository extends BaseRepository<
     }
     if ("is_active" in data && data.is_active !== undefined) {
       dbData.is_active = data.is_active;
+    }
+    if ("imo_id" in data && data.imo_id !== undefined) {
+      dbData.imo_id = data.imo_id;
+    }
+    if ("advance_cap" in data && data.advance_cap !== undefined) {
+      dbData.advance_cap = data.advance_cap;
     }
 
     return dbData;

@@ -49,6 +49,7 @@ export interface NewCarrierForm {
   is_active?: boolean;
   contact_info?: CarrierContactInfo;
   imo_id?: string;
+  advance_cap?: number | null;
 }
 
 export interface UpdateCarrierForm extends Partial<NewCarrierForm> {
@@ -84,6 +85,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "Legal & General America",
@@ -92,6 +94,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "American Home Life",
@@ -100,6 +103,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "SBLI",
@@ -108,6 +112,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "Baltimore Life",
@@ -116,6 +121,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "John Hancock",
@@ -124,6 +130,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "American-Amicable Group",
@@ -132,6 +139,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "Corebridge Financial",
@@ -140,6 +148,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "Transamerica",
@@ -148,6 +157,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "ELCO Mutual",
@@ -156,6 +166,7 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
   {
     name: "Kansas City Life",
@@ -164,5 +175,6 @@ export const DEFAULT_CARRIERS: Array<
     commission_structure: null,
     contact_info: null,
     imo_id: null,
+    advance_cap: null,
   },
 ];

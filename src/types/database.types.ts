@@ -1080,6 +1080,7 @@ export type Database = {
       };
       carriers: {
         Row: {
+          advance_cap: number | null;
           code: string | null;
           commission_structure: Json | null;
           contact_info: Json | null;
@@ -1091,6 +1092,7 @@ export type Database = {
           updated_at: string | null;
         };
         Insert: {
+          advance_cap?: number | null;
           code?: string | null;
           commission_structure?: Json | null;
           contact_info?: Json | null;
@@ -1102,6 +1104,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          advance_cap?: number | null;
           code?: string | null;
           commission_structure?: Json | null;
           contact_info?: Json | null;
@@ -1240,6 +1243,9 @@ export type Database = {
           month_number: number | null;
           months_paid: number;
           notes: string | null;
+          original_advance: number | null;
+          overage_amount: number | null;
+          overage_start_month: number | null;
           payment_date: string | null;
           policy_id: string | null;
           related_advance_id: string | null;
@@ -1263,6 +1269,9 @@ export type Database = {
           month_number?: number | null;
           months_paid?: number;
           notes?: string | null;
+          original_advance?: number | null;
+          overage_amount?: number | null;
+          overage_start_month?: number | null;
           payment_date?: string | null;
           policy_id?: string | null;
           related_advance_id?: string | null;
@@ -1286,6 +1295,9 @@ export type Database = {
           month_number?: number | null;
           months_paid?: number;
           notes?: string | null;
+          original_advance?: number | null;
+          overage_amount?: number | null;
+          overage_start_month?: number | null;
           payment_date?: string | null;
           policy_id?: string | null;
           related_advance_id?: string | null;

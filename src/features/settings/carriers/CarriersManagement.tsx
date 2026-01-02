@@ -1,7 +1,7 @@
 // src/features/settings/carriers/CarriersManagement.tsx
 // Redesigned with zinc palette and compact design patterns
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, Building2 } from "lucide-react";
 import { useCarriers, Carrier } from "./hooks/useCarriers";
+import { useProducts } from "../products/hooks/useProducts";
 import { CarrierForm } from "./components/CarrierForm";
 import { CarrierDeleteDialog } from "./components/CarrierDeleteDialog";
 import { NewCarrierForm } from "../../../types/carrier.types";
@@ -22,6 +23,7 @@ import { NewCarrierForm } from "../../../types/carrier.types";
 export function CarriersManagement() {
   const { carriers, isLoading, createCarrier, updateCarrier, deleteCarrier } =
     useCarriers();
+  const { products } = useProducts();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -40,10 +42,18 @@ export function CarriersManagement() {
     );
   }
 
+  // Compute product counts per carrier
+  const productCountByCarrier = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const product of products) {
+      counts[product.carrier_id] = (counts[product.carrier_id] || 0) + 1;
+    }
+    return counts;
+  }, [products]);
+
   // Count products per carrier
-  const getProductCount = (_carrierId: string) => {
-    // TODO: Implement actual product count query
-    return 0;
+  const getProductCount = (carrierId: string) => {
+    return productCountByCarrier[carrierId] || 0;
   };
 
   const handleAddCarrier = () => {

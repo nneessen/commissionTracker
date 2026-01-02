@@ -5,6 +5,7 @@ import { Commission } from "../../types/commission.types";
 import { logger } from "../base/logger";
 import type { CreateCommissionData } from "./CommissionCRUDService";
 import { commissionCRUDService } from "./CommissionCRUDService";
+import { commissionLifecycleService } from "./CommissionLifecycleService";
 import {
   CalculationError,
   NotFoundError,
@@ -19,6 +20,11 @@ export interface CalculationResult {
   compGuidePercentage: number;
   isAutoCalculated: boolean;
   contractCompLevel: number;
+  // Capped advance fields (only populated when carrier has advance_cap)
+  originalAdvance?: number | null;
+  overageAmount?: number | null;
+  overageStartMonth?: number | null;
+  isCapped?: boolean;
 }
 
 class CommissionCalculationService {
@@ -188,19 +194,22 @@ class CommissionCalculationService {
         return null;
       }
 
-      // Calculate commission ADVANCE amount
+      // Calculate commission ADVANCE amount with carrier cap applied
       // BUSINESS RULE: Advance = Monthly Premium × Advance Months × Commission Rate
-      // This is the upfront payment, NOT annual commission
-      // The advance is earned month-by-month as client pays
+      // Some carriers have advance caps (e.g., Mutual of Omaha = $3,000)
+      // When advance exceeds cap, overage is paid as-earned after recoupment
       const advanceMonths = data.advanceMonths || 9; // Industry standard
       // IMPORTANT: comp_guide stores rates as decimals (e.g., 0.95 = 95%, 1.1 = 110%)
       // Do NOT divide by 100 - the rate is already in the correct format
       const commissionRate = rateResult.data;
 
-      const commissionCalculation = {
-        amount: data.monthlyPremium * advanceMonths * commissionRate,
-        rate: rateResult.data,
-      };
+      // Use capped advance calculation (handles carrier advance caps)
+      const cappedResult = commissionLifecycleService.calculateCappedAdvance({
+        monthlyPremium: data.monthlyPremium,
+        advanceMonths,
+        commissionRate,
+        advanceCap: carrier.advance_cap,
+      });
 
       logger.info(
         "CommissionCalculation",
@@ -208,17 +217,33 @@ class CommissionCalculationService {
         JSON.stringify({
           monthlyPremium: data.monthlyPremium,
           advanceMonths,
-          commissionRate: rateResult.data,
-          advanceAmount: commissionCalculation.amount,
+          commissionRate,
+          advanceAmount: cappedResult.advanceAmount,
+          originalAdvance: cappedResult.originalAdvance,
+          isCapped: cappedResult.isCapped,
+          overageAmount: cappedResult.overageAmount,
+          overageStartMonth: cappedResult.overageStartMonth,
+          carrierAdvanceCap: carrier.advance_cap,
         }),
       );
 
       return {
-        advanceAmount: commissionCalculation.amount, // This is the ADVANCE
-        commissionRate: commissionCalculation.rate,
-        compGuidePercentage: commissionCalculation.rate,
+        advanceAmount: cappedResult.advanceAmount, // This is the ADVANCE (capped if applicable)
+        commissionRate,
+        compGuidePercentage: commissionRate,
         isAutoCalculated: true,
         contractCompLevel,
+        // Capped advance fields
+        originalAdvance: cappedResult.isCapped
+          ? cappedResult.originalAdvance
+          : null,
+        overageAmount: cappedResult.isCapped
+          ? cappedResult.overageAmount
+          : null,
+        overageStartMonth: cappedResult.isCapped
+          ? cappedResult.overageStartMonth
+          : null,
+        isCapped: cappedResult.isCapped,
       };
     } catch (error) {
       if (
@@ -294,6 +319,10 @@ class CommissionCalculationService {
             contractCompLevel: calculation.contractCompLevel,
             isAutoCalculated: calculation.isAutoCalculated,
             advanceMonths: commissionData.advanceMonths || 9,
+            // Capped advance fields (only populated when carrier has advance_cap)
+            originalAdvance: calculation.originalAdvance,
+            overageAmount: calculation.overageAmount,
+            overageStartMonth: calculation.overageStartMonth,
           };
         } else {
           // CRITICAL: comp_guide lookup failed - DO NOT fall back to a wrong rate

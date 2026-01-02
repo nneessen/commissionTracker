@@ -128,6 +128,7 @@ export class CarrierService extends BaseService<
       contact_info: (data.contact_info || null) as Json,
       commission_structure: null, // Always null on creation
       imo_id: data.imo_id || null,
+      advance_cap: data.advance_cap ?? null,
     };
 
     return super.create(repositoryData);
@@ -151,6 +152,8 @@ export class CarrierService extends BaseService<
       repositoryData.contact_info = (data.contact_info || null) as Json;
     }
     if (data.imo_id !== undefined) repositoryData.imo_id = data.imo_id || null;
+    if (data.advance_cap !== undefined)
+      repositoryData.advance_cap = data.advance_cap ?? null;
 
     return super.update(id, repositoryData);
   }
@@ -170,6 +173,7 @@ export class CarrierService extends BaseService<
       contact_info: (data.contact_info || null) as Json,
       commission_structure: null,
       imo_id: data.imo_id || null,
+      advance_cap: data.advance_cap ?? null,
     }));
 
     return super.createMany(repositoryItems);

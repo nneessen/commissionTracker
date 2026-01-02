@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-02 15:11:57
+
+### Changed Files
+- `plans/active/carrier-advance-cap-bugfix.md`
+- `src/features/settings/carriers/CarriersManagement.tsx`
+- `src/features/settings/carriers/components/CarrierForm.tsx`
+- `src/features/settings/carriers/hooks/useCarriers.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/CommissionLifecycleService.ts`
+- `src/services/settings/carriers/CarrierRepository.ts`
+- `src/services/settings/carriers/CarrierService.ts`
+- `src/types/carrier.types.ts`
+- `src/types/commission.types.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260102_009_add_carrier_advance_cap.sql`
+- `supabase/migrations/20260102_010_create_capped_overage_trigger.sql`
+
+### Statistics
+```
+ 14 files changed, 9585 insertions(+), 8973 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-02 13:02:19
 
 ### Changed Files

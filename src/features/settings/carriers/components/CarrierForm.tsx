@@ -44,6 +44,11 @@ const carrierFormSchema = z.object({
   code: z.string().max(50, "Code is too long").optional().or(z.literal("")),
   is_active: z.boolean(),
   imo_id: z.string().optional(),
+  advance_cap: z
+    .number()
+    .positive("Must be a positive number")
+    .optional()
+    .nullable(),
 });
 
 type CarrierFormValues = z.infer<typeof carrierFormSchema>;
@@ -73,6 +78,7 @@ export function CarrierForm({
       code: undefined,
       is_active: true,
       imo_id: undefined,
+      advance_cap: undefined,
     },
   });
 
@@ -84,6 +90,7 @@ export function CarrierForm({
         code: carrier.code || undefined,
         is_active: carrier.is_active ?? true,
         imo_id: carrier.imo_id || undefined,
+        advance_cap: carrier.advance_cap ?? undefined,
       });
     } else {
       form.reset({
@@ -92,6 +99,7 @@ export function CarrierForm({
         is_active: true,
         // Default to user's IMO for new carriers
         imo_id: imo?.id || undefined,
+        advance_cap: undefined,
       });
     }
   }, [carrier, open, form, imo?.id]);
@@ -206,6 +214,42 @@ export function CarrierForm({
                 )}
               />
             )}
+
+            <FormField
+              control={form.control}
+              name="advance_cap"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Advance Cap (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400 text-[11px]">
+                        $
+                      </span>
+                      <Input
+                        type="number"
+                        placeholder="No cap"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(
+                            value === "" ? null : parseFloat(value),
+                          );
+                        }}
+                        className="h-7 pl-5 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription className="text-[10px] text-zinc-400">
+                    Maximum advance per policy. Leave empty for no cap.
+                  </FormDescription>
+                  <FormMessage className="text-[10px]" />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

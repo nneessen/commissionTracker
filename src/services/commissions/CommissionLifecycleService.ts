@@ -21,7 +21,7 @@
  * const chargeback = calculateChargeback(4612.50, 9, 3); // $3,075.00
  */
 
-import {logger} from '../base/logger';
+import { logger } from "../base/logger";
 
 /**
  * Input parameters for advance calculation
@@ -40,6 +40,26 @@ export interface AdvanceCalculationResult {
   monthlyEarningRate: number; // Amount earned per month paid
   advanceMonths: number;
   commissionRate: number;
+}
+
+/**
+ * Input parameters for capped advance calculation
+ * Extends base params with carrier advance cap
+ */
+export interface CappedAdvanceCalculationParams extends AdvanceCalculationParams {
+  advanceCap?: number | null; // Carrier's advance cap (null = no cap)
+}
+
+/**
+ * Result of capped advance calculation
+ * Extends base result with cap-related fields
+ */
+export interface CappedAdvanceCalculationResult extends AdvanceCalculationResult {
+  originalAdvance: number; // Full calculated advance before cap
+  cappedAdvanceAmount: number; // Actual advance paid (min of advance, cap)
+  overageAmount: number; // Amount exceeding cap (paid as-earned later)
+  overageStartMonth: number | null; // Month when overage payments begin
+  isCapped: boolean; // Whether cap was applied
 }
 
 /**
@@ -90,7 +110,7 @@ export interface ChargebackCalculationResult {
 export interface PolicyCohort {
   policyId: string;
   effectiveDate: Date;
-  status: 'active' | 'lapsed' | 'cancelled';
+  status: "active" | "lapsed" | "cancelled";
   lapseDate?: Date;
 }
 
@@ -171,38 +191,139 @@ class CommissionLifecycleService {
    * // result.monthlyEarningRate = $512.50
    * ```
    */
-  public calculateAdvance(params: AdvanceCalculationParams): AdvanceCalculationResult {
+  public calculateAdvance(
+    params: AdvanceCalculationParams,
+  ): AdvanceCalculationResult {
     const { monthlyPremium, commissionRate } = params;
     const advanceMonths = params.advanceMonths ?? this.DEFAULT_ADVANCE_MONTHS;
 
     // Validation
     if (monthlyPremium <= 0) {
-      throw new Error(`Monthly premium must be positive, got ${monthlyPremium}`);
+      throw new Error(
+        `Monthly premium must be positive, got ${monthlyPremium}`,
+      );
     }
     if (commissionRate <= 0) {
-      throw new Error(`Commission rate must be positive, got ${commissionRate}`);
+      throw new Error(
+        `Commission rate must be positive, got ${commissionRate}`,
+      );
     }
     if (advanceMonths <= 0 || advanceMonths > 12) {
-      throw new Error(`Advance months must be between 1-12, got ${advanceMonths}`);
+      throw new Error(
+        `Advance months must be between 1-12, got ${advanceMonths}`,
+      );
     }
 
     // CORE FORMULA: The ONE formula for commission calculation
     const advanceAmount = monthlyPremium * advanceMonths * commissionRate;
     const monthlyEarningRate = advanceAmount / advanceMonths;
 
-    logger.info('Advance calculated', {
-      monthlyPremium,
-      advanceMonths,
-      commissionRate,
-      advanceAmount,
-      monthlyEarningRate
-    }, 'CommissionLifecycle');
+    logger.info(
+      "Advance calculated",
+      {
+        monthlyPremium,
+        advanceMonths,
+        commissionRate,
+        advanceAmount,
+        monthlyEarningRate,
+      },
+      "CommissionLifecycle",
+    );
 
     return {
       advanceAmount,
       monthlyEarningRate,
       advanceMonths,
-      commissionRate
+      commissionRate,
+    };
+  }
+
+  /**
+   * Calculate commission advance with carrier cap applied
+   *
+   * BUSINESS RULE:
+   * Some carriers have a maximum advance amount (e.g., Mutual of Omaha = $3,000).
+   * When calculated advance exceeds the cap:
+   *   - Agent receives the capped amount as upfront advance
+   *   - Overage is paid "as earned" after the advance is recouped
+   *
+   * Recoupment period = advanceCap / monthlyEarningRate
+   * Overage payments start at recoupment_months + 1
+   *
+   * @param params - Capped advance calculation parameters
+   * @returns Capped advance calculation result
+   *
+   * @example
+   * ```typescript
+   * // Policy with $500/month premium at 100% commission rate, $3,000 carrier cap
+   * const result = service.calculateCappedAdvance({
+   *   monthlyPremium: 500,
+   *   advanceMonths: 9,
+   *   commissionRate: 1.0, // 100%
+   *   advanceCap: 3000
+   * });
+   * // result.originalAdvance = $4,500 (500 × 9 × 1.0)
+   * // result.cappedAdvanceAmount = $3,000 (capped)
+   * // result.overageAmount = $1,500
+   * // result.overageStartMonth = 7 (3000/500 = 6 months to recoup, overage starts month 7)
+   * ```
+   */
+  public calculateCappedAdvance(
+    params: CappedAdvanceCalculationParams,
+  ): CappedAdvanceCalculationResult {
+    // First, calculate the normal advance without cap
+    const baseResult = this.calculateAdvance(params);
+    const { advanceAmount, monthlyEarningRate } = baseResult;
+
+    // If no cap or advance is under cap, return normal result
+    if (
+      !params.advanceCap ||
+      params.advanceCap <= 0 ||
+      advanceAmount <= params.advanceCap
+    ) {
+      return {
+        ...baseResult,
+        originalAdvance: advanceAmount,
+        cappedAdvanceAmount: advanceAmount,
+        overageAmount: 0,
+        overageStartMonth: null,
+        isCapped: false,
+      };
+    }
+
+    // Cap is applied
+    const cappedAdvanceAmount = params.advanceCap;
+    const overageAmount = advanceAmount - cappedAdvanceAmount;
+
+    // Calculate recoupment period
+    // Recoupment months = cap / monthly_earning_rate (how many months to earn back the capped advance)
+    const recoupmentMonths = Math.ceil(
+      cappedAdvanceAmount / monthlyEarningRate,
+    );
+    const overageStartMonth = recoupmentMonths + 1;
+
+    logger.info(
+      "Capped advance calculated",
+      {
+        originalAdvance: advanceAmount,
+        advanceCap: params.advanceCap,
+        cappedAdvanceAmount,
+        overageAmount,
+        monthlyEarningRate,
+        recoupmentMonths,
+        overageStartMonth,
+      },
+      "CommissionLifecycle",
+    );
+
+    return {
+      ...baseResult,
+      advanceAmount: cappedAdvanceAmount, // Override with capped amount
+      originalAdvance: advanceAmount,
+      cappedAdvanceAmount,
+      overageAmount,
+      overageStartMonth,
+      isCapped: true,
     };
   }
 
@@ -231,12 +352,16 @@ class CommissionLifecycleService {
    * // result.percentageEarned = 33.33%
    * ```
    */
-  public calculateEarned(params: EarnedCalculationParams): EarnedCalculationResult {
+  public calculateEarned(
+    params: EarnedCalculationParams,
+  ): EarnedCalculationResult {
     const { advanceAmount, advanceMonths, monthsPaid } = params;
 
     // Validation
     if (advanceAmount < 0) {
-      throw new Error(`Advance amount cannot be negative, got ${advanceAmount}`);
+      throw new Error(
+        `Advance amount cannot be negative, got ${advanceAmount}`,
+      );
     }
     if (monthsPaid < 0) {
       throw new Error(`Months paid cannot be negative, got ${monthsPaid}`);
@@ -257,7 +382,7 @@ class CommissionLifecycleService {
       unearnedAmount,
       percentageEarned,
       isFullyEarned,
-      monthsRemaining
+      monthsRemaining,
     };
   }
 
@@ -272,9 +397,13 @@ class CommissionLifecycleService {
   public calculateUnearned(
     advanceAmount: number,
     advanceMonths: number,
-    monthsPaid: number
+    monthsPaid: number,
   ): number {
-    const result = this.calculateEarned({ advanceAmount, advanceMonths, monthsPaid });
+    const result = this.calculateEarned({
+      advanceAmount,
+      advanceMonths,
+      monthsPaid,
+    });
     return result.unearnedAmount;
   }
 
@@ -305,14 +434,22 @@ class CommissionLifecycleService {
    * // result.earnedAmount = $1,537.50
    * ```
    */
-  public calculateChargeback(params: ChargebackCalculationParams): ChargebackCalculationResult {
-    const { advanceAmount, advanceMonths, monthsPaid, lapseDate, effectiveDate } = params;
+  public calculateChargeback(
+    params: ChargebackCalculationParams,
+  ): ChargebackCalculationResult {
+    const {
+      advanceAmount,
+      advanceMonths,
+      monthsPaid,
+      lapseDate,
+      effectiveDate,
+    } = params;
 
     // Calculate earned portion
     const earnedResult = this.calculateEarned({
       advanceAmount,
       advanceMonths,
-      monthsPaid
+      monthsPaid,
     });
 
     // Chargeback is the unearned amount
@@ -322,29 +459,33 @@ class CommissionLifecycleService {
     const monthsElapsed = this.calculateMonthsElapsed(effectiveDate, lapseDate);
 
     // Determine chargeback reason
-    let chargebackReason = 'Policy lapsed before advance fully earned';
+    let chargebackReason = "Policy lapsed before advance fully earned";
     if (monthsPaid === 0) {
-      chargebackReason = 'Policy cancelled with no payments - full chargeback';
+      chargebackReason = "Policy cancelled with no payments - full chargeback";
     } else if (monthsPaid < 3) {
       chargebackReason = `Policy lapsed early (${monthsPaid} months) - high chargeback`;
     } else if (earnedResult.isFullyEarned) {
-      chargebackReason = 'No chargeback - advance fully earned';
+      chargebackReason = "No chargeback - advance fully earned";
     }
 
-    logger.info('Chargeback calculated', {
-      advanceAmount,
-      monthsPaid,
-      earnedAmount: earnedResult.earnedAmount,
-      chargebackAmount,
-      reason: chargebackReason
-    }, 'CommissionLifecycle');
+    logger.info(
+      "Chargeback calculated",
+      {
+        advanceAmount,
+        monthsPaid,
+        earnedAmount: earnedResult.earnedAmount,
+        chargebackAmount,
+        reason: chargebackReason,
+      },
+      "CommissionLifecycle",
+    );
 
     return {
       chargebackAmount,
       earnedAmount: earnedResult.earnedAmount,
       monthsPaid,
       monthsElapsed,
-      chargebackReason
+      chargebackReason,
     };
   }
 
@@ -379,10 +520,10 @@ class CommissionLifecycleService {
   public calculateMonthsPaid(
     effectiveDate: Date,
     asOfDate: Date = new Date(),
-    status: 'active' | 'lapsed' | 'cancelled' = 'active'
+    status: "active" | "lapsed" | "cancelled" = "active",
   ): number {
     // If cancelled immediately, 0 months paid
-    if (status === 'cancelled') {
+    if (status === "cancelled") {
       return 0;
     }
 
@@ -421,29 +562,37 @@ class CommissionLifecycleService {
   public calculatePersistencyMetrics(
     cohort: PolicyCohort[],
     cohortStartDate: Date,
-    cohortEndDate: Date
+    cohortEndDate: Date,
   ): PersistencyAnalysis {
     const totalPolicies = cohort.length;
 
     if (totalPolicies === 0) {
-      throw new Error('Cannot calculate persistency for empty cohort');
+      throw new Error("Cannot calculate persistency for empty cohort");
     }
 
     // Calculate milestone metrics
     const milestones = {
-      threeMonth: this.calculateMilestonePersistency(cohort, cohortStartDate, 3),
+      threeMonth: this.calculateMilestonePersistency(
+        cohort,
+        cohortStartDate,
+        3,
+      ),
       sixMonth: this.calculateMilestonePersistency(cohort, cohortStartDate, 6),
       nineMonth: this.calculateMilestonePersistency(cohort, cohortStartDate, 9),
-      twelveMonth: this.calculateMilestonePersistency(cohort, cohortStartDate, 12)
+      twelveMonth: this.calculateMilestonePersistency(
+        cohort,
+        cohortStartDate,
+        12,
+      ),
     };
 
     // Calculate average persistency
-    const averagePersistency = (
-      milestones.threeMonth.persistencyRate +
-      milestones.sixMonth.persistencyRate +
-      milestones.nineMonth.persistencyRate +
-      milestones.twelveMonth.persistencyRate
-    ) / 4;
+    const averagePersistency =
+      (milestones.threeMonth.persistencyRate +
+        milestones.sixMonth.persistencyRate +
+        milestones.nineMonth.persistencyRate +
+        milestones.twelveMonth.persistencyRate) /
+      4;
 
     // Predict chargeback rate based on lapse patterns
     // Policies that lapse before 9 months create chargebacks
@@ -455,7 +604,7 @@ class CommissionLifecycleService {
       totalPolicies,
       milestones,
       averagePersistency,
-      predictedChargebackRate
+      predictedChargebackRate,
     };
   }
 
@@ -470,7 +619,7 @@ class CommissionLifecycleService {
   private calculateMilestonePersistency(
     cohort: PolicyCohort[],
     cohortStartDate: Date,
-    months: number
+    months: number,
   ): PersistencyMilestone {
     const milestoneDate = new Date(cohortStartDate);
     milestoneDate.setMonth(milestoneDate.getMonth() + months);
@@ -480,7 +629,7 @@ class CommissionLifecycleService {
 
     for (const policy of cohort) {
       // Check if policy is still active at milestone
-      if (policy.status === 'active') {
+      if (policy.status === "active") {
         activePolicies++;
       } else if (policy.lapseDate) {
         // If lapsed, check if it lapsed before or after milestone
@@ -506,7 +655,7 @@ class CommissionLifecycleService {
       lapsedPolicies,
       totalPolicies,
       persistencyRate,
-      lapsedRate
+      lapsedRate,
     };
   }
 
@@ -530,45 +679,46 @@ class CommissionLifecycleService {
    */
   public getChargebackRisk(
     monthsPaid: number,
-    advanceMonths: number = this.DEFAULT_ADVANCE_MONTHS
-  ): { level: 'high' | 'medium' | 'low' | 'none'; description: string } {
+    advanceMonths: number = this.DEFAULT_ADVANCE_MONTHS,
+  ): { level: "high" | "medium" | "low" | "none"; description: string } {
     if (monthsPaid === 0) {
       return {
-        level: 'high',
-        description: 'No payments received - 100% chargeback risk'
+        level: "high",
+        description: "No payments received - 100% chargeback risk",
       };
     }
 
     if (monthsPaid < 3) {
       return {
-        level: 'high',
-        description: `Only ${monthsPaid} months paid - significant chargeback risk`
+        level: "high",
+        description: `Only ${monthsPaid} months paid - significant chargeback risk`,
       };
     }
 
     if (monthsPaid < 6) {
       return {
-        level: 'medium',
-        description: `${monthsPaid} months paid - moderate chargeback risk`
+        level: "medium",
+        description: `${monthsPaid} months paid - moderate chargeback risk`,
       };
     }
 
     if (monthsPaid < advanceMonths) {
       return {
-        level: 'low',
-        description: `${monthsPaid}/${advanceMonths} months paid - low chargeback risk`
+        level: "low",
+        description: `${monthsPaid}/${advanceMonths} months paid - low chargeback risk`,
       };
     }
 
     return {
-      level: 'none',
-      description: 'Advance fully earned - no chargeback risk'
+      level: "none",
+      description: "Advance fully earned - no chargeback risk",
     };
   }
 }
 
 // Export singleton instance
-export const commissionLifecycleService = CommissionLifecycleService.getInstance();
+export const commissionLifecycleService =
+  CommissionLifecycleService.getInstance();
 
 // Export class for testing
 export { CommissionLifecycleService };

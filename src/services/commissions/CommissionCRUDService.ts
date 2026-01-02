@@ -41,6 +41,11 @@ export interface CreateCommissionData {
   advanceAmount?: number;
   advanceMonths?: number;
 
+  // CAPPED ADVANCE (when carrier has advance cap)
+  originalAdvance?: number | null;
+  overageAmount?: number | null;
+  overageStartMonth?: number | null;
+
   // EARNING TRACKING
   monthsPaid?: number;
   earnedAmount?: number;
@@ -479,6 +484,15 @@ class CommissionCRUDService {
       // DEPRECATED: Keep for backward compatibility
       advanceAmount: parseFloat(dbRecord.amount || 0), // Deprecated - use 'amount' instead
 
+      // CAPPED ADVANCE (when carrier has advance cap)
+      originalAdvance: dbRecord.original_advance
+        ? parseFloat(dbRecord.original_advance)
+        : null,
+      overageAmount: dbRecord.overage_amount
+        ? parseFloat(dbRecord.overage_amount)
+        : null,
+      overageStartMonth: dbRecord.overage_start_month ?? null,
+
       // EARNING TRACKING
       monthsPaid: dbRecord.months_paid || 0,
       earnedAmount: parseFloat(dbRecord.earned_amount || 0),
@@ -530,6 +544,14 @@ class CommissionCRUDService {
     if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount;
     if (data.advanceMonths !== undefined)
       dbData.advance_months = data.advanceMonths;
+
+    // CAPPED ADVANCE (when carrier has advance cap)
+    if (data.originalAdvance !== undefined)
+      dbData.original_advance = data.originalAdvance;
+    if (data.overageAmount !== undefined)
+      dbData.overage_amount = data.overageAmount;
+    if (data.overageStartMonth !== undefined)
+      dbData.overage_start_month = data.overageStartMonth;
 
     // EARNING TRACKING
     if (data.monthsPaid !== undefined) dbData.months_paid = data.monthsPaid;
