@@ -202,12 +202,53 @@ export class OverrideRepository extends BaseRepository<
 
   /**
    * Find overrides by override agent ID (income for this agent)
+   * @param overrideAgentId - ID of the agent receiving overrides
+   * @param startDate - Optional start date filter
+   * @param activeOnly - If true, only include overrides for active policies (default: true)
    */
   async findByOverrideAgentId(
     overrideAgentId: string,
     startDate?: string,
+    activeOnly: boolean = true,
   ): Promise<OverrideMetricRow[]> {
     try {
+      // If filtering by active policies, we need to join with policies table
+      if (activeOnly) {
+        let query = this.client
+          .from(this.tableName)
+          .select(
+            `
+            override_agent_id,
+            override_commission_amount,
+            status,
+            created_at,
+            policy:policies!inner(status)
+          `,
+          )
+          .eq("override_agent_id", overrideAgentId)
+          .eq("policy.status", "active");
+
+        if (startDate) {
+          query = query.gte("created_at", startDate);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw this.handleError(error, "findByOverrideAgentId");
+        }
+
+        // Extract only the fields we need (exclude joined policy data)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return ((data || []) as any[]).map((row) => ({
+          override_agent_id: row.override_agent_id,
+          override_commission_amount: row.override_commission_amount,
+          status: row.status,
+          created_at: row.created_at,
+        })) as OverrideMetricRow[];
+      }
+
+      // Without active filter
       let query = this.client
         .from(this.tableName)
         .select(
@@ -233,12 +274,46 @@ export class OverrideRepository extends BaseRepository<
 
   /**
    * Find overrides for agent (as either base or override agent) within date range
+   * @param agentId - ID of the agent (either base or override)
+   * @param startDate - Start date filter
+   * @param activeOnly - If true, only include overrides for active policies (default: true)
    */
   async findForAgentInRange(
     agentId: string,
     startDate: string,
+    activeOnly: boolean = true,
   ): Promise<OverrideMetricRow[]> {
     try {
+      // If filtering by active policies, we need to join with policies table
+      if (activeOnly) {
+        const { data, error } = await this.client
+          .from(this.tableName)
+          .select(
+            `
+            override_commission_amount,
+            override_agent_id,
+            base_agent_id,
+            policy:policies!inner(status)
+          `,
+          )
+          .or(`override_agent_id.eq.${agentId},base_agent_id.eq.${agentId}`)
+          .eq("policy.status", "active")
+          .gte("created_at", startDate);
+
+        if (error) {
+          throw this.handleError(error, "findForAgentInRange");
+        }
+
+        // Extract only the fields we need (exclude joined policy data)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return ((data || []) as any[]).map((row) => ({
+          override_agent_id: row.override_agent_id,
+          base_agent_id: row.base_agent_id,
+          override_commission_amount: row.override_commission_amount,
+        })) as OverrideMetricRow[];
+      }
+
+      // Without active filter
       const { data, error } = await this.client
         .from(this.tableName)
         .select("override_commission_amount, override_agent_id, base_agent_id")

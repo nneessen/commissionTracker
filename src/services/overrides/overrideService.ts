@@ -33,6 +33,8 @@ class OverrideService {
         throw new Error("Not authenticated");
       }
 
+      // Use inner join with policies to filter by active status only
+      // This ensures we only show overrides for currently active policies
       let query = supabase
         .from("override_commissions")
         .select(
@@ -40,12 +42,13 @@ class OverrideService {
           *,
           base_agent:user_profiles!override_commissions_base_agent_id_fkey(email),
           override_agent:user_profiles!override_commissions_override_agent_id_fkey(email),
-          policy:policies(policy_number),
+          policy:policies!inner(policy_number, status),
           carrier:carriers(name),
           product:products(name)
         `,
         )
-        .eq("override_agent_id", user.id);
+        .eq("override_agent_id", user.id)
+        .eq("policy.status", "active");
 
       // Apply filters
       if (filters?.status) {

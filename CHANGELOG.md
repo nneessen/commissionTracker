@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-02 08:20:14
+
+### Changed Files
+- `src/services/overrides/OverrideRepository.ts`
+- `src/services/overrides/overrideService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260102_002_fix_override_trigger_active_only.sql`
+- `supabase/migrations/20260102_003_fix_override_trigger_insert_case.sql`
+- `supabase/migrations/reverts/20260102_002_revert_fix_override_trigger.sql`
+- `supabase/migrations/reverts/20260102_003_revert_fix_override_trigger_insert.sql`
+
+### Statistics
+```
+ 7 files changed, 907 insertions(+), 10825 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-01 18:47:41
 
 ### Changed Files
