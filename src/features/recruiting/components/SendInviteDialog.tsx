@@ -78,6 +78,9 @@ export function SendInviteDialog({
   });
 
   const onSubmit = async (data: InviteFormData) => {
+    // Prevent concurrent submissions (double-click protection)
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
     try {
       await createWithInvite.mutateAsync({
@@ -239,7 +242,8 @@ export function SendInviteDialog({
             Cancel
           </Button>
           <Button
-            type="submit"
+            type="button"
+            onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting}
             size="sm"
             className="h-6 text-[10px] px-2"
