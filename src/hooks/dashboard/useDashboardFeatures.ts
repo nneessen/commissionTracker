@@ -9,6 +9,7 @@ import {
 } from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
+import { isTemporaryFreeAccessPeriod } from "@/lib/temporaryAccess";
 
 // Admin emails that bypass all gating
 const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
@@ -101,7 +102,7 @@ export function useDashboardFeatures(): DashboardFeatures {
       };
     }
 
-    // Helper to check feature access (subscription OR owner downline)
+    // Helper to check feature access (subscription OR owner downline OR temporary access)
     const hasFeature = (feature: string): boolean => {
       // Check subscription plan
       if (
@@ -113,6 +114,11 @@ export function useDashboardFeatures(): DashboardFeatures {
       }
       // Check owner downline access
       if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature)) {
+        return true;
+      }
+      // Temporary free access period (until Feb 1, 2026)
+      // Grants access to all dashboard features
+      if (isTemporaryFreeAccessPeriod()) {
         return true;
       }
       return false;

@@ -17,6 +17,8 @@ All users have FREE access to all subscription features **except the Recruiting 
 - Team Hierarchy
 - Override tracking
 - Downline reports
+- **All Analytics sections** (Game Plan, Commission Pipeline, Predictive Analytics, etc.)
+- **Dashboard Financial Details** (profit margin, recurring expenses, etc.)
 
 ### Features Still Gated
 
@@ -71,7 +73,44 @@ if (shouldGrantTemporaryAccess(feature)) {
 }
 ```
 
-### 4. Remove the recruiting banner (optional)
+### 4. Remove from useAnalyticsSectionAccess.ts
+File: `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+
+Remove this import:
+```typescript
+import { isTemporaryFreeAccessPeriod } from "@/lib/temporaryAccess";
+```
+
+Remove these blocks (2 occurrences in the file):
+```typescript
+// Temporary free access period (until Feb 1, 2026)
+// Grants access to ALL analytics sections
+if (isTemporaryFreeAccessPeriod()) {
+  return {
+    hasAccess: true,
+    // ... rest of return
+  };
+}
+```
+
+### 5. Remove from useDashboardFeatures.ts
+File: `src/hooks/dashboard/useDashboardFeatures.ts`
+
+Remove this import:
+```typescript
+import { isTemporaryFreeAccessPeriod } from "@/lib/temporaryAccess";
+```
+
+Remove these lines from hasFeature():
+```typescript
+// Temporary free access period (until Feb 1, 2026)
+// Grants access to all dashboard features
+if (isTemporaryFreeAccessPeriod()) {
+  return true;
+}
+```
+
+### 6. Remove the recruiting banner (optional)
 File: `src/features/recruiting/RecruitingDashboard.tsx`
 
 Remove imports:
@@ -97,4 +136,6 @@ src/features/recruiting/components/RecruitingPreviewBanner.tsx
 
 To confirm it's working, log in as a non-admin user and check:
 1. They can access Expenses, Hierarchy, Reports, etc. without upgrade prompts
-2. Recruiting Pipeline shows the yellow warning banner at the top
+2. All Analytics sections (Game Plan, Commission Pipeline, etc.) are accessible
+3. Dashboard shows Financial Details section (profit margin, expenses breakdown)
+4. Recruiting Pipeline shows the yellow warning banner at the top
