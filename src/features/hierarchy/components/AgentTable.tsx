@@ -1,6 +1,6 @@
 // src/features/hierarchy/components/AgentTable.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronRight,
@@ -43,11 +43,10 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
-import { useQuery } from "@tanstack/react-query";
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 // import {policyService} from '@/services/policies/policyService';
 // import {commissionService} from '@/services/commissions/commissionService';
-import { supabase } from "@/services/base/supabase";
+import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 
 interface AgentWithMetrics extends UserProfile {
   // Real calculated metrics
@@ -171,12 +170,15 @@ function AgentRow({
   // If viewing from upline's perspective: spread = upline level - agent level
   // For the agent row, we're showing what the upline earns from this agent
   const agentContractLevel = agent.contract_level || 100; // Default to 100%
-  const uplineLevel = uplineContractLevel || 100;
 
-  // Debug: Log what we're getting
-
-  const overrideSpread =
-    uplineLevel > agentContractLevel ? uplineLevel - agentContractLevel : 0;
+  // Only calculate override if we have the viewer's contract level
+  // If uplineContractLevel is null/undefined, we can't calculate a valid override
+  const overrideSpread = useMemo(() => {
+    if (!uplineContractLevel) return 0; // No viewer level yet, show 0
+    return uplineContractLevel > agentContractLevel
+      ? uplineContractLevel - agentContractLevel
+      : 0;
+  }, [uplineContractLevel, agentContractLevel]);
 
   // Determine status display based on actual fields
   const getStatusDisplay = () => {
@@ -385,52 +387,22 @@ export function AgentTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  // Get current user's contract level for override calculation
-  const { data: currentUser } = useQuery({
-    queryKey: ["current-user-profile"],
-    queryFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return null;
+  // Get current user's contract level for override calculation using standard hook
+  const { data: currentUserProfile } = useCurrentUserProfile();
+  const viewerContractLevel = currentUserProfile?.contract_level ?? null;
 
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("id, contract_level")
-        .eq("id", user.id)
-        .single();
+  // Enrich ALL visible agents with viewer's contract level for override calculation
+  // The override % shows what the VIEWER earns from each agent, regardless of hierarchy depth
+  const agentsWithUplines = useMemo(() => {
+    if (!viewerContractLevel) return agents;
 
-      return profile;
-    },
-  });
+    return agents.map((agent) => ({
+      ...agent,
+      upline_contract_level: viewerContractLevel,
+    }));
+  }, [agents, viewerContractLevel]);
 
-  // Add current user's contract level to agents that are direct downlines
-  const { data: agentsWithUplines } = useQuery({
-    queryKey: ["agents-with-uplines", agents, currentUser],
-    queryFn: async () => {
-      if (!currentUser) return agents;
-
-      // For each agent, determine their upline's contract level
-      return agents.map((agent) => {
-        // If this agent's upline is the current user, use current user's contract level
-        if (agent.upline_id === currentUser.id) {
-          return {
-            ...agent,
-            upline_contract_level: currentUser.contract_level || 100,
-          };
-        }
-
-        // Otherwise, this agent might be a downline of a downline, don't show override
-        return {
-          ...agent,
-          upline_contract_level: null,
-        };
-      });
-    },
-    enabled: agents.length > 0 && !!currentUser,
-  });
-
-  const agentsToDisplay = agentsWithUplines || agents;
+  const agentsToDisplay = agentsWithUplines;
 
   // Build hierarchy structure
   const agentMap = new Map(agentsToDisplay.map((a) => [a.id, a]));
@@ -519,7 +491,7 @@ export function AgentTable({
           uplineContractLevel={agent.upline_contract_level || null}
           onRemove={setAgentToRemove}
           dateRange={dateRange}
-          viewerId={currentUser?.id}
+          viewerId={currentUserProfile?.id}
         />,
       );
 
