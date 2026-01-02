@@ -286,7 +286,7 @@ async function handleCompleteFirstSale(
     logId,
   );
 
-  // Fetch the daily log with pending data
+  // Fetch the daily log with pending data (including hierarchy_depth for leaderboard logic)
   const { data: log, error: logError } = await supabase
     .from("daily_sales_logs")
     .select(
@@ -298,7 +298,8 @@ async function handleCompleteFirstSale(
       log_date,
       title,
       pending_policy_data,
-      first_seller_id
+      first_seller_id,
+      hierarchy_depth
     `,
     )
     .eq("id", logId)
@@ -360,38 +361,54 @@ async function handleCompleteFirstSale(
     return { ok: false, error: "Failed to post policy notification" };
   }
 
-  // Get today's production for leaderboard
-  const { data: productionData } = await supabase.rpc(
-    "get_daily_production_by_agent",
-    {
-      p_imo_id: log.imo_id,
-      p_agency_id: integration.agency_id,
-    },
-  );
+  // ONLY include leaderboard for direct agency (hierarchy_depth = 0)
+  // Parent agencies (depth > 0) and IMO-level (depth = 999) get policy notification only
+  const shouldIncludeLeaderboard = log.hierarchy_depth === 0;
 
-  const production: DailyProductionEntry[] = productionData || [];
-  const totalAP = production.reduce(
-    (sum, e) => sum + (e.total_annual_premium || 0),
-    0,
-  );
+  let leaderboardOk = false;
+  let leaderboardMessageTs: string | null = null;
 
-  // Build leaderboard with the title (use default if not set)
-  const title = log.title || getDefaultDailyTitle();
-  const leaderboardText = buildLeaderboardText(title, production, totalAP);
+  if (shouldIncludeLeaderboard) {
+    // Get today's production for leaderboard
+    const { data: productionData } = await supabase.rpc(
+      "get_daily_production_by_agent",
+      {
+        p_imo_id: log.imo_id,
+        p_agency_id: integration.agency_id,
+      },
+    );
 
-  // Post the leaderboard
-  const leaderboardResult = await postSlackMessage(
-    botToken,
-    log.channel_id,
-    leaderboardText,
-  );
+    const production: DailyProductionEntry[] = productionData || [];
+    const totalAP = production.reduce(
+      (sum, e) => sum + (e.total_annual_premium || 0),
+      0,
+    );
 
-  // Update the log: clear pending_policy_data, save leaderboard message_ts
+    // Build leaderboard with the title (use default if not set)
+    const title = log.title || getDefaultDailyTitle();
+    const leaderboardText = buildLeaderboardText(title, production, totalAP);
+
+    // Post the leaderboard
+    const leaderboardResult = await postSlackMessage(
+      botToken,
+      log.channel_id,
+      leaderboardText,
+    );
+
+    leaderboardOk = leaderboardResult.ok;
+    leaderboardMessageTs = leaderboardResult.ts || null;
+  } else {
+    console.log(
+      `[slack-policy-notification] Skipping leaderboard for parent/IMO integration (hierarchy_depth=${log.hierarchy_depth})`,
+    );
+  }
+
+  // Update the log: clear pending_policy_data, save leaderboard message_ts (if any)
   const { error: updateError } = await supabase
     .from("daily_sales_logs")
     .update({
       pending_policy_data: null,
-      leaderboard_message_ts: leaderboardResult.ts || null,
+      leaderboard_message_ts: leaderboardMessageTs,
       updated_at: new Date().toISOString(),
     })
     .eq("id", logId);
@@ -407,7 +424,7 @@ async function handleCompleteFirstSale(
   return {
     ok: true,
     policyOk: policyResult.ok,
-    leaderboardOk: leaderboardResult.ok,
+    leaderboardOk,
   };
 }
 
@@ -428,7 +445,7 @@ async function handleUpdateLeaderboard(
     logId,
   );
 
-  // Fetch the daily log with integration details
+  // Fetch the daily log with integration details (including hierarchy_depth for validation)
   const { data: log, error: logError } = await supabase
     .from("daily_sales_logs")
     .select(
@@ -440,7 +457,8 @@ async function handleUpdateLeaderboard(
       log_date,
       title,
       leaderboard_message_ts,
-      first_seller_id
+      first_seller_id,
+      hierarchy_depth
     `,
     )
     .eq("id", logId)
@@ -449,6 +467,14 @@ async function handleUpdateLeaderboard(
   if (logError || !log) {
     console.error("[slack-policy-notification] Log not found:", logError);
     return { ok: false, error: "Log not found" };
+  }
+
+  // Validate that leaderboards are only updated for direct agency integrations
+  if (log.hierarchy_depth !== 0) {
+    console.log(
+      `[slack-policy-notification] Skipping leaderboard update for parent/IMO integration (hierarchy_depth=${log.hierarchy_depth})`,
+    );
+    return { ok: true, updated: false };
   }
 
   if (!log.leaderboard_message_ts) {
@@ -879,6 +905,10 @@ serve(async (req) => {
         let leaderboardOk = false;
         let isFirstSale = false;
 
+        // ONLY include leaderboard for direct agency (hierarchy_depth = 0)
+        // Parent agencies (depth > 0) and IMO-level (depth = 999) get policy notification only
+        const shouldIncludeLeaderboard = integration.hierarchy_depth === 0;
+
         // Check if there's already a daily log for today (Eastern timezone)
         const todayDate = getTodayDateET();
         const { data: existingLog } = await supabase
@@ -939,8 +969,36 @@ serve(async (req) => {
 
         if (isEffectivelyFirstSale) {
           // =====================================================================
-          // FIRST SALE - Don't post anything yet, store pending data
+          // FIRST SALE HANDLING
           // =====================================================================
+
+          // For parent agencies and IMO-level integrations, skip the naming dialog
+          // Just post the policy notification immediately (no leaderboard)
+          if (!shouldIncludeLeaderboard) {
+            console.log(
+              `[slack-policy-notification] First sale for parent/IMO integration ${integration.team_name} - posting policy only, no naming dialog`,
+            );
+
+            const policyResponse = await postSlackMessage(
+              botToken,
+              integration.policy_channel_id,
+              policyText,
+            );
+
+            results.push({
+              integrationId: integration.integration_id,
+              teamName: integration.team_name,
+              channelName: integration.policy_channel_name,
+              policyOk: policyResponse.ok,
+              leaderboardOk: false, // No leaderboard for parent/IMO
+              isFirstSale: false, // Not treating as first sale for parent/IMO
+              error: policyResponse.error || null,
+            });
+
+            continue; // Skip to next integration
+          }
+
+          // For direct agency (hierarchy_depth = 0), do the normal first-sale flow with naming dialog
           isFirstSale = true;
 
           console.log(
@@ -969,6 +1027,7 @@ serve(async (req) => {
                 first_seller_id: agentId,
                 pending_policy_data: pendingData,
                 leaderboard_message_ts: null, // Clear old message_ts
+                hierarchy_depth: integration.hierarchy_depth, // Track integration level for leaderboard logic
                 updated_at: new Date().toISOString(),
               })
               .eq("id", existingLog.id);
@@ -992,6 +1051,7 @@ serve(async (req) => {
                 log_date: todayDate,
                 first_seller_id: agentId,
                 pending_policy_data: pendingData,
+                hierarchy_depth: integration.hierarchy_depth, // Track integration level for leaderboard logic
               })
               .select("id")
               .single();
@@ -1047,8 +1107,9 @@ serve(async (req) => {
 
         // =====================================================================
         // Handle daily leaderboard for subsequent sales
+        // ONLY for direct agency (hierarchy_depth = 0), not for parent/IMO
         // =====================================================================
-        {
+        if (shouldIncludeLeaderboard && existingLog) {
           // Subsequent sale - delete old leaderboard and post fresh one
           // This ensures leaderboard always appears AFTER the latest policy notification
           const leaderboardText = buildLeaderboardText(
@@ -1119,6 +1180,11 @@ serve(async (req) => {
               leaderboardData.error,
             );
           }
+        } else if (!shouldIncludeLeaderboard) {
+          // Parent/IMO integration - no leaderboard, just policy notification
+          console.log(
+            `[slack-policy-notification] Skipping leaderboard for parent/IMO integration ${integration.team_name}`,
+          );
         }
 
         results.push({

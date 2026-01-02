@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-02 10:45:05
+
+### Changed Files
+- `plans/active/slack-hierarchy-code-review.md`
+- `src/types/database.types.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20260102_005_fix_slack_hierarchy_leaderboard.sql`
+- `supabase/migrations/reverts/20260102_005_revert_slack_hierarchy_leaderboard.sql`
+
+### Statistics
+```
+ 5 files changed, 267 insertions(+), 31 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-02 08:20:14
 
 ### Changed Files

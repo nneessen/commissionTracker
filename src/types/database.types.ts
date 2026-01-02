@@ -1698,6 +1698,7 @@ export type Database = {
           channel_id: string;
           created_at: string | null;
           first_seller_id: string | null;
+          hierarchy_depth: number | null;
           id: string;
           imo_id: string;
           leaderboard_message_ts: string | null;
@@ -1712,6 +1713,7 @@ export type Database = {
           channel_id: string;
           created_at?: string | null;
           first_seller_id?: string | null;
+          hierarchy_depth?: number | null;
           id?: string;
           imo_id: string;
           leaderboard_message_ts?: string | null;
@@ -1726,6 +1728,7 @@ export type Database = {
           channel_id?: string;
           created_at?: string | null;
           first_seller_id?: string | null;
+          hierarchy_depth?: number | null;
           id?: string;
           imo_id?: string;
           leaderboard_message_ts?: string | null;

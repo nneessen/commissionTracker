@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-02 08:20:14
+Last Updated: 2026-01-02 10:45:05
 
 ## Metrics
-- Total Files: 28902
-- Total Lines of Code: 355491
-- Total Commits: 599
+- Total Files: 28904
+- Total Lines of Code: 366550
+- Total Commits: 606
 
 ## Recent Activity
-c34cada docs: multiple changes in .,plans/active,src/features/admin/components
-e0f4e19 feat(users): add server-side user search for scalable upline selection
-b02e128 docs: multiple changes in .,docs,src/features/policies
-33a419e style(recruiting): redesign SendInviteDialog with zinc palette
-98afa0f feat(recruiting): add recruit self-registration invitation system
+d69ea46 docs: multiple changes in .,src/services/overrides,src/types
+2bad5e9 fix(recruiting): resolve public registration page loading issues
+82ae116 docs: comprehensive continuation for registration invite bugs
+84c42a7 fix(recruiting): restore submit button functionality + prevent double submission
+727ce28 fix(recruiting): prevent double submission causing invite errors
