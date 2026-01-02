@@ -125,12 +125,21 @@ function getDefaultDailyTitle(): string {
 }
 
 /**
- * Look up Slack member ID by email
+ * Slack user info returned from lookup
+ */
+interface SlackUserInfo {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+/**
+ * Look up Slack member by email - returns full user info for posting as user
  */
 async function lookupSlackMemberByEmail(
   botToken: string,
   email: string,
-): Promise<string | null> {
+): Promise<SlackUserInfo | null> {
   try {
     const response = await fetch(
       `https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(email)}`,
@@ -144,7 +153,16 @@ async function lookupSlackMemberByEmail(
 
     const data = await response.json();
     if (data.ok && data.user) {
-      return data.user.id;
+      return {
+        id: data.user.id,
+        displayName:
+          data.user.profile?.display_name ||
+          data.user.profile?.real_name ||
+          data.user.real_name ||
+          email.split("@")[0],
+        avatarUrl:
+          data.user.profile?.image_72 || data.user.profile?.image_48 || null,
+      };
     }
     return null;
   } catch (err) {
@@ -155,41 +173,52 @@ async function lookupSlackMemberByEmail(
 
 /**
  * Build the simple policy notification text
- * Format: $1,200 Carrier Product Eff Date: 12/26 @slackuser
+ * Format: $1,200 Carrier Product Eff Date: 12/26
+ * Note: The agent's name/avatar is shown via postSlackMessage username/icon_url
  */
 function buildSimplePolicyText(
   annualPremium: number,
   carrierName: string,
   productName: string,
   effectiveDate: string,
-  slackMemberId: string | null,
-  agentName: string,
 ): string {
   const ap = formatCurrency(annualPremium);
   const date = formatDateCompact(effectiveDate);
 
-  // Use @mention if we have slack_member_id, otherwise just name
-  const userDisplay = slackMemberId ? `<@${slackMemberId}>` : agentName;
-
-  return `${ap} ${carrierName} ${productName} Eff Date: ${date} ${userDisplay}`;
+  return `${ap} ${carrierName} ${productName} Eff Date: ${date}`;
 }
 
 /**
  * Post a message to Slack and return the response
+ * Optionally post as a specific user (shows their name/avatar)
  */
 async function postSlackMessage(
   botToken: string,
   channelId: string,
   text: string,
+  options?: {
+    username?: string;
+    icon_url?: string;
+  },
 ): Promise<{ ok: boolean; ts?: string; error?: string }> {
   try {
+    const payload: Record<string, unknown> = { channel: channelId, text };
+
+    // If username/icon provided, post as that user (still shows APP label but uses their name/avatar)
+    if (options?.username) {
+      payload.username = options.username;
+    }
+    if (options?.icon_url) {
+      payload.icon_url = options.icon_url;
+    }
+
     const response = await fetch("https://slack.com/api/chat.postMessage", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${botToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ channel: channelId, text }),
+      body: JSON.stringify(payload),
     });
     return await response.json();
   } catch (err) {
@@ -323,6 +352,8 @@ async function handleCompleteFirstSale(
     productName: string;
     agentName: string;
     agentSlackMemberId: string | null;
+    agentDisplayName?: string;
+    agentAvatarUrl?: string | null;
     annualPremium: number;
     effectiveDate: string;
     agentId: string;
@@ -346,11 +377,17 @@ async function handleCompleteFirstSale(
   // Decrypt bot token
   const botToken = await decrypt(integration.bot_token_encrypted);
 
-  // Post the policy notification
+  // Post the policy notification as the agent
+  const postAsUserOptions = {
+    username: pendingData.agentDisplayName || pendingData.agentName,
+    icon_url: pendingData.agentAvatarUrl || undefined,
+  };
+
   const policyResult = await postSlackMessage(
     botToken,
     log.channel_id,
     pendingData.policyText,
+    postAsUserOptions,
   );
 
   if (!policyResult.ok) {
@@ -870,24 +907,24 @@ serve(async (req) => {
         const botToken = await decrypt(fullIntegration.bot_token_encrypted);
 
         // =====================================================================
-        // Look up Slack member ID FOR THIS SPECIFIC WORKSPACE
+        // Look up Slack user FOR THIS SPECIFIC WORKSPACE
         // Slack user IDs are workspace-specific, so we must look up per-workspace
+        // We get the full user info (id, name, avatar) to post as that user
         // =====================================================================
-        let workspaceSlackMemberId: string | null = null;
+        let workspaceSlackUser: SlackUserInfo | null = null;
 
         if (agentEmail) {
-          const lookedUpId = await lookupSlackMemberByEmail(
+          workspaceSlackUser = await lookupSlackMemberByEmail(
             botToken,
             agentEmail,
           );
-          if (lookedUpId) {
-            workspaceSlackMemberId = lookedUpId;
+          if (workspaceSlackUser) {
             console.log(
-              `[slack-policy-notification] Found Slack member ID for ${agentEmail} in ${integration.team_name}: ${lookedUpId}`,
+              `[slack-policy-notification] Found Slack user for ${agentEmail} in ${integration.team_name}: ${workspaceSlackUser.displayName} (${workspaceSlackUser.id})`,
             );
           } else {
             console.log(
-              `[slack-policy-notification] Could not find Slack member ID for ${agentEmail} in ${integration.team_name} - using name`,
+              `[slack-policy-notification] Could not find Slack user for ${agentEmail} in ${integration.team_name} - using name`,
             );
           }
         }
@@ -902,9 +939,15 @@ serve(async (req) => {
           carrierName,
           productName,
           effectiveDate || fallbackDate,
-          workspaceSlackMemberId, // Use workspace-specific ID
-          agentName,
         );
+
+        // Options for posting as the agent (shows their name/avatar)
+        const postAsUserOptions = workspaceSlackUser
+          ? {
+              username: workspaceSlackUser.displayName,
+              icon_url: workspaceSlackUser.avatarUrl || undefined,
+            }
+          : { username: agentName };
 
         // =====================================================================
         // Check FIRST if this is a first sale - before posting anything
@@ -990,6 +1033,7 @@ serve(async (req) => {
               botToken,
               integration.policy_channel_id,
               policyText,
+              postAsUserOptions,
             );
 
             results.push({
@@ -1018,7 +1062,9 @@ serve(async (req) => {
             carrierName,
             productName,
             agentName,
-            agentSlackMemberId: workspaceSlackMemberId, // Store workspace-specific ID
+            agentSlackMemberId: workspaceSlackUser?.id || null, // Store workspace-specific ID
+            agentDisplayName: workspaceSlackUser?.displayName || agentName,
+            agentAvatarUrl: workspaceSlackUser?.avatarUrl || null,
             annualPremium,
             effectiveDate: effectiveDate || fallbackDate,
             agentId,
@@ -1093,24 +1139,14 @@ serve(async (req) => {
         }
 
         // =====================================================================
-        // SUBSEQUENT SALE - Post policy notification normally
+        // SUBSEQUENT SALE - Post policy notification normally (as the agent)
         // =====================================================================
-        const policyResponse = await fetch(
-          "https://slack.com/api/chat.postMessage",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${botToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              channel: integration.policy_channel_id,
-              text: policyText,
-            }),
-          },
+        const policyData = await postSlackMessage(
+          botToken,
+          integration.policy_channel_id,
+          policyText,
+          postAsUserOptions,
         );
-
-        const policyData = await policyResponse.json();
 
         // =====================================================================
         // Handle daily leaderboard for subsequent sales
