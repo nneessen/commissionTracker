@@ -659,6 +659,22 @@ serve(async (req) => {
     let hierarchyIntegrations: HierarchyIntegration[] = [];
 
     if (agencyId) {
+      // Debug: First check the raw agency hierarchy
+      const { data: rawHierarchy, error: rawError } = await supabase.rpc(
+        "get_agency_hierarchy",
+        { p_agency_id: agencyId },
+      );
+      if (rawError) {
+        console.error(
+          "[slack-policy-notification] Error fetching raw hierarchy:",
+          rawError,
+        );
+      } else {
+        console.log(
+          `[slack-policy-notification] Agency hierarchy for ${agencyId}: ${JSON.stringify(rawHierarchy)}`,
+        );
+      }
+
       const { data: hierarchyData, error: hierarchyError } = await supabase.rpc(
         "get_slack_integrations_for_agency_hierarchy",
         { p_agency_id: agencyId },
@@ -674,6 +690,12 @@ serve(async (req) => {
         console.log(
           `[slack-policy-notification] Found ${hierarchyIntegrations.length} integrations for agency ${agencyId}`,
         );
+        // Debug: log each integration details
+        hierarchyIntegrations.forEach((int, idx) => {
+          console.log(
+            `[slack-policy-notification] Integration ${idx + 1}: team="${int.team_name}", agency="${int.agency_name}", agency_id=${int.agency_id}, hierarchy_depth=${int.hierarchy_depth}`,
+          );
+        });
       }
     } else {
       // Fall back to IMO-level integration
