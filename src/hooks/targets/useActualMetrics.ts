@@ -1,7 +1,7 @@
 // src/hooks/targets/useActualMetrics.ts
 
-import {useMetricsWithDateRange} from '../kpi/useMetricsWithDateRange';
-import type {ActualMetrics} from '../../types/targets.types';
+import { useMetricsWithDateRange } from "../kpi/useMetricsWithDateRange";
+import type { ActualMetrics } from "../../types/targets.types";
 
 /**
  * Fetch actual metrics for targets comparison
@@ -9,16 +9,19 @@ import type {ActualMetrics} from '../../types/targets.types';
  */
 export const useActualMetrics = (): ActualMetrics => {
   // Fetch metrics for each time period
-  const ytdMetrics = useMetricsWithDateRange({ timePeriod: 'yearly' });
-  const qtdMetrics = useMetricsWithDateRange({ timePeriod: 'monthly', periodOffset: 0 }); // Quarterly not supported, using monthly
-  const mtdMetrics = useMetricsWithDateRange({ timePeriod: 'monthly' });
+  const ytdMetrics = useMetricsWithDateRange({ timePeriod: "yearly" });
+  const qtdMetrics = useMetricsWithDateRange({
+    timePeriod: "monthly",
+    periodOffset: 0,
+  }); // Quarterly not supported, using monthly
+  const mtdMetrics = useMetricsWithDateRange({ timePeriod: "monthly" });
 
-  // Extract actual values
+  // Extract actual values - use .paid (only paid status commissions, not earned)
   return {
-    // Income (commission earned)
-    ytdIncome: ytdMetrics.periodCommissions.earned,
-    qtdIncome: qtdMetrics.periodCommissions.earned,
-    mtdIncome: mtdMetrics.periodCommissions.earned,
+    // Income (paid commissions only - actual money received)
+    ytdIncome: ytdMetrics.periodCommissions.paid,
+    qtdIncome: qtdMetrics.periodCommissions.paid,
+    mtdIncome: mtdMetrics.periodCommissions.paid,
 
     // Policies
     ytdPolicies: ytdMetrics.periodPolicies.newCount,
@@ -33,8 +36,9 @@ export const useActualMetrics = (): ActualMetrics => {
 
     // Expenses
     mtdExpenses: mtdMetrics.periodExpenses.total,
-    currentExpenseRatio: ytdMetrics.periodCommissions.earned > 0
-      ? ytdMetrics.periodExpenses.total / ytdMetrics.periodCommissions.earned
-      : 0,
+    currentExpenseRatio:
+      ytdMetrics.periodCommissions.paid > 0
+        ? ytdMetrics.periodExpenses.total / ytdMetrics.periodCommissions.paid
+        : 0,
   };
 };

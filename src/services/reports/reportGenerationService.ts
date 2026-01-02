@@ -159,7 +159,7 @@ export class ReportGenerationService {
         // Only fetch carrier performance if user has policies
         hasNoPolicies
           ? Promise.resolve([])
-          : this.fetchCarrierPerformance(userId),
+          : this.fetchCarrierPerformance(userId, filters),
         // Only fetch commission aging if user has policies
         hasNoPolicies ? Promise.resolve([]) : this.fetchCommissionAging(userId),
       ]);
@@ -346,7 +346,7 @@ export class ReportGenerationService {
       hasNoPolicies ? Promise.resolve([]) : this.fetchCohortRetention(userId),
       hasNoPolicies
         ? Promise.resolve([])
-        : this.fetchCarrierPerformance(userId),
+        : this.fetchCarrierPerformance(userId, filters),
       InsightsService.generateInsights({
         userId,
         startDate: filters.startDate,
@@ -821,14 +821,25 @@ export class ReportGenerationService {
     userId: string,
     filters: ReportFilters,
   ) {
+    // Fetch all commissions for user - filter by date in JS
+    // because payment_date may be NULL and we need fallback to created_at
     const { data } = await supabase
       .from("commissions")
       .select("*")
-      .eq("user_id", userId)
-      .gte("payment_date", filters.startDate.toISOString())
-      .lte("payment_date", filters.endDate.toISOString());
+      .eq("user_id", userId);
 
-    return data || [];
+    if (!data) return [];
+
+    // Filter by date range using correct date field
+    // For paid commissions: use payment_date (when money was received)
+    // For others: use created_at as fallback
+    return data.filter((c) => {
+      const dateToCheck =
+        c.status === "paid" && c.payment_date
+          ? new Date(c.payment_date)
+          : new Date(c.created_at);
+      return dateToCheck >= filters.startDate && dateToCheck <= filters.endDate;
+    });
   }
 
   private static async fetchExpenseData(
@@ -861,20 +872,101 @@ export class ReportGenerationService {
   // ============================================================================
 
   /**
-   * Fetch carrier performance metrics from materialized view
-   * Pre-computed: persistency rates, commission rates, policy counts by carrier
+   * Fetch carrier performance metrics by aggregating actual commission data
+   * Uses date filtering to show only relevant data for the report period
    */
-  private static async fetchCarrierPerformance(userId: string) {
-    const { data, error } = await supabase
-      .from("mv_carrier_performance")
-      .select("*")
-      .eq("user_id", userId);
+  private static async fetchCarrierPerformance(
+    userId: string,
+    filters: ReportFilters,
+  ) {
+    // Fetch commissions with policy and carrier data
+    const { data: commissions, error } = await supabase
+      .from("commissions")
+      .select(
+        `
+        *,
+        policy:policies!policy_id (
+          carrier_id,
+          status,
+          carrier:carriers!carrier_id (
+            name
+          )
+        )
+      `,
+      )
+      .eq("user_id", userId)
+      .eq("status", "paid");
 
     if (error) {
       console.error("Error fetching carrier performance:", error);
       return [];
     }
-    return data || [];
+
+    if (!commissions) return [];
+
+    // Filter by date range using correct date field
+    const filteredCommissions = commissions.filter((c) => {
+      const dateToCheck = c.payment_date
+        ? new Date(c.payment_date)
+        : new Date(c.created_at);
+      return dateToCheck >= filters.startDate && dateToCheck <= filters.endDate;
+    });
+
+    // Aggregate by carrier
+    const carrierMap = new Map<
+      string,
+      {
+        carrier_name: string;
+        total_commission_amount: number;
+        total_policies: number;
+        active_policies: number;
+        lapsed_policies: number;
+        commission_rates: number[];
+      }
+    >();
+
+    for (const commission of filteredCommissions) {
+      const policy = commission.policy as {
+        carrier_id: string;
+        status: string;
+        carrier: { name: string } | null;
+      } | null;
+      if (!policy?.carrier) continue;
+
+      const carrierName = policy.carrier.name;
+      const existing = carrierMap.get(carrierName) || {
+        carrier_name: carrierName,
+        total_commission_amount: 0,
+        total_policies: 0,
+        active_policies: 0,
+        lapsed_policies: 0,
+        commission_rates: [],
+      };
+
+      existing.total_commission_amount += commission.amount || 0;
+      existing.total_policies += 1;
+      if (policy.status === "active") {
+        existing.active_policies += 1;
+      } else if (policy.status === "lapsed") {
+        existing.lapsed_policies += 1;
+      }
+
+      carrierMap.set(carrierName, existing);
+    }
+
+    // Convert to array and calculate derived metrics
+    return Array.from(carrierMap.values()).map((carrier) => ({
+      carrier_name: carrier.carrier_name,
+      total_commission_amount: carrier.total_commission_amount,
+      total_policies: carrier.total_policies,
+      active_policies: carrier.active_policies,
+      lapsed_policies: carrier.lapsed_policies,
+      avg_commission_rate_pct: 0, // Not calculated from raw data
+      persistency_rate:
+        carrier.total_policies > 0
+          ? carrier.active_policies / carrier.total_policies
+          : 0,
+    }));
   }
 
   /**

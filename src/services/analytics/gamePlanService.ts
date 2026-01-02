@@ -121,13 +121,13 @@ class GamePlanService {
     });
 
     // Filter to MTD commissions (current month only, paid status)
+    // Use paymentDate for paid commissions (when money was received), createdAt as fallback
     const mtdCommissionsData = commissions.filter((c) => {
-      const createdDate = new Date(c.createdAt);
-      return (
-        createdDate >= monthStart &&
-        createdDate <= monthEnd &&
-        c.status === "paid"
-      );
+      if (c.status !== "paid") return false;
+      const dateToCheck = c.paymentDate
+        ? new Date(c.paymentDate)
+        : new Date(c.createdAt);
+      return dateToCheck >= monthStart && dateToCheck <= monthEnd;
     });
 
     // Calculate MTD commissions earned
@@ -472,11 +472,13 @@ class GamePlanService {
     });
 
     // Filter YTD commissions (paid only)
+    // Use paymentDate for paid commissions (when money was received), createdAt as fallback
     const ytdCommissionsData = commissions.filter((c) => {
-      const createdDate = new Date(c.createdAt);
-      return (
-        createdDate >= yearStart && createdDate <= now && c.status === "paid"
-      );
+      if (c.status !== "paid") return false;
+      const dateToCheck = c.paymentDate
+        ? new Date(c.paymentDate)
+        : new Date(c.createdAt);
+      return dateToCheck >= yearStart && dateToCheck <= now;
     });
 
     // Calculate YTD totals
