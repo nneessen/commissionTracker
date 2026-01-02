@@ -11,12 +11,9 @@ import { CookieConsentBanner } from "./features/legal";
 import { getDisplayName } from "./types/user.types";
 
 function App() {
-  const { user, loading, signOut } = useAuth();
   const location = useLocation();
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const navigate = useNavigate();
-
+  // Check if public path BEFORE calling useAuth to avoid unnecessary auth checks
   const publicPaths = [
     "/login",
     "/auth/callback",
@@ -29,10 +26,33 @@ function App() {
     "/join-",
     "/join/",
     "/register/",
+    "/test-register/",
   ];
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),
   );
+
+  // For public paths, render immediately without auth
+  if (isPublicPath) {
+    return (
+      <>
+        <Toaster />
+        <CookieConsentBanner />
+        <Outlet />
+      </>
+    );
+  }
+
+  // Only use auth for non-public paths
+  return <AuthenticatedApp />;
+}
+
+// Separate component for authenticated routes
+function AuthenticatedApp() {
+  const { user, loading, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -65,25 +85,15 @@ function App() {
 
   // Redirect to login when no authenticated user
   useEffect(() => {
-    // Skip if still loading
     if (loading) return;
-
-    // Skip public paths
-    if (isPublicPath) return;
-
-    // Skip if already on login
     if (location.pathname === "/login") return;
 
-    // Redirect to login if no user
-    // - On initial load with no session: redirect
-    // - After logout (wasAuthenticatedRef was true): redirect
-    // - During token refresh: user stays non-null, so no redirect
     if (!user) {
       navigate({ to: "/login" });
     }
-  }, [user, loading, isPublicPath, location.pathname, navigate]);
+  }, [user, loading, location.pathname, navigate]);
 
-  if (loading && !isPublicPath) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Loading...</div>
@@ -91,27 +101,12 @@ function App() {
     );
   }
 
-  if (isPublicPath) {
-    return (
-      <>
-        <Toaster />
-        <CookieConsentBanner />
-        <Outlet />
-      </>
-    );
-  }
-
-  if (!user && !isPublicPath) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Redirecting to login...</div>
       </div>
     );
-  }
-
-  // Guard: user must be non-null here
-  if (!user) {
-    return null;
   }
 
   return (

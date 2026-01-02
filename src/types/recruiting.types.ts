@@ -1087,7 +1087,7 @@ export type InvitationStatus =
 
 export interface RecruitInvitation {
   id: string;
-  recruit_id: string;
+  recruit_id: string | null; // Nullable - set when registration form is submitted
   inviter_id: string;
   invite_token: string;
   email: string;
@@ -1099,14 +1099,28 @@ export interface RecruitInvitation {
   resend_count: number;
   last_resent_at: string | null;
   message: string | null;
+  // Prefill fields (stored until recruit submits form)
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  upline_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateInvitationInput {
-  recruit_id: string;
+  recruit_id?: string; // Optional - new flow creates user on form submission
   email: string;
   message?: string;
+  // Prefill fields for new flow
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  upline_id?: string;
 }
 
 export interface CreateInvitationResult {

@@ -5,6 +5,7 @@
  * These are the system-defined roles that determine user access levels
  */
 export type RoleName =
+  | "super_admin"
   | "admin"
   | "agent"
   | "recruit"
@@ -20,6 +21,7 @@ export type RoleName =
  * Use these instead of hardcoded string literals
  */
 export const ROLES = {
+  SUPER_ADMIN: "super_admin",
   ADMIN: "admin",
   AGENT: "agent",
   RECRUIT: "recruit",

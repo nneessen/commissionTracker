@@ -4207,54 +4207,72 @@ export type Database = {
       };
       recruit_invitations: {
         Row: {
+          city: string | null;
           completed_at: string | null;
           created_at: string;
           email: string;
           expires_at: string;
+          first_name: string | null;
           id: string;
           invite_token: string;
           inviter_id: string;
+          last_name: string | null;
           last_resent_at: string | null;
           message: string | null;
-          recruit_id: string;
+          phone: string | null;
+          recruit_id: string | null;
           resend_count: number;
           sent_at: string | null;
+          state: string | null;
           status: string;
           updated_at: string;
+          upline_id: string | null;
           viewed_at: string | null;
         };
         Insert: {
+          city?: string | null;
           completed_at?: string | null;
           created_at?: string;
           email: string;
           expires_at?: string;
+          first_name?: string | null;
           id?: string;
           invite_token?: string;
           inviter_id: string;
+          last_name?: string | null;
           last_resent_at?: string | null;
           message?: string | null;
-          recruit_id: string;
+          phone?: string | null;
+          recruit_id?: string | null;
           resend_count?: number;
           sent_at?: string | null;
+          state?: string | null;
           status?: string;
           updated_at?: string;
+          upline_id?: string | null;
           viewed_at?: string | null;
         };
         Update: {
+          city?: string | null;
           completed_at?: string | null;
           created_at?: string;
           email?: string;
           expires_at?: string;
+          first_name?: string | null;
           id?: string;
           invite_token?: string;
           inviter_id?: string;
+          last_name?: string | null;
           last_resent_at?: string | null;
           message?: string | null;
-          recruit_id?: string;
+          phone?: string | null;
+          recruit_id?: string | null;
           resend_count?: number;
           sent_at?: string | null;
+          state?: string | null;
           status?: string;
           updated_at?: string;
+          upline_id?: string | null;
           viewed_at?: string | null;
         };
         Relationships: [
@@ -4296,6 +4314,27 @@ export type Database = {
           {
             foreignKeyName: "recruit_invitations_recruit_id_fkey";
             columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruit_invitations_upline_id_fkey";
+            columns: ["upline_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
             referencedColumns: ["id"];
@@ -8855,10 +8894,24 @@ export type Database = {
         };
         Returns: string;
       };
-      create_recruit_invitation: {
-        Args: { p_email: string; p_message?: string; p_recruit_id: string };
-        Returns: Json;
-      };
+      create_recruit_invitation:
+        | {
+            Args: {
+              p_city?: string;
+              p_email: string;
+              p_first_name?: string;
+              p_last_name?: string;
+              p_message?: string;
+              p_phone?: string;
+              p_state?: string;
+              p_upline_id?: string;
+            };
+            Returns: Json;
+          }
+        | {
+            Args: { p_email: string; p_message?: string; p_recruit_id: string };
+            Returns: Json;
+          };
       create_scheduled_report: {
         Args: {
           p_day_of_month?: number;
@@ -10239,10 +10292,9 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
-      submit_recruit_registration: {
-        Args: { p_data: Json; p_token: string };
-        Returns: Json;
-      };
+      submit_recruit_registration:
+        | { Args: { p_data: Json; p_token: string }; Returns: Json }
+        | { Args: { p_data: Json; p_token: string }; Returns: Json };
       submit_recruiting_lead:
         | {
             Args: {

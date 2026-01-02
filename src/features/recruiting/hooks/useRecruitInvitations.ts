@@ -1,5 +1,6 @@
 // src/features/recruiting/hooks/useRecruitInvitations.ts
 
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { recruitInvitationService } from "@/services/recruiting/recruitInvitationService";
@@ -81,9 +82,10 @@ export function useCreateRecruitWithInvitation() {
 
       return result;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Invitation sent successfully!", {
-        description: `Registration link sent to ${data.recruit_id ? "the recruit" : "email"}.`,
+        description:
+          "Registration link sent. User will be added when they complete the form.",
         duration: 5000,
       });
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
@@ -338,23 +340,65 @@ export function usePendingInvitationsCount() {
 // ============================================================================
 
 /**
- * Validates an invitation token
+ * Validates an invitation token (public, no auth required)
+ * Uses direct state management instead of React Query to avoid
+ * issues with query execution in public/unauthenticated context.
  */
 export function useInvitationByToken(token: string | undefined) {
-  return useQuery<InvitationValidationResult>({
-    queryKey: ["public-invitation", token],
-    queryFn: () =>
-      token
-        ? recruitInvitationService.validateToken(token)
-        : Promise.resolve({
+  const [data, setData] = useState<InvitationValidationResult | undefined>(
+    undefined,
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      setIsLoading(false);
+      setData({
+        valid: false,
+        error: "invitation_not_found",
+        message: "No invitation token provided.",
+      });
+      return;
+    }
+
+    let cancelled = false;
+
+    async function validateToken() {
+      console.log("[useInvitationByToken] Validating token:", token);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await recruitInvitationService.validateToken(token!);
+        console.log("[useInvitationByToken] Result:", result);
+
+        if (!cancelled) {
+          setData(result);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error("[useInvitationByToken] Error:", err);
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setData({
             valid: false,
-            error: "invitation_not_found" as const,
-            message: "No token provided",
-          }),
-    enabled: !!token,
-    staleTime: 0, // Always fresh - token status can change
-    retry: false, // Don't retry on invalid tokens
-  });
+            error: "invitation_not_found",
+            message: "Failed to validate invitation.",
+          });
+          setIsLoading(false);
+        }
+      }
+    }
+
+    validateToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  return { data, isLoading, error };
 }
 
 /**

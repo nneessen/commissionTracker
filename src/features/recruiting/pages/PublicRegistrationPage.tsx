@@ -28,11 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useInvitationByToken,
-  useSubmitRegistration,
-} from "../hooks/useRecruitInvitations";
-import type { RegistrationFormData } from "@/types/recruiting.types";
+import { useSubmitRegistration } from "../hooks/useRecruitInvitations";
+import { supabase } from "@/services/base/supabase";
+import type {
+  RegistrationFormData,
+  InvitationValidationResult,
+} from "@/types/recruiting.types";
 
 // US States for dropdown
 const US_STATES = [
@@ -123,7 +124,57 @@ export function PublicRegistrationPage() {
   const params = useParams({ strict: false }) as { token?: string };
   const token = params.token;
 
-  const { data: invitation, isLoading, error } = useInvitationByToken(token);
+  // Direct state management - bypassing hooks for public page reliability
+  const [invitation, setInvitation] =
+    useState<InvitationValidationResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch invitation directly on mount
+  useEffect(() => {
+    if (!token) {
+      setIsLoading(false);
+      setInvitation({
+        valid: false,
+        error: "invitation_not_found",
+        message: "No invitation token provided.",
+      });
+      return;
+    }
+
+    // Simple fetch without cleanup guards
+    (async () => {
+      try {
+        const { data, error: rpcError } = await supabase.rpc(
+          "get_public_invitation_by_token",
+          { p_token: token },
+        );
+
+        if (rpcError) {
+          setInvitation({
+            valid: false,
+            error: "invitation_not_found",
+            message: rpcError.message || "Failed to validate invitation.",
+          });
+        } else {
+          setInvitation(data as InvitationValidationResult);
+        }
+      } catch {
+        setInvitation({
+          valid: false,
+          error: "invitation_not_found",
+          message: "An error occurred.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [token]);
+
+  console.log("[PublicRegistrationPage] State:", {
+    isLoading,
+    invitation: invitation ? "present" : "null",
+  });
+
   const submitRegistration = useSubmitRegistration();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -332,7 +383,7 @@ export function PublicRegistrationPage() {
   }
 
   // Error states
-  if (error || !invitation?.valid) {
+  if (!invitation?.valid) {
     const errorType = invitation?.error || "invitation_not_found";
     const errorMessage =
       invitation?.message || "This invitation link is invalid or has expired.";

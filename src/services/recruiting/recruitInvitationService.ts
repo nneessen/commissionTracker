@@ -18,8 +18,8 @@ export const recruitInvitationService = {
   // ========================================
 
   /**
-   * Creates a placeholder recruit profile and invitation
-   * Returns the invitation with token for email sending
+   * Creates an invitation for a new recruit
+   * No user_profiles record is created - that happens when they submit the registration form
    */
   async createRecruitWithInvitation(
     email: string,
@@ -41,101 +41,32 @@ export const recruitInvitationService = {
     message: string;
   }> {
     try {
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        return {
-          success: false,
-          error: "unauthorized",
-          message: "You must be logged in to send invitations.",
-        };
-      }
-
-      // Get current user's profile for hierarchy info
-      const { data: currentUser } = await supabase
-        .from("user_profiles")
-        .select("id, agency_id, imo_id")
-        .eq("id", user.id)
-        .single();
-
-      if (!currentUser) {
-        return {
-          success: false,
-          error: "user_not_found",
-          message: "User profile not found.",
-        };
-      }
-
-      // Check for existing user with this email
-      const { data: existingUser } = await supabase
-        .from("user_profiles")
-        .select("id, email")
-        .eq("email", email.toLowerCase().trim())
-        .maybeSingle();
-
-      if (existingUser) {
-        return {
-          success: false,
-          error: "email_exists",
-          message:
-            "A user with this email already exists. Please check your recruiting dashboard.",
-        };
-      }
-
-      // Create placeholder user_profiles entry
-      const { data: recruit, error: recruitError } = await supabase
-        .from("user_profiles")
-        .insert({
-          email: email.toLowerCase().trim(),
-          first_name: options?.first_name || null,
-          last_name: options?.last_name || null,
-          phone: options?.phone || null,
-          city: options?.city || null,
-          state: options?.state || null,
-          // Hierarchy
-          upline_id: options?.upline_id || user.id,
-          recruiter_id: user.id,
-          agency_id: currentUser.agency_id,
-          imo_id: currentUser.imo_id,
-          // Status
-          roles: ["recruit"],
-          agent_status: "unlicensed",
-          approval_status: "pending",
-          onboarding_status: null, // Not yet in pipeline
-          current_onboarding_phase: null,
-          // Required fields
-          hierarchy_path: "",
-          hierarchy_depth: 0,
-        })
-        .select()
-        .single();
-
-      if (recruitError) {
-        console.error("Error creating recruit placeholder:", recruitError);
-        return {
-          success: false,
-          error: "create_failed",
-          message: "Failed to create recruit. Please try again.",
-        };
-      }
-
-      // Create invitation via RPC
+      // Create invitation via RPC (user is created when form is submitted)
       const { data: invitationResult, error: invitationError } = await supabase
         .rpc("create_recruit_invitation", {
-          p_recruit_id: recruit.id,
           p_email: email.toLowerCase().trim(),
           p_message: options?.message || null,
+          p_first_name: options?.first_name || null,
+          p_last_name: options?.last_name || null,
+          p_phone: options?.phone || null,
+          p_city: options?.city || null,
+          p_state: options?.state || null,
+          p_upline_id: options?.upline_id || null,
         })
         .single();
 
       const typedResult = invitationResult as CreateInvitationResult | null;
 
-      if (invitationError || !typedResult?.success) {
-        // Rollback recruit creation
-        await supabase.from("user_profiles").delete().eq("id", recruit.id);
+      if (invitationError) {
         console.error("Error creating invitation:", invitationError);
+        return {
+          success: false,
+          error: "invitation_failed",
+          message: "Failed to create invitation. Please try again.",
+        };
+      }
+
+      if (!typedResult?.success) {
         return {
           success: false,
           error: typedResult?.error || "invitation_failed",
@@ -147,7 +78,8 @@ export const recruitInvitationService = {
 
       return {
         success: true,
-        recruit_id: recruit.id,
+        // No recruit_id yet - created when form is submitted
+        recruit_id: undefined,
         invitation_id: typedResult.invitation_id,
         token: typedResult.token,
         message: "Invitation created successfully.",
@@ -164,22 +96,44 @@ export const recruitInvitationService = {
 
   /**
    * Creates an invitation for an existing recruit
+   * @deprecated Use createRecruitWithInvitation instead. The new architecture
+   * defers user creation until form submission. This function now fetches
+   * the recruit's existing data to prefill the invitation.
    */
   async createInvitation(
     recruitId: string,
     email: string,
     message?: string,
   ): Promise<CreateInvitationResult> {
+    // Fetch existing recruit data for prefill
+    const { data: recruit } = await supabase
+      .from("user_profiles")
+      .select("first_name, last_name, phone, city, state")
+      .eq("id", recruitId)
+      .single();
+
     const { data, error } = await supabase
       .rpc("create_recruit_invitation", {
-        p_recruit_id: recruitId,
         p_email: email.toLowerCase().trim(),
         p_message: message || null,
+        p_first_name: recruit?.first_name || null,
+        p_last_name: recruit?.last_name || null,
+        p_phone: recruit?.phone || null,
+        p_city: recruit?.city || null,
+        p_state: recruit?.state || null,
       })
       .single();
 
     if (error) {
       console.error("Error creating invitation:", error);
+      // Check for specific error types
+      if (error.message?.includes("email_exists")) {
+        return {
+          success: false,
+          error: "email_exists",
+          message: "A user with this email already exists in the system.",
+        };
+      }
       return {
         success: false,
         error: "rpc_error",
@@ -357,20 +311,46 @@ export const recruitInvitationService = {
    * This is called from the public registration page
    */
   async validateToken(token: string): Promise<InvitationValidationResult> {
-    const { data, error } = await supabase
-      .rpc("get_public_invitation_by_token", { p_token: token })
-      .single();
+    console.log("[validateToken] Starting validation for token:", token);
 
-    if (error) {
-      console.error("Error validating token:", error);
+    try {
+      // Note: Don't use .single() for RPC calls that return JSON
+      // The RPC returns JSON directly, not a row
+      const { data, error } = await supabase.rpc(
+        "get_public_invitation_by_token",
+        { p_token: token },
+      );
+
+      console.log("[validateToken] RPC response:", { data, error });
+
+      if (error) {
+        console.error("[validateToken] Error validating token:", error);
+        return {
+          valid: false,
+          error: "invitation_not_found",
+          message: "Unable to validate invitation. Please try again.",
+        };
+      }
+
+      if (!data) {
+        console.error("[validateToken] No data returned");
+        return {
+          valid: false,
+          error: "invitation_not_found",
+          message: "Invalid invitation token.",
+        };
+      }
+
+      console.log("[validateToken] Success, returning data");
+      return data as InvitationValidationResult;
+    } catch (err) {
+      console.error("[validateToken] Exception caught:", err);
       return {
         valid: false,
         error: "invitation_not_found",
-        message: "Unable to validate invitation. Please try again.",
+        message: "An error occurred while validating the invitation.",
       };
     }
-
-    return data as InvitationValidationResult;
   },
 
   /**
@@ -381,23 +361,48 @@ export const recruitInvitationService = {
     token: string,
     formData: RegistrationFormData,
   ): Promise<RegistrationResult> {
-    const { data, error } = await supabase
-      .rpc("submit_recruit_registration", {
-        p_token: token,
-        p_data: formData,
-      })
-      .single();
+    console.log("[submitRegistration] Submitting for token:", token);
 
-    if (error) {
-      console.error("Error submitting registration:", error);
+    try {
+      // Note: Don't use .single() for RPC calls that return JSON
+      const { data, error } = await supabase.rpc(
+        "submit_recruit_registration",
+        {
+          p_token: token,
+          p_data: formData,
+        },
+      );
+
+      console.log("[submitRegistration] RPC response:", { data, error });
+
+      if (error) {
+        console.error("[submitRegistration] Error:", error);
+        return {
+          success: false,
+          error: "submission_failed",
+          message: "Failed to submit registration. Please try again.",
+        };
+      }
+
+      if (!data) {
+        console.error("[submitRegistration] No data returned");
+        return {
+          success: false,
+          error: "submission_failed",
+          message: "Registration failed. Please try again.",
+        };
+      }
+
+      console.log("[submitRegistration] Success");
+      return data as RegistrationResult;
+    } catch (err) {
+      console.error("[submitRegistration] Exception:", err);
       return {
         success: false,
         error: "submission_failed",
-        message: "Failed to submit registration. Please try again.",
+        message: "An error occurred. Please try again.",
       };
     }
-
-    return data as RegistrationResult;
   },
 
   // ========================================

@@ -43,6 +43,7 @@ import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPi
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
 import { PublicJoinWrapper } from "./features/recruiting/pages/PublicJoinWrapper";
 import { PublicRegistrationPage } from "./features/recruiting/pages/PublicRegistrationPage";
+import { TestRegistration } from "./features/recruiting/pages/TestRegistration";
 import { LeadsQueueDashboard } from "./features/recruiting/components/LeadsQueueDashboard";
 import { TrainingHubPage, TrainerDashboard } from "./features/training-hub";
 import { ContractingPage } from "./features/contracting/ContractingPage";
@@ -438,6 +439,13 @@ const publicRegistrationRoute = createRoute({
   component: PublicRegistrationPage,
 });
 
+// Debug route for testing registration
+const testRegistrationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "test-register/$token",
+  component: TestRegistration,
+});
+
 // Alternative join route - catches /join-* pattern using catch-all
 // This handles URLs like /join-the-standard without redirect
 // Uses stable wrapper component (not inline function) so React Query works correctly
@@ -569,6 +577,7 @@ const routeTree = rootRoute.addChildren([
   myPipelineRoute,
   publicJoinRoute,
   publicRegistrationRoute,
+  testRegistrationRoute,
   leadsQueueRoute,
   trainingHubRoute,
   trainerDashboardRoute,
