@@ -240,7 +240,6 @@ export function SendInviteDialog({
           </Button>
           <Button
             type="submit"
-            onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting}
             size="sm"
             className="h-6 text-[10px] px-2"
