@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-03 17:42:20
+
+### Changed Files
+- `src/hooks/expenses/useExpenses.ts`
+- `src/services/expenses/expense/ExpenseRepository.ts`
+- `src/services/expenses/expense/ExpenseService.ts`
+- `src/types/expense.types.ts`
+
+### Statistics
+```
+ 4 files changed, 36 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-03 17:29:01
 
 ### Changed Files

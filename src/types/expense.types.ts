@@ -76,6 +76,7 @@ export interface UpdateExpenseData {
  * Filter options for querying expenses
  */
 export interface ExpenseFilters {
+  userId?: string; // Filter expenses by user - CRITICAL for data isolation
   expenseType?: ExpenseType | "all";
   category?: string | "all";
   startDate?: string;

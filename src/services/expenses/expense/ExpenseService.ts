@@ -335,11 +335,13 @@ class ExpenseServiceClass extends BaseService<
   async getByDateRange(
     startDate: string,
     endDate: string,
+    userId?: string,
   ): Promise<ServiceResponse<Expense[]>> {
     try {
       const expenses = await this._repository.findByDateRange(
         startDate,
         endDate,
+        userId,
       );
       return { success: true, data: expenses as Expense[] };
     } catch (error) {
@@ -739,8 +741,9 @@ class ExpenseServiceClass extends BaseService<
   async getExpensesByDateRange(
     startDate: string,
     endDate: string,
+    userId?: string,
   ): Promise<Expense[]> {
-    const result = await this.getByDateRange(startDate, endDate);
+    const result = await this.getByDateRange(startDate, endDate, userId);
     if (!result.success) {
       throw result.error;
     }

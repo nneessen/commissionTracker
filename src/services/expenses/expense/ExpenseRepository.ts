@@ -102,6 +102,11 @@ export class ExpenseRepository extends BaseRepository<
       .select("*")
       .order("date", { ascending: false });
 
+    // CRITICAL: Filter by user_id for data isolation
+    if (filters?.userId) {
+      query = query.eq("user_id", filters.userId);
+    }
+
     if (filters?.expenseType && filters.expenseType !== "all") {
       query = query.eq("expense_type", filters.expenseType);
     }
@@ -147,13 +152,21 @@ export class ExpenseRepository extends BaseRepository<
   async findByDateRange(
     startDate: string,
     endDate: string,
+    userId?: string,
   ): Promise<ExpenseBaseEntity[]> {
-    const { data, error } = await this.client
+    let query = this.client
       .from(this.tableName)
       .select("*")
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: false });
+
+    // Filter by user_id if provided for data isolation
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw this.handleError(error, "findByDateRange");
