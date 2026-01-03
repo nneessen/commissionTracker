@@ -501,7 +501,19 @@ class HierarchyService {
       // Include owner + all downlines for pending AP calculation
       const allTeamUserIds = [myProfile.id, ...downlineIds];
 
-      // Fetch policies for all downlines in the period
+      // Batch fetch ALL policies for team members in a single query (N+1 fix)
+      const allPolicies =
+        await this.policyRepo.findMetricsByUserIds(allTeamUserIds);
+
+      // Group policies by user_id for O(1) lookup instead of O(N) filtering per user
+      const policiesByUserId = new Map<string, typeof allPolicies>();
+      for (const policy of allPolicies) {
+        const existing = policiesByUserId.get(policy.user_id) || [];
+        existing.push(policy);
+        policiesByUserId.set(policy.user_id, existing);
+      }
+
+      // Aggregate metrics for all team members
       let teamAPTotal = 0;
       let teamPoliciesCount = 0;
       let teamPendingAPTotal = 0;
@@ -516,19 +528,16 @@ class HierarchyService {
       const rangeStart = new Date(mtdStart);
       const rangeEnd = new Date(mtdEnd);
 
-      // Aggregate policies for all team members (owner + downlines)
+      // Aggregate policies for all team members (owner + downlines) using pre-fetched data
       for (const userId of allTeamUserIds) {
-        const policyData = await this.getAgentPolicies(userId);
-        const policies = policyData.policies || [];
+        // O(1) lookup from pre-grouped Map
+        const policies = policiesByUserId.get(userId) || [];
 
         // Filter PENDING policies (all pending, no date filter) for total pending display
-        const pendingPolicies = policies.filter(
-          (p: { status?: string }) => p.status === "pending",
-        );
+        const pendingPolicies = policies.filter((p) => p.status === "pending");
 
         const pendingAP = pendingPolicies.reduce(
-          (sum: number, p: { annualPremium?: number | string }) =>
-            sum + parseFloat(String(p.annualPremium) || "0"),
+          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
           0,
         );
 
@@ -538,21 +547,18 @@ class HierarchyService {
         // Only aggregate active policies for downlines (not owner) for team performance
         if (userId !== myProfile.id) {
           // Filter policies created in the period with status="active"
-          const periodPolicies = policies.filter(
-            (p: { createdAt?: string; status?: string }) => {
-              const createdDate = new Date(p.createdAt || "");
-              return (
-                createdDate >= rangeStart &&
-                createdDate <= rangeEnd &&
-                p.status === "active"
-              );
-            },
-          );
+          const periodPolicies = policies.filter((p) => {
+            const createdDate = new Date(p.created_at || "");
+            return (
+              createdDate >= rangeStart &&
+              createdDate <= rangeEnd &&
+              p.status === "active"
+            );
+          });
 
           // Sum AP for this agent
           const agentAP = periodPolicies.reduce(
-            (sum: number, p: { annualPremium?: number | string }) =>
-              sum + parseFloat(String(p.annualPremium) || "0"),
+            (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
             0,
           );
 
@@ -612,7 +618,7 @@ class HierarchyService {
 
       // Count pending invitations
       const { count: pendingInvitations } = await supabase
-        .from("invitations")
+        .from("hierarchy_invitations")
         .select("*", { count: "exact", head: true })
         .eq("inviter_id", myProfile.id)
         .eq("status", "pending");
@@ -677,21 +683,18 @@ class HierarchyService {
       let teamYTDAPTotal = 0;
       const ytdRangeStart = new Date(now.getFullYear(), 0, 1);
 
+      // Use pre-grouped policies (O(1) lookup)
       for (const userId of allTeamUserIds) {
-        const policyData = await this.getAgentPolicies(userId);
-        const policies = policyData.policies || [];
+        const policies = policiesByUserId.get(userId) || [];
 
         // Filter YTD active policies
-        const ytdPolicies = policies.filter(
-          (p: { createdAt?: string; status?: string }) => {
-            const createdDate = new Date(p.createdAt || "");
-            return createdDate >= ytdRangeStart && p.status === "active";
-          },
-        );
+        const ytdPolicies = policies.filter((p) => {
+          const createdDate = new Date(p.created_at || "");
+          return createdDate >= ytdRangeStart && p.status === "active";
+        });
 
         const ytdAP = ytdPolicies.reduce(
-          (sum: number, p: { annualPremium?: number | string }) =>
-            sum + parseFloat(String(p.annualPremium) || "0"),
+          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
           0,
         );
 
