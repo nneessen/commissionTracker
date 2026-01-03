@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyDownlines, useMyHierarchyStats, useHierarchyTree } from "@/hooks";
+import { useMyDownlines, useMyHierarchyStats } from "@/hooks";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SendInvitationModal } from "./components/SendInvitationModal";
 import { TeamMetricsCard } from "./components/TeamMetricsCard";
@@ -54,7 +54,6 @@ export function HierarchyDashboardCompact() {
   const navigate = useNavigate();
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
     useMyDownlines();
-  const { data: _hierarchyTree = [] } = useHierarchyTree();
 
   // Timeframe state
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");

@@ -456,12 +456,39 @@ class HierarchyService {
         startDate ||
         new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const mtdEnd = endDate || now.toISOString();
+      const ytdStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
-      // Get overrides where current user is EITHER the override_agent OR the base_agent
-      const mtdOverrides = await this.overrideRepo.findForAgentInRange(
-        myProfile.id,
-        mtdStart,
+      // Calculate direct downlines - only approved agents with upline_id = current user
+      const directDownlines = downlines.filter(
+        (d) => d.upline_id === myProfile.id,
       );
+
+      // Get all downline IDs for policy aggregation
+      const downlineIds = downlines.map((d) => d.id);
+
+      // Include owner + all downlines for pending AP calculation
+      const allTeamUserIds = [myProfile.id, ...downlineIds];
+
+      // ==========================================
+      // PARALLELIZED QUERIES - All independent, run simultaneously
+      // ==========================================
+      const [mtdOverrides, ytdOverrides, allPolicies, invitationResult] =
+        await Promise.all([
+          // MTD overrides where user is override_agent OR base_agent
+          this.overrideRepo.findForAgentInRange(myProfile.id, mtdStart),
+          // YTD overrides where user is override_agent
+          this.overrideRepo.findByOverrideAgentId(myProfile.id, ytdStart),
+          // All policies for team members
+          this.policyRepo.findMetricsByUserIds(allTeamUserIds),
+          // Pending invitations count
+          supabase
+            .from("hierarchy_invitations")
+            .select("*", { count: "exact", head: true })
+            .eq("inviter_id", myProfile.id)
+            .eq("status", "pending"),
+        ]);
+
+      const pendingInvitations = invitationResult.count || 0;
 
       // Calculate MTD income (only where user is the override_agent receiving the income)
       const mtdIncome = mtdOverrides
@@ -472,38 +499,15 @@ class HierarchyService {
           0,
         );
 
-      // Get override income YTD
-      const ytdStart = new Date(now.getFullYear(), 0, 1).toISOString();
-
-      const ytdOverrides = await this.overrideRepo.findByOverrideAgentId(
-        myProfile.id,
-        ytdStart,
-      );
-
       const ytdIncome = ytdOverrides.reduce(
         (sum, o) =>
           sum + parseFloat(String(o.override_commission_amount) || "0"),
         0,
       );
 
-      // Calculate direct downlines - only approved agents with upline_id = current user
-      const directDownlines = downlines.filter(
-        (d) => d.upline_id === myProfile.id,
-      );
-
       // ==========================================
       // Calculate Team Performance Metrics
       // ==========================================
-
-      // Get all downline IDs for policy aggregation
-      const downlineIds = downlines.map((d) => d.id);
-
-      // Include owner + all downlines for pending AP calculation
-      const allTeamUserIds = [myProfile.id, ...downlineIds];
-
-      // Batch fetch ALL policies for team members in a single query (N+1 fix)
-      const allPolicies =
-        await this.policyRepo.findMetricsByUserIds(allTeamUserIds);
 
       // Group policies by user_id for O(1) lookup instead of O(N) filtering per user
       const policiesByUserId = new Map<string, typeof allPolicies>();
@@ -616,12 +620,7 @@ class HierarchyService {
             contractLevels.length
           : 0;
 
-      // Count pending invitations
-      const { count: pendingInvitations } = await supabase
-        .from("hierarchy_invitations")
-        .select("*", { count: "exact", head: true })
-        .eq("inviter_id", myProfile.id)
-        .eq("status", "pending");
+      // pendingInvitations already fetched in parallelized queries above (line ~491)
 
       // Calculate RELATIVE max depth from user's position
       // User's depth is myProfile.hierarchy_depth, downlines are at deeper levels
