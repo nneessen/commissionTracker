@@ -11,6 +11,7 @@ import {
   useAnalyticsDateRange,
 } from "./context/AnalyticsDateContext";
 import { AnalyticsSectionGate } from "@/components/subscription";
+import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 
 // Lazy load analytics components for better performance
 const PaceMetrics = lazy(() =>
@@ -218,7 +219,9 @@ function AnalyticsDashboardContent() {
 export function AnalyticsDashboard() {
   return (
     <AnalyticsDateProvider>
-      <AnalyticsDashboardContent />
+      <ChunkErrorBoundary context="analytics dashboard">
+        <AnalyticsDashboardContent />
+      </ChunkErrorBoundary>
     </AnalyticsDateProvider>
   );
 }

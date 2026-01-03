@@ -11,6 +11,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { Toaster } from "@/components/ui/sonner";
 import { metricsService } from "./services/observability/MetricsService";
+import { ChunkErrorBoundary } from "./components/shared/ChunkErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,21 +35,23 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      storageKey="commission-tracker-theme"
-    >
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NotificationProvider>
-            <RouterProvider router={router} />
-            <Toaster />
-            <ReactQueryDevtools initialIsOpen={false} />
-          </NotificationProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <ChunkErrorBoundary context="application">
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        storageKey="commission-tracker-theme"
+      >
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <NotificationProvider>
+              <RouterProvider router={router} />
+              <Toaster />
+              <ReactQueryDevtools initialIsOpen={false} />
+            </NotificationProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ChunkErrorBoundary>
   </React.StrictMode>,
 );
