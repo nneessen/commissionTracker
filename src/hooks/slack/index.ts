@@ -14,6 +14,7 @@ export {
   useSlackIntegration,
   useHasSlackIntegration,
   useConnectSlack,
+  useReauthorizeSlackIntegration,
   useDisconnectSlack,
   useTestSlackConnection,
   useUpdateSlackChannelSettings,

@@ -35,6 +35,7 @@ import {
 import {
   useSlackIntegrations,
   useConnectSlack,
+  useReauthorizeSlackIntegration,
   useDisconnectSlackById,
   useTestSlackConnectionById,
   useSlackChannelsById,
@@ -89,8 +90,6 @@ interface WorkspaceCardProps {
   }) => Promise<void>;
   isUpdatingUserPrefs: boolean;
   isAdmin: boolean;
-  onReauthorize: () => Promise<void>;
-  isReauthorizing: boolean;
 }
 
 function WorkspaceCard({
@@ -99,8 +98,6 @@ function WorkspaceCard({
   onUpdateUserPrefs,
   isUpdatingUserPrefs,
   isAdmin,
-  onReauthorize,
-  isReauthorizing,
 }: WorkspaceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -108,6 +105,7 @@ function WorkspaceCard({
     useSlackChannelsById(isExpanded ? integration.id : undefined);
 
   const disconnectSlack = useDisconnectSlackById();
+  const reauthorize = useReauthorizeSlackIntegration();
   const testConnection = useTestSlackConnectionById();
   const updateSettings = useUpdateSlackIntegrationSettings();
   const joinChannel = useJoinSlackChannelById();
@@ -143,6 +141,17 @@ function WorkspaceCard({
       }
     } catch {
       toast.error("Failed to test connection");
+    }
+  };
+
+  const handleReauthorize = async () => {
+    try {
+      await reauthorize.mutateAsync({
+        integrationId: integration.id,
+        returnUrl: `${window.location.origin}/settings/integrations`,
+      });
+    } catch {
+      toast.error("Failed to initiate re-authorization");
     }
   };
 
@@ -346,11 +355,11 @@ function WorkspaceCard({
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-[9px] text-purple-500 hover:text-purple-600"
-                onClick={onReauthorize}
-                disabled={isReauthorizing}
+                onClick={handleReauthorize}
+                disabled={reauthorize.isPending}
                 title="Re-authorize with updated permissions"
               >
-                {isReauthorizing ? (
+                {reauthorize.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   "Re-authorize"
@@ -1431,8 +1440,6 @@ export function SlackIntegrationCard() {
                 onUpdateUserPrefs={handleUpdateUserPrefs}
                 isUpdatingUserPrefs={updateUserPrefs.isPending}
                 isAdmin={canManageSlack}
-                onReauthorize={() => handleConnect()}
-                isReauthorizing={connectSlack.isPending}
               />
             ))}
           </div>

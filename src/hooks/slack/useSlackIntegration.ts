@@ -120,6 +120,57 @@ export function useConnectSlack() {
 }
 
 /**
+ * Re-authorize an existing Slack integration
+ * Uses the integration's existing agency_id to ensure the correct OAuth flow
+ * This prevents agency_id mismatch when the user's current agency differs from the integration's
+ */
+export function useReauthorizeSlackIntegration() {
+  const { user } = useAuth();
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async ({
+      integrationId,
+      returnUrl,
+    }: {
+      integrationId: string;
+      returnUrl?: string;
+    }): Promise<void> => {
+      if (!profile?.imo_id || !user?.id) {
+        throw new Error("User not authenticated or no IMO assigned");
+      }
+
+      // Fetch the existing integration to get its agency_id
+      const integration = await slackService.getIntegrationById(integrationId);
+      if (!integration) {
+        throw new Error("Integration not found");
+      }
+
+      let oauthUrl: string;
+
+      // Use the integration's agency_id, not the user's current agency
+      if (integration.agency_id) {
+        oauthUrl = await slackService.initiateOAuthForAgency(
+          integration.agency_id,
+          profile.imo_id,
+          user.id,
+          returnUrl,
+        );
+      } else {
+        // IMO-level integration
+        oauthUrl = await slackService.initiateOAuth(
+          profile.imo_id,
+          user.id,
+          returnUrl,
+        );
+      }
+
+      window.location.href = oauthUrl;
+    },
+  });
+}
+
+/**
  * Disconnect a specific Slack workspace by integration ID
  */
 export function useDisconnectSlackById() {
