@@ -400,7 +400,8 @@ async function handleCompleteFirstSale(
 
   // ONLY include leaderboard for direct agency (hierarchy_depth = 0)
   // Parent agencies (depth > 0) and IMO-level (depth = 999) get policy notification only
-  const shouldIncludeLeaderboard = log.hierarchy_depth === 0;
+  // Default to 0 (direct agency) if hierarchy_depth is null/undefined for backwards compatibility
+  const shouldIncludeLeaderboard = (log.hierarchy_depth ?? 0) === 0;
 
   let leaderboardOk = false;
   let leaderboardMessageTs: string | null = null;
@@ -507,7 +508,8 @@ async function handleUpdateLeaderboard(
   }
 
   // Validate that leaderboards are only updated for direct agency integrations
-  if (log.hierarchy_depth !== 0) {
+  // Default to 0 (direct agency) if hierarchy_depth is null/undefined for backwards compatibility
+  if ((log.hierarchy_depth ?? 0) !== 0) {
     console.log(
       `[slack-policy-notification] Skipping leaderboard update for parent/IMO integration (hierarchy_depth=${log.hierarchy_depth})`,
     );
@@ -957,7 +959,9 @@ serve(async (req) => {
 
         // ONLY include leaderboard for direct agency (hierarchy_depth = 0)
         // Parent agencies (depth > 0) and IMO-level (depth = 999) get policy notification only
-        const shouldIncludeLeaderboard = integration.hierarchy_depth === 0;
+        // Default to 0 (direct agency) if hierarchy_depth is null/undefined for backwards compatibility
+        const shouldIncludeLeaderboard =
+          (integration.hierarchy_depth ?? 0) === 0;
 
         // Check if there's already a daily log for today (Eastern timezone)
         const todayDate = getTodayDateET();

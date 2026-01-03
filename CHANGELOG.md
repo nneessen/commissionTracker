@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-03 09:44:30
+
+### Changed Files
+- `.serena/memories/ACTIVE_SESSION_CONTINUATION.md`
+- `plans/active/CONTINUATION_PROMPT.md`
+- `plans/completed/fix-commission-amount-calculation.md`
+- `src/features/policies/PolicyForm.tsx`
+- `src/hooks/commissions/useCommissions.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/settings/carriers/CarrierRepository.ts`
+- `src/services/settings/carriers/CarrierService.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+
+### Statistics
+```
+ 9 files changed, 391 insertions(+), 166 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-02 17:53:38
 
 ### Changed Files

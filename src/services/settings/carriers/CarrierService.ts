@@ -142,6 +142,18 @@ export class CarrierService extends BaseService<
     id: string,
     data: Partial<NewCarrierForm>,
   ): Promise<ServiceResponse<CarrierEntity>> {
+    // Debug: log incoming data
+    console.log("[CarrierService.updateFromForm] Received data:", {
+      id,
+      name: data.name,
+      code: data.code,
+      is_active: data.is_active,
+      imo_id: data.imo_id,
+      advance_cap: data.advance_cap,
+      hasAdvanceCap: "advance_cap" in data,
+      advanceCapType: typeof data.advance_cap,
+    });
+
     // Transform partial NewCarrierForm to repository format
     const repositoryData: CarrierUpdateData = {};
 
@@ -151,9 +163,19 @@ export class CarrierService extends BaseService<
     if (data.contact_info !== undefined) {
       repositoryData.contact_info = (data.contact_info || null) as Json;
     }
-    if (data.imo_id !== undefined) repositoryData.imo_id = data.imo_id || null;
-    if (data.advance_cap !== undefined)
+    // Include imo_id if present in data (even if null/undefined to allow clearing)
+    if ("imo_id" in data) {
+      repositoryData.imo_id = data.imo_id || null;
+    }
+    // Include advance_cap if present in data (even if null/undefined to allow clearing)
+    if ("advance_cap" in data) {
       repositoryData.advance_cap = data.advance_cap ?? null;
+    }
+
+    console.log(
+      "[CarrierService.updateFromForm] Sending to repository:",
+      repositoryData,
+    );
 
     return super.update(id, repositoryData);
   }

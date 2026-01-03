@@ -1,124 +1,91 @@
-# Session Continuation - Policy Edit Form Not Working
+# Comprehensive Continuation Prompt - Commission Tracker
 
-**Last Updated**: 2024-12-15  
-**Priority**: CRITICAL - Core functionality broken
+**Date**: 2026-01-03
+**Last Session**: Fixed commission amount display bug ($2,233 → $1,758)
 
-## TWO CRITICAL ISSUES
+---
 
-### Issue 1: Update Button Does Nothing
-When clicking "Update" on the policy edit form, nothing happens - dialog stays open, no console logs, no network requests.
+## COMPLETED THIS SESSION
 
-### Issue 2: Form Fields Not Pre-Populated
-When opening the edit dialog for an existing policy, the form fields are EMPTY instead of showing the existing policy data. User has to re-select carrier, product, etc. all over again.
+### Commission Amount Fix ✅
+- **Issue**: Dashboard showed $2,233 instead of $1,758
+- **Root Cause**: `useCommissions()` hook fetched ALL users' commissions instead of current user only
+- **Fix Applied**:
+  1. `src/hooks/commissions/useCommissions.ts` - Added user_id filtering via `useAuth()`
+  2. `src/services/commissions/CommissionRepository.ts` - Fixed column name in `findByAgent()` (expected_date → created_at)
+- **Status**: VERIFIED WORKING
 
-## What Should Happen
-1. User clicks edit on a policy
-2. Dialog opens with ALL fields pre-populated with existing policy data
-3. User changes premium from $150 to $200
-4. User clicks Update
-5. Dialog closes, policy updates, commission recalculates
+---
 
-## What Actually Happens
-1. User clicks edit on a policy
-2. Dialog opens with EMPTY fields (carrier, product, etc. not selected)
-3. User has to re-enter everything
-4. User clicks Update - NOTHING HAPPENS
+## PENDING ISSUES (Priority Order)
 
-## Previous Session Work (Still In Place)
+### 1. Policy Edit Form Not Working (P0 - CRITICAL)
 
-### Files Modified
-1. **policyService.ts** - Added commission creation on policy create
-2. **CommissionCalculationService.ts** - Added `recalculateCommissionByPolicyId` method
-3. **useUpdatePolicy.ts** - Added commission recalculation on premium change
-4. **PolicyDialog.tsx** - Fixed updatePolicy prop (but may still be broken)
-5. **PolicyForm.tsx** - Added debug logging
-6. **PolicyDashboard.tsx** - Added debug logging
+**Location**: `src/features/policies/`
 
-## Key Files to Debug
+**Issue 1: Update Button Does Nothing**
+- User clicks edit on a policy → Dialog opens → User clicks "Update" → NOTHING HAPPENS
+- No console logs, no network requests, dialog stays open
 
-### PolicyDialog.tsx (lines 44-52)
-```tsx
-<PolicyForm
-  policyId={policyId}
-  onClose={handleClose}
-  addPolicy={onSave}
-  updatePolicy={async (id: string, updates: Partial<NewPolicyForm>) => {
-    // For updates, pass the formData through onSave which handles both create and update
-    await onSave(updates as NewPolicyForm);
-  }}
-  getPolicyById={getPolicyById || (() => undefined)}
-/>
+**Issue 2: Form Fields Not Pre-Populated**
+- When opening edit dialog, all fields are EMPTY (carrier, product, premium not selected)
+- User has to re-enter everything
+
+**Key Files**:
+- `src/features/policies/components/PolicyDialog.tsx` (lines 44-52)
+- `src/features/policies/components/PolicyForm.tsx` (lines 76-105)
+- `src/features/policies/PolicyDashboard.tsx` (lines 64-111)
+
+**Data Flow to Debug**:
 ```
-
-**Problem**: `getPolicyById` might be returning undefined, which would explain why form isn't populated.
-
-### PolicyForm.tsx (lines 76-105)
-```tsx
-useEffect(() => {
-  if (policyId) {
-    const policy = getPolicyById(policyId);
-    if (policy) {
-      setFormData({...}); // Should populate form
-    } else {
-      console.error("❌ PolicyForm: Policy not found for id:", policyId);
-    }
-  }
-}, [policyId, getPolicyById]);
-```
-
-**Check**: Is `getPolicyById` being passed correctly? Is the policy being found?
-
-### PolicyDashboard.tsx (lines 64-111)
-This is where PolicyDialog is rendered. Check:
-- Is `editingPolicyId` being set correctly?
-- Is `getPolicyById` function working?
-
-## Debug Steps
-
-1. **Add console.log in PolicyDialog** to see if policyId is passed
-2. **Add console.log in PolicyForm useEffect** to see if policy is found
-3. **Check if getPolicyById returns the policy** in PolicyDashboard
-
-## Likely Root Causes
-
-### For Empty Form:
-1. `getPolicyById` is returning `undefined` because policies array might not include the policy
-2. `policyId` might not be passed correctly to PolicyDialog
-3. The useEffect in PolicyForm might not be running
-
-### For Update Not Working:
-1. The `updatePolicy` prop in PolicyDialog calls `onSave` but might not be awaited properly
-2. Form validation might be failing silently
-3. The mutation might be failing but errors are being swallowed
-
-## Quick Fix Approach
-
-1. Add extensive console.log statements to trace the data flow
-2. Check browser console for any errors
-3. Verify that `editingPolicyId` is set when edit button is clicked
-4. Verify that `getPolicyById(editingPolicyId)` returns the policy object
-5. Verify that PolicyForm receives and uses the policy data
-
-## Data Flow to Trace
-
-```
-PolicyList (edit button click)
+PolicyList (edit button)
   → PolicyDashboard.handleEditPolicy(policyId)
     → setEditingPolicyId(policyId)
-    → setIsPolicyFormOpen(true)
       → PolicyDialog renders with policyId={editingPolicyId}
-        → PolicyForm receives policyId and getPolicyById
-          → useEffect runs, calls getPolicyById(policyId)
-            → Should return policy object
-              → setFormData with policy values
+        → PolicyForm.useEffect calls getPolicyById(policyId)
+          → Should populate form with policy data
 ```
 
-## Test After Fix
+### 2. Carrier Advance Cap Not Persisting (P1)
 
-1. Click edit on existing policy
-2. Verify all fields show existing values (carrier, product, premium, etc.)
-3. Change premium value
-4. Click Update
-5. Verify dialog closes
-6. Verify policy premium updated
-7. Verify commission recalculated
+**Location**: Settings → Carriers
+
+**Issue**: `advance_cap` and `imo_id` don't persist after save despite success toast.
+
+**Key Files**:
+- `src/features/settings/carriers/hooks/useCarriers.ts:67-87`
+- `src/services/settings/carriers/CarrierService.ts:140-159`
+
+### 3. Slack Policy Notification Code Review (P2)
+
+Needs code review before deployment:
+- `supabase/migrations/20260102_005_fix_slack_hierarchy_leaderboard.sql`
+- `supabase/functions/slack-policy-notification/index.ts`
+
+### 4. Registration System Verification (P1)
+
+May be resolved - needs testing:
+- Send new invite, click link, verify form loads and submits
+
+---
+
+## DEAD CODE TO CLEAN UP
+
+- `CommissionAnalyticsService.getCommissionMetrics()` - queries non-existent columns, not called anywhere
+
+---
+
+## DATABASE CONNECTION
+
+```bash
+PGPASSWORD='N123j234n345!$!$' psql -h aws-1-us-east-2.pooler.supabase.com -p 6543 -U postgres.pcyaqwodnyrpkaiojnpz -d postgres -c "QUERY"
+```
+
+---
+
+## SESSION START CHECKLIST
+
+1. Activate project: `mcp__serena__activate_project("commissionTracker")`
+2. Read this memory for context
+3. Pick highest priority issue
+4. Create todo list before starting

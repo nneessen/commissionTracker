@@ -146,7 +146,7 @@ export class CommissionRepository extends BaseRepository<
         .from(this.tableName)
         .select("*")
         .eq("user_id", userId)
-        .order("expected_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         throw this.handleError(error, "findByAgent");

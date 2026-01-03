@@ -59,12 +59,18 @@ export class CarrierRepository extends BaseRepository<
     if ("is_active" in data && data.is_active !== undefined) {
       dbData.is_active = data.is_active;
     }
-    if ("imo_id" in data && data.imo_id !== undefined) {
-      dbData.imo_id = data.imo_id;
+    // Handle imo_id - include null values to allow clearing
+    if ("imo_id" in data) {
+      dbData.imo_id = data.imo_id ?? null;
     }
-    if ("advance_cap" in data && data.advance_cap !== undefined) {
-      dbData.advance_cap = data.advance_cap;
+    // Handle advance_cap - include null values to allow clearing
+    if ("advance_cap" in data) {
+      dbData.advance_cap = data.advance_cap ?? null;
     }
+
+    // Debug: log what we're sending to DB
+    console.log("[CarrierRepository.transformToDB] Input:", data);
+    console.log("[CarrierRepository.transformToDB] Output:", dbData);
 
     return dbData;
   }

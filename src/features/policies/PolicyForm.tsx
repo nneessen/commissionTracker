@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 import {
   calculateAnnualPremium,
@@ -90,31 +91,47 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     userContractLevel,
   );
 
-  // Populate form when editing an existing policy - wait for carriers to be loaded
+  // Populate form when editing an existing policy
+  // Note: We populate immediately when policy is available, regardless of carriers loading state
+  // The form fields will show the values even if carrier dropdown hasn't loaded yet
   useEffect(() => {
-    if (policyId && policy && carriers.length > 0) {
-      const newFormData = {
-        clientName: policy.client?.name || "",
-        clientState: policy.client?.state || "",
-        clientAge: policy.client?.age || 0,
-        carrierId: policy.carrierId,
-        productId: policy.productId || "",
-        product: policy.product,
-        policyNumber: policy.policyNumber,
-        submitDate: policy.submitDate || formatDateForDB(new Date()),
-        effectiveDate: policy.effectiveDate || formatDateForDB(new Date()),
-        premium: calculatePaymentAmount(
-          policy.annualPremium,
-          policy.paymentFrequency,
-        ),
-        paymentFrequency: policy.paymentFrequency,
-        commissionPercentage: policy.commissionPercentage * 100,
-        status: policy.status,
-        notes: policy.notes || "",
-      };
-      setFormData(newFormData);
+    if (!policyId || !policy) {
+      return;
     }
-  }, [policyId, policy, carriers.length]);
+
+    // Debug: Log when form population should happen
+    console.log("[PolicyForm] Populating form for policy:", {
+      policyId,
+      policyNumber: policy.policyNumber,
+      clientName: policy.client?.name,
+      carrierId: policy.carrierId,
+      carriersLoaded: carriers.length,
+    });
+
+    const newFormData: NewPolicyForm = {
+      clientName: policy.client?.name || "",
+      clientState: policy.client?.state || "",
+      clientAge: policy.client?.age || 0,
+      clientEmail: policy.client?.email || "",
+      clientPhone: policy.client?.phone || "",
+      carrierId: policy.carrierId || "",
+      productId: policy.productId || "",
+      product: policy.product,
+      policyNumber: policy.policyNumber || "",
+      submitDate: policy.submitDate || formatDateForDB(new Date()),
+      effectiveDate: policy.effectiveDate || formatDateForDB(new Date()),
+      premium: calculatePaymentAmount(
+        policy.annualPremium || 0,
+        policy.paymentFrequency,
+      ),
+      paymentFrequency: policy.paymentFrequency || "monthly",
+      commissionPercentage: (policy.commissionPercentage || 0) * 100,
+      status: policy.status || "pending",
+      notes: policy.notes || "",
+    };
+
+    setFormData(newFormData);
+  }, [policyId, policy]);
 
   // When products load and we're editing a policy without productId, auto-match by product type
   useEffect(() => {
@@ -299,37 +316,48 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const isValid = Object.keys(newErrors).length === 0;
+
+    if (!isValid) {
+      // Show toast with first error for visibility
+      const firstError = Object.values(newErrors)[0];
+      toast.error(`Please fix errors: ${firstError}`);
+    }
+
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      // Calculate annual premium before submitting
-      const annualPremium = calculateAnnualPremium(
-        formData.premium,
-        formData.paymentFrequency,
-      );
+    if (!validateForm()) {
+      // Toast already shown by validateForm
+      return;
+    }
 
-      const submissionData = {
-        ...formData,
-        annualPremium,
-      };
+    // Calculate annual premium before submitting
+    const annualPremium = calculateAnnualPremium(
+      formData.premium,
+      formData.paymentFrequency,
+    );
 
-      try {
-        if (policyId) {
-          await updatePolicy(policyId, submissionData);
-          onClose();
-        } else {
-          await addPolicy(submissionData);
-          onClose();
-        }
-      } catch (error) {
-        alert(
-          `Error: ${error instanceof Error ? error.message : "Failed to save policy"}`,
-        );
+    const submissionData = {
+      ...formData,
+      annualPremium,
+    };
+
+    try {
+      if (policyId) {
+        await updatePolicy(policyId, submissionData);
+        onClose();
+      } else {
+        await addPolicy(submissionData);
+        onClose();
       }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save policy",
+      );
     }
   };
 
