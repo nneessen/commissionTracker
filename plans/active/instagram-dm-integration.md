@@ -357,12 +357,17 @@ For priority contacts without recent outbound:
 - [x] Run migrations (all 6 applied successfully)
 - [ ] Regenerate database.types.ts (needs Supabase auth - manual types work for now)
 
-### Milestone 2: OAuth & Integration
-- [ ] Create `instagram-oauth-init` edge function
-- [ ] Create `instagram-oauth-callback` edge function
-- [ ] Create `instagram-refresh-token` edge function (CRON)
-- [ ] Create instagramService OAuth methods
-- [ ] Create useInstagramIntegration hooks
+### Milestone 2: OAuth & Integration ✅ COMPLETE
+- [x] Create `instagram-oauth-init` edge function
+  - `supabase/functions/instagram-oauth-init/index.ts`
+- [x] Create `instagram-oauth-callback` edge function
+  - `supabase/functions/instagram-oauth-callback/index.ts`
+- [x] Create `instagram-refresh-token` edge function (CRON)
+  - `supabase/functions/instagram-refresh-token/index.ts`
+- [x] Create instagramService OAuth methods
+  - `src/services/instagram/instagramService.ts`
+- [x] Create useInstagramIntegration hooks
+  - `src/hooks/instagram/useInstagramIntegration.ts`
 
 ### Milestone 3: Basic UI
 - [ ] Create InstagramTabContent with feature gate
@@ -434,19 +439,25 @@ For priority contacts without recent outbound:
 | `supabase/migrations/20260103_009_instagram_billing_feature.sql` | Team tier feature flag |
 | `src/types/instagram.types.ts` | TypeScript types & query keys |
 
-### ⏳ To Create (Milestones 2-8)
+### ✅ Created (Milestone 2)
 | File | Purpose |
 |------|---------|
-| `supabase/functions/instagram-oauth-init/*` | OAuth initiation |
-| `supabase/functions/instagram-oauth-callback/*` | OAuth callback handler |
-| `supabase/functions/instagram-refresh-token/*` | Token refresh CRON |
+| `supabase/functions/instagram-oauth-init/index.ts` | OAuth initiation |
+| `supabase/functions/instagram-oauth-callback/index.ts` | OAuth callback handler |
+| `supabase/functions/instagram-refresh-token/index.ts` | Token refresh CRON |
+| `src/services/instagram/instagramService.ts` | Service layer |
+| `src/services/instagram/index.ts` | Service exports |
+| `src/hooks/instagram/useInstagramIntegration.ts` | TanStack Query hooks |
+| `src/hooks/instagram/index.ts` | Hook exports |
+
+### ⏳ To Create (Milestones 3-8)
+| File | Purpose |
+|------|---------|
 | `supabase/functions/instagram-get-conversations/*` | Fetch conversations |
 | `supabase/functions/instagram-get-messages/*` | Fetch messages |
 | `supabase/functions/instagram-send-message/*` | Send DM |
 | `supabase/functions/instagram-webhook/*` | Webhook handler |
 | `supabase/functions/instagram-process-scheduled/*` | Scheduled message CRON |
-| `src/services/instagram/instagramService.ts` | Service layer |
-| `src/hooks/instagram/useInstagramIntegration.ts` | TanStack Query hooks |
 | `src/features/messages/components/instagram/*.tsx` | 12 UI components |
 
 ---
