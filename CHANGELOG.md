@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-03 17:29:01
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/instagram-dm-integration.md`
+- `src/components/layout/index.ts`
+- `src/types/instagram.types.ts`
+- `supabase/migrations/20260103_004_instagram_enums.sql`
+- `supabase/migrations/20260103_005_instagram_integrations.sql`
+- `supabase/migrations/20260103_006_instagram_conversations_messages.sql`
+- `supabase/migrations/20260103_007_instagram_scheduled_templates.sql`
+- `supabase/migrations/20260103_008_instagram_lead_source.sql`
+- `supabase/migrations/20260103_009_instagram_billing_feature.sql`
+
+### Statistics
+```
+ 11 files changed, 2074 insertions(+), 7 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-03 17:28:44
+
+### Changed Files
+- `plans/active/instagram-dm-integration.md`
+- `src/components/layout/index.ts`
+- `src/types/instagram.types.ts`
+- `supabase/migrations/20260103_004_instagram_enums.sql`
+- `supabase/migrations/20260103_005_instagram_integrations.sql`
+- `supabase/migrations/20260103_006_instagram_conversations_messages.sql`
+- `supabase/migrations/20260103_007_instagram_scheduled_templates.sql`
+- `supabase/migrations/20260103_008_instagram_lead_source.sql`
+- `supabase/migrations/20260103_009_instagram_billing_feature.sql`
+
+### Statistics
+```
+ 9 files changed, 2050 insertions(+), 2 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-03 16:38:53
 
 ### Changed Files
