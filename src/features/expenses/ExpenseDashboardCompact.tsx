@@ -49,7 +49,7 @@ import type {
   CreateExpenseData,
   ExpenseTemplate,
 } from "../../types/expense.types";
-import { isSameMonth } from "../../lib/date";
+import { isSameMonth, formatDateForDisplay } from "../../lib/date";
 import { formatCurrency, formatPercent } from "../../lib/format";
 import { toast } from "sonner";
 import { DEFAULT_EXPENSE_CATEGORIES } from "../../types/expense.types";
@@ -228,16 +228,19 @@ export function ExpenseDashboardCompact() {
           `Deleted current expense and ${count} future occurrences!`,
         );
       } else if (deleteOption === "all") {
-        await supabase
+        const { error } = await supabase
           .from("expenses")
           .delete()
           .eq("recurring_group_id", selectedExpense.recurring_group_id);
+
+        if (error) throw error;
         toast.success("Deleted all recurring expenses!");
       }
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
-    } catch (_error) {
-      toast.error("Failed to delete expense. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to delete expense: ${message}`);
     }
   };
 
@@ -761,10 +764,10 @@ export function ExpenseDashboardCompact() {
                           className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                         >
                           <td className="p-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {new Date(expense.date).toLocaleDateString(
-                              "en-US",
-                              { month: "short", day: "numeric" },
-                            )}
+                            {formatDateForDisplay(expense.date, {
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </td>
                           <td className="p-2 text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
                             {expense.name}

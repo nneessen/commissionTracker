@@ -268,8 +268,12 @@ export class ExpenseRepository extends BaseRepository<
 
   /**
    * Delete all future expenses in a recurring group (date > given date)
+   * Returns the number of deleted expenses
    */
-  async deleteFutureInGroup(groupId: string, afterDate: string): Promise<number> {
+  async deleteFutureInGroup(
+    groupId: string,
+    afterDate: string,
+  ): Promise<number> {
     const { data, error } = await this.client
       .from(this.tableName)
       .delete()
@@ -281,6 +285,7 @@ export class ExpenseRepository extends BaseRepository<
       throw this.handleError(error, "deleteFutureInGroup");
     }
 
+    // Return count of deleted rows (may be 0 if none found, which is valid)
     return data?.length || 0;
   }
 
@@ -343,7 +348,7 @@ export class ExpenseRepository extends BaseRepository<
    */
   async findDownlineExpenses(
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<DownlineExpense[]> {
     const { data, error } = await this.client.rpc("get_downline_expenses", {
       p_start_date: startDate || null,
@@ -362,14 +367,14 @@ export class ExpenseRepository extends BaseRepository<
    */
   async getDownlineExpenseSummary(
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<AgentExpenseSummary[]> {
     const { data, error } = await this.client.rpc(
       "get_downline_expense_summary",
       {
         p_start_date: startDate || null,
         p_end_date: endDate || null,
-      }
+      },
     );
 
     if (error) {
@@ -384,7 +389,7 @@ export class ExpenseRepository extends BaseRepository<
    */
   async getImoExpenseSummary(
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<AgentExpenseSummary[]> {
     const { data, error } = await this.client.rpc("get_imo_expense_summary", {
       p_start_date: startDate || null,
@@ -403,14 +408,14 @@ export class ExpenseRepository extends BaseRepository<
    */
   async getImoExpenseByCategory(
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<CategoryExpenseSummary[]> {
     const { data, error } = await this.client.rpc(
       "get_imo_expense_by_category",
       {
         p_start_date: startDate || null,
         p_end_date: endDate || null,
-      }
+      },
     );
 
     if (error) {
