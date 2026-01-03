@@ -138,13 +138,21 @@ export function ExpenseDashboardCompact() {
       ? ((totalAmount - previousTotal) / previousTotal) * 100
       : 0;
 
-  // YTD calculations
-  const currentYear = selectedMonth.getFullYear();
-  const ytdExpenses = expenses.filter(
-    (e) => new Date(e.date).getFullYear() === currentYear,
-  );
+  // YTD calculations - only include expenses from Jan 1 to TODAY (not future)
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const startOfYear = new Date(currentYear, 0, 1);
+
+  const ytdExpenses = expenses.filter((e) => {
+    const expenseDate = new Date(e.date);
+    return expenseDate >= startOfYear && expenseDate <= today;
+  });
+
   const ytdTotal = ytdExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const avgMonthlyExpense = ytdTotal / (selectedMonth.getMonth() + 1);
+
+  // Avg monthly: calculate based on actual months elapsed (minimum 1)
+  const monthsElapsed = Math.max(1, today.getMonth() + 1);
+  const avgMonthlyExpense = ytdTotal / monthsElapsed;
 
   // Calculate expense ratio (expenses as % of gross commissions)
   const grossCommission = metricsData.periodCommissions?.earned || 0;
