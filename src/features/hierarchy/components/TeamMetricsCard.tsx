@@ -343,7 +343,7 @@ export function TeamMetricsCard({
                 </div>
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-4 text-[11px]">
-                    <div>
+                    <div title="Sum of all team members' monthly AP targets (yearly target ÷ 12)">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         Target:{" "}
                       </span>
@@ -351,7 +351,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamMonthlyAPTarget)}
                       </span>
                     </div>
-                    <div>
+                    <div title="Active policies closed this month">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         MTD:{" "}
                       </span>
@@ -359,7 +359,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamAPTotal)}
                       </span>
                     </div>
-                    <div>
+                    <div title="(Active + Pending AP) ÷ day of month × days in month">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         Projected:{" "}
                       </span>
@@ -386,6 +386,11 @@ export function TeamMetricsCard({
                     ({teamMonthlyPacePercentage.toFixed(0)}%)
                   </div>
                 </div>
+                <div className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-1">
+                  Target = sum of each team member's (policies/yr × avg premium)
+                  ÷ 12 • Projected = current submission rate extrapolated to
+                  month-end
+                </div>
               </div>
             )}
 
@@ -397,7 +402,7 @@ export function TeamMetricsCard({
                 </div>
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-4 text-[11px]">
-                    <div>
+                    <div title="Sum of all team members' yearly AP targets (policies/yr × avg premium)">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         Target:{" "}
                       </span>
@@ -405,7 +410,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamYearlyAPTarget)}
                       </span>
                     </div>
-                    <div>
+                    <div title="Active policies closed year-to-date">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         YTD:{" "}
                       </span>
@@ -413,7 +418,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamYTDAPTotal)}
                       </span>
                     </div>
-                    <div>
+                    <div title="(Active YTD + Pending AP) ÷ day of year × 365">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         Projected:{" "}
                       </span>
@@ -439,6 +444,10 @@ export function TeamMetricsCard({
                         : "↓ Behind"}{" "}
                     ({teamYearlyPacePercentage.toFixed(0)}%)
                   </div>
+                </div>
+                <div className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-1">
+                  Target = sum of each team member's (policies/yr × avg premium)
+                  • Projected = current submission rate extrapolated to year-end
                 </div>
               </div>
             )}
