@@ -41,12 +41,24 @@ export const userSlackPreferencesService = {
     userId: string,
     imoId: string,
   ): Promise<UserSlackPreferences | null> {
+    console.log("[userSlackPreferencesService] Getting preferences for:", {
+      userId,
+      imoId,
+    });
+
     const { data, error } = await supabase
       .from("user_slack_preferences")
       .select("*")
       .eq("user_id", userId)
       .eq("imo_id", imoId)
       .maybeSingle();
+
+    console.log("[userSlackPreferencesService] Query result:", {
+      data,
+      error,
+      hasDefaultChannel: data?.default_view_channel_id,
+      defaultChannelName: data?.default_view_channel_name,
+    });
 
     if (error) {
       console.error(
@@ -56,7 +68,9 @@ export const userSlackPreferencesService = {
       throw error;
     }
 
-    return data ? transformRow(data) : null;
+    const result = data ? transformRow(data) : null;
+    console.log("[userSlackPreferencesService] Transformed result:", result);
+    return result;
   },
 
   /**
@@ -87,6 +101,12 @@ export const userSlackPreferencesService = {
       updateData.auto_post_enabled = input.autoPostEnabled;
     }
 
+    console.log("[userSlackPreferencesService] Upserting preferences:", {
+      userId,
+      imoId,
+      updateData,
+    });
+
     const { data, error } = await supabase
       .from("user_slack_preferences")
       .upsert(
@@ -109,6 +129,8 @@ export const userSlackPreferencesService = {
       );
       throw error;
     }
+
+    console.log("[userSlackPreferencesService] Upsert successful:", data);
 
     return transformRow(data);
   },

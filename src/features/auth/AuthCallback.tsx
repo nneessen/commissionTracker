@@ -1,10 +1,14 @@
 // src/features/auth/AuthCallback.tsx
 
 import React, { useEffect, useState } from "react";
-import {useNavigate} from "@tanstack/react-router";
-import {supabase} from "../../services/base/supabase";
-import {logger} from "../../services/base/logger";
-import {AUTH_CALLBACK_TYPES, type AuthCallbackType, SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "../../services/base/supabase";
+import { logger } from "../../services/base/logger";
+import {
+  AUTH_CALLBACK_TYPES,
+  type AuthCallbackType,
+  SESSION_STORAGE_KEYS,
+} from "../../constants/auth.constants";
 
 export const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -42,6 +46,11 @@ export const AuthCallback: React.FC = () => {
           logger.auth(
             "Password recovery callback, redirecting to reset password",
           );
+          // Redirect to reset password page with hash intact so it can read the tokens
+          setStatus("success");
+          setMessage("Redirecting to password reset...");
+          // Use window.location to preserve the hash with tokens
+          window.location.href = `/auth/reset-password${window.location.hash}`;
           return;
         }
 

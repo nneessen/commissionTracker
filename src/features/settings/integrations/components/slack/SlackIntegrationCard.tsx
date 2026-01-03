@@ -1282,7 +1282,9 @@ export function SlackIntegrationCard() {
 
   const handleConnect = async () => {
     try {
-      await connectSlack.mutateAsync("/settings/integrations");
+      // Pass absolute URL for redirect after OAuth
+      const returnUrl = `${window.location.origin}/settings/integrations`;
+      await connectSlack.mutateAsync(returnUrl);
     } catch {
       toast.error("Failed to initiate Slack connection");
     }

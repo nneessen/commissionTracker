@@ -120,7 +120,11 @@ serve(async (req) => {
     }
 
     const { imoId, userId, agencyId, returnUrl } = state;
-    const redirectUrl = returnUrl || `${APP_URL}/settings/integrations`;
+    // Ensure redirect URL is absolute (handle relative paths from frontend)
+    let redirectUrl = returnUrl || `${APP_URL}/settings/integrations`;
+    if (redirectUrl.startsWith("/")) {
+      redirectUrl = `${APP_URL}${redirectUrl}`;
+    }
 
     console.log(
       `[slack-oauth-callback] Processing OAuth for IMO: ${imoId}${agencyId ? `, Agency: ${agencyId}` : " (IMO-level)"}`,
