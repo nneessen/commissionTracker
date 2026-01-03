@@ -88,6 +88,9 @@ interface WorkspaceCardProps {
     defaultViewIntegrationId?: string | null;
   }) => Promise<void>;
   isUpdatingUserPrefs: boolean;
+  isAdmin: boolean;
+  onReauthorize: () => Promise<void>;
+  isReauthorizing: boolean;
 }
 
 function WorkspaceCard({
@@ -95,6 +98,9 @@ function WorkspaceCard({
   userPrefs,
   onUpdateUserPrefs,
   isUpdatingUserPrefs,
+  isAdmin,
+  onReauthorize,
+  isReauthorizing,
 }: WorkspaceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -334,25 +340,48 @@ function WorkspaceCard({
               <RefreshCw className="h-3 w-3" />
             )}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-[9px] text-red-500 hover:text-red-600"
-            onClick={handleDisconnect}
-            disabled={disconnectSlack.isPending}
-          >
-            Remove
-          </Button>
+          {isAdmin && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[9px] text-purple-500 hover:text-purple-600"
+                onClick={onReauthorize}
+                disabled={isReauthorizing}
+                title="Re-authorize with updated permissions"
+              >
+                {isReauthorizing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  "Re-authorize"
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[9px] text-red-500 hover:text-red-600"
+                onClick={handleDisconnect}
+                disabled={disconnectSlack.isPending}
+              >
+                Remove
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Expanded Settings */}
       {isExpanded && isConnected && (
         <div className="p-3 bg-zinc-50/50 dark:bg-zinc-800/30 space-y-4">
-          {/* Channel Settings */}
+          {/* Channel Settings - Admin Only for Editing */}
           <div className="space-y-3">
             <h5 className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">
               Channel Settings
+              {!isAdmin && (
+                <span className="ml-2 text-[8px] font-normal text-zinc-400">
+                  (Admin only)
+                </span>
+              )}
             </h5>
 
             {channelsLoading ? (
@@ -361,6 +390,40 @@ function WorkspaceCard({
                 <span className="text-[10px] text-zinc-500">
                   Loading channels...
                 </span>
+              </div>
+            ) : !isAdmin ? (
+              /* Read-only view for non-admins */
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-[9px] text-zinc-600 dark:text-zinc-400">
+                    Policy Sales
+                  </Label>
+                  <div className="h-7 px-2 flex items-center text-[10px] bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700">
+                    {integration.policy_channel_name ? (
+                      <span className="flex items-center gap-1">
+                        <Hash className="h-2.5 w-2.5" />
+                        {integration.policy_channel_name}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400">Not configured</span>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[9px] text-zinc-600 dark:text-zinc-400">
+                    Leaderboard
+                  </Label>
+                  <div className="h-7 px-2 flex items-center text-[10px] bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700">
+                    {integration.leaderboard_channel_name ? (
+                      <span className="flex items-center gap-1">
+                        <Hash className="h-2.5 w-2.5" />
+                        {integration.leaderboard_channel_name}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-400">Not configured</span>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : availableChannels.length === 0 ? (
               <div className="text-[10px] text-zinc-500 py-2">
@@ -450,34 +513,38 @@ function WorkspaceCard({
               </div>
             )}
 
-            {/* Toggle Options */}
-            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2">
-              <label className="flex items-center gap-2 text-[10px] text-zinc-600 dark:text-zinc-400">
-                <Switch
-                  checked={integration.include_client_info || false}
-                  onCheckedChange={(checked) =>
-                    handleToggleSetting("include_client_info", checked)
-                  }
-                  disabled={updateSettings.isPending}
-                  className="scale-75"
-                />
-                Include client name
-              </label>
-              <label className="flex items-center gap-2 text-[10px] text-zinc-600 dark:text-zinc-400">
-                <Switch
-                  checked={integration.include_leaderboard_with_policy ?? true}
-                  onCheckedChange={(checked) =>
-                    handleToggleSetting(
-                      "include_leaderboard_with_policy",
-                      checked,
-                    )
-                  }
-                  disabled={updateSettings.isPending}
-                  className="scale-75"
-                />
-                Leaderboard with each sale
-              </label>
-            </div>
+            {/* Toggle Options - Admin Only */}
+            {isAdmin && (
+              <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2">
+                <label className="flex items-center gap-2 text-[10px] text-zinc-600 dark:text-zinc-400">
+                  <Switch
+                    checked={integration.include_client_info || false}
+                    onCheckedChange={(checked) =>
+                      handleToggleSetting("include_client_info", checked)
+                    }
+                    disabled={updateSettings.isPending}
+                    className="scale-75"
+                  />
+                  Include client name
+                </label>
+                <label className="flex items-center gap-2 text-[10px] text-zinc-600 dark:text-zinc-400">
+                  <Switch
+                    checked={
+                      integration.include_leaderboard_with_policy ?? true
+                    }
+                    onCheckedChange={(checked) =>
+                      handleToggleSetting(
+                        "include_leaderboard_with_policy",
+                        checked,
+                      )
+                    }
+                    disabled={updateSettings.isPending}
+                    className="scale-75"
+                  />
+                  Leaderboard with each sale
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Your Preferences for this Workspace */}
@@ -1323,21 +1390,23 @@ export function SlackIntegrationCard() {
             </p>
           </div>
 
-          {/* Add Workspace Button */}
-          <Button
-            size="sm"
-            variant={hasConnections ? "outline" : "default"}
-            className="h-7 px-3 text-[10px]"
-            onClick={handleConnect}
-            disabled={connectSlack.isPending}
-          >
-            {connectSlack.isPending ? (
-              <Loader2 className="h-3 w-3 animate-spin mr-1" />
-            ) : (
-              <Plus className="h-3 w-3 mr-1" />
-            )}
-            {hasConnections ? "Add Workspace" : "Connect Slack"}
-          </Button>
+          {/* Add Workspace Button - Admin Only */}
+          {isImoAdmin && (
+            <Button
+              size="sm"
+              variant={hasConnections ? "outline" : "default"}
+              className="h-7 px-3 text-[10px]"
+              onClick={handleConnect}
+              disabled={connectSlack.isPending}
+            >
+              {connectSlack.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Plus className="h-3 w-3 mr-1" />
+              )}
+              {hasConnections ? "Add Workspace" : "Connect Slack"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1356,6 +1425,9 @@ export function SlackIntegrationCard() {
                 userPrefs={userPrefs ?? null}
                 onUpdateUserPrefs={handleUpdateUserPrefs}
                 isUpdatingUserPrefs={updateUserPrefs.isPending}
+                isAdmin={isImoAdmin}
+                onReauthorize={() => handleConnect()}
+                isReauthorizing={connectSlack.isPending}
               />
             ))}
           </div>
@@ -1455,58 +1527,60 @@ export function SlackIntegrationCard() {
         </div>
       )}
 
-      {/* Notification Webhooks Section */}
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
-              Notification Webhooks
-            </h4>
-            <p className="text-[9px] text-zinc-400">
-              Post notifications to any workspace without OAuth
-            </p>
+      {/* Notification Webhooks Section - Admin Only */}
+      {isImoAdmin && (
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                Notification Webhooks
+              </h4>
+              <p className="text-[9px] text-zinc-400">
+                Post notifications to any workspace without OAuth
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[9px]"
+              onClick={() => setShowAddWebhook(true)}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add Webhook
+            </Button>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 px-2 text-[9px]"
-            onClick={() => setShowAddWebhook(true)}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Add Webhook
-          </Button>
-        </div>
 
-        {webhooksLoading ? (
-          <div className="flex items-center gap-2 py-2">
-            <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
-            <span className="text-[10px] text-zinc-500">
-              Loading webhooks...
-            </span>
-          </div>
-        ) : webhooks.length === 0 ? (
-          <div className="py-3 text-center">
-            <Link2 className="h-5 w-5 text-zinc-300 dark:text-zinc-600 mx-auto mb-1" />
-            <p className="text-[10px] text-zinc-500">
-              No webhooks configured. Add one to post notifications to other
-              workspaces.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {webhooks.map((webhook) => (
-              <WebhookCard
-                key={webhook.id}
-                webhook={webhook}
-                onDelete={handleDeleteWebhook}
-                onToggle={handleToggleWebhook}
-                isDeleting={deleteWebhook.isPending}
-                isUpdating={updateWebhook.isPending}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {webhooksLoading ? (
+            <div className="flex items-center gap-2 py-2">
+              <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+              <span className="text-[10px] text-zinc-500">
+                Loading webhooks...
+              </span>
+            </div>
+          ) : webhooks.length === 0 ? (
+            <div className="py-3 text-center">
+              <Link2 className="h-5 w-5 text-zinc-300 dark:text-zinc-600 mx-auto mb-1" />
+              <p className="text-[10px] text-zinc-500">
+                No webhooks configured. Add one to post notifications to other
+                workspaces.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {webhooks.map((webhook) => (
+                <WebhookCard
+                  key={webhook.id}
+                  webhook={webhook}
+                  onDelete={handleDeleteWebhook}
+                  onToggle={handleToggleWebhook}
+                  isDeleting={deleteWebhook.isPending}
+                  isUpdating={updateWebhook.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add Webhook Dialog */}
       <AddWebhookDialog

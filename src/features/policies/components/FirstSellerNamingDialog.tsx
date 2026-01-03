@@ -52,6 +52,7 @@ export function FirstSellerNamingDialog({
 }: FirstSellerNamingDialogProps) {
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isHandlingClose, setIsHandlingClose] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const insertEmoji = (emoji: string) => {
@@ -151,8 +152,21 @@ export function FirstSellerNamingDialog({
     }
   };
 
+  // Handle dialog dismissal (clicking outside, pressing ESC)
+  // This ensures the notification is always posted even if user dismisses without action
+  const handleOpenChange = async (newOpen: boolean) => {
+    if (!newOpen && !isHandlingClose && !isSubmitting) {
+      // Dialog being dismissed without completing - trigger skip to post notification
+      setIsHandlingClose(true);
+      await handleSkip();
+      setIsHandlingClose(false);
+      return; // handleSkip already calls onOpenChange(false)
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">

@@ -127,7 +127,7 @@ serve(async (req) => {
     // Build OAuth URL
     const redirectUri = `${SUPABASE_URL}/functions/v1/slack-oauth-callback`;
     const scope =
-      "chat:write,channels:read,channels:join,users:read,users:read.email";
+      "chat:write,chat:write.customize,channels:read,channels:join,users:read,users:read.email";
 
     const authUrl = new URL("https://slack.com/oauth/v2/authorize");
     authUrl.searchParams.set("client_id", clientId);
