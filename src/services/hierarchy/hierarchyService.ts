@@ -521,7 +521,7 @@ class HierarchyService {
         const policyData = await this.getAgentPolicies(userId);
         const policies = policyData.policies || [];
 
-        // Filter PENDING policies (all pending, no date filter)
+        // Filter PENDING policies (all pending, no date filter) for total pending display
         const pendingPolicies = policies.filter(
           (p: { status?: string }) => p.status === "pending",
         );
@@ -700,6 +700,7 @@ class HierarchyService {
 
       // ==========================================
       // Monthly Pace Calculations
+      // Formula: (Active AP MTD + Pending AP) / day of month × days in month
       // ==========================================
       const daysInMonth = new Date(
         now.getFullYear(),
@@ -710,10 +711,12 @@ class HierarchyService {
       const expectedMonthlyAPAtThisPoint =
         (dayOfMonth / daysInMonth) * teamMonthlyAPTarget;
 
-      // teamAPTotal is MTD active AP
+      // Use Active + Pending AP for pace calculation
+      const teamMonthlyAPForPacePercentage = teamAPTotal + teamPendingAPTotal;
       const teamMonthlyPacePercentage =
         expectedMonthlyAPAtThisPoint > 0
-          ? (teamAPTotal / expectedMonthlyAPAtThisPoint) * 100
+          ? (teamMonthlyAPForPacePercentage / expectedMonthlyAPAtThisPoint) *
+            100
           : teamMonthlyAPTarget > 0
             ? 0
             : 100;
@@ -725,12 +728,15 @@ class HierarchyService {
             ? "on_pace"
             : "behind";
 
-      // Projected month-end AP at current pace
+      // FIXED: Projected month-end AP based on Active + Pending AP
+      // Formula: (Active AP MTD + Pending AP) / day of month × days in month
+      const teamMonthlyAPForPace = teamAPTotal + teamPendingAPTotal;
       const teamMonthlyProjected =
-        dayOfMonth > 0 ? (teamAPTotal / dayOfMonth) * daysInMonth : 0;
+        dayOfMonth > 0 ? (teamMonthlyAPForPace / dayOfMonth) * daysInMonth : 0;
 
       // ==========================================
       // Yearly Pace Calculations
+      // Formula: (Active AP YTD + Pending AP) / day of year × days in year
       // ==========================================
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       const dayOfYear =
@@ -746,9 +752,11 @@ class HierarchyService {
       const expectedYearlyAPAtThisPoint =
         (dayOfYear / daysInYear) * teamYearlyAPTarget;
 
+      // Use Active YTD + Pending AP for pace calculation
+      const teamYearlyAPForPace = teamYTDAPTotal + teamPendingAPTotal;
       const teamYearlyPacePercentage =
         expectedYearlyAPAtThisPoint > 0
-          ? (teamYTDAPTotal / expectedYearlyAPAtThisPoint) * 100
+          ? (teamYearlyAPForPace / expectedYearlyAPAtThisPoint) * 100
           : teamYearlyAPTarget > 0
             ? 0
             : 100;
@@ -760,9 +768,10 @@ class HierarchyService {
             ? "on_pace"
             : "behind";
 
-      // Projected year-end AP at current pace
+      // FIXED: Projected year-end AP based on Active YTD + Pending AP
+      // Formula: (Active AP YTD + Pending AP) / day of year × days in year
       const teamYearlyProjected =
-        dayOfYear > 0 ? (teamYTDAPTotal / dayOfYear) * daysInYear : 0;
+        dayOfYear > 0 ? (teamYearlyAPForPace / dayOfYear) * daysInYear : 0;
 
       const result: HierarchyStats = {
         // Agent counts - only approved agents
