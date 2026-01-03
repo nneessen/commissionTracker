@@ -96,8 +96,7 @@ export function AreaStackedChart({
     const total =
       stackOffset === "none"
         ? null
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
-          payload.reduce(
+        : payload.reduce(
             (sum: number, entry: any) => sum + (entry.value || 0),
             0,
           );

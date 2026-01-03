@@ -160,7 +160,7 @@ export function TargetsPage() {
             </div>
           </div>
 
-          {/* Welcome Content */}
+          {/* TODO: Welcome Content - Needs to be restyled to match my styles of the rest of my application. look for other dialogs for exampe add user add recruit dialogs for a better understanding of how i want it styled*/}
           <div className="flex-1 flex items-center justify-center">
             <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 max-w-md text-center">
               <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">

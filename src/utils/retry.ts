@@ -25,7 +25,7 @@ const DEFAULT_OPTIONS: Required<
 /**
  * Determines if an error is retryable
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- error constructor signature
+
 function isRetryable(
   error: unknown,
   retryableErrors?: Array<new (...args: any[]) => Error>,
@@ -144,7 +144,7 @@ export async function withRetry<T>(
 export function Retry(options: RetryOptions = {}) {
   return function (
     _target: any,
-    _propertyKey: string, // eslint-disable-line @typescript-eslint/no-explicit-any -- decorator target type
+    _propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;

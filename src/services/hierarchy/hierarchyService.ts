@@ -1134,14 +1134,22 @@ class HierarchyService {
   }
 
   /**
-   * Get override amount the viewer earns from a specific agent (for team table)
+   * Get override amount the viewer earns from agent(s) (for team table)
    * @param viewerId - The logged-in user viewing the team table
-   * @param baseAgentId - The team member (row agent)
+   * @param baseAgentIds - Single agent ID or array of agent IDs
+   * @returns For single ID: { mtd: number }, for array: Map<agentId, mtdAmount>
    */
   async getViewerOverridesFromAgent(
     viewerId: string,
-    baseAgentId: string,
-  ): Promise<{ mtd: number }> {
+    baseAgentIds: string | string[],
+  ): Promise<{ mtd: number } | Map<string, number>> {
+    const ids = Array.isArray(baseAgentIds) ? baseAgentIds : [baseAgentIds];
+    const isBatch = Array.isArray(baseAgentIds);
+
+    if (ids.length === 0) {
+      return isBatch ? new Map() : { mtd: 0 };
+    }
+
     try {
       const now = new Date();
       const mtdStart = new Date(
@@ -1153,17 +1161,26 @@ class HierarchyService {
       const overrides =
         await this.overrideRepo.findByOverrideAndBaseAgentInRange(
           viewerId,
-          baseAgentId,
+          ids,
           mtdStart,
         );
 
-      const mtd = overrides.reduce(
-        (sum, o) =>
-          sum + parseFloat(String(o.override_commission_amount) || "0"),
-        0,
-      );
+      // Group by base_agent_id and sum
+      const mtdByAgent = new Map<string, number>();
+      for (const o of overrides) {
+        const agentId = o.base_agent_id;
+        const current = mtdByAgent.get(agentId) || 0;
+        mtdByAgent.set(
+          agentId,
+          current + parseFloat(String(o.override_commission_amount) || "0"),
+        );
+      }
 
-      return { mtd };
+      // Return format based on input type (backward compatible)
+      if (!isBatch) {
+        return { mtd: mtdByAgent.get(ids[0]) || 0 };
+      }
+      return mtdByAgent;
     } catch (error) {
       logger.error(
         "HierarchyService.getViewerOverridesFromAgent",

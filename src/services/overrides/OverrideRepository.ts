@@ -382,21 +382,25 @@ export class OverrideRepository extends BaseRepository<
   }
 
   /**
-   * Find overrides where a specific override agent earns from a specific base agent
+   * Find overrides where a specific override agent earns from base agent(s)
    * Used for team table to show "Overrides I earn from this agent"
    * Only counts overrides with status 'earned' or 'paid' (base commission must be paid)
+   * Supports both single baseAgentId and batch mode with array of baseAgentIds
    */
   async findByOverrideAndBaseAgentInRange(
     overrideAgentId: string,
-    baseAgentId: string,
+    baseAgentIds: string | string[],
     startDate: string,
   ): Promise<OverrideMetricRow[]> {
+    const ids = Array.isArray(baseAgentIds) ? baseAgentIds : [baseAgentIds];
+    if (ids.length === 0) return [];
+
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("override_commission_amount")
+        .select("base_agent_id, override_commission_amount")
         .eq("override_agent_id", overrideAgentId)
-        .eq("base_agent_id", baseAgentId)
+        .in("base_agent_id", ids)
         .gte("created_at", startDate)
         .in("status", ["earned", "paid"]); // Only count earned/paid overrides
 

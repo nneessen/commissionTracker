@@ -257,7 +257,7 @@ class CommissionAnalyticsService {
    * );
    * ```
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback records have dynamic shape
+
   calculateChargebackRiskForCommission(
     commission: Commission,
     existingChargebacks: any[],
@@ -434,7 +434,6 @@ class CommissionAnalyticsService {
         (acc, cb) => {
           (acc[cb.commissionId] = acc[cb.commissionId] || []).push(cb);
           return acc;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback grouping type
         },
         {} as Record<string, any[]>,
       );

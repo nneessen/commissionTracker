@@ -5,7 +5,7 @@ import { format } from "date-fns";
 /**
  * Convert data to CSV format
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+
 export function convertToCSV(
   data: Record<string, any>[],
   headers?: string[],
@@ -44,7 +44,7 @@ export function convertToCSV(
 /**
  * Download CSV file
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+
 export function downloadCSV(
   data: Record<string, any>[],
   filename: string,
@@ -71,7 +71,7 @@ export function downloadCSV(
 /**
  * Copy data to clipboard as CSV
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+
 export async function copyToClipboardAsCSV(
   data: Record<string, any>[],
   headers?: string[],
@@ -560,7 +560,7 @@ export function printAnalyticsToPDF(
 /**
  * Format analytics metrics for export
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+
 export function formatMetricsForExport(
   metrics: Record<string, any>,
 ): Record<string, any> {

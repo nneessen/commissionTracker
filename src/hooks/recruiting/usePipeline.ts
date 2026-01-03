@@ -86,7 +86,6 @@ export function useCreatePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic mutation type
     mutationFn: ({
       templateId,
       phaseData,

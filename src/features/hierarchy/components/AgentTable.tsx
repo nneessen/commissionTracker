@@ -44,8 +44,7 @@ import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
-// import {policyService} from '@/services/policies/policyService';
-// import {commissionService} from '@/services/commissions/commissionService';
+import { policyRepository } from "@/services/policies";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 
 interface AgentWithMetrics extends UserProfile {
@@ -72,64 +71,75 @@ interface AgentTableProps {
 // Statuses that count toward MTD AP (active and issued)
 const AP_COUNTABLE_STATUSES = ["active", "issued"];
 
-// Fetch real metrics for an agent using service layer
-async function fetchAgentMetrics(
-  agentId: string,
-  viewerId?: string,
-  dateRange?: DateRangeFilter,
-): Promise<{
+// Metrics for a single agent
+interface AgentMetrics {
   mtd_ap: number;
   mtd_policies: number;
   override_amount: number;
-}> {
-  // Use provided date range or default to current month
+}
+
+/**
+ * BATCH FETCH: Fetch metrics for ALL agents at once (2 queries total)
+ * This replaces the previous per-agent fetching that caused N+1 queries
+ */
+async function fetchAllAgentMetrics(
+  agentIds: string[],
+  viewerId?: string,
+  dateRange?: DateRangeFilter,
+): Promise<Map<string, AgentMetrics>> {
+  if (agentIds.length === 0) return new Map();
+
   const now = new Date();
   const startOfMonth = dateRange
     ? new Date(dateRange.start)
     : new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = dateRange ? new Date(dateRange.end) : now;
 
-  // Get policies for this agent for the selected period
-  const policyData = await hierarchyService.getAgentPolicies(agentId);
-  const policies = policyData.policies || [];
+  // BATCH QUERY 1: Get all policies for all agents in a single query
+  const allPolicies = await policyRepository.findMetricsByUserIds(agentIds);
 
-  // Filter policies by createdAt (when policy was written) - NOT issueDate/effectiveDate
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
-  const mtdPolicies = policies.filter((p: any) => {
-    const createdDate = new Date(p.createdAt || "");
-    return createdDate >= startOfMonth && createdDate <= endOfMonth;
-  });
-
-  const mtdMetrics = mtdPolicies.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
-    (acc: { policies: number; ap: number }, policy: any) => {
-      acc.policies++;
-      // Count AP for policies with status "active" or "issued"
-      if (AP_COUNTABLE_STATUSES.includes(policy.status)) {
-        acc.ap += parseFloat(String(policy.annualPremium) || "0");
-      }
-      return acc;
-    },
-    { policies: 0, ap: 0 },
-  );
-
-  // Get override commissions - what the VIEWER earns from this agent
-  // If viewerId is provided, get viewer's overrides from this agent
-  // Otherwise fall back to legacy behavior
-  let overrideAmount = 0;
-  if (viewerId && viewerId !== agentId) {
-    const viewerOverrides = await hierarchyService.getViewerOverridesFromAgent(
-      viewerId,
-      agentId,
-    );
-    overrideAmount = viewerOverrides.mtd || 0;
+  // BATCH QUERY 2: Get all overrides the viewer earns from all agents
+  let overridesByAgent = new Map<string, number>();
+  if (viewerId) {
+    // Filter out the viewer's own ID - they don't earn overrides from themselves
+    const otherAgentIds = agentIds.filter((id) => id !== viewerId);
+    if (otherAgentIds.length > 0) {
+      const result = await hierarchyService.getViewerOverridesFromAgent(
+        viewerId,
+        otherAgentIds,
+      );
+      // Result is a Map when passed an array
+      overridesByAgent = result as Map<string, number>;
+    }
   }
 
-  return {
-    mtd_ap: mtdMetrics.ap,
-    mtd_policies: mtdMetrics.policies,
-    override_amount: overrideAmount,
-  };
+  // Aggregate metrics in-memory by agent (no additional DB calls)
+  const metricsMap = new Map<string, AgentMetrics>();
+
+  for (const agentId of agentIds) {
+    // Filter policies for this agent
+    const agentPolicies = allPolicies.filter((p) => p.user_id === agentId);
+
+    // Filter by date range (using created_at)
+    const mtdPolicies = agentPolicies.filter((p) => {
+      if (!p.created_at) return false;
+      const createdDate = new Date(p.created_at);
+      return createdDate >= startOfMonth && createdDate <= endOfMonth;
+    });
+
+    // Calculate MTD AP (only for active/issued policies)
+    const mtd_ap = mtdPolicies
+      .filter((p) => AP_COUNTABLE_STATUSES.includes(p.status || ""))
+      .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
+
+    metricsMap.set(agentId, {
+      mtd_ap,
+      mtd_policies: mtdPolicies.length,
+      override_amount: overridesByAgent.get(agentId) || 0,
+    });
+  }
+
+  return metricsMap;
 }
 
 function AgentRow({
@@ -140,8 +150,7 @@ function AgentRow({
   hasChildren,
   uplineContractLevel,
   onRemove,
-  dateRange,
-  viewerId,
+  metrics,
 }: {
   agent: AgentWithMetrics;
   depth: number;
@@ -150,21 +159,16 @@ function AgentRow({
   hasChildren: boolean;
   uplineContractLevel: number | null;
   onRemove: (agent: AgentWithMetrics) => void;
-  dateRange?: DateRangeFilter;
-  viewerId?: string;
+  metrics?: AgentMetrics;
 }) {
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState({
+
+  // Use metrics passed from parent (batch-fetched), with defaults
+  const { mtd_ap, mtd_policies, override_amount } = metrics || {
     mtd_ap: 0,
     mtd_policies: 0,
     override_amount: 0,
-  });
-
-  // Fetch real metrics for this agent with date range
-  // Pass viewerId to get overrides the viewer earns from this agent
-  useEffect(() => {
-    fetchAgentMetrics(agent.id, viewerId, dateRange).then(setMetrics);
-  }, [agent.id, viewerId, dateRange]);
+  };
 
   // Calculate real override spread
   // If viewing from upline's perspective: spread = upline level - agent level
@@ -283,9 +287,9 @@ function AgentRow({
 
       {/* MTD AP */}
       <td className="px-2 py-1.5 text-right text-[11px] font-mono">
-        {metrics.mtd_ap > 0 ? (
+        {mtd_ap > 0 ? (
           <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-            {formatCurrency(metrics.mtd_ap)}
+            {formatCurrency(mtd_ap)}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">$0</span>
@@ -294,9 +298,9 @@ function AgentRow({
 
       {/* MTD Policies */}
       <td className="px-2 py-1.5 text-center text-[11px] font-mono">
-        {metrics.mtd_policies > 0 ? (
+        {mtd_policies > 0 ? (
           <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-            {metrics.mtd_policies}
+            {mtd_policies}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">0</span>
@@ -316,9 +320,9 @@ function AgentRow({
 
       {/* Override $ MTD */}
       <td className="px-2 py-1.5 text-right text-[11px] font-mono">
-        {metrics.override_amount > 0 ? (
+        {override_amount > 0 ? (
           <span className="font-bold text-emerald-600 dark:text-emerald-400">
-            {formatCurrency(metrics.override_amount)}
+            {formatCurrency(override_amount)}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">$0</span>
@@ -387,9 +391,41 @@ export function AgentTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
+  // BATCH METRICS: State for all agent metrics (fetched once for all agents)
+  const [metricsMap, setMetricsMap] = useState<Map<string, AgentMetrics>>(
+    new Map(),
+  );
+  const [_metricsLoading, setMetricsLoading] = useState(false);
+
   // Get current user's contract level for override calculation using standard hook
   const { data: currentUserProfile } = useCurrentUserProfile();
   const viewerContractLevel = currentUserProfile?.contract_level ?? null;
+  const viewerId = currentUserProfile?.id;
+
+  // Memoize agent IDs with stable serialization for dependency tracking
+  const agentIds = useMemo(() => agents.map((a) => a.id), [agents]);
+  const agentIdsKey = useMemo(() => [...agentIds].sort().join(","), [agentIds]);
+
+  // BATCH FETCH: Fetch metrics for ALL agents in 2 queries (not N+1)
+  useEffect(() => {
+    if (agentIds.length === 0) {
+      setMetricsMap(new Map());
+      setMetricsLoading(false);
+      return;
+    }
+
+    setMetricsLoading(true);
+    fetchAllAgentMetrics(agentIds, viewerId, dateRange)
+      .then(setMetricsMap)
+      .catch((err) => {
+        console.error("Error fetching agent metrics:", err);
+        toast.error(
+          "Failed to load agent metrics. Showing placeholder values.",
+        );
+        setMetricsMap(new Map());
+      })
+      .finally(() => setMetricsLoading(false));
+  }, [agentIds, agentIdsKey, viewerId, dateRange]);
 
   // Enrich ALL visible agents with viewer's contract level for override calculation
   // The override % shows what the VIEWER earns from each agent, regardless of hierarchy depth
@@ -490,8 +526,7 @@ export function AgentTable({
           hasChildren={children.length > 0}
           uplineContractLevel={agent.upline_contract_level || null}
           onRemove={setAgentToRemove}
-          dateRange={dateRange}
-          viewerId={currentUserProfile?.id}
+          metrics={metricsMap.get(agent.id)}
         />,
       );
 

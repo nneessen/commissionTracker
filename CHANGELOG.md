@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-03 15:31:07
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/__tests__/services/hierarchy/batchQueries.test.ts`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/reports/components/charts/AreaStackedChart.tsx`
+- `src/features/reports/components/charts/PieBreakdownChart.tsx`
+- `src/features/targets/TargetsPage.tsx`
+- `src/hooks/recruiting/usePipeline.ts`
+- `src/services/commissions/CommissionAnalyticsService.ts`
+- `src/services/email/UserEmailRepository.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/overrides/OverrideRepository.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/index.ts`
+- `src/utils/exportHelpers.ts`
+- `src/utils/retry.ts`
+
+### Statistics
+```
+ 16 files changed, 480 insertions(+), 103 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-03 15:29:53
+
+### Changed Files
+- `src/__tests__/services/hierarchy/batchQueries.test.ts`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/targets/TargetsPage.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/overrides/OverrideRepository.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/index.ts`
+
+### Statistics
+```
+ 7 files changed, 445 insertions(+), 84 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-03 13:51:16
 
 ### Changed Files

@@ -2,10 +2,14 @@
 // Repository for user_emails table - extends BaseRepository
 
 import { BaseRepository, type BaseEntity } from "../base/BaseRepository";
-import type { UserEmailEntity, CreateUserEmailData, UpdateUserEmailData } from "./types";
+import type {
+  UserEmailEntity,
+  CreateUserEmailData,
+  UpdateUserEmailData,
+} from "./types";
 
 // Type assertion to satisfy BaseEntity constraint while using string dates
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for date type compatibility
+
 type UserEmailBaseEntity = UserEmailEntity & BaseEntity;
 
 export class UserEmailRepository extends BaseRepository<
@@ -20,7 +24,9 @@ export class UserEmailRepository extends BaseRepository<
   /**
    * Transform database record to UserEmailEntity
    */
-  protected transformFromDB(dbRecord: Record<string, unknown>): UserEmailBaseEntity {
+  protected transformFromDB(
+    dbRecord: Record<string, unknown>,
+  ): UserEmailBaseEntity {
     return {
       id: dbRecord.id as string,
       user_id: dbRecord.user_id as string,
@@ -48,7 +54,7 @@ export class UserEmailRepository extends BaseRepository<
    * Transform entity data to database record
    */
   protected transformToDB(
-    data: CreateUserEmailData | UpdateUserEmailData
+    data: CreateUserEmailData | UpdateUserEmailData,
   ): Record<string, unknown> {
     const dbData: Record<string, unknown> = {};
 

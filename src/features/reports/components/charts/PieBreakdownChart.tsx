@@ -120,7 +120,6 @@ export function PieBreakdownChart({
     );
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
   const CustomLabel = ({
     cx,
     cy,
