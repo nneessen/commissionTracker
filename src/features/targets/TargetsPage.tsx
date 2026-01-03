@@ -20,6 +20,7 @@ import {
 } from "../../services/targets/targetsCalculationService";
 import { TargetInputDialog } from "./components/TargetInputDialog";
 import { PersistencyScenarios } from "./components/PersistencyScenarios";
+import { WelcomeTargetCard } from "./components/WelcomeTargetCard";
 
 export function TargetsPage() {
   const { data: targets, isLoading, error } = useTargets();
@@ -160,28 +161,11 @@ export function TargetsPage() {
             </div>
           </div>
 
-          {/* TODO: Welcome Content - Needs to be restyled to match my styles of the rest of my application. look for other dialogs for exampe add user add recruit dialogs for a better understanding of how i want it styled*/}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 max-w-md text-center">
-              <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">
-                <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                Set Your {targetYear} Income Target
-              </h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-                Enter your annual net income goal to get started. We'll
-                automatically calculate monthly, weekly, and daily targets based
-                on your historical data.
-              </p>
-              <Button
-                onClick={() => setShowInputDialog(true)}
-                className="w-full"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
+          {/* Welcome Content - First-time user experience */}
+          <WelcomeTargetCard
+            targetYear={targetYear}
+            onGetStarted={() => setShowInputDialog(true)}
+          />
         </div>
         <TargetInputDialog
           open={showInputDialog}
