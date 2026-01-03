@@ -71,6 +71,7 @@ import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { STAFF_ONLY_ROLES } from "@/constants/roles";
 
 interface RecruitDetailPanelProps {
   recruit: UserProfile;
@@ -402,7 +403,14 @@ export function RecruitDetailPanel({
         </div>
 
         {/* Quick Actions - Inline */}
-        {(isUpline || currentUserProfile?.is_admin) && (
+        {/* Allow uplines, admins, and staff roles (trainer, contracting_manager) to manage recruits */}
+        {(isUpline ||
+          currentUserProfile?.is_admin ||
+          currentUserProfile?.roles?.some((role) =>
+            STAFF_ONLY_ROLES.includes(
+              role as (typeof STAFF_ONLY_ROLES)[number],
+            ),
+          )) && (
           <div className="flex items-center gap-1 mt-2">
             {hasPipelineProgress ? (
               <>
@@ -685,7 +693,15 @@ export function RecruitDetailPanel({
                 currentUserId={currentUserId}
                 currentPhaseId={currentPhase?.phase_id}
                 viewedPhaseId={viewingPhaseId}
-                isAdmin={currentUserProfile?.is_admin || false}
+                isAdmin={
+                  currentUserProfile?.is_admin ||
+                  currentUserProfile?.roles?.some((role) =>
+                    STAFF_ONLY_ROLES.includes(
+                      role as (typeof STAFF_ONLY_ROLES)[number],
+                    ),
+                  ) ||
+                  false
+                }
                 onPhaseComplete={() => {}}
                 recruitEmail={recruit.email || ""}
                 recruitName={displayName}

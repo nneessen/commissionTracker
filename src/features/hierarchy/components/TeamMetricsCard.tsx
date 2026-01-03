@@ -53,6 +53,24 @@ export function TeamMetricsCard({
   const avgContractLevel = stats?.avg_contract_level || 0;
   const pendingInvitations = stats?.pending_invitations || 0;
 
+  // NEW: Pending AP metrics
+  const teamPendingAP = stats?.team_pending_ap_total || 0;
+  const teamPendingCount = stats?.team_pending_policies_count || 0;
+
+  // NEW: Team Pace metrics (AP-based)
+  // Monthly
+  const teamMonthlyAPTarget = stats?.team_monthly_ap_target || 0;
+  const teamMonthlyPacePercentage = stats?.team_monthly_pace_percentage || 0;
+  const teamMonthlyPaceStatus = stats?.team_monthly_pace_status || "on_pace";
+  const teamMonthlyProjected = stats?.team_monthly_projected || 0;
+
+  // Yearly
+  const teamYearlyAPTarget = stats?.team_yearly_ap_target || 0;
+  const teamYTDAPTotal = stats?.team_ytd_ap_total || 0;
+  const teamYearlyPacePercentage = stats?.team_yearly_pace_percentage || 0;
+  const teamYearlyPaceStatus = stats?.team_yearly_pace_status || "on_pace";
+  const teamYearlyProjected = stats?.team_yearly_projected || 0;
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
       <div className="p-3">
@@ -208,6 +226,22 @@ export function TeamMetricsCard({
                   {formatCurrency(avgPremiumPerAgent)}
                 </span>
               </div>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  Pending AP
+                </span>
+                <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+                  {formatCurrency(teamPendingAP)}
+                </span>
+              </div>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  Pending Policies
+                </span>
+                <span className="font-mono text-amber-600 dark:text-amber-400">
+                  {teamPendingCount}
+                </span>
+              </div>
               <div className="h-px bg-zinc-200 dark:bg-zinc-700 my-1" />
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
@@ -297,6 +331,119 @@ export function TeamMetricsCard({
             </div>
           </div>
         </div>
+
+        {/* Team Pace Section - Monthly & Yearly */}
+        {(teamMonthlyAPTarget > 0 || teamYearlyAPTarget > 0) && (
+          <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 space-y-3">
+            {/* Monthly Pace */}
+            {teamMonthlyAPTarget > 0 && (
+              <div>
+                <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1">
+                  Monthly Pace
+                </div>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-4 text-[11px]">
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Target:{" "}
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(teamMonthlyAPTarget)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        MTD:{" "}
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(teamAPTotal)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Projected:{" "}
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(teamMonthlyProjected)}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      "px-2 py-0.5 rounded text-[10px] font-semibold",
+                      teamMonthlyPaceStatus === "ahead"
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : teamMonthlyPaceStatus === "on_pace"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                    )}
+                  >
+                    {teamMonthlyPaceStatus === "ahead"
+                      ? "↑ Ahead"
+                      : teamMonthlyPaceStatus === "on_pace"
+                        ? "→ On Pace"
+                        : "↓ Behind"}{" "}
+                    ({teamMonthlyPacePercentage.toFixed(0)}%)
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Yearly Pace */}
+            {teamYearlyAPTarget > 0 && (
+              <div>
+                <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1">
+                  Yearly Pace
+                </div>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-4 text-[11px]">
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Target:{" "}
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(teamYearlyAPTarget)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        YTD:{" "}
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(teamYTDAPTotal)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Projected:{" "}
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(teamYearlyProjected)}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      "px-2 py-0.5 rounded text-[10px] font-semibold",
+                      teamYearlyPaceStatus === "ahead"
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : teamYearlyPaceStatus === "on_pace"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                    )}
+                  >
+                    {teamYearlyPaceStatus === "ahead"
+                      ? "↑ Ahead"
+                      : teamYearlyPaceStatus === "on_pace"
+                        ? "→ On Pace"
+                        : "↓ Behind"}{" "}
+                    ({teamYearlyPacePercentage.toFixed(0)}%)
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

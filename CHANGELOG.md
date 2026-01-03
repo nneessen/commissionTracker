@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-03 13:51:16
+
+### Changed Files
+- `plans/active/team-metrics-enhancement.md`
+- `src/features/hierarchy/components/TeamMetricsCard.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/training-hub/components/ActivityTab.tsx`
+- `src/features/training-hub/components/EmailTemplatesTab.tsx`
+- `src/features/workflows/components/WorkflowManager.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/types/hierarchy.types.ts`
+- `supabase/migrations/20260103_002_staff_recruit_management_permissions.sql`
+- `supabase/migrations/20260103_003_fix_leads_visibility.sql`
+- `supabase/migrations/reverts/20260103_002_revert_staff_recruit_permissions.sql`
+- `supabase/migrations/reverts/20260103_003_revert_leads_visibility.sql`
+
+### Statistics
+```
+ 12 files changed, 1029 insertions(+), 71 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-03 10:07:50
 
 ### Changed Files

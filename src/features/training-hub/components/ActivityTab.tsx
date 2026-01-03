@@ -6,12 +6,18 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
+  Loader2,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
+import { useAuth } from "@/contexts/AuthContext";
+
+const PAGE_SIZE = 20;
 
 interface ActivityTabProps {
   searchQuery: string;
@@ -40,11 +46,22 @@ interface NotificationActivity {
 type Activity = EmailActivity | NotificationActivity;
 
 export function ActivityTab({ searchQuery }: ActivityTabProps) {
-  // Fetch recent emails (last 50)
-  const { data: recentEmails, isLoading: emailsLoading } = useQuery({
-    queryKey: ["training-hub-recent-emails"],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  // Get current user and super admin status
+  const { user } = useAuth();
+  const { isSuperAdmin, isLoading: authStatusLoading } =
+    useAuthorizationStatus();
+
+  // Fetch recent emails with pagination - filtered by user unless super admin
+  const {
+    data: emailsData,
+    isLoading: emailsLoading,
+    isFetchingNextPage: emailsFetchingNext,
+    hasNextPage: emailsHasNextPage,
+    fetchNextPage: fetchNextEmails,
+  } = useInfiniteQuery({
+    queryKey: ["training-hub-recent-emails", user?.id, isSuperAdmin],
+    queryFn: async ({ pageParam = 0 }) => {
+      let query = supabase
         .from("user_emails")
         .select(
           `
@@ -54,47 +71,83 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
           sent_at,
           created_at,
           to_addresses,
+          user_id,
+          sender_id,
           user:user_id(first_name, last_name, email)
         `,
         )
         .in("status", ["sent", "delivered", "failed"])
         .order("created_at", { ascending: false })
-        .limit(50);
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
 
+      // Filter by current user if not super admin
+      if (!isSuperAdmin && user?.id) {
+        query = query.or(`user_id.eq.${user.id},sender_id.eq.${user.id}`);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return { data, nextPage: pageParam + PAGE_SIZE };
     },
+    getNextPageParam: (lastPage) => {
+      // If we got fewer items than PAGE_SIZE, there are no more pages
+      return lastPage.data.length === PAGE_SIZE ? lastPage.nextPage : undefined;
+    },
+    initialPageParam: 0,
+    enabled: !!user && !authStatusLoading,
   });
 
-  // Fetch recent notifications (last 50)
-  const { data: recentNotifications, isLoading: notificationsLoading } =
-    useQuery({
-      queryKey: ["training-hub-recent-notifications"],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("notifications")
-          .select(
-            `
+  // Fetch recent notifications with pagination - filtered by user unless super admin
+  const {
+    data: notificationsData,
+    isLoading: notificationsLoading,
+    isFetchingNextPage: notificationsFetchingNext,
+    hasNextPage: notificationsHasNextPage,
+    fetchNextPage: fetchNextNotifications,
+  } = useInfiniteQuery({
+    queryKey: ["training-hub-recent-notifications", user?.id, isSuperAdmin],
+    queryFn: async ({ pageParam = 0 }) => {
+      let query = supabase
+        .from("notifications")
+        .select(
+          `
           id,
           type,
           title,
           message,
           created_at,
+          user_id,
           user:user_id(first_name, last_name, email)
         `,
-          )
-          .order("created_at", { ascending: false })
-          .limit(50);
+        )
+        .order("created_at", { ascending: false })
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
 
-        if (error) throw error;
-        return data;
-      },
-    });
+      // Filter by current user if not super admin
+      if (!isSuperAdmin && user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { data, nextPage: pageParam + PAGE_SIZE };
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.data.length === PAGE_SIZE ? lastPage.nextPage : undefined;
+    },
+    initialPageParam: 0,
+    enabled: !!user && !authStatusLoading,
+  });
+
+  // Flatten paginated data
+  const recentEmails = emailsData?.pages.flatMap((page) => page.data) || [];
+  const recentNotifications =
+    notificationsData?.pages.flatMap((page) => page.data) || [];
 
   // Combine and sort activities
   const activities: Activity[] = [];
 
-  recentEmails?.forEach((email) => {
+  recentEmails.forEach((email) => {
     const recipient = email.to_addresses?.[0] || "Unknown";
     activities.push({
       id: email.id,
@@ -107,12 +160,13 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
     });
   });
 
-  recentNotifications?.forEach((notif) => {
+  recentNotifications.forEach((notif) => {
     // Handle Supabase foreign key joins - could be object or array
     const userRecord = notif.user;
-    const user = Array.isArray(userRecord) ? userRecord[0] : userRecord;
-    const userName = user
-      ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email
+    const userInfo = Array.isArray(userRecord) ? userRecord[0] : userRecord;
+    const userName = userInfo
+      ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim() ||
+        userInfo.email
       : "Unknown";
     activities.push({
       id: notif.id,
@@ -149,7 +203,15 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
     }
   });
 
-  const isLoading = emailsLoading || notificationsLoading;
+  const isLoading = emailsLoading || notificationsLoading || authStatusLoading;
+  const isFetchingMore = emailsFetchingNext || notificationsFetchingNext;
+  const hasMoreData = emailsHasNextPage || notificationsHasNextPage;
+
+  // Handler to load more data from both sources
+  const handleLoadMore = () => {
+    if (emailsHasNextPage) fetchNextEmails();
+    if (notificationsHasNextPage) fetchNextNotifications();
+  };
 
   const getEmailStatusIcon = (status: string) => {
     switch (status) {
@@ -220,7 +282,7 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
           </div>
         ) : (
           <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {filteredActivities.slice(0, 100).map((activity) => (
+            {filteredActivities.map((activity) => (
               <div
                 key={`${activity.type}-${activity.id}`}
                 className="flex items-start gap-2.5 px-2.5 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
@@ -287,6 +349,28 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
                 </div>
               </div>
             ))}
+
+            {/* Load More Button */}
+            {hasMoreData && (
+              <div className="p-3 flex justify-center border-t border-zinc-100 dark:border-zinc-800">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={isFetchingMore}
+                  className="text-[11px] h-7"
+                >
+                  {isFetchingMore ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More"
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

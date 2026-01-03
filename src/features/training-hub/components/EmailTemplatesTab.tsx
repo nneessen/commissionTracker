@@ -69,6 +69,7 @@ import {
   useToggleTemplateActive,
 } from "@/features/email/hooks/useEmailTemplates";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
 import { EmailBlockBuilder } from "@/features/email/components/block-builder";
 import {
   EMAIL_TEMPLATE_CATEGORIES,
@@ -490,12 +491,10 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
   const duplicateTemplate = useDuplicateEmailTemplate();
   const toggleActive = useToggleTemplateActive();
   const { isAnyRole } = usePermissionCheck();
+  const { isSuperAdmin } = useAuthorizationStatus();
 
-  const canManageGlobal = isAnyRole([
-    "admin",
-    "trainer",
-    "contracting_manager",
-  ]);
+  const canManageGlobal =
+    isSuperAdmin || isAnyRole(["admin", "trainer", "contracting_manager"]);
 
   const filterTemplates = (templates: EmailTemplate[]) => {
     if (!searchQuery) return templates;

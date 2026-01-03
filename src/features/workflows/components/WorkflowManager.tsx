@@ -58,15 +58,20 @@ import {
 } from "@/hooks/workflows";
 import WorkflowWizard from "./WorkflowWizard";
 import EventTypeManager from "./EventTypeManager";
+import { EmailTemplatesTab } from "@/features/training-hub/components/EmailTemplatesTab";
 import type { Workflow } from "@/types/workflow.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 import { cn } from "@/lib/utils";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import {
+  useCurrentUserProfile,
+  useAuthorizationStatus,
+} from "@/hooks/admin/useUserApproval";
 
 export default function WorkflowManager() {
   const { user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
+  const { isSuperAdmin } = useAuthorizationStatus();
   const { isImoAdmin, imo } = useImo();
   const [showDialog, setShowDialog] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
@@ -89,7 +94,7 @@ export default function WorkflowManager() {
   const cloneOrgTemplate = useCloneOrgTemplate();
   const deleteOrgTemplate = useDeleteOrgTemplate();
 
-  const isAdmin = profile?.is_admin === true;
+  const isAdmin = profile?.is_admin === true || isSuperAdmin;
 
   const handleDeleteTemplateConfirm = () => {
     if (deleteTemplateId) {
@@ -185,13 +190,22 @@ export default function WorkflowManager() {
               Workflows
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger
-                value="events"
-                className="text-[11px] h-6 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900"
-              >
-                <Shield className="h-3 w-3 mr-1" />
-                Event Types
-              </TabsTrigger>
+              <>
+                <TabsTrigger
+                  value="templates"
+                  className="text-[11px] h-6 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900"
+                >
+                  <Mail className="h-3 w-3 mr-1" />
+                  Email Templates
+                </TabsTrigger>
+                <TabsTrigger
+                  value="events"
+                  className="text-[11px] h-6 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900"
+                >
+                  <Shield className="h-3 w-3 mr-1" />
+                  Event Types
+                </TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -533,6 +547,16 @@ export default function WorkflowManager() {
             </div>
           </div>
         </TabsContent>
+
+        {/* Email Templates Tab Content (Admin Only) */}
+        {isAdmin && (
+          <TabsContent
+            value="templates"
+            className="flex-1 mt-0 h-full overflow-hidden"
+          >
+            <EmailTemplatesTab searchQuery="" />
+          </TabsContent>
+        )}
 
         {/* Event Types Tab Content (Admin Only) */}
         {isAdmin && (

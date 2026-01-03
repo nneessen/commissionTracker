@@ -203,6 +203,24 @@ export interface HierarchyStats {
   retention_rate: number; // Approved agents / total agents
   avg_contract_level: number; // Average contract_level across team
   pending_invitations: number; // Count from invitations table
+
+  // Pending AP Submission (policies not yet active)
+  team_pending_ap_total: number; // Sum of AP for status='pending' across owner + all downlines
+  team_pending_policies_count: number; // Count of pending policies
+
+  // Team Pace Metrics (AP-based)
+  // Monthly Pace
+  team_monthly_ap_target: number; // Sum of all team members' monthly AP targets
+  team_monthly_pace_percentage: number; // (actual AP MTD / expected AP at this point in month) * 100
+  team_monthly_pace_status: "ahead" | "on_pace" | "behind";
+  team_monthly_projected: number; // Projected month-end AP at current pace
+
+  // Yearly Pace
+  team_yearly_ap_target: number; // Sum of all team members' annual AP targets
+  team_ytd_ap_total: number; // Actual team AP written YTD
+  team_yearly_pace_percentage: number; // (actual AP YTD / expected AP at this point in year) * 100
+  team_yearly_pace_status: "ahead" | "on_pace" | "behind";
+  team_yearly_projected: number; // Projected year-end AP at current pace
 }
 
 /**

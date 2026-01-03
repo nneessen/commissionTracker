@@ -25,6 +25,7 @@ import type {
   HierarchyStats,
 } from "../../types/hierarchy.types";
 import { NotFoundError, ValidationError } from "../../errors/ServiceErrors";
+import { userTargetsRepository } from "../targets/UserTargetsRepository";
 
 /**
  * Service layer for hierarchy operations
@@ -497,9 +498,14 @@ class HierarchyService {
       // Get all downline IDs for policy aggregation
       const downlineIds = downlines.map((d) => d.id);
 
+      // Include owner + all downlines for pending AP calculation
+      const allTeamUserIds = [myProfile.id, ...downlineIds];
+
       // Fetch policies for all downlines in the period
       let teamAPTotal = 0;
       let teamPoliciesCount = 0;
+      let teamPendingAPTotal = 0;
+      let teamPendingPoliciesCount = 0;
       const agentPerformance: Array<{
         id: string;
         name: string;
@@ -510,43 +516,60 @@ class HierarchyService {
       const rangeStart = new Date(mtdStart);
       const rangeEnd = new Date(mtdEnd);
 
-      // Aggregate policies for all downlines
-      for (const downlineId of downlineIds) {
-        const policyData = await this.getAgentPolicies(downlineId);
+      // Aggregate policies for all team members (owner + downlines)
+      for (const userId of allTeamUserIds) {
+        const policyData = await this.getAgentPolicies(userId);
         const policies = policyData.policies || [];
 
-        // Filter policies created in the period with status="active"
-        const periodPolicies = policies.filter(
-          (p: { createdAt?: string; status?: string }) => {
-            const createdDate = new Date(p.createdAt || "");
-            return (
-              createdDate >= rangeStart &&
-              createdDate <= rangeEnd &&
-              p.status === "active"
-            );
-          },
+        // Filter PENDING policies (all pending, no date filter)
+        const pendingPolicies = policies.filter(
+          (p: { status?: string }) => p.status === "pending",
         );
 
-        // Sum AP for this agent
-        const agentAP = periodPolicies.reduce(
+        const pendingAP = pendingPolicies.reduce(
           (sum: number, p: { annualPremium?: number | string }) =>
             sum + parseFloat(String(p.annualPremium) || "0"),
           0,
         );
 
-        teamAPTotal += agentAP;
-        teamPoliciesCount += periodPolicies.length;
+        teamPendingAPTotal += pendingAP;
+        teamPendingPoliciesCount += pendingPolicies.length;
 
-        // Track agent performance for top performer
-        const downline = downlines.find((d) => d.id === downlineId);
-        if (downline && agentAP > 0) {
-          agentPerformance.push({
-            id: downlineId,
-            name:
-              `${downline.first_name || ""} ${downline.last_name || ""}`.trim() ||
-              downline.email,
-            ap: agentAP,
-          });
+        // Only aggregate active policies for downlines (not owner) for team performance
+        if (userId !== myProfile.id) {
+          // Filter policies created in the period with status="active"
+          const periodPolicies = policies.filter(
+            (p: { createdAt?: string; status?: string }) => {
+              const createdDate = new Date(p.createdAt || "");
+              return (
+                createdDate >= rangeStart &&
+                createdDate <= rangeEnd &&
+                p.status === "active"
+              );
+            },
+          );
+
+          // Sum AP for this agent
+          const agentAP = periodPolicies.reduce(
+            (sum: number, p: { annualPremium?: number | string }) =>
+              sum + parseFloat(String(p.annualPremium) || "0"),
+            0,
+          );
+
+          teamAPTotal += agentAP;
+          teamPoliciesCount += periodPolicies.length;
+
+          // Track agent performance for top performer
+          const downline = downlines.find((d) => d.id === userId);
+          if (downline && agentAP > 0) {
+            agentPerformance.push({
+              id: userId,
+              name:
+                `${downline.first_name || ""} ${downline.last_name || ""}`.trim() ||
+                downline.email,
+              ap: agentAP,
+            });
+          }
         }
       }
 
@@ -604,6 +627,143 @@ class HierarchyService {
           : myDepth;
       const relativeMaxDepth = maxDownlineDepth - myDepth;
 
+      // ==========================================
+      // Calculate Team Pace Metrics (AP-based)
+      // ==========================================
+
+      // Fetch targets for all team members
+      const [downlineTargets, myTargets] = await Promise.all([
+        userTargetsRepository.findDownlineWithOwner(),
+        userTargetsRepository.findByUserId(myProfile.id),
+      ]);
+
+      // Calculate AP targets for each team member
+      const calcAPTargets = (
+        t: { annualPoliciesTarget?: number; avgPremiumTarget?: number } | null,
+      ): { monthly: number; yearly: number } => {
+        if (!t) return { monthly: 0, yearly: 0 };
+        const yearlyAP =
+          (t.annualPoliciesTarget || 0) * (t.avgPremiumTarget || 0);
+        return { monthly: yearlyAP / 12, yearly: yearlyAP };
+      };
+
+      // Sum team AP targets (monthly and yearly)
+      const downlineTargetSums = downlineTargets.reduce(
+        (acc, t) => {
+          const targets = calcAPTargets({
+            annualPoliciesTarget: t.annualPoliciesTarget,
+            avgPremiumTarget: t.avgPremiumTarget,
+          });
+          return {
+            monthly: acc.monthly + targets.monthly,
+            yearly: acc.yearly + targets.yearly,
+          };
+        },
+        { monthly: 0, yearly: 0 },
+      );
+
+      const myAPTargets = calcAPTargets({
+        annualPoliciesTarget: myTargets?.annualPoliciesTarget,
+        avgPremiumTarget: myTargets?.avgPremiumTarget,
+      });
+
+      const teamMonthlyAPTarget =
+        myAPTargets.monthly + downlineTargetSums.monthly;
+      const teamYearlyAPTarget = myAPTargets.yearly + downlineTargetSums.yearly;
+
+      // ==========================================
+      // Calculate YTD AP for yearly pace
+      // ==========================================
+      let teamYTDAPTotal = 0;
+      const ytdRangeStart = new Date(now.getFullYear(), 0, 1);
+
+      for (const userId of allTeamUserIds) {
+        const policyData = await this.getAgentPolicies(userId);
+        const policies = policyData.policies || [];
+
+        // Filter YTD active policies
+        const ytdPolicies = policies.filter(
+          (p: { createdAt?: string; status?: string }) => {
+            const createdDate = new Date(p.createdAt || "");
+            return createdDate >= ytdRangeStart && p.status === "active";
+          },
+        );
+
+        const ytdAP = ytdPolicies.reduce(
+          (sum: number, p: { annualPremium?: number | string }) =>
+            sum + parseFloat(String(p.annualPremium) || "0"),
+          0,
+        );
+
+        teamYTDAPTotal += ytdAP;
+      }
+
+      // ==========================================
+      // Monthly Pace Calculations
+      // ==========================================
+      const daysInMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+      ).getDate();
+      const dayOfMonth = now.getDate();
+      const expectedMonthlyAPAtThisPoint =
+        (dayOfMonth / daysInMonth) * teamMonthlyAPTarget;
+
+      // teamAPTotal is MTD active AP
+      const teamMonthlyPacePercentage =
+        expectedMonthlyAPAtThisPoint > 0
+          ? (teamAPTotal / expectedMonthlyAPAtThisPoint) * 100
+          : teamMonthlyAPTarget > 0
+            ? 0
+            : 100;
+
+      const teamMonthlyPaceStatus: "ahead" | "on_pace" | "behind" =
+        teamMonthlyPacePercentage >= 105
+          ? "ahead"
+          : teamMonthlyPacePercentage >= 95
+            ? "on_pace"
+            : "behind";
+
+      // Projected month-end AP at current pace
+      const teamMonthlyProjected =
+        dayOfMonth > 0 ? (teamAPTotal / dayOfMonth) * daysInMonth : 0;
+
+      // ==========================================
+      // Yearly Pace Calculations
+      // ==========================================
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const dayOfYear =
+        Math.floor(
+          (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24),
+        ) + 1;
+      const daysInYear =
+        (now.getFullYear() % 4 === 0 && now.getFullYear() % 100 !== 0) ||
+        now.getFullYear() % 400 === 0
+          ? 366
+          : 365;
+
+      const expectedYearlyAPAtThisPoint =
+        (dayOfYear / daysInYear) * teamYearlyAPTarget;
+
+      const teamYearlyPacePercentage =
+        expectedYearlyAPAtThisPoint > 0
+          ? (teamYTDAPTotal / expectedYearlyAPAtThisPoint) * 100
+          : teamYearlyAPTarget > 0
+            ? 0
+            : 100;
+
+      const teamYearlyPaceStatus: "ahead" | "on_pace" | "behind" =
+        teamYearlyPacePercentage >= 105
+          ? "ahead"
+          : teamYearlyPacePercentage >= 95
+            ? "on_pace"
+            : "behind";
+
+      // Projected year-end AP at current pace
+      const teamYearlyProjected =
+        dayOfYear > 0 ? (teamYTDAPTotal / dayOfYear) * daysInYear : 0;
+
       const result: HierarchyStats = {
         // Agent counts - only approved agents
         total_agents: downlines.length + 1, // approved downlines + self
@@ -630,6 +790,23 @@ class HierarchyService {
         retention_rate: retentionRate,
         avg_contract_level: avgContractLevel,
         pending_invitations: pendingInvitations || 0,
+
+        // Pending AP Submission
+        team_pending_ap_total: teamPendingAPTotal,
+        team_pending_policies_count: teamPendingPoliciesCount,
+
+        // Team Pace - Monthly
+        team_monthly_ap_target: teamMonthlyAPTarget,
+        team_monthly_pace_percentage: teamMonthlyPacePercentage,
+        team_monthly_pace_status: teamMonthlyPaceStatus,
+        team_monthly_projected: teamMonthlyProjected,
+
+        // Team Pace - Yearly
+        team_yearly_ap_target: teamYearlyAPTarget,
+        team_ytd_ap_total: teamYTDAPTotal,
+        team_yearly_pace_percentage: teamYearlyPacePercentage,
+        team_yearly_pace_status: teamYearlyPaceStatus,
+        team_yearly_projected: teamYearlyProjected,
       };
 
       return result;
