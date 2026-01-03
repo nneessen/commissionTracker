@@ -1234,7 +1234,10 @@ export function SlackIntegrationCard() {
   const updateWebhook = useUpdateSlackWebhook();
   const deleteWebhook = useDeleteSlackWebhook();
 
-  const { imo, isImoAdmin } = useImo();
+  const { imo, isImoAdmin, isSuperAdmin } = useImo();
+
+  // Super admin always has access, plus IMO admins
+  const canManageSlack = isImoAdmin || isSuperAdmin;
 
   const [showUserPrefs, setShowUserPrefs] = useState(false);
   const [showAddWebhook, setShowAddWebhook] = useState(false);
@@ -1271,7 +1274,7 @@ export function SlackIntegrationCard() {
           : row.agencies,
       }));
     },
-    enabled: !!imo?.id && isImoAdmin,
+    enabled: !!imo?.id && canManageSlack,
   });
 
   const connectedIntegrations = integrations.filter((i) => i.isConnected);
@@ -1391,7 +1394,7 @@ export function SlackIntegrationCard() {
           </div>
 
           {/* Add Workspace Button - Admin Only */}
-          {isImoAdmin && (
+          {canManageSlack && (
             <Button
               size="sm"
               variant={hasConnections ? "outline" : "default"}
@@ -1425,7 +1428,7 @@ export function SlackIntegrationCard() {
                 userPrefs={userPrefs ?? null}
                 onUpdateUserPrefs={handleUpdateUserPrefs}
                 isUpdatingUserPrefs={updateUserPrefs.isPending}
-                isAdmin={isImoAdmin}
+                isAdmin={canManageSlack}
                 onReauthorize={() => handleConnect()}
                 isReauthorizing={connectSlack.isPending}
               />
@@ -1434,8 +1437,8 @@ export function SlackIntegrationCard() {
         </div>
       )}
 
-      {/* Slack App Credentials Section - IMO Admin Only */}
-      {isImoAdmin && (
+      {/* Slack App Credentials Section - Admin Only */}
+      {canManageSlack && (
         <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div>
@@ -1528,7 +1531,7 @@ export function SlackIntegrationCard() {
       )}
 
       {/* Notification Webhooks Section - Admin Only */}
-      {isImoAdmin && (
+      {canManageSlack && (
         <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div>

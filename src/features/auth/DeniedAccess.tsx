@@ -1,13 +1,16 @@
 // /home/nneessen/projects/commissionTracker/src/features/auth/DeniedAccess.tsx
 
 import React from "react";
-import {Button} from "../../components/ui";
-import {Card, CardContent} from "@/components/ui/card";
-import {Separator} from "@/components/ui/separator";
-import {supabase} from "../../services/base/supabase";
-import {useNavigate} from "@tanstack/react-router";
+import { Button } from "../../components/ui";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { supabase } from "../../services/base/supabase";
+import { useNavigate } from "@tanstack/react-router";
 
-export const DeniedAccess: React.FC<{ email?: string; reason?: string }> = ({ email, reason }) => {
+export const DeniedAccess: React.FC<{ email?: string; reason?: string }> = ({
+  email,
+  reason,
+}) => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -57,11 +60,14 @@ export const DeniedAccess: React.FC<{ email?: string; reason?: string }> = ({ em
               </p>
               {email && (
                 <p className="text-sm text-muted-foreground">
-                  Account: <span className="font-semibold text-foreground">{email}</span>
+                  Account:{" "}
+                  <span className="font-semibold text-foreground">{email}</span>
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                Unfortunately, your account application has been denied by an administrator and you will not be able to access the application.
+                Unfortunately, your account application has been denied by an
+                administrator and you will not be able to access the
+                application.
               </p>
             </div>
 
@@ -98,9 +104,12 @@ export const DeniedAccess: React.FC<{ email?: string; reason?: string }> = ({ em
             </div>
 
             <div className="text-center text-xs text-muted-foreground space-y-2">
-              <p>If you believe this is a mistake or would like to appeal this decision, please contact the administrator.</p>
+              <p>
+                If you believe this is a mistake or would like to appeal this
+                decision, please contact the administrator.
+              </p>
               <p className="font-semibold text-foreground">
-                Contact: nick@nickneessen.com
+                Contact: nickneessen@thestandardhq.com
               </p>
             </div>
 
@@ -116,7 +125,7 @@ export const DeniedAccess: React.FC<{ email?: string; reason?: string }> = ({ em
         </Card>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Questions? Contact support at nick@nickneessen.com
+          Questions? Contact support at nickneessen@thestandardhq.com
         </p>
       </div>
     </div>

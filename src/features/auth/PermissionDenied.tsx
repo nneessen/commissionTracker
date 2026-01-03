@@ -1,8 +1,8 @@
-import React from 'react';
-import {Button} from '@/components/ui';
-import {Card, CardContent} from '@/components/ui/card';
-import {Separator} from '@/components/ui/separator';
-import {useNavigate} from '@tanstack/react-router';
+import React from "react";
+import { Button } from "@/components/ui";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "@tanstack/react-router";
 
 interface PermissionDeniedProps {
   message?: string;
@@ -21,7 +21,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
   const navigate = useNavigate();
 
   const handleBackToDashboard = () => {
-    navigate({ to: '/' });
+    navigate({ to: "/" });
   };
 
   return (
@@ -66,7 +66,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
               </p>
               <p className="text-sm text-muted-foreground">
                 {message ||
-                  'You do not have the required permissions to access this page. If you believe this is an error, please contact your administrator.'}
+                  "You do not have the required permissions to access this page. If you believe this is an error, please contact your administrator."}
               </p>
             </div>
 
@@ -87,7 +87,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
                 administrator to request the necessary permissions.
               </p>
               <p className="font-semibold text-foreground">
-                Contact: nick@nickneessen.com
+                Contact: nickneessen@thestandardhq.com
               </p>
             </div>
 
@@ -105,7 +105,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
         </Card>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Questions? Contact support at nick@nickneessen.com
+          Questions? Contact support at nickneessen@thestandardhq.com
         </p>
       </div>
     </div>
