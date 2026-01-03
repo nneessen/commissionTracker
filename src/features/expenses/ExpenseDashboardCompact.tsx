@@ -139,13 +139,15 @@ export function ExpenseDashboardCompact() {
       : 0;
 
   // YTD calculations - only include expenses from Jan 1 to TODAY (not future)
+  // Compare as strings (YYYY-MM-DD format) to avoid timezone issues
   const today = new Date();
   const currentYear = today.getFullYear();
-  const startOfYear = new Date(currentYear, 0, 1);
+  const todayStr = today.toISOString().split("T")[0]; // "2026-01-03"
+  const startOfYearStr = `${currentYear}-01-01`; // "2026-01-01"
 
   const ytdExpenses = expenses.filter((e) => {
-    const expenseDate = new Date(e.date);
-    return expenseDate >= startOfYear && expenseDate <= today;
+    // e.date is already in YYYY-MM-DD format
+    return e.date >= startOfYearStr && e.date <= todayStr;
   });
 
   const ytdTotal = ytdExpenses.reduce((sum, e) => sum + e.amount, 0);

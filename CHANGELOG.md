@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-03 17:55:25
+
+### Changed Files
+- `src/features/expenses/ExpenseDashboardCompact.tsx`
+- `supabase/functions/instagram-oauth-callback/index.ts`
+- `supabase/functions/instagram-oauth-init/index.ts`
+
+### Statistics
+```
+ 3 files changed, 559 insertions(+), 3 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-03 17:52:04
 
 ### Changed Files
