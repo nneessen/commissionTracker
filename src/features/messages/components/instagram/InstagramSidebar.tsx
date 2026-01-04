@@ -2,16 +2,10 @@
 // Instagram conversation list sidebar
 
 import { useState, type ReactNode } from "react";
-import {
-  Search,
-  RefreshCw,
-  Loader2,
-  Star,
-  MessageSquare,
-  X,
-} from "lucide-react";
+import { Search, RefreshCw, Star, MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useInstagramConversations } from "@/hooks/instagram";
 import { InstagramConversationItem } from "./InstagramConversationItem";
@@ -19,6 +13,24 @@ import type {
   InstagramIntegration,
   InstagramConversation,
 } from "@/types/instagram.types";
+
+/**
+ * Skeleton loader for conversation items
+ */
+function ConversationSkeleton(): ReactNode {
+  return (
+    <div className="flex items-start gap-2 p-2">
+      {/* Avatar skeleton */}
+      <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+      {/* Content skeleton */}
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-2.5 w-full" />
+        <Skeleton className="h-2 w-16" />
+      </div>
+    </div>
+  );
+}
 
 interface InstagramSidebarProps {
   integration: InstagramIntegration;
@@ -148,8 +160,10 @@ export function InstagramSidebar({
       {/* Conversations list */}
       <div className="flex-1 overflow-auto p-1.5 space-y-0.5">
         {isLoading ? (
-          <div className="flex items-center justify-center h-32">
-            <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+          <div className="space-y-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <ConversationSkeleton key={i} />
+            ))}
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center px-4">

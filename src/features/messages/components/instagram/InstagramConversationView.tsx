@@ -5,7 +5,6 @@ import { useRef, useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import {
-  Loader2,
   AlertCircle,
   User,
   Instagram,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/services/base/supabase";
@@ -29,6 +29,69 @@ import { InstagramWindowIndicator } from "./InstagramWindowIndicator";
 import { InstagramPriorityBadge } from "./InstagramPriorityBadge";
 import { CreateLeadFromIGDialog } from "./CreateLeadFromIGDialog";
 import { InstagramScheduleDialog } from "./InstagramScheduleDialog";
+
+/**
+ * Skeleton loader for message bubbles
+ */
+function MessageSkeleton({
+  isOutbound = false,
+}: {
+  isOutbound?: boolean;
+}): ReactNode {
+  return (
+    <div
+      className={cn(
+        "flex w-full mt-2",
+        isOutbound ? "justify-end" : "justify-start",
+      )}
+    >
+      <div
+        className={cn("max-w-[75%]", isOutbound ? "items-end" : "items-start")}
+      >
+        <Skeleton
+          className={cn(
+            "rounded-2xl",
+            isOutbound ? "h-8 w-40 rounded-br-md" : "h-8 w-48 rounded-bl-md",
+          )}
+        />
+        <Skeleton className="h-2 w-12 mt-1 mx-1" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Loading skeleton for conversation view
+ */
+function ConversationViewSkeleton(): ReactNode {
+  return (
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="flex-1 space-y-1">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-2 w-16" />
+        </div>
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+
+      {/* Messages skeleton */}
+      <div className="flex-1 overflow-auto p-3">
+        <MessageSkeleton isOutbound={false} />
+        <MessageSkeleton isOutbound={true} />
+        <MessageSkeleton isOutbound={false} />
+        <MessageSkeleton isOutbound={false} />
+        <MessageSkeleton isOutbound={true} />
+      </div>
+
+      {/* Input skeleton */}
+      <div className="p-2 border-t border-zinc-200 dark:border-zinc-800">
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+    </div>
+  );
+}
 
 interface InstagramConversationViewProps {
   conversationId: string;
@@ -126,18 +189,9 @@ export function InstagramConversationView({
     sendMessage.mutate(text);
   };
 
-  // Loading state
+  // Loading state - use skeleton for better UX
   if (isLoadingConversation || (isLoadingMessages && messages.length === 0)) {
-    return (
-      <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <div className="text-center">
-          <Loader2 className="h-6 w-6 mx-auto mb-2 text-zinc-400 animate-spin" />
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            Loading conversation...
-          </p>
-        </div>
-      </div>
-    );
+    return <ConversationViewSkeleton />;
   }
 
   // Error state
