@@ -18,6 +18,7 @@ import {
   RefreshCw,
   MessageSquare,
   AlertTriangle,
+  ArrowLeft,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { InstagramConversation } from "@/types/instagram.types";
@@ -87,20 +88,27 @@ function TabContentSkeleton(): ReactNode {
 
 interface InstagramTabContentProps {
   selectedConversation?: InstagramConversation | null;
+  /** Callback for mobile back button - when provided, shows a back button */
+  onBack?: () => void;
 }
 
 export function InstagramTabContent({
   selectedConversation,
+  onBack,
 }: InstagramTabContentProps): ReactNode {
   return (
     <FeatureGate feature="instagram_messaging" promptVariant="card">
-      <InstagramTabContentInner selectedConversation={selectedConversation} />
+      <InstagramTabContentInner
+        selectedConversation={selectedConversation}
+        onBack={onBack}
+      />
     </FeatureGate>
   );
 }
 
 function InstagramTabContentInner({
   selectedConversation,
+  onBack,
 }: InstagramTabContentProps): ReactNode {
   const {
     data: integration,
@@ -180,16 +188,30 @@ function InstagramTabContentInner({
   if (selectedConversation) {
     return (
       <div className="h-full flex flex-col">
+        {/* Mobile back button */}
+        {onBack && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 rounded-t-lg border border-b-0 border-zinc-200 dark:border-zinc-800">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="h-7 px-2 text-[11px]"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+              Conversations
+            </Button>
+          </div>
+        )}
         {/* Token expired banner above conversation view */}
         {isTokenExpired && (
-          <div className="p-3 bg-white dark:bg-zinc-900 rounded-t-lg border border-b-0 border-zinc-200 dark:border-zinc-800">
+          <div className="p-3 bg-white dark:bg-zinc-900 border-x border-zinc-200 dark:border-zinc-800">
             <TokenExpiredBanner
               onReconnect={handleConnect}
               isReconnecting={connectInstagram.isPending}
             />
           </div>
         )}
-        <div className={isTokenExpired ? "flex-1" : "h-full"}>
+        <div className={isTokenExpired || onBack ? "flex-1" : "h-full"}>
           <InstagramConversationView
             conversationId={selectedConversation.id}
             integrationId={integration.id}

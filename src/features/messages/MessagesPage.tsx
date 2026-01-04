@@ -33,7 +33,7 @@ import { useActiveInstagramIntegration } from "@/hooks/instagram";
 import type { SlackChannel } from "@/types/slack.types";
 import type { InstagramConversation } from "@/types/instagram.types";
 import { ResizablePanel } from "@/components/ui/resizable-panel";
-import { useResizableSidebar } from "@/hooks/ui/useResizableSidebar";
+import { useResizableSidebar, useIsMobile } from "@/hooks/ui";
 
 type TabType =
   | "email"
@@ -60,6 +60,9 @@ export function MessagesPage() {
   // Instagram state
   const [selectedInstagramConversation, setSelectedInstagramConversation] =
     useState<InstagramConversation | null>(null);
+
+  // Mobile detection
+  const isMobile = useIsMobile();
 
   // Get email quota
   const { remainingDaily, percentUsed, quota } = useEmailQuota();
@@ -276,22 +279,28 @@ export function MessagesPage() {
               />
             </ResizablePanel>
           ) : activeTab === "instagram" && instagramIntegration ? (
-            /* Instagram conversations sidebar - resizable */
-            <ResizablePanel
-              width={instagramSidebar.width}
-              isResizing={instagramSidebar.isResizing}
-              onMouseDown={instagramSidebar.handleMouseDown}
-              className="flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
-            >
-              <InstagramSidebar
-                integration={instagramIntegration}
-                selectedConversationId={
-                  selectedInstagramConversation?.id || null
+            /* Instagram conversations sidebar - resizable, hidden on mobile when conversation selected */
+            (!isMobile || !selectedInstagramConversation) && (
+              <ResizablePanel
+                width={isMobile ? 280 : instagramSidebar.width}
+                isResizing={!isMobile && instagramSidebar.isResizing}
+                onMouseDown={
+                  isMobile ? () => {} : instagramSidebar.handleMouseDown
                 }
-                onConversationSelect={setSelectedInstagramConversation}
-              />
-            </ResizablePanel>
-          ) : (
+                className="flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+              >
+                <InstagramSidebar
+                  integration={instagramIntegration}
+                  selectedConversationId={
+                    selectedInstagramConversation?.id || null
+                  }
+                  onConversationSelect={setSelectedInstagramConversation}
+                />
+              </ResizablePanel>
+            )
+          ) : activeTab === "instagram" &&
+            !instagramIntegration ? /* No sidebar when not connected */
+          null : (
             /* Email folders sidebar - fixed width for now */
             <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
               <div className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
@@ -387,6 +396,11 @@ export function MessagesPage() {
             {activeTab === "instagram" && (
               <InstagramTabContent
                 selectedConversation={selectedInstagramConversation}
+                onBack={
+                  isMobile && selectedInstagramConversation
+                    ? () => setSelectedInstagramConversation(null)
+                    : undefined
+                }
               />
             )}
 

@@ -7,7 +7,7 @@ interface ResizablePanelProps {
   children: React.ReactNode;
   width: number;
   isResizing: boolean;
-  onMouseDown: (e: React.MouseEvent) => void;
+  onMouseDown?: (e: React.MouseEvent) => void;
   className?: string;
 }
 
@@ -46,26 +46,28 @@ export const ResizablePanel = React.forwardRef<
     >
       {children}
 
-      {/* Resize Handle */}
-      <div
-        onMouseDown={onMouseDown}
-        className={cn(
-          "absolute top-0 right-0 h-full w-1 cursor-col-resize group",
-          "hover:w-1 transition-colors",
-          // Extend hitbox for easier grabbing
-          'before:absolute before:inset-y-0 before:-inset-x-1 before:w-3 before:content-[""]',
-        )}
-      >
-        {/* Visual indicator */}
+      {/* Resize Handle - only show when onMouseDown is provided */}
+      {onMouseDown && (
         <div
+          onMouseDown={onMouseDown}
           className={cn(
-            "absolute inset-y-0 right-0 w-0.5 transition-all",
-            isResizing
-              ? "bg-blue-500 opacity-100 w-0.5"
-              : "bg-zinc-200 dark:bg-zinc-800 opacity-0 group-hover:opacity-100 group-hover:bg-blue-500",
+            "absolute top-0 right-0 h-full w-1 cursor-col-resize group",
+            "hover:w-1 transition-colors",
+            // Extend hitbox for easier grabbing
+            'before:absolute before:inset-y-0 before:-inset-x-1 before:w-3 before:content-[""]',
           )}
-        />
-      </div>
+        >
+          {/* Visual indicator */}
+          <div
+            className={cn(
+              "absolute inset-y-0 right-0 w-0.5 transition-all",
+              isResizing
+                ? "bg-blue-500 opacity-100 w-0.5"
+                : "bg-zinc-200 dark:bg-zinc-800 opacity-0 group-hover:opacity-100 group-hover:bg-blue-500",
+            )}
+          />
+        </div>
+      )}
     </div>
   );
 });
