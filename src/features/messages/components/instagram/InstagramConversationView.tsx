@@ -96,11 +96,14 @@ function ConversationViewSkeleton(): ReactNode {
 interface InstagramConversationViewProps {
   conversationId: string;
   integrationId: string;
+  /** When true, disables message input (e.g., token expired) */
+  isTokenExpired?: boolean;
 }
 
 export function InstagramConversationView({
   conversationId,
   integrationId: _integrationId,
+  isTokenExpired = false,
 }: InstagramConversationViewProps): ReactNode {
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -393,6 +396,7 @@ export function InstagramConversationView({
           onSend={handleSendMessage}
           onScheduleClick={() => setShowScheduleDialog(true)}
           isSending={sendMessage.isPending}
+          disabled={isTokenExpired}
           placeholder={`Message @${conversation.participant_username || displayName}`}
         />
       </div>

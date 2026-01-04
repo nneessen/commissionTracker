@@ -70,10 +70,21 @@ serve(async (req) => {
     // Verify user has Team tier subscription (instagram_messaging feature)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Get user's subscription with plan features
     const { data: subscription, error: subError } = await supabase
-      .from("imo_subscriptions")
-      .select("features")
-      .eq("imo_id", imoId)
+      .from("user_subscriptions")
+      .select(
+        `
+        id,
+        status,
+        plan:subscription_plans(
+          id,
+          name,
+          features
+        )
+      `,
+      )
+      .eq("user_id", userId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -86,12 +97,15 @@ serve(async (req) => {
       );
     }
 
-    // Check if instagram_messaging feature is enabled
-    const hasInstagramFeature =
-      subscription?.features?.instagram_messaging === true;
+    // Check if instagram_messaging feature is enabled in the plan
+    const planFeatures = subscription?.plan?.features as
+      | Record<string, boolean>
+      | undefined;
+    const hasInstagramFeature = planFeatures?.instagram_messaging === true;
+
     if (!hasInstagramFeature) {
       console.warn(
-        `[instagram-oauth-init] IMO ${imoId} does not have instagram_messaging feature`,
+        `[instagram-oauth-init] User ${userId} does not have instagram_messaging feature. Plan: ${subscription?.plan?.name || "none"}`,
       );
       return new Response(
         JSON.stringify({
@@ -105,6 +119,10 @@ serve(async (req) => {
         },
       );
     }
+
+    console.log(
+      `[instagram-oauth-init] User ${userId} has instagram_messaging feature via ${subscription?.plan?.name} plan`,
+    );
 
     // Create signed state (includes userId, imoId, timestamp for callback verification)
     const state = {

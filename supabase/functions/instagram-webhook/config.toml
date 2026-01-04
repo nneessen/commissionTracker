@@ -1,0 +1,3 @@
+# supabase/functions/instagram-webhook/config.toml
+# Allow unauthenticated requests (Meta webhooks don't send JWT)
+verify_jwt = false

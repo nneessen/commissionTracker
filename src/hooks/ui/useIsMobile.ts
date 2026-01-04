@@ -21,10 +21,7 @@ export function useIsMobile(): boolean {
       `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
     );
 
-    // Initial check
-    setIsMobile(mediaQuery.matches);
-
-    // Listen for changes
+    // Listen for changes (initial value already set in useState)
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mediaQuery.addEventListener("change", handler);
 

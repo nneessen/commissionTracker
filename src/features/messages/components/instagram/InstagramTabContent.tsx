@@ -215,6 +215,7 @@ function InstagramTabContentInner({
           <InstagramConversationView
             conversationId={selectedConversation.id}
             integrationId={integration.id}
+            isTokenExpired={isTokenExpired}
           />
         </div>
       </div>
