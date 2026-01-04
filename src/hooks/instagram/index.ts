@@ -18,6 +18,8 @@ export {
   useInstagramMessages,
   // Priority hooks
   useSetInstagramPriority,
+  // Lead hooks
+  useCreateLeadFromInstagram,
   // Template hooks
   useInstagramTemplates,
   useCreateInstagramTemplate,

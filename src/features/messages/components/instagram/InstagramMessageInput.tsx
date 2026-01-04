@@ -1,0 +1,143 @@
+// src/features/messages/components/instagram/InstagramMessageInput.tsx
+// Message composer with character limit for Instagram DMs
+
+import {
+  useState,
+  useRef,
+  useEffect,
+  type ReactNode,
+  type KeyboardEvent,
+} from "react";
+import { Send, Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { getWindowStatus } from "@/types/instagram.types";
+
+const MAX_CHARS = 1000;
+
+interface InstagramMessageInputProps {
+  canReplyUntil: string | null;
+  onSend: (text: string) => void;
+  isSending?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+}
+
+export function InstagramMessageInput({
+  canReplyUntil,
+  onSend,
+  isSending = false,
+  disabled = false,
+  placeholder = "Type a message...",
+}: InstagramMessageInputProps): ReactNode {
+  const [text, setText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const windowStatus = getWindowStatus(canReplyUntil);
+  const isWindowClosed = windowStatus === "closed";
+  const isDisabled = disabled || isSending || isWindowClosed;
+  const charCount = text.length;
+  const isOverLimit = charCount > MAX_CHARS;
+  const canSend = text.trim().length > 0 && !isOverLimit && !isDisabled;
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [text]);
+
+  const handleSend = () => {
+    if (!canSend) return;
+    onSend(text.trim());
+    setText("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Window closed state
+  if (isWindowClosed) {
+    return (
+      <div className="flex items-center gap-2 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+        <AlertCircle className="h-4 w-4 text-zinc-400 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+            Messaging window closed
+          </p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-500">
+            You can only reply within 24 hours of their last message. Wait for
+            them to message you.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div
+        className={cn(
+          "flex items-end gap-2 p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg border transition-colors",
+          isOverLimit
+            ? "border-red-300 dark:border-red-700"
+            : "border-zinc-200 dark:border-zinc-700",
+        )}
+      >
+        <Textarea
+          ref={textareaRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={isDisabled}
+          className={cn(
+            "flex-1 min-h-[36px] max-h-[120px] resize-none border-0 bg-transparent p-1.5 text-[11px] placeholder:text-zinc-400",
+            "focus-visible:ring-0 focus-visible:ring-offset-0",
+          )}
+          rows={1}
+        />
+        <Button
+          size="icon"
+          className="h-7 w-7 flex-shrink-0"
+          onClick={handleSend}
+          disabled={!canSend}
+        >
+          {isSending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Send className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      </div>
+
+      {/* Character counter */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
+          Press Enter to send, Shift+Enter for new line
+        </p>
+        <p
+          className={cn(
+            "text-[9px]",
+            isOverLimit
+              ? "text-red-500 font-medium"
+              : charCount > MAX_CHARS * 0.9
+                ? "text-amber-500"
+                : "text-zinc-400 dark:text-zinc-500",
+          )}
+        >
+          {charCount}/{MAX_CHARS}
+        </p>
+      </div>
+    </div>
+  );
+}

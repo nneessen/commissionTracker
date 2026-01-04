@@ -27,8 +27,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlackTabContent, SlackSidebar } from "./components/slack";
+import { InstagramTabContent, InstagramSidebar } from "./components/instagram";
 import { useUserSlackPreferences, useSlackIntegrations } from "@/hooks/slack";
+import { useActiveInstagramIntegration } from "@/hooks/instagram";
 import type { SlackChannel } from "@/types/slack.types";
+import type { InstagramConversation } from "@/types/instagram.types";
 import { ResizablePanel } from "@/components/ui/resizable-panel";
 import { useResizableSidebar } from "@/hooks/ui/useResizableSidebar";
 
@@ -54,6 +57,10 @@ export function MessagesPage() {
   >(null);
   const [hasAppliedDefaults, setHasAppliedDefaults] = useState(false);
 
+  // Instagram state
+  const [selectedInstagramConversation, setSelectedInstagramConversation] =
+    useState<InstagramConversation | null>(null);
+
   // Get email quota
   const { remainingDaily, percentUsed, quota } = useEmailQuota();
 
@@ -61,6 +68,9 @@ export function MessagesPage() {
   const { data: userSlackPrefs } = useUserSlackPreferences();
   const { data: integrations = [] } = useSlackIntegrations();
   const connectedIntegrations = integrations.filter((i) => i.isConnected);
+
+  // Get active Instagram integration
+  const { data: instagramIntegration } = useActiveInstagramIntegration();
 
   // Initialize selected integration from user preferences or first available
   useEffect(() => {
@@ -98,6 +108,14 @@ export function MessagesPage() {
     storageKey: "messages-slack-sidebar-width",
     defaultWidth: 144,
     minWidth: 120,
+    maxWidth: 400,
+  });
+
+  // Resizable sidebar for Instagram
+  const instagramSidebar = useResizableSidebar({
+    storageKey: "messages-instagram-sidebar-width",
+    defaultWidth: 200,
+    minWidth: 160,
     maxWidth: 400,
   });
 
@@ -257,6 +275,22 @@ export function MessagesPage() {
                 onWorkspaceChange={handleWorkspaceChange}
               />
             </ResizablePanel>
+          ) : activeTab === "instagram" && instagramIntegration ? (
+            /* Instagram conversations sidebar - resizable */
+            <ResizablePanel
+              width={instagramSidebar.width}
+              isResizing={instagramSidebar.isResizing}
+              onMouseDown={instagramSidebar.handleMouseDown}
+              className="flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+            >
+              <InstagramSidebar
+                integration={instagramIntegration}
+                selectedConversationId={
+                  selectedInstagramConversation?.id || null
+                }
+                onConversationSelect={setSelectedInstagramConversation}
+              />
+            </ResizablePanel>
           ) : (
             /* Email folders sidebar - fixed width for now */
             <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -351,17 +385,9 @@ export function MessagesPage() {
             )}
 
             {activeTab === "instagram" && (
-              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <div className="text-center">
-                  <Instagram className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Instagram DMs coming soon
-                  </p>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
-                    Active conversations from the last 30 days
-                  </p>
-                </div>
-              </div>
+              <InstagramTabContent
+                selectedConversation={selectedInstagramConversation}
+              />
             )}
 
             {activeTab === "templates" && (

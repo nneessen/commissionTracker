@@ -36,6 +36,7 @@ export const FEATURE_PLAN_REQUIREMENTS: Record<FeatureKey, string> = {
   recruiting: "Team",
   overrides: "Team",
   downline_reports: "Team",
+  instagram_messaging: "Team",
 };
 
 // Map features to user-friendly names
@@ -56,6 +57,7 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   recruiting: "Recruiting Pipeline",
   overrides: "Override Tracking",
   downline_reports: "Downline Reports",
+  instagram_messaging: "Instagram Messaging",
 };
 
 export interface UseFeatureAccessResult {

@@ -34,6 +34,7 @@ export interface SubscriptionFeatures {
   recruiting: boolean;
   overrides: boolean;
   downline_reports: boolean;
+  instagram_messaging: boolean;
 }
 
 // Entity types

@@ -13,6 +13,7 @@ import type {
   InstagramMessageTemplate,
   InstagramScheduledMessage,
   ConversationFilters,
+  CreateLeadFromIGInput,
 } from "@/types/instagram.types";
 
 // ============================================================================
@@ -291,6 +292,39 @@ export function useSetInstagramPriority() {
   });
 }
 
+/**
+ * Create a recruiting lead from an Instagram conversation
+ */
+export function useCreateLeadFromInstagram() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (input: CreateLeadFromIGInput): Promise<string> => {
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+      return instagramService.createLeadFromConversation(input, user.id);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate specific conversation
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.conversation(variables.conversationId),
+      });
+      // Invalidate conversations list (more targeted than instagramKeys.all)
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "instagram" &&
+          query.queryKey[1] === "conversations",
+      });
+      // Invalidate recruiting leads
+      queryClient.invalidateQueries({
+        queryKey: ["recruiting", "leads"],
+      });
+    },
+  });
+}
+
 // ============================================================================
 // Template Hooks
 // ============================================================================
@@ -431,12 +465,10 @@ export function useCancelInstagramScheduledMessage() {
   return useMutation({
     mutationFn: async ({
       messageId,
-      conversationId: _conversationId,
     }: {
       messageId: string;
       conversationId: string;
     }): Promise<void> => {
-      void _conversationId; // Used in onSuccess via variables
       await instagramService.cancelScheduledMessage(messageId);
     },
     onSuccess: (_, variables) => {
