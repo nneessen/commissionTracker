@@ -8,30 +8,38 @@ import {
   type ReactNode,
   type KeyboardEvent,
 } from "react";
-import { Send, Loader2, AlertCircle } from "lucide-react";
+import { Send, Loader2, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { getWindowStatus } from "@/types/instagram.types";
+import { InstagramTemplateSelector } from "./InstagramTemplateSelector";
 
 const MAX_CHARS = 1000;
 
 interface InstagramMessageInputProps {
   canReplyUntil: string | null;
-  onSend: (text: string) => void;
+  onSend: (text: string, templateId?: string) => void;
+  onScheduleClick?: () => void;
   isSending?: boolean;
   disabled?: boolean;
   placeholder?: string;
+  showScheduleButton?: boolean;
 }
 
 export function InstagramMessageInput({
   canReplyUntil,
   onSend,
+  onScheduleClick,
   isSending = false,
   disabled = false,
   placeholder = "Type a message...",
+  showScheduleButton = true,
 }: InstagramMessageInputProps): ReactNode {
   const [text, setText] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const windowStatus = getWindowStatus(canReplyUntil);
@@ -51,11 +59,18 @@ export function InstagramMessageInput({
 
   const handleSend = () => {
     if (!canSend) return;
-    onSend(text.trim());
+    onSend(text.trim(), selectedTemplateId || undefined);
     setText("");
+    setSelectedTemplateId(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
+  };
+
+  const handleTemplateSelect = (content: string, templateId: string) => {
+    setText(content);
+    setSelectedTemplateId(templateId);
+    textareaRef.current?.focus();
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -96,7 +111,13 @@ export function InstagramMessageInput({
         <Textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            // Clear template ID if user modifies text
+            if (selectedTemplateId) {
+              setSelectedTemplateId(null);
+            }
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={isDisabled}
@@ -106,18 +127,43 @@ export function InstagramMessageInput({
           )}
           rows={1}
         />
-        <Button
-          size="icon"
-          className="h-7 w-7 flex-shrink-0"
-          onClick={handleSend}
-          disabled={!canSend}
-        >
-          {isSending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Send className="h-3.5 w-3.5" />
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Template selector */}
+          <InstagramTemplateSelector
+            onSelect={handleTemplateSelect}
+            disabled={isDisabled}
+          />
+
+          {/* Schedule button */}
+          {showScheduleButton && onScheduleClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onScheduleClick}
+              disabled={isDisabled}
+              title="Schedule message"
+            >
+              <Clock className="h-3.5 w-3.5" />
+            </Button>
           )}
-        </Button>
+
+          {/* Send button */}
+          <Button
+            size="icon"
+            className="h-7 w-7"
+            onClick={handleSend}
+            disabled={!canSend}
+          >
+            {isSending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Character counter */}

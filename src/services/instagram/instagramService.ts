@@ -266,6 +266,90 @@ class InstagramServiceClass {
   async cancelScheduledMessage(messageId: string): Promise<void> {
     return this.scheduledMessageRepo.cancel(messageId);
   }
+
+  /**
+   * Schedule a message for future sending
+   * Validates that scheduled time is within the messaging window
+   */
+  async scheduleMessage(
+    conversationId: string,
+    messageText: string,
+    scheduledFor: Date,
+    userId: string,
+    templateId?: string,
+  ): Promise<InstagramScheduledMessage> {
+    // Validate message content
+    if (!messageText || messageText.trim().length === 0) {
+      throw new Error("Message text is required");
+    }
+    if (messageText.length > 1000) {
+      throw new Error("Message exceeds 1000 character limit");
+    }
+
+    // Get conversation to verify ownership and check window
+    const conversation = await this.conversationRepo.findById(conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    // Verify user ownership through conversation repository
+    const ownsConversation = await this.conversationRepo.verifyOwnership(
+      conversationId,
+      userId,
+    );
+    if (!ownsConversation) {
+      throw new Error("Access denied to this conversation");
+    }
+
+    // Check messaging window
+    if (!conversation.can_reply_until) {
+      throw new Error(
+        "Cannot schedule message: messaging window is closed. Wait for the contact to message you first.",
+      );
+    }
+
+    const windowExpiry = new Date(conversation.can_reply_until);
+    const now = new Date();
+
+    if (windowExpiry <= now) {
+      throw new Error(
+        "Cannot schedule message: messaging window has expired. Wait for the contact to message you first.",
+      );
+    }
+
+    // Validate scheduled time is in the future
+    if (scheduledFor <= now) {
+      throw new Error("Scheduled time must be in the future");
+    }
+
+    // Validate scheduled time is before window expiry
+    if (scheduledFor >= windowExpiry) {
+      throw new Error(
+        "Scheduled time must be before the messaging window expires",
+      );
+    }
+
+    // Create the scheduled message
+    return this.scheduledMessageRepo.create({
+      conversation_id: conversationId,
+      message_text: messageText.trim(),
+      template_id: templateId || null,
+      scheduled_for: scheduledFor.toISOString(),
+      scheduled_by: userId,
+      messaging_window_expires_at: conversation.can_reply_until,
+      status: "pending",
+      is_auto_reminder: false,
+    });
+  }
+
+  /**
+   * Find pending auto-reminders for a conversation
+   */
+  async getPendingAutoReminders(
+    conversationId: string,
+  ): Promise<InstagramScheduledMessage[]> {
+    return this.scheduledMessageRepo.findPendingAutoReminders(conversationId);
+  }
 }
 
 // Singleton export

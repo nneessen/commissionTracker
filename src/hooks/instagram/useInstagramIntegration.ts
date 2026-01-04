@@ -478,3 +478,41 @@ export function useCancelInstagramScheduledMessage() {
     },
   });
 }
+
+/**
+ * Schedule a message for future sending
+ */
+export function useScheduleInstagramMessage() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      messageText,
+      scheduledFor,
+      templateId,
+    }: {
+      conversationId: string;
+      messageText: string;
+      scheduledFor: Date;
+      templateId?: string;
+    }): Promise<InstagramScheduledMessage> => {
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+      return instagramService.scheduleMessage(
+        conversationId,
+        messageText,
+        scheduledFor,
+        user.id,
+        templateId,
+      );
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.scheduled(variables.conversationId),
+      });
+    },
+  });
+}

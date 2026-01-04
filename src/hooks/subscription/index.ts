@@ -2,6 +2,7 @@
 
 export { useSubscription, subscriptionKeys } from "./useSubscription";
 export { useSubscriptionPlans } from "./useSubscriptionPlans";
+export { useSubscriptionAnnouncement } from "./useSubscriptionAnnouncement";
 export { useUsageTracking } from "./useUsageTracking";
 export {
   useFeatureAccess,

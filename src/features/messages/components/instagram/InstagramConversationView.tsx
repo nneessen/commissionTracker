@@ -28,6 +28,7 @@ import { InstagramMessageInput } from "./InstagramMessageInput";
 import { InstagramWindowIndicator } from "./InstagramWindowIndicator";
 import { InstagramPriorityBadge } from "./InstagramPriorityBadge";
 import { CreateLeadFromIGDialog } from "./CreateLeadFromIGDialog";
+import { InstagramScheduleDialog } from "./InstagramScheduleDialog";
 
 interface InstagramConversationViewProps {
   conversationId: string;
@@ -41,6 +42,7 @@ export function InstagramConversationView({
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showCreateLeadDialog, setShowCreateLeadDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 
   // Fetch conversation details
   const {
@@ -335,6 +337,7 @@ export function InstagramConversationView({
         <InstagramMessageInput
           canReplyUntil={conversation.can_reply_until}
           onSend={handleSendMessage}
+          onScheduleClick={() => setShowScheduleDialog(true)}
           isSending={sendMessage.isPending}
           placeholder={`Message @${conversation.participant_username || displayName}`}
         />
@@ -345,6 +348,19 @@ export function InstagramConversationView({
         open={showCreateLeadDialog}
         onOpenChange={setShowCreateLeadDialog}
         conversation={conversation}
+      />
+
+      {/* Schedule Message Dialog */}
+      <InstagramScheduleDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        conversation={conversation}
+        onScheduled={() => {
+          // Refetch scheduled messages after scheduling
+          queryClient.invalidateQueries({
+            queryKey: instagramKeys.scheduled(conversationId),
+          });
+        }}
       />
     </div>
   );

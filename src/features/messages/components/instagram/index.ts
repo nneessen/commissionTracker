@@ -12,3 +12,5 @@ export { InstagramMessageInput } from "./InstagramMessageInput";
 export { InstagramWindowIndicator } from "./InstagramWindowIndicator";
 export { InstagramPriorityBadge } from "./InstagramPriorityBadge";
 export { CreateLeadFromIGDialog } from "./CreateLeadFromIGDialog";
+export { InstagramTemplateSelector } from "./InstagramTemplateSelector";
+export { InstagramScheduleDialog } from "./InstagramScheduleDialog";

@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-04 15:49:31
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/INSTAGRAM_M7_REVIEW_COMPLETE.md`
+- `src/App.tsx`
+- `src/components/subscription/SubscriptionAnnouncementDialog.tsx`
+- `src/components/subscription/index.ts`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/features/messages/components/instagram/InstagramMessageInput.tsx`
+- `src/features/messages/components/instagram/InstagramScheduleDialog.tsx`
+- `src/features/messages/components/instagram/InstagramTemplateSelector.tsx`
+- `src/features/messages/components/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useSubscriptionAnnouncement.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramScheduledMessageRepository.ts`
+- `supabase/functions/instagram-process-scheduled/index.ts`
+- `supabase/functions/instagram-webhook/index.ts`
+- `supabase/migrations/20260104_002_instagram_scheduled_cron.sql`
+
+### Statistics
+```
+ 19 files changed, 2788 insertions(+), 22 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-04 15:48:21
+
+### Changed Files
+- `plans/active/INSTAGRAM_M7_REVIEW_COMPLETE.md`
+- `src/App.tsx`
+- `src/components/subscription/SubscriptionAnnouncementDialog.tsx`
+- `src/components/subscription/index.ts`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/features/messages/components/instagram/InstagramMessageInput.tsx`
+- `src/features/messages/components/instagram/InstagramScheduleDialog.tsx`
+- `src/features/messages/components/instagram/InstagramTemplateSelector.tsx`
+- `src/features/messages/components/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useSubscriptionAnnouncement.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramScheduledMessageRepository.ts`
+- `supabase/functions/instagram-process-scheduled/index.ts`
+- `supabase/functions/instagram-webhook/index.ts`
+- `supabase/migrations/20260104_002_instagram_scheduled_cron.sql`
+
+### Statistics
+```
+ 17 files changed, 2755 insertions(+), 15 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-03 18:02:56
 
 ### Changed Files

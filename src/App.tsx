@@ -9,6 +9,8 @@ import { logger } from "./services/base/logger";
 import { ApprovalGuard } from "./components/auth/ApprovalGuard";
 import { CookieConsentBanner } from "./features/legal";
 import { getDisplayName } from "./types/user.types";
+import { SubscriptionAnnouncementDialog } from "./components/subscription";
+import { useSubscriptionAnnouncement } from "./hooks/subscription";
 
 function App() {
   const location = useLocation();
@@ -53,6 +55,8 @@ function AuthenticatedApp() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { shouldShow: showAnnouncement, dismiss: dismissAnnouncement } =
+    useSubscriptionAnnouncement();
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -113,6 +117,10 @@ function AuthenticatedApp() {
     <>
       <Toaster />
       <CookieConsentBanner />
+      <SubscriptionAnnouncementDialog
+        open={showAnnouncement}
+        onDismiss={dismissAnnouncement}
+      />
       <ImoProvider>
         <div className="flex min-h-screen">
           <Sidebar
