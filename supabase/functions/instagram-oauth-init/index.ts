@@ -134,29 +134,26 @@ serve(async (req) => {
 
     const signedState = await createSignedState(state);
 
-    // Build Meta OAuth URL for Instagram Business API
-    // Using Facebook OAuth endpoint since Instagram Business API requires FB Pages
-    const redirectUri = `${SUPABASE_URL}/functions/v1/instagram-oauth-callback`;
+    // Build Instagram OAuth URL
+    const APP_URL = Deno.env.get("APP_URL") || "https://www.thestandardhq.com";
+    const redirectUri = `${APP_URL}/api/instagram-oauth-callback`;
 
-    // Required scopes for Instagram Messaging API:
-    // - instagram_basic: Access profile info
-    // - instagram_manage_messages: Send/receive DMs
-    // - pages_manage_metadata: Required for accessing Instagram connected to FB Page
-    // - pages_read_engagement: Read page engagement data
+    // Instagram Business API scopes
     const scope = [
-      "instagram_basic",
-      "instagram_manage_messages",
-      "pages_manage_metadata",
-      "pages_read_engagement",
+      "instagram_business_basic",
+      "instagram_business_manage_messages",
+      "instagram_business_manage_comments",
+      "instagram_business_content_publish",
     ].join(",");
 
-    // Meta uses Facebook's OAuth endpoint for Instagram Business API
-    const authUrl = new URL("https://www.facebook.com/v18.0/dialog/oauth");
+    // Use Instagram's OAuth endpoint directly
+    const authUrl = new URL("https://www.instagram.com/oauth/authorize");
     authUrl.searchParams.set("client_id", INSTAGRAM_APP_ID);
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("scope", scope);
     authUrl.searchParams.set("state", signedState);
     authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("enable_fb_login", "0");
 
     console.log(
       `[instagram-oauth-init] Generated OAuth URL for IMO ${imoId}, user ${userId}`,
