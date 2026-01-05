@@ -43,21 +43,21 @@ export class LeadVendorRepository extends BaseRepository<
       throw new Error("User not authenticated");
     }
 
-    // Get user's imo_id from users table
-    const { data: userRecord, error: userError } = await this.client
-      .from("users")
+    // Get user's imo_id from user_profiles table (not users/auth table)
+    const { data: userProfile, error: profileError } = await this.client
+      .from("user_profiles")
       .select("imo_id")
       .eq("id", user.id)
       .single();
 
-    if (userError || !userRecord?.imo_id) {
+    if (profileError || !userProfile?.imo_id) {
       throw new Error("Could not determine user IMO");
     }
 
     // Transform data and add required fields
     const dbData = {
       ...this.transformToDB(data),
-      imo_id: userRecord.imo_id,
+      imo_id: userProfile.imo_id,
       created_by: user.id,
     };
 

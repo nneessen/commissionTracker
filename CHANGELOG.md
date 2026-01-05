@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 10:40:36
+
+### Changed Files
+- `src/services/lead-purchases/LeadVendorRepository.ts`
+
+### Statistics
+```
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 10:27:09
 
 ### Changed Files
