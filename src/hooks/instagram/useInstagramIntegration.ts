@@ -11,6 +11,7 @@ import type {
   InstagramConversation,
   InstagramMessage,
   InstagramMessageTemplate,
+  InstagramTemplateCategory,
   InstagramScheduledMessage,
   ConversationFilters,
   CreateLeadFromIGInput,
@@ -476,19 +477,22 @@ export function useCreateLeadFromInstagram() {
 // ============================================================================
 
 /**
- * Get message templates for the current IMO
+ * Get message templates for the current user (personal templates)
  */
 export function useInstagramTemplates() {
-  const { data: profile } = useCurrentUserProfile();
-  const imoId = profile?.imo_id;
+  const { user } = useAuth();
+  const userId = user?.id;
 
   return useQuery({
-    queryKey: instagramKeys.templates(imoId ?? ""),
+    // Use a proper key only when user is authenticated to avoid cache pollution
+    queryKey: userId
+      ? instagramKeys.userTemplates(userId)
+      : ["instagram", "templates", "disabled"],
     queryFn: async (): Promise<InstagramMessageTemplate[]> => {
-      if (!imoId) return [];
-      return instagramService.getTemplates(imoId);
+      if (!userId) return [];
+      return instagramService.getTemplatesByUser(userId);
     },
-    enabled: !!imoId,
+    enabled: !!userId,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -506,6 +510,7 @@ export function useCreateInstagramTemplate() {
       name: string;
       content: string;
       category?: string;
+      message_stage?: string;
     }): Promise<InstagramMessageTemplate> => {
       if (!profile?.imo_id || !user?.id) {
         throw new Error("User not authenticated or no IMO assigned");
@@ -516,14 +521,15 @@ export function useCreateInstagramTemplate() {
         name: template.name,
         content: template.content,
         category: template.category || null,
+        message_stage: template.message_stage || "opener",
         is_active: true,
         created_by: user.id,
       });
     },
     onSuccess: () => {
-      if (profile?.imo_id) {
+      if (user?.id) {
         queryClient.invalidateQueries({
-          queryKey: instagramKeys.templates(profile.imo_id),
+          queryKey: instagramKeys.userTemplates(user.id),
         });
       }
     },
@@ -535,7 +541,7 @@ export function useCreateInstagramTemplate() {
  */
 export function useUpdateInstagramTemplate() {
   const queryClient = useQueryClient();
-  const { data: profile } = useCurrentUserProfile();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -543,14 +549,19 @@ export function useUpdateInstagramTemplate() {
       updates,
     }: {
       templateId: string;
-      updates: { name?: string; content?: string; category?: string };
+      updates: {
+        name?: string;
+        content?: string;
+        category?: string;
+        message_stage?: string;
+      };
     }): Promise<InstagramMessageTemplate> => {
       return instagramService.updateTemplate(templateId, updates);
     },
     onSuccess: (_, variables) => {
-      if (profile?.imo_id) {
+      if (user?.id) {
         queryClient.invalidateQueries({
-          queryKey: instagramKeys.templates(profile.imo_id),
+          queryKey: instagramKeys.userTemplates(user.id),
         });
       }
       queryClient.invalidateQueries({
@@ -565,16 +576,126 @@ export function useUpdateInstagramTemplate() {
  */
 export function useDeleteInstagramTemplate() {
   const queryClient = useQueryClient();
-  const { data: profile } = useCurrentUserProfile();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (templateId: string): Promise<void> => {
-      await instagramService.deleteTemplate(templateId);
+      await instagramService.deleteTemplate(templateId, user?.id);
     },
     onSuccess: () => {
-      if (profile?.imo_id) {
+      if (user?.id) {
         queryClient.invalidateQueries({
-          queryKey: instagramKeys.templates(profile.imo_id),
+          queryKey: instagramKeys.userTemplates(user.id),
+        });
+      }
+    },
+  });
+}
+
+// ============================================================================
+// Template Category Hooks
+// ============================================================================
+
+/**
+ * Get custom template categories for the current user
+ */
+export function useInstagramTemplateCategories() {
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  return useQuery({
+    // Use a proper key only when user is authenticated to avoid cache pollution
+    queryKey: userId
+      ? instagramKeys.templateCategories(userId)
+      : ["instagram", "templateCategories", "disabled"],
+    queryFn: async (): Promise<InstagramTemplateCategory[]> => {
+      if (!userId) return [];
+      return instagramService.getTemplateCategories(userId);
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Create a new template category
+ */
+export function useCreateTemplateCategory() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (category: {
+      name: string;
+      display_order?: number;
+    }): Promise<InstagramTemplateCategory> => {
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+      return instagramService.createTemplateCategory({
+        user_id: user.id,
+        name: category.name,
+        display_order: category.display_order ?? 0,
+        is_active: true,
+      });
+    },
+    onSuccess: () => {
+      if (user?.id) {
+        queryClient.invalidateQueries({
+          queryKey: instagramKeys.templateCategories(user.id),
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Update a template category
+ */
+export function useUpdateTemplateCategory() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      categoryId,
+      updates,
+    }: {
+      categoryId: string;
+      updates: { name?: string; display_order?: number };
+    }): Promise<InstagramTemplateCategory> => {
+      return instagramService.updateTemplateCategory(categoryId, updates);
+    },
+    onSuccess: () => {
+      if (user?.id) {
+        queryClient.invalidateQueries({
+          queryKey: instagramKeys.templateCategories(user.id),
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Delete a template category
+ * Also invalidates templates query since templates using this category are updated
+ */
+export function useDeleteTemplateCategory() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (categoryId: string): Promise<void> => {
+      await instagramService.deleteTemplateCategory(categoryId);
+    },
+    onSuccess: () => {
+      if (user?.id) {
+        queryClient.invalidateQueries({
+          queryKey: instagramKeys.templateCategories(user.id),
+        });
+        // Also invalidate templates since their categories may have been cleared
+        queryClient.invalidateQueries({
+          queryKey: instagramKeys.userTemplates(user.id),
         });
       }
     },

@@ -32,6 +32,105 @@ export type ScheduledMessageStatus =
   | "failed"
   | "expired";
 
+// Prospect types for template categorization
+export type ProspectType =
+  | "licensed_agent"
+  | "has_team"
+  | "solar"
+  | "door_to_door"
+  | "athlete"
+  | "car_salesman"
+  | "general_cold"
+  | "custom"; // For user-defined categories
+
+// Message stages for template categorization
+export type MessageStage = "opener" | "follow_up" | "closer";
+
+// Display labels for built-in prospect types
+export const PROSPECT_TYPE_LABELS: Record<string, string> = {
+  licensed_agent: "Licensed Agent",
+  has_team: "Has Team",
+  solar: "Solar",
+  door_to_door: "Door-to-Door",
+  athlete: "Athlete",
+  car_salesman: "Car Salesman",
+  general_cold: "General/Cold",
+};
+
+// Display labels for message stages
+export const MESSAGE_STAGE_LABELS: Record<MessageStage, string> = {
+  opener: "Opener",
+  follow_up: "Follow-up",
+  closer: "Closer",
+};
+
+// Built-in prospect types (cannot be deleted by user)
+export const BUILT_IN_PROSPECT_TYPES: ProspectType[] = [
+  "licensed_agent",
+  "has_team",
+  "solar",
+  "door_to_door",
+  "athlete",
+  "car_salesman",
+  "general_cold",
+];
+
+// Custom category prefix for storing category IDs
+export const CUSTOM_CATEGORY_PREFIX = "custom:";
+
+/**
+ * Check if a category value represents a custom category (stored as custom:{uuid})
+ */
+export function isCustomCategory(category: string | null | undefined): boolean {
+  return category?.startsWith(CUSTOM_CATEGORY_PREFIX) ?? false;
+}
+
+/**
+ * Extract the UUID from a custom category value
+ */
+export function getCustomCategoryId(category: string): string | null {
+  if (!isCustomCategory(category)) return null;
+  return category.slice(CUSTOM_CATEGORY_PREFIX.length);
+}
+
+/**
+ * Create a custom category value from a category ID
+ */
+export function createCustomCategoryValue(categoryId: string): string {
+  return `${CUSTOM_CATEGORY_PREFIX}${categoryId}`;
+}
+
+/**
+ * Get display label for a category (handles both built-in and custom)
+ */
+export function getCategoryLabel(
+  category: string | null | undefined,
+  customCategories: InstagramTemplateCategory[] = [],
+): string {
+  if (!category) return "";
+
+  // Check if it's a built-in type
+  if (PROSPECT_TYPE_LABELS[category]) {
+    return PROSPECT_TYPE_LABELS[category];
+  }
+
+  // Check if it's a custom category (new format: custom:{uuid})
+  if (isCustomCategory(category)) {
+    const categoryId = getCustomCategoryId(category);
+    const customCat = customCategories.find((c) => c.id === categoryId);
+    return customCat?.name ?? "Unknown";
+  }
+
+  // Legacy: might be stored by name directly (for backward compatibility)
+  const legacyMatch = customCategories.find((c) => c.name === category);
+  if (legacyMatch) {
+    return legacyMatch.name;
+  }
+
+  // Fallback: return as-is
+  return category;
+}
+
 // ============================================================================
 // Database Row Types (manual definition until migrations applied)
 // ============================================================================
@@ -136,13 +235,24 @@ export interface InstagramMessageTemplateRow {
   user_id: string | null;
   name: string;
   content: string;
-  category: string | null;
+  category: string | null; // Prospect type (licensed_agent, has_team, solar, etc.)
+  message_stage: string | null; // Message stage (opener, follow_up, closer)
   use_count: number;
   last_used_at: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   created_by: string | null;
+}
+
+export interface InstagramTemplateCategoryRow {
+  id: string;
+  user_id: string;
+  name: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface InstagramUsageTrackingRow {
@@ -199,6 +309,11 @@ export type InstagramMessageTemplateInsert = Omit<
   "id" | "created_at" | "updated_at" | "use_count" | "last_used_at"
 >;
 
+export type InstagramTemplateCategoryInsert = Omit<
+  InstagramTemplateCategoryRow,
+  "id" | "created_at" | "updated_at"
+>;
+
 // ============================================================================
 // Update Types
 // ============================================================================
@@ -209,6 +324,8 @@ export type InstagramScheduledMessageUpdate =
   Partial<InstagramScheduledMessageRow>;
 export type InstagramMessageTemplateUpdate =
   Partial<InstagramMessageTemplateRow>;
+export type InstagramTemplateCategoryUpdate =
+  Partial<InstagramTemplateCategoryRow>;
 
 // ============================================================================
 // Application Interfaces (with computed fields)
@@ -245,6 +362,7 @@ export interface InstagramScheduledMessage extends InstagramScheduledMessageRow 
 }
 
 export type InstagramMessageTemplate = InstagramMessageTemplateRow;
+export type InstagramTemplateCategory = InstagramTemplateCategoryRow;
 
 export interface InstagramUsageStats {
   messagesSent: number;
@@ -469,11 +587,21 @@ export const instagramKeys = {
   allScheduled: (integrationId: string) =>
     [...instagramKeys.all, "allScheduled", integrationId] as const,
 
-  // Templates
+  // Templates (legacy IMO-based)
   templates: (imoId: string) =>
     [...instagramKeys.all, "templates", imoId] as const,
   template: (templateId: string) =>
     [...instagramKeys.all, "template", templateId] as const,
+
+  // Templates (user-based - personal templates)
+  userTemplates: (userId: string) =>
+    [...instagramKeys.all, "templates", "user", userId] as const,
+
+  // Template Categories
+  templateCategories: (userId: string) =>
+    [...instagramKeys.all, "templateCategories", userId] as const,
+  templateCategory: (categoryId: string) =>
+    [...instagramKeys.all, "templateCategory", categoryId] as const,
 
   // Usage
   usage: (userId: string, period?: string) =>

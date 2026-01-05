@@ -9,6 +9,7 @@ import {
   InstagramScheduledMessageRepository,
   InstagramTemplateRepository,
 } from "./repositories";
+import { InstagramTemplateCategoryRepository } from "./repositories/InstagramTemplateCategoryRepository";
 import type {
   InstagramIntegration,
   InstagramConversation,
@@ -17,6 +18,9 @@ import type {
   InstagramMessageTemplate,
   InstagramMessageTemplateInsert,
   InstagramMessageTemplateUpdate,
+  InstagramTemplateCategory,
+  InstagramTemplateCategoryInsert,
+  InstagramTemplateCategoryUpdate,
   ConversationFilters,
   CreateLeadFromIGInput,
 } from "@/types/instagram.types";
@@ -27,6 +31,7 @@ class InstagramServiceClass {
   private messageRepo: InstagramMessageRepository;
   private scheduledMessageRepo: InstagramScheduledMessageRepository;
   private templateRepo: InstagramTemplateRepository;
+  private templateCategoryRepo: InstagramTemplateCategoryRepository;
 
   constructor() {
     this.integrationRepo = new InstagramIntegrationRepository();
@@ -34,6 +39,7 @@ class InstagramServiceClass {
     this.messageRepo = new InstagramMessageRepository();
     this.scheduledMessageRepo = new InstagramScheduledMessageRepository();
     this.templateRepo = new InstagramTemplateRepository();
+    this.templateCategoryRepo = new InstagramTemplateCategoryRepository();
   }
 
   /**
@@ -414,8 +420,100 @@ class InstagramServiceClass {
   /**
    * Delete a message template (soft delete)
    */
-  async deleteTemplate(templateId: string): Promise<void> {
-    return this.templateRepo.softDelete(templateId);
+  async deleteTemplate(templateId: string, userId?: string): Promise<void> {
+    return this.templateRepo.softDelete(templateId, userId);
+  }
+
+  /**
+   * Get templates for a specific user (personal templates)
+   */
+  async getTemplatesByUser(
+    userId: string,
+  ): Promise<InstagramMessageTemplate[]> {
+    return this.templateRepo.findByUserId(userId);
+  }
+
+  /**
+   * Get templates filtered by prospect type and/or message stage
+   */
+  async getTemplatesByFilters(
+    userId: string,
+    filters: {
+      prospectType?: string;
+      messageStage?: string;
+    },
+  ): Promise<InstagramMessageTemplate[]> {
+    return this.templateRepo.findByFilters(userId, filters);
+  }
+
+  // ============================================================================
+  // Template Categories
+  // ============================================================================
+
+  /**
+   * Get all custom template categories for a user
+   */
+  async getTemplateCategories(
+    userId: string,
+  ): Promise<InstagramTemplateCategory[]> {
+    return this.templateCategoryRepo.findByUserId(userId);
+  }
+
+  /**
+   * Create a new template category
+   */
+  async createTemplateCategory(
+    category: InstagramTemplateCategoryInsert,
+  ): Promise<InstagramTemplateCategory> {
+    return this.templateCategoryRepo.create(category);
+  }
+
+  /**
+   * Update a template category
+   */
+  async updateTemplateCategory(
+    categoryId: string,
+    updates: InstagramTemplateCategoryUpdate,
+  ): Promise<InstagramTemplateCategory> {
+    return this.templateCategoryRepo.update(categoryId, {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Delete a template category (soft delete)
+   * Also clears this category from any templates using it
+   */
+  async deleteTemplateCategory(categoryId: string): Promise<void> {
+    // Get the category to find its user_id
+    const category = await this.templateCategoryRepo.findById(categoryId);
+    if (!category) {
+      throw new Error("Category not found");
+    }
+
+    // Clear templates using this category (new format: custom:{uuid})
+    const customCategoryValue = `custom:${categoryId}`;
+    await this.templateRepo.clearCategory(
+      category.user_id,
+      customCategoryValue,
+    );
+
+    // Also clear legacy format (stored by name) for backward compatibility
+    await this.templateRepo.clearCategory(category.user_id, category.name);
+
+    // Soft delete the category (with user_id for defense-in-depth)
+    return this.templateCategoryRepo.softDelete(categoryId, category.user_id);
+  }
+
+  /**
+   * Reorder template categories
+   */
+  async reorderTemplateCategories(
+    userId: string,
+    categoryIds: string[],
+  ): Promise<void> {
+    return this.templateCategoryRepo.reorder(userId, categoryIds);
   }
 
   // ============================================================================

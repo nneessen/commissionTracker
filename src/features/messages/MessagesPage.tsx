@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SlackTabContent, SlackSidebar } from "./components/slack";
 import { InstagramTabContent, InstagramSidebar } from "./components/instagram";
+import { InstagramTemplatesSettings } from "./components/instagram/templates";
 import { useUserSlackPreferences, useSlackIntegrations } from "@/hooks/slack";
 import { useActiveInstagramIntegration } from "@/hooks/instagram";
 import type { SlackChannel } from "@/types/slack.types";
@@ -299,8 +300,7 @@ export function MessagesPage() {
               </ResizablePanel>
             )
           ) : activeTab === "instagram" &&
-            !instagramIntegration ? /* No sidebar when not connected */
-          null : (
+            !instagramIntegration /* No sidebar when not connected */ ? null : (
             /* Email folders sidebar - fixed width for now */
             <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
               <div className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
@@ -433,16 +433,8 @@ export function MessagesPage() {
             )}
 
             {activeTab === "settings" && (
-              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <div className="text-center">
-                  <Settings className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Settings coming soon
-                  </p>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
-                    Signatures, snippets, and notifications
-                  </p>
-                </div>
+              <div className="h-full overflow-hidden">
+                <InstagramTemplatesSettings />
               </div>
             )}
           </div>

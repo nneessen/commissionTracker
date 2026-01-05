@@ -3018,6 +3018,7 @@ export type Database = {
           imo_id: string;
           is_active: boolean | null;
           last_used_at: string | null;
+          message_stage: string | null;
           name: string;
           updated_at: string | null;
           use_count: number | null;
@@ -3032,6 +3033,7 @@ export type Database = {
           imo_id: string;
           is_active?: boolean | null;
           last_used_at?: string | null;
+          message_stage?: string | null;
           name: string;
           updated_at?: string | null;
           use_count?: number | null;
@@ -3046,6 +3048,7 @@ export type Database = {
           imo_id?: string;
           is_active?: boolean | null;
           last_used_at?: string | null;
+          message_stage?: string | null;
           name?: string;
           updated_at?: string | null;
           use_count?: number | null;
@@ -3228,6 +3231,44 @@ export type Database = {
             columns: ["template_id"];
             isOneToOne: false;
             referencedRelation: "instagram_message_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      instagram_template_categories: {
+        Row: {
+          created_at: string | null;
+          display_order: number | null;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          display_order?: number | null;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          display_order?: number | null;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_template_categories_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];

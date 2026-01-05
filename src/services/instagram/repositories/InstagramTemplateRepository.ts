@@ -29,7 +29,7 @@ export class InstagramTemplateRepository extends BaseRepository<
   }
 
   /**
-   * Find active templates for an IMO
+   * Find active templates for an IMO (legacy)
    */
   async findActiveByImoId(imoId: string): Promise<InstagramMessageTemplate[]> {
     const { data, error } = await this.client
@@ -44,14 +44,85 @@ export class InstagramTemplateRepository extends BaseRepository<
   }
 
   /**
-   * Soft delete a template (set is_active to false)
+   * Find active templates for a user (personal templates)
    */
-  async softDelete(id: string): Promise<void> {
-    const { error } = await this.client
+  async findByUserId(userId: string): Promise<InstagramMessageTemplate[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .order("use_count", { ascending: false });
+
+    if (error) throw this.handleError(error, "findByUserId");
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Find templates filtered by prospect type and/or message stage
+   */
+  async findByFilters(
+    userId: string,
+    filters: {
+      prospectType?: string;
+      messageStage?: string;
+    },
+  ): Promise<InstagramMessageTemplate[]> {
+    let query = this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true);
+
+    if (filters.prospectType) {
+      query = query.eq("category", filters.prospectType);
+    }
+
+    if (filters.messageStage) {
+      query = query.eq("message_stage", filters.messageStage);
+    }
+
+    const { data, error } = await query.order("use_count", {
+      ascending: false,
+    });
+
+    if (error) throw this.handleError(error, "findByFilters");
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Soft delete a template (set is_active to false)
+   * Includes user_id check for defense-in-depth (RLS also enforces this)
+   */
+  async softDelete(id: string, userId?: string): Promise<void> {
+    let query = this.client
       .from(this.tableName)
       .update({ is_active: false })
       .eq("id", id);
 
+    // Add user_id verification if provided
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    const { error } = await query;
+
     if (error) throw this.handleError(error, "softDelete");
+  }
+
+  /**
+   * Clear category from all templates that match the given category value
+   * Used when a custom category is deleted
+   */
+  async clearCategory(userId: string, categoryValue: string): Promise<number> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .update({ category: null })
+      .eq("user_id", userId)
+      .eq("category", categoryValue)
+      .select("id");
+
+    if (error) throw this.handleError(error, "clearCategory");
+    return data?.length ?? 0;
   }
 }

@@ -6,6 +6,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 16:41:31
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/instagram-templates-code-review.md`
+- `plans/active/template-selector-redesign.md`
+- `scripts/seed-instagram-templates.js`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/features/messages/components/instagram/InstagramMessageInput.tsx`
+- `src/features/messages/components/instagram/InstagramTemplateSelector.tsx`
+- `src/features/messages/components/instagram/templates/CategoryManager.tsx`
+- `src/features/messages/components/instagram/templates/InstagramTemplatesSettings.tsx`
+- `src/features/messages/components/instagram/templates/TemplateDeleteDialog.tsx`
+- `src/features/messages/components/instagram/templates/TemplateForm.tsx`
+- `src/features/messages/components/instagram/templates/TemplateList.tsx`
+- `src/features/messages/components/instagram/templates/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramTemplateCategoryRepository.ts`
+- `src/services/instagram/repositories/InstagramTemplateRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/instagram.types.ts`
+- `supabase/migrations/20260105_010_instagram_template_categories.sql`
+
+### Statistics
+```
+ 22 files changed, 12630 insertions(+), 9878 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-05 16:39:43
+
+### Changed Files
+- `plans/active/instagram-templates-code-review.md`
+- `plans/active/template-selector-redesign.md`
+- `scripts/seed-instagram-templates.js`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/features/messages/components/instagram/InstagramMessageInput.tsx`
+- `src/features/messages/components/instagram/InstagramTemplateSelector.tsx`
+- `src/features/messages/components/instagram/templates/CategoryManager.tsx`
+- `src/features/messages/components/instagram/templates/InstagramTemplatesSettings.tsx`
+- `src/features/messages/components/instagram/templates/TemplateDeleteDialog.tsx`
+- `src/features/messages/components/instagram/templates/TemplateForm.tsx`
+- `src/features/messages/components/instagram/templates/TemplateList.tsx`
+- `src/features/messages/components/instagram/templates/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramTemplateCategoryRepository.ts`
+- `src/services/instagram/repositories/InstagramTemplateRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/instagram.types.ts`
+- `supabase/migrations/20260105_010_instagram_template_categories.sql`
+
+### Statistics
+```
+ 20 files changed, 12612 insertions(+), 9873 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 14:46:26
 
 ### Changed Files

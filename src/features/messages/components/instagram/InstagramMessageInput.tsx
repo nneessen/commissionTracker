@@ -12,7 +12,11 @@ import { Send, Loader2, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { getWindowStatus } from "@/types/instagram.types";
+import {
+  getWindowStatus,
+  type InstagramConversation,
+  type InstagramMessage,
+} from "@/types/instagram.types";
 import { InstagramTemplateSelector } from "./InstagramTemplateSelector";
 
 const MAX_CHARS = 1000;
@@ -25,6 +29,10 @@ interface InstagramMessageInputProps {
   disabled?: boolean;
   placeholder?: string;
   showScheduleButton?: boolean;
+  /** Conversation context for template selector */
+  conversation?: InstagramConversation | null;
+  /** Recent messages for template selector context */
+  recentMessages?: InstagramMessage[];
 }
 
 export function InstagramMessageInput({
@@ -35,6 +43,8 @@ export function InstagramMessageInput({
   disabled = false,
   placeholder = "Type a message...",
   showScheduleButton = true,
+  conversation,
+  recentMessages,
 }: InstagramMessageInputProps): ReactNode {
   const [text, setText] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
@@ -134,6 +144,8 @@ export function InstagramMessageInput({
           <InstagramTemplateSelector
             onSelect={handleTemplateSelect}
             disabled={isDisabled}
+            conversation={conversation}
+            recentMessages={recentMessages}
           />
 
           {/* Schedule button */}

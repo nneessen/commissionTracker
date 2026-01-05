@@ -402,6 +402,8 @@ export function InstagramConversationView({
           isSending={sendMessage.isPending}
           disabled={isTokenExpired}
           placeholder={`Message @${conversation.participant_username || displayName}`}
+          conversation={conversation}
+          recentMessages={sortedMessages.slice(-5).reverse()}
         />
       </div>
 
