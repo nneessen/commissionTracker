@@ -44,7 +44,7 @@ export type ProspectType =
   | "custom"; // For user-defined categories
 
 // Message stages for template categorization
-export type MessageStage = "opener" | "follow_up" | "closer";
+export type MessageStage = "opener" | "follow_up" | "engagement" | "closer";
 
 // Display labels for built-in prospect types
 export const PROSPECT_TYPE_LABELS: Record<string, string> = {
@@ -61,6 +61,7 @@ export const PROSPECT_TYPE_LABELS: Record<string, string> = {
 export const MESSAGE_STAGE_LABELS: Record<MessageStage, string> = {
   opener: "Opener",
   follow_up: "Follow-up",
+  engagement: "Engagement",
   closer: "Closer",
 };
 
