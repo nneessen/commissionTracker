@@ -1,6 +1,6 @@
 // src/features/policies/PolicyDashboard.tsx
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PolicyDialog } from "./components/PolicyDialog";
@@ -24,37 +24,117 @@ import {
 import type { NewPolicyForm } from "../../types/policy.types";
 import { toast } from "sonner";
 
+// Type for pending first-sale logs
+interface PendingFirstSaleLog {
+  logId: string;
+  agencyName: string;
+}
+
+// Polling configuration for first-seller check
+const FIRST_SELLER_POLL_MAX_ATTEMPTS = 6;
+const FIRST_SELLER_POLL_INTERVAL_MS = 500;
+
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
-  const [firstSellerDialog, setFirstSellerDialog] = useState<{
-    open: boolean;
-    logId: string;
-    agencyName: string;
-  }>({ open: false, logId: "", agencyName: "" });
+  // Support multiple pending logs for multi-channel naming
+  const [pendingFirstSales, setPendingFirstSales] = useState<
+    PendingFirstSaleLog[]
+  >([]);
+  const [currentFirstSaleIndex, setCurrentFirstSaleIndex] = useState(0);
+
+  // Ref to track active polling and allow cancellation
+  const pollingAbortRef = useRef<AbortController | null>(null);
 
   const { user } = useAuth();
 
-  const checkFirstSeller = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.rpc("check_first_seller_naming", {
-        p_user_id: userId,
-      });
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingAbortRef.current) {
+        pollingAbortRef.current.abort();
+      }
+    };
+  }, []);
 
-      if (error) {
-        console.error("Error checking first seller:", error);
+  // Get the current first sale dialog to show (if any)
+  const currentFirstSale = pendingFirstSales[currentFirstSaleIndex];
+
+  // Handle when a naming dialog is completed (move to next or close)
+  const handleFirstSaleComplete = () => {
+    if (currentFirstSaleIndex < pendingFirstSales.length - 1) {
+      // Move to next pending log
+      setCurrentFirstSaleIndex((prev) => prev + 1);
+    } else {
+      // All done, close dialogs
+      setPendingFirstSales([]);
+      setCurrentFirstSaleIndex(0);
+    }
+  };
+
+  const checkFirstSeller = async (userId: string) => {
+    // Cancel any existing polling before starting new one
+    if (pollingAbortRef.current) {
+      pollingAbortRef.current.abort();
+    }
+
+    const abortController = new AbortController();
+    pollingAbortRef.current = abortController;
+
+    // The edge function triggered by the DB runs asynchronously and takes ~1-2 seconds.
+    // We poll multiple times to catch the first-sale pending state when it's created.
+    for (let attempt = 0; attempt < FIRST_SELLER_POLL_MAX_ATTEMPTS; attempt++) {
+      // Check if polling was cancelled
+      if (abortController.signal.aborted) {
         return;
       }
 
-      if (data && data.length > 0 && data[0].needs_naming) {
-        setFirstSellerDialog({
-          open: true,
-          logId: data[0].log_id,
-          agencyName: data[0].agency_name,
-        });
+      try {
+        const { data, error } = await supabase.rpc(
+          "check_first_seller_naming",
+          {
+            p_user_id: userId,
+          },
+        );
+
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        if (error) {
+          console.error("Error checking first seller:", error);
+          return;
+        }
+
+        // RPC now returns ALL pending logs for multi-channel naming
+        if (data && data.length > 0) {
+          const pendingLogs = data
+            .filter((log: { needs_naming: boolean }) => log.needs_naming)
+            .map((log: { log_id: string; agency_name: string }) => ({
+              logId: log.log_id,
+              agencyName: log.agency_name,
+            }));
+
+          if (pendingLogs.length > 0) {
+            setPendingFirstSales(pendingLogs);
+            setCurrentFirstSaleIndex(0);
+            return; // Found pending logs, stop polling
+          }
+        }
+
+        // If no data yet and we haven't exhausted attempts, wait and try again
+        if (attempt < FIRST_SELLER_POLL_MAX_ATTEMPTS - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, FIRST_SELLER_POLL_INTERVAL_MS),
+          );
+        }
+      } catch (err) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+        console.error("Error checking first seller:", err);
+        return;
       }
-    } catch (err) {
-      console.error("Error checking first seller:", err);
     }
   };
 
@@ -106,15 +186,21 @@ export const PolicyDashboard: React.FC = () => {
         onNewPolicy={() => setIsPolicyFormOpen(true)}
       />
 
-      {/* First Seller Naming Dialog */}
-      <FirstSellerNamingDialog
-        open={firstSellerDialog.open}
-        onOpenChange={(open) =>
-          setFirstSellerDialog((prev) => ({ ...prev, open }))
-        }
-        logId={firstSellerDialog.logId}
-        agencyName={firstSellerDialog.agencyName}
-      />
+      {/* First Seller Naming Dialog(s) - supports multi-channel naming */}
+      {currentFirstSale && (
+        <FirstSellerNamingDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              handleFirstSaleComplete();
+            }
+          }}
+          logId={currentFirstSale.logId}
+          agencyName={currentFirstSale.agencyName}
+          totalChannels={pendingFirstSales.length}
+          currentChannel={currentFirstSaleIndex + 1}
+        />
+      )}
 
       {/* Policy Dialog */}
       <PolicyDialog

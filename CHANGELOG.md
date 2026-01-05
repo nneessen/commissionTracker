@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 10:27:09
+
+### Changed Files
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/components/FirstSellerNamingDialog.tsx`
+- `src/types/database.types.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20260105_003_multi_channel_naming.sql`
+- `supabase/migrations/reverts/20260105_003_revert_multi_channel_naming.sql`
+
+### Statistics
+```
+ 6 files changed, 10048 insertions(+), 9807 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 09:21:26
 
 ### Changed Files
