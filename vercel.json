@@ -2,9 +2,16 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "framework": "vite",
+  "redirects": [
+    {
+      "source": "/api/instagram-oauth-callback",
+      "destination": "https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-oauth-callback",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
