@@ -130,7 +130,52 @@ class InstagramServiceClass {
   // ============================================================================
 
   /**
-   * Get conversations for an integration
+   * Sync conversations from Instagram API and store in local DB
+   * This is the primary method to fetch fresh data from Instagram
+   */
+  async syncConversations(
+    integrationId: string,
+    options?: { limit?: number; cursor?: string },
+  ): Promise<{
+    conversations: InstagramConversation[];
+    hasMore: boolean;
+    nextCursor?: string;
+    syncedCount: number;
+  }> {
+    const { data, error } = await supabase.functions.invoke(
+      "instagram-get-conversations",
+      {
+        body: {
+          integrationId,
+          limit: options?.limit ?? 20,
+          cursor: options?.cursor,
+          syncToDb: true,
+        },
+      },
+    );
+
+    if (error) {
+      console.error("[InstagramService] Error syncing conversations:", error);
+      throw new Error("Failed to sync Instagram conversations");
+    }
+
+    if (!data?.ok) {
+      if (data?.code === "TOKEN_EXPIRED") {
+        throw new Error("Instagram token expired. Please reconnect.");
+      }
+      throw new Error(data?.error || "Failed to sync conversations");
+    }
+
+    return {
+      conversations: data.conversations || [],
+      hasMore: data.hasMore || false,
+      nextCursor: data.nextCursor,
+      syncedCount: data.syncedCount || 0,
+    };
+  }
+
+  /**
+   * Get conversations for an integration (from local DB)
    */
   async getConversations(
     integrationId: string,
@@ -195,7 +240,95 @@ class InstagramServiceClass {
   // ============================================================================
 
   /**
-   * Get messages for a conversation
+   * Sync messages from Instagram API for a conversation
+   */
+  async syncMessages(
+    conversationId: string,
+    options?: { limit?: number; cursor?: string },
+  ): Promise<{
+    messages: InstagramMessage[];
+    hasMore: boolean;
+    nextCursor?: string;
+    syncedCount: number;
+  }> {
+    const { data, error } = await supabase.functions.invoke(
+      "instagram-get-messages",
+      {
+        body: {
+          conversationId,
+          limit: options?.limit ?? 50,
+          cursor: options?.cursor,
+          syncToDb: true,
+        },
+      },
+    );
+
+    if (error) {
+      console.error("[InstagramService] Error syncing messages:", error);
+      throw new Error("Failed to sync Instagram messages");
+    }
+
+    if (!data?.ok) {
+      if (data?.code === "TOKEN_EXPIRED") {
+        throw new Error("Instagram token expired. Please reconnect.");
+      }
+      throw new Error(data?.error || "Failed to sync messages");
+    }
+
+    return {
+      messages: data.messages || [],
+      hasMore: data.hasMore || false,
+      nextCursor: data.nextCursor,
+      syncedCount: data.syncedCount || 0,
+    };
+  }
+
+  /**
+   * Send a message via Instagram API
+   */
+  async sendMessage(
+    conversationId: string,
+    messageText: string,
+    templateId?: string,
+  ): Promise<InstagramMessage> {
+    const { data, error } = await supabase.functions.invoke(
+      "instagram-send-message",
+      {
+        body: {
+          conversationId,
+          messageText,
+          templateId,
+        },
+      },
+    );
+
+    if (error) {
+      console.error("[InstagramService] Error sending message:", error);
+      throw new Error("Failed to send Instagram message");
+    }
+
+    if (!data?.ok) {
+      if (data?.code === "TOKEN_EXPIRED") {
+        throw new Error("Instagram token expired. Please reconnect.");
+      }
+      if (data?.code === "WINDOW_CLOSED") {
+        throw new Error(
+          "Messaging window closed. You can only reply within 24 hours of the last message from this user.",
+        );
+      }
+      if (data?.code === "RATE_LIMITED") {
+        throw new Error(
+          "Instagram API rate limit reached. Please try again later.",
+        );
+      }
+      throw new Error(data?.error || "Failed to send message");
+    }
+
+    return data.message;
+  }
+
+  /**
+   * Get messages for a conversation (from local DB)
    */
   async getMessages(
     conversationId: string,

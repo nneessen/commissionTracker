@@ -2,7 +2,7 @@
 // Displays Instagram conversation messages and message composer
 
 import { useRef, useEffect, useState, type ReactNode } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import {
   AlertCircle,
@@ -16,11 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/services/base/supabase";
 import {
   useInstagramMessages,
   useInstagramConversation,
   useSetInstagramPriority,
+  useSendInstagramMessage,
+  useSyncInstagramMessages,
 } from "@/hooks/instagram";
 import { instagramKeys } from "@/types/instagram.types";
 import { InstagramMessageBubble } from "./InstagramMessageBubble";
@@ -109,6 +110,7 @@ export function InstagramConversationView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showCreateLeadDialog, setShowCreateLeadDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const hasSyncedRef = useRef(false);
 
   // Fetch conversation details
   const {
@@ -117,50 +119,34 @@ export function InstagramConversationView({
     error: conversationError,
   } = useInstagramConversation(conversationId);
 
-  // Fetch messages
+  // Fetch messages from local DB
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
     error: messagesError,
-    refetch: refetchMessages,
-    isRefetching,
   } = useInstagramMessages(conversationId);
 
   const messages = messagesData?.messages || [];
 
-  // Send message mutation
-  const sendMessage = useMutation({
-    mutationFn: async (text: string) => {
-      const { data, error } = await supabase.functions.invoke(
-        "instagram-send-message",
-        {
-          body: {
-            conversationId,
-            messageText: text,
-          },
-        },
-      );
+  // Sync messages from Instagram API
+  const syncMessages = useSyncInstagramMessages();
+  const isSyncing = syncMessages.isPending;
 
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || "Failed to send message");
+  // Auto-sync messages on first load
+  useEffect(() => {
+    if (!hasSyncedRef.current && conversationId) {
+      hasSyncedRef.current = true;
+      syncMessages.mutate({ conversationId });
+    }
+  }, [conversationId, syncMessages]);
 
-      return data;
-    },
-    onSuccess: () => {
-      // Invalidate messages to refetch
-      queryClient.invalidateQueries({
-        queryKey: instagramKeys.messages(conversationId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: instagramKeys.conversation(conversationId),
-      });
-    },
-    onError: (err) => {
-      toast.error(
-        `Failed to send: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
-    },
-  });
+  // Manual refresh handler
+  const handleRefresh = () => {
+    syncMessages.mutate({ conversationId });
+  };
+
+  // Send message using hook
+  const sendMessage = useSendInstagramMessage();
 
   // Priority toggle
   const setPriority = useSetInstagramPriority();
@@ -189,11 +175,27 @@ export function InstagramConversationView({
   }, [messages.length]);
 
   const handleSendMessage = (text: string) => {
-    sendMessage.mutate(text);
+    sendMessage.mutate(
+      { conversationId, messageText: text },
+      {
+        onSuccess: () => {
+          // Optionally show success toast
+        },
+        onError: (err) => {
+          toast.error(
+            `Failed to send: ${err instanceof Error ? err.message : "Unknown error"}`,
+          );
+        },
+      },
+    );
   };
 
   // Loading state - use skeleton for better UX
-  if (isLoadingConversation || (isLoadingMessages && messages.length === 0)) {
+  if (
+    isLoadingConversation ||
+    (isLoadingMessages && messages.length === 0) ||
+    (isSyncing && messages.length === 0)
+  ) {
     return <ConversationViewSkeleton />;
   }
 
@@ -211,12 +213,15 @@ export function InstagramConversationView({
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
           <Button
-            onClick={() => refetchMessages()}
+            onClick={handleRefresh}
             variant="outline"
             size="sm"
             className="h-7 text-[11px]"
+            disabled={isSyncing}
           >
-            <RefreshCw className="h-3 w-3 mr-1.5" />
+            <RefreshCw
+              className={cn("h-3 w-3 mr-1.5", isSyncing && "animate-spin")}
+            />
             Try Again
           </Button>
         </div>
@@ -336,12 +341,10 @@ export function InstagramConversationView({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => refetchMessages()}
-            disabled={isRefetching}
+            onClick={handleRefresh}
+            disabled={isSyncing}
           >
-            <RefreshCw
-              className={cn("h-4 w-4", isRefetching && "animate-spin")}
-            />
+            <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
           </Button>
         </div>
       </div>

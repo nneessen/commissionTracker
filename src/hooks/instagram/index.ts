@@ -14,8 +14,11 @@ export {
   useInstagramConversations,
   useInstagramConversation,
   usePriorityInstagramConversations,
+  useSyncInstagramConversations,
   // Message hooks
   useInstagramMessages,
+  useSyncInstagramMessages,
+  useSendInstagramMessage,
   // Priority hooks
   useSetInstagramPriority,
   // Lead hooks
@@ -28,4 +31,5 @@ export {
   // Scheduled message hooks
   useInstagramScheduledMessages,
   useCancelInstagramScheduledMessage,
+  useScheduleInstagramMessage,
 } from "./useInstagramIntegration";

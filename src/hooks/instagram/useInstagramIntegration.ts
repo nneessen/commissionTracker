@@ -223,9 +223,121 @@ export function usePriorityInstagramConversations(
   });
 }
 
+/**
+ * Sync conversations from Instagram API
+ */
+export function useSyncInstagramConversations() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      integrationId,
+      limit,
+      cursor,
+    }: {
+      integrationId: string;
+      limit?: number;
+      cursor?: string;
+    }): Promise<{
+      conversations: InstagramConversation[];
+      hasMore: boolean;
+      nextCursor?: string;
+      syncedCount: number;
+    }> => {
+      return instagramService.syncConversations(integrationId, {
+        limit,
+        cursor,
+      });
+    },
+    onSuccess: (data, variables) => {
+      // Update the conversations in cache
+      queryClient.setQueryData(
+        instagramKeys.conversations(variables.integrationId),
+        data.conversations,
+      );
+      // Also invalidate to ensure any filtered queries are refreshed
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.conversations(variables.integrationId),
+      });
+    },
+  });
+}
+
 // ============================================================================
 // Message Hooks
 // ============================================================================
+
+/**
+ * Sync messages from Instagram API for a conversation
+ */
+export function useSyncInstagramMessages() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      limit,
+      cursor,
+    }: {
+      conversationId: string;
+      limit?: number;
+      cursor?: string;
+    }): Promise<{
+      messages: InstagramMessage[];
+      hasMore: boolean;
+      nextCursor?: string;
+      syncedCount: number;
+    }> => {
+      return instagramService.syncMessages(conversationId, { limit, cursor });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.messages(variables.conversationId),
+      });
+    },
+  });
+}
+
+/**
+ * Send a message via Instagram API
+ */
+export function useSendInstagramMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      messageText,
+      templateId,
+    }: {
+      conversationId: string;
+      messageText: string;
+      templateId?: string;
+    }): Promise<InstagramMessage> => {
+      return instagramService.sendMessage(
+        conversationId,
+        messageText,
+        templateId,
+      );
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate messages for this conversation
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.messages(variables.conversationId),
+      });
+      // Invalidate conversation to update last_message_preview
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.conversation(variables.conversationId),
+      });
+      // Invalidate conversations list too
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "instagram" &&
+          query.queryKey[1] === "conversations",
+      });
+    },
+  });
+}
 
 /**
  * Get messages for a conversation

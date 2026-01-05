@@ -1,13 +1,16 @@
 // src/features/messages/components/instagram/InstagramSidebar.tsx
 // Instagram conversation list sidebar
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Search, RefreshCw, Star, MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useInstagramConversations } from "@/hooks/instagram";
+import {
+  useInstagramConversations,
+  useSyncInstagramConversations,
+} from "@/hooks/instagram";
 import { InstagramConversationItem } from "./InstagramConversationItem";
 import type {
   InstagramIntegration,
@@ -45,15 +48,31 @@ export function InstagramSidebar({
 }: InstagramSidebarProps): ReactNode {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState(false);
+  const hasSyncedRef = useRef(false);
 
-  const {
-    data: conversations = [],
-    isLoading,
-    refetch,
-    isRefetching,
-  } = useInstagramConversations(integration.id, {
-    isPriority: filterPriority || undefined,
-  });
+  const { data: conversations = [], isLoading } = useInstagramConversations(
+    integration.id,
+    {
+      isPriority: filterPriority || undefined,
+    },
+  );
+
+  // Sync hook for fetching from Instagram API
+  const syncConversations = useSyncInstagramConversations();
+  const isSyncing = syncConversations.isPending;
+
+  // Auto-sync on first load
+  useEffect(() => {
+    if (!hasSyncedRef.current && integration.id) {
+      hasSyncedRef.current = true;
+      syncConversations.mutate({ integrationId: integration.id });
+    }
+  }, [integration.id, syncConversations]);
+
+  // Handler for manual refresh
+  const handleRefresh = () => {
+    syncConversations.mutate({ integrationId: integration.id });
+  };
 
   // Filter conversations by search query
   const filteredConversations = conversations.filter((conv) => {
@@ -89,12 +108,10 @@ export function InstagramSidebar({
             variant="ghost"
             size="icon"
             className="h-5 w-5 flex-shrink-0"
-            onClick={() => refetch()}
-            disabled={isRefetching}
+            onClick={handleRefresh}
+            disabled={isSyncing}
           >
-            <RefreshCw
-              className={cn("h-3 w-3", isRefetching && "animate-spin")}
-            />
+            <RefreshCw className={cn("h-3 w-3", isSyncing && "animate-spin")} />
           </Button>
         </div>
 
@@ -159,7 +176,7 @@ export function InstagramSidebar({
 
       {/* Conversations list */}
       <div className="flex-1 overflow-auto p-1.5 space-y-0.5">
-        {isLoading ? (
+        {isLoading || (isSyncing && conversations.length === 0) ? (
           <div className="space-y-1">
             {Array.from({ length: 5 }).map((_, i) => (
               <ConversationSkeleton key={i} />
