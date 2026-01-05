@@ -370,6 +370,11 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
     description: "Gas, maintenance, registration (business use)",
     type: "business",
   },
+  {
+    name: "Life Insurance Leads",
+    description: "Lead packs purchased from vendors for client prospecting",
+    type: "business",
+  },
 
   // Personal Categories
   {

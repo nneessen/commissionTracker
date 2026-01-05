@@ -6,6 +6,76 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 09:21:26
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/completed/CONTINUATION_lead_purchases_integration.md`
+- `plans/completed/lead-pack-tracking-expense-redesign.md`
+- `src/features/expenses/ExpenseDashboardCompact.tsx`
+- `src/features/expenses/ExpensesPage.tsx`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+- `src/features/expenses/index.ts`
+- `src/features/expenses/leads/LeadPurchaseDashboard.tsx`
+- `src/features/expenses/leads/LeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/LeadVendorDialog.tsx`
+- `src/features/expenses/leads/index.ts`
+- `src/hooks/lead-purchases/index.ts`
+- `src/hooks/lead-purchases/useLeadPurchases.ts`
+- `src/hooks/lead-purchases/useLeadVendors.ts`
+- `src/router.tsx`
+- `src/services/expenses/categories/ExpenseCategoryRepository.ts`
+- `src/services/lead-purchases/LeadPurchaseRepository.ts`
+- `src/services/lead-purchases/LeadPurchaseService.ts`
+- `src/services/lead-purchases/LeadVendorRepository.ts`
+- `src/services/lead-purchases/LeadVendorService.ts`
+- `src/services/lead-purchases/index.ts`
+- `src/types/database.types.ts`
+- `src/types/expense.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `supabase/migrations/20260105_001_expense_categories_redesign.sql`
+- `supabase/migrations/20260105_002_lead_vendors_purchases.sql`
+
+### Statistics
+```
+ 27 files changed, 13636 insertions(+), 9003 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-05 09:21:04
+
+### Changed Files
+- `plans/completed/CONTINUATION_lead_purchases_integration.md`
+- `plans/completed/lead-pack-tracking-expense-redesign.md`
+- `src/features/expenses/ExpenseDashboardCompact.tsx`
+- `src/features/expenses/ExpensesPage.tsx`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+- `src/features/expenses/index.ts`
+- `src/features/expenses/leads/LeadPurchaseDashboard.tsx`
+- `src/features/expenses/leads/LeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/LeadVendorDialog.tsx`
+- `src/features/expenses/leads/index.ts`
+- `src/hooks/lead-purchases/index.ts`
+- `src/hooks/lead-purchases/useLeadPurchases.ts`
+- `src/hooks/lead-purchases/useLeadVendors.ts`
+- `src/router.tsx`
+- `src/services/expenses/categories/ExpenseCategoryRepository.ts`
+- `src/services/lead-purchases/LeadPurchaseRepository.ts`
+- `src/services/lead-purchases/LeadPurchaseService.ts`
+- `src/services/lead-purchases/LeadVendorRepository.ts`
+- `src/services/lead-purchases/LeadVendorService.ts`
+- `src/services/lead-purchases/index.ts`
+- `src/types/database.types.ts`
+- `src/types/expense.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `supabase/migrations/20260105_001_expense_categories_redesign.sql`
+- `supabase/migrations/20260105_002_lead_vendors_purchases.sql`
+
+### Statistics
+```
+ 25 files changed, 13598 insertions(+), 8997 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 07:51:39
 
 ### Changed Files

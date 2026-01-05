@@ -1,0 +1,252 @@
+// src/types/lead-purchase.types.ts
+import type { Database } from "./database.types";
+
+// Database row types
+type LeadVendorRow = Database["public"]["Tables"]["lead_vendors"]["Row"];
+type LeadVendorInsert = Database["public"]["Tables"]["lead_vendors"]["Insert"];
+type LeadVendorUpdate = Database["public"]["Tables"]["lead_vendors"]["Update"];
+
+type LeadPurchaseRow = Database["public"]["Tables"]["lead_purchases"]["Row"];
+type LeadPurchaseInsert =
+  Database["public"]["Tables"]["lead_purchases"]["Insert"];
+type LeadPurchaseUpdate =
+  Database["public"]["Tables"]["lead_purchases"]["Update"];
+
+// Lead freshness enum
+export type LeadFreshness = Database["public"]["Enums"]["lead_freshness"];
+
+// =============================================================================
+// LEAD VENDOR TYPES
+// =============================================================================
+
+export interface LeadVendor {
+  id: string;
+  imoId: string;
+  createdBy: string;
+  name: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  website: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLeadVendorData {
+  name: string;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  website?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdateLeadVendorData {
+  name?: string;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  website?: string | null;
+  notes?: string | null;
+  isActive?: boolean;
+}
+
+// =============================================================================
+// LEAD PURCHASE TYPES
+// =============================================================================
+
+export interface LeadPurchase {
+  id: string;
+  userId: string;
+  imoId: string | null;
+  agencyId: string | null;
+  expenseId: string | null;
+  vendorId: string;
+  purchaseName: string | null;
+  leadFreshness: LeadFreshness;
+  leadCount: number;
+  totalCost: number;
+  costPerLead: number; // Auto-calculated
+  purchaseDate: string;
+  policiesSold: number;
+  commissionEarned: number;
+  roiPercentage: number; // Auto-calculated
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Joined data
+  vendor?: LeadVendor;
+}
+
+export interface CreateLeadPurchaseData {
+  vendorId: string;
+  expenseId?: string | null;
+  purchaseName?: string | null;
+  leadFreshness?: LeadFreshness;
+  leadCount: number;
+  totalCost: number;
+  purchaseDate: string;
+  policiesSold?: number;
+  commissionEarned?: number;
+  notes?: string | null;
+}
+
+export interface UpdateLeadPurchaseData {
+  vendorId?: string;
+  expenseId?: string | null;
+  purchaseName?: string | null;
+  leadFreshness?: LeadFreshness;
+  leadCount?: number;
+  totalCost?: number;
+  purchaseDate?: string;
+  policiesSold?: number;
+  commissionEarned?: number;
+  notes?: string | null;
+}
+
+// =============================================================================
+// STATS & ANALYTICS TYPES
+// =============================================================================
+
+export interface LeadPurchaseStats {
+  totalPurchases: number;
+  totalLeads: number;
+  totalSpent: number;
+  totalPolicies: number;
+  totalCommission: number;
+  avgCostPerLead: number;
+  avgRoi: number;
+  conversionRate: number;
+}
+
+export interface VendorStats extends LeadPurchaseStats {
+  vendorId: string;
+  vendorName: string;
+}
+
+// =============================================================================
+// FILTER TYPES
+// =============================================================================
+
+export interface LeadPurchaseFilters {
+  vendorId?: string;
+  startDate?: string;
+  endDate?: string;
+  leadFreshness?: LeadFreshness;
+}
+
+// =============================================================================
+// FORM TYPES (for UI)
+// =============================================================================
+
+export interface LeadPurchaseFormData {
+  vendorId: string;
+  purchaseName: string;
+  leadFreshness: LeadFreshness;
+  leadCount: number;
+  totalCost: number;
+  purchaseDate: string;
+  policiesSold: number;
+  commissionEarned: number;
+  notes: string;
+}
+
+export interface LeadVendorFormData {
+  name: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  website: string;
+  notes: string;
+}
+
+// =============================================================================
+// TRANSFORM HELPERS (for repository layer)
+// =============================================================================
+
+export function transformLeadVendorFromDB(row: LeadVendorRow): LeadVendor {
+  return {
+    id: row.id,
+    imoId: row.imo_id,
+    createdBy: row.created_by,
+    name: row.name,
+    contactName: row.contact_name,
+    contactEmail: row.contact_email,
+    contactPhone: row.contact_phone,
+    website: row.website,
+    notes: row.notes,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function transformLeadVendorToDB(
+  data: CreateLeadVendorData | UpdateLeadVendorData,
+): Partial<LeadVendorInsert | LeadVendorUpdate> {
+  const result: Record<string, unknown> = {};
+
+  if ("name" in data && data.name !== undefined) result.name = data.name;
+  if ("contactName" in data) result.contact_name = data.contactName;
+  if ("contactEmail" in data) result.contact_email = data.contactEmail;
+  if ("contactPhone" in data) result.contact_phone = data.contactPhone;
+  if ("website" in data) result.website = data.website;
+  if ("notes" in data) result.notes = data.notes;
+  if ("isActive" in data && data.isActive !== undefined)
+    result.is_active = data.isActive;
+
+  return result;
+}
+
+export function transformLeadPurchaseFromDB(
+  row: LeadPurchaseRow,
+): LeadPurchase {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    imoId: row.imo_id,
+    agencyId: row.agency_id,
+    expenseId: row.expense_id,
+    vendorId: row.vendor_id,
+    purchaseName: row.purchase_name,
+    leadFreshness: row.lead_freshness,
+    leadCount: row.lead_count,
+    totalCost: Number(row.total_cost),
+    costPerLead: Number(row.cost_per_lead),
+    purchaseDate: row.purchase_date,
+    policiesSold: row.policies_sold,
+    commissionEarned: Number(row.commission_earned),
+    roiPercentage: Number(row.roi_percentage),
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function transformLeadPurchaseToDB(
+  data: CreateLeadPurchaseData | UpdateLeadPurchaseData,
+): Partial<LeadPurchaseInsert | LeadPurchaseUpdate> {
+  const result: Record<string, unknown> = {};
+
+  if ("vendorId" in data && data.vendorId !== undefined)
+    result.vendor_id = data.vendorId;
+  if ("expenseId" in data) result.expense_id = data.expenseId;
+  if ("purchaseName" in data) result.purchase_name = data.purchaseName;
+  if ("leadFreshness" in data && data.leadFreshness !== undefined)
+    result.lead_freshness = data.leadFreshness;
+  if ("leadCount" in data && data.leadCount !== undefined)
+    result.lead_count = data.leadCount;
+  if ("totalCost" in data && data.totalCost !== undefined)
+    result.total_cost = data.totalCost;
+  if ("purchaseDate" in data && data.purchaseDate !== undefined)
+    result.purchase_date = data.purchaseDate;
+  if ("policiesSold" in data && data.policiesSold !== undefined)
+    result.policies_sold = data.policiesSold;
+  if ("commissionEarned" in data && data.commissionEarned !== undefined)
+    result.commission_earned = data.commissionEarned;
+  if ("notes" in data) result.notes = data.notes;
+
+  return result;
+}

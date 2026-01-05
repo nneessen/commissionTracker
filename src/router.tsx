@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
-import { ExpenseDashboardCompact } from "./features/expenses";
+import { ExpensesPage } from "./features/expenses";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
@@ -207,7 +207,7 @@ const expensesRoute = createRoute({
       noStaffRoles
       subscriptionFeature="expenses"
     >
-      <ExpenseDashboardCompact />
+      <ExpensesPage />
     </RouteGuard>
   ),
 });

@@ -12,13 +12,18 @@ type ExpenseCategoryBaseEntity = ExpenseCategory & BaseEntity;
  * Repository for expense_categories data access
  * Extends BaseRepository for standard CRUD operations
  */
+/**
+ * Repository for user_expense_categories data access (user's custom categories only)
+ * Note: Global categories are in global_expense_categories table (read-only)
+ * Use get_all_expense_categories() RPC to get combined list
+ */
 export class ExpenseCategoryRepository extends BaseRepository<
   ExpenseCategoryBaseEntity,
   CreateExpenseCategoryData,
   UpdateExpenseCategoryData
 > {
   constructor() {
-    super("expense_categories");
+    super("user_expense_categories");
   }
 
   /**

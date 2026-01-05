@@ -46,16 +46,19 @@ import { downloadCSV } from "../../utils/exportHelpers";
 import type {
   Expense,
   AdvancedExpenseFilters,
-  CreateExpenseData,
   ExpenseTemplate,
 } from "../../types/expense.types";
 import { isSameMonth, formatDateForDisplay } from "../../lib/date";
 import { formatCurrency, formatPercent } from "../../lib/format";
 import { toast } from "sonner";
 import { DEFAULT_EXPENSE_CATEGORIES } from "../../types/expense.types";
-import { ExpenseDialogCompact } from "./components/ExpenseDialogCompact";
+import {
+  ExpenseDialogCompact,
+  type CreateExpenseWithLeadData,
+} from "./components/ExpenseDialogCompact";
 import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";
 import { useMetricsWithDateRange } from "@/hooks/kpi/useMetricsWithDateRange";
+import { useCreateLeadPurchase } from "@/hooks/lead-purchases";
 
 export function ExpenseDashboardCompact() {
   // State
@@ -80,6 +83,7 @@ export function ExpenseDashboardCompact() {
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
+  const createLeadPurchase = useCreateLeadPurchase();
   const deleteTemplate = useDeleteExpenseTemplate();
 
   // Get commission metrics for expense ratio calculation
@@ -198,18 +202,44 @@ export function ExpenseDashboardCompact() {
   };
 
   // Event handlers
-  const handleSaveExpense = async (data: CreateExpenseData) => {
+  const handleSaveExpense = async (data: CreateExpenseWithLeadData) => {
     try {
       if (selectedExpense) {
+        // Update existing expense (no lead purchase changes for now)
+        const { leadPurchase: _, ...expenseData } = data;
         await updateExpense.mutateAsync({
           id: selectedExpense.id,
-          updates: data,
+          updates: expenseData,
         });
         toast.success("Expense updated successfully!");
         setIsEditDialogOpen(false);
       } else {
-        await createExpense.mutateAsync(data);
-        toast.success("Expense created successfully!");
+        // Create new expense
+        const { leadPurchase, ...expenseData } = data;
+        const newExpense = await createExpense.mutateAsync(expenseData);
+
+        // If lead purchase data provided, create linked lead purchase
+        if (leadPurchase && newExpense?.id) {
+          try {
+            await createLeadPurchase.mutateAsync({
+              vendorId: leadPurchase.vendorId,
+              leadCount: leadPurchase.leadCount,
+              totalCost: data.amount,
+              purchaseDate: data.date,
+              leadFreshness: leadPurchase.leadFreshness,
+              purchaseName: leadPurchase.purchaseName,
+              policiesSold: 0,
+              commissionEarned: 0,
+              notes: data.notes || null,
+            });
+            toast.success("Expense & lead purchase created!");
+          } catch (leadError) {
+            console.error("Failed to create lead purchase:", leadError);
+            toast.success("Expense created (lead purchase failed)");
+          }
+        } else {
+          toast.success("Expense created successfully!");
+        }
         setIsAddDialogOpen(false);
       }
       setSelectedExpense(null);
@@ -300,7 +330,7 @@ export function ExpenseDashboardCompact() {
 
   return (
     <>
-      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      <div className="flex flex-col p-3 space-y-2.5">
         {/* Compact Header */}
         <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-3">
@@ -373,7 +403,7 @@ export function ExpenseDashboardCompact() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto space-y-2">
+        <div className="space-y-2">
           {/* Expense Summary Card */}
           <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
             <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">

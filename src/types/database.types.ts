@@ -2509,47 +2509,6 @@ export type Database = {
           },
         ];
       };
-      expense_categories: {
-        Row: {
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_active: boolean;
-          name: string;
-          sort_order: number;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name: string;
-          sort_order?: number;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name?: string;
-          sort_order?: number;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "expense_categories_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       expense_templates: {
         Row: {
           amount: number;
@@ -2616,6 +2575,7 @@ export type Database = {
           imo_id: string | null;
           is_recurring: boolean | null;
           is_tax_deductible: boolean;
+          lead_purchase_id: string | null;
           name: string;
           notes: string | null;
           receipt_url: string | null;
@@ -2637,6 +2597,7 @@ export type Database = {
           imo_id?: string | null;
           is_recurring?: boolean | null;
           is_tax_deductible?: boolean;
+          lead_purchase_id?: string | null;
           name: string;
           notes?: string | null;
           receipt_url?: string | null;
@@ -2658,6 +2619,7 @@ export type Database = {
           imo_id?: string | null;
           is_recurring?: boolean | null;
           is_tax_deductible?: boolean;
+          lead_purchase_id?: string | null;
           name?: string;
           notes?: string | null;
           receipt_url?: string | null;
@@ -2682,7 +2644,47 @@ export type Database = {
             referencedRelation: "imos";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "expenses_lead_purchase_id_fkey";
+            columns: ["lead_purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "lead_purchases";
+            referencedColumns: ["id"];
+          },
         ];
+      };
+      global_expense_categories: {
+        Row: {
+          category_type: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          category_type?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          category_type?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       hierarchy_invitations: {
         Row: {
@@ -2800,6 +2802,486 @@ export type Database = {
           zip?: string | null;
         };
         Relationships: [];
+      };
+      instagram_conversations: {
+        Row: {
+          auto_reminder_enabled: boolean | null;
+          auto_reminder_hours: number | null;
+          auto_reminder_template_id: string | null;
+          can_reply_until: string | null;
+          created_at: string | null;
+          id: string;
+          instagram_conversation_id: string;
+          integration_id: string;
+          is_priority: boolean | null;
+          last_inbound_at: string | null;
+          last_message_at: string | null;
+          last_message_direction:
+            | Database["public"]["Enums"]["message_direction"]
+            | null;
+          last_message_preview: string | null;
+          participant_instagram_id: string;
+          participant_name: string | null;
+          participant_profile_picture_url: string | null;
+          participant_username: string | null;
+          priority_notes: string | null;
+          priority_set_at: string | null;
+          priority_set_by: string | null;
+          recruiting_lead_id: string | null;
+          unread_count: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          auto_reminder_enabled?: boolean | null;
+          auto_reminder_hours?: number | null;
+          auto_reminder_template_id?: string | null;
+          can_reply_until?: string | null;
+          created_at?: string | null;
+          id?: string;
+          instagram_conversation_id: string;
+          integration_id: string;
+          is_priority?: boolean | null;
+          last_inbound_at?: string | null;
+          last_message_at?: string | null;
+          last_message_direction?:
+            | Database["public"]["Enums"]["message_direction"]
+            | null;
+          last_message_preview?: string | null;
+          participant_instagram_id: string;
+          participant_name?: string | null;
+          participant_profile_picture_url?: string | null;
+          participant_username?: string | null;
+          priority_notes?: string | null;
+          priority_set_at?: string | null;
+          priority_set_by?: string | null;
+          recruiting_lead_id?: string | null;
+          unread_count?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          auto_reminder_enabled?: boolean | null;
+          auto_reminder_hours?: number | null;
+          auto_reminder_template_id?: string | null;
+          can_reply_until?: string | null;
+          created_at?: string | null;
+          id?: string;
+          instagram_conversation_id?: string;
+          integration_id?: string;
+          is_priority?: boolean | null;
+          last_inbound_at?: string | null;
+          last_message_at?: string | null;
+          last_message_direction?:
+            | Database["public"]["Enums"]["message_direction"]
+            | null;
+          last_message_preview?: string | null;
+          participant_instagram_id?: string;
+          participant_name?: string | null;
+          participant_profile_picture_url?: string | null;
+          participant_username?: string | null;
+          priority_notes?: string | null;
+          priority_set_at?: string | null;
+          priority_set_by?: string | null;
+          recruiting_lead_id?: string | null;
+          unread_count?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_instagram_conversations_recruiting_lead";
+            columns: ["recruiting_lead_id"];
+            isOneToOne: false;
+            referencedRelation: "recruiting_leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_conversations_integration_id_fkey";
+            columns: ["integration_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_integrations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_conversations_priority_set_by_fkey";
+            columns: ["priority_set_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      instagram_integrations: {
+        Row: {
+          access_token_encrypted: string;
+          api_calls_reset_at: string | null;
+          api_calls_this_hour: number | null;
+          connection_status: Database["public"]["Enums"]["instagram_connection_status"];
+          created_at: string | null;
+          facebook_page_id: string | null;
+          facebook_page_name: string | null;
+          id: string;
+          imo_id: string;
+          instagram_name: string | null;
+          instagram_profile_picture_url: string | null;
+          instagram_user_id: string;
+          instagram_username: string;
+          is_active: boolean;
+          last_connected_at: string | null;
+          last_error: string | null;
+          last_error_at: string | null;
+          last_refresh_at: string | null;
+          scopes: string[];
+          token_expires_at: string | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          api_calls_reset_at?: string | null;
+          api_calls_this_hour?: number | null;
+          connection_status?: Database["public"]["Enums"]["instagram_connection_status"];
+          created_at?: string | null;
+          facebook_page_id?: string | null;
+          facebook_page_name?: string | null;
+          id?: string;
+          imo_id: string;
+          instagram_name?: string | null;
+          instagram_profile_picture_url?: string | null;
+          instagram_user_id: string;
+          instagram_username: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_refresh_at?: string | null;
+          scopes?: string[];
+          token_expires_at?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          api_calls_reset_at?: string | null;
+          api_calls_this_hour?: number | null;
+          connection_status?: Database["public"]["Enums"]["instagram_connection_status"];
+          created_at?: string | null;
+          facebook_page_id?: string | null;
+          facebook_page_name?: string | null;
+          id?: string;
+          imo_id?: string;
+          instagram_name?: string | null;
+          instagram_profile_picture_url?: string | null;
+          instagram_user_id?: string;
+          instagram_username?: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_refresh_at?: string | null;
+          scopes?: string[];
+          token_expires_at?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_integrations_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_integrations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      instagram_message_templates: {
+        Row: {
+          category: string | null;
+          content: string;
+          created_at: string | null;
+          created_by: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean | null;
+          last_used_at: string | null;
+          name: string;
+          updated_at: string | null;
+          use_count: number | null;
+          user_id: string | null;
+        };
+        Insert: {
+          category?: string | null;
+          content: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          name: string;
+          updated_at?: string | null;
+          use_count?: number | null;
+          user_id?: string | null;
+        };
+        Update: {
+          category?: string | null;
+          content?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          name?: string;
+          updated_at?: string | null;
+          use_count?: number | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_message_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_message_templates_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_message_templates_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      instagram_messages: {
+        Row: {
+          conversation_id: string;
+          created_at: string | null;
+          delivered_at: string | null;
+          direction: Database["public"]["Enums"]["message_direction"];
+          id: string;
+          instagram_message_id: string;
+          media_type: string | null;
+          media_url: string | null;
+          message_text: string | null;
+          message_type: Database["public"]["Enums"]["instagram_message_type"];
+          read_at: string | null;
+          scheduled_message_id: string | null;
+          sender_instagram_id: string;
+          sender_username: string | null;
+          sent_at: string;
+          status: Database["public"]["Enums"]["instagram_message_status"];
+          story_id: string | null;
+          story_url: string | null;
+          template_id: string | null;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          direction: Database["public"]["Enums"]["message_direction"];
+          id?: string;
+          instagram_message_id: string;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_text?: string | null;
+          message_type?: Database["public"]["Enums"]["instagram_message_type"];
+          read_at?: string | null;
+          scheduled_message_id?: string | null;
+          sender_instagram_id: string;
+          sender_username?: string | null;
+          sent_at: string;
+          status?: Database["public"]["Enums"]["instagram_message_status"];
+          story_id?: string | null;
+          story_url?: string | null;
+          template_id?: string | null;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          direction?: Database["public"]["Enums"]["message_direction"];
+          id?: string;
+          instagram_message_id?: string;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_text?: string | null;
+          message_type?: Database["public"]["Enums"]["instagram_message_type"];
+          read_at?: string | null;
+          scheduled_message_id?: string | null;
+          sender_instagram_id?: string;
+          sender_username?: string | null;
+          sent_at?: string;
+          status?: Database["public"]["Enums"]["instagram_message_status"];
+          story_id?: string | null;
+          story_url?: string | null;
+          template_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      instagram_scheduled_messages: {
+        Row: {
+          conversation_id: string;
+          created_at: string | null;
+          error_message: string | null;
+          id: string;
+          is_auto_reminder: boolean | null;
+          message_text: string;
+          messaging_window_expires_at: string;
+          retry_count: number | null;
+          scheduled_by: string;
+          scheduled_for: string;
+          sent_at: string | null;
+          sent_message_id: string | null;
+          status: Database["public"]["Enums"]["scheduled_message_status"];
+          template_id: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          is_auto_reminder?: boolean | null;
+          message_text: string;
+          messaging_window_expires_at: string;
+          retry_count?: number | null;
+          scheduled_by: string;
+          scheduled_for: string;
+          sent_at?: string | null;
+          sent_message_id?: string | null;
+          status?: Database["public"]["Enums"]["scheduled_message_status"];
+          template_id?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          is_auto_reminder?: boolean | null;
+          message_text?: string;
+          messaging_window_expires_at?: string;
+          retry_count?: number | null;
+          scheduled_by?: string;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          sent_message_id?: string | null;
+          status?: Database["public"]["Enums"]["scheduled_message_status"];
+          template_id?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_scheduled_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_scheduled_messages_scheduled_by_fkey";
+            columns: ["scheduled_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_scheduled_messages_sent_message_id_fkey";
+            columns: ["sent_message_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_scheduled_messages_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_message_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      instagram_usage_tracking: {
+        Row: {
+          api_calls_made: number | null;
+          created_at: string | null;
+          id: string;
+          imo_id: string;
+          messages_received: number | null;
+          messages_sent: number | null;
+          period_end: string;
+          period_start: string;
+          scheduled_messages_sent: number | null;
+          templates_used: number | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          api_calls_made?: number | null;
+          created_at?: string | null;
+          id?: string;
+          imo_id: string;
+          messages_received?: number | null;
+          messages_sent?: number | null;
+          period_end: string;
+          period_start: string;
+          scheduled_messages_sent?: number | null;
+          templates_used?: number | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          api_calls_made?: number | null;
+          created_at?: string | null;
+          id?: string;
+          imo_id?: string;
+          messages_received?: number | null;
+          messages_sent?: number | null;
+          period_end?: string;
+          period_start?: string;
+          scheduled_messages_sent?: number | null;
+          templates_used?: number | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_usage_tracking_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_usage_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       join_requests: {
         Row: {
@@ -2923,6 +3405,165 @@ export type Database = {
             columns: ["requester_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lead_purchases: {
+        Row: {
+          agency_id: string | null;
+          commission_earned: number;
+          cost_per_lead: number | null;
+          created_at: string;
+          expense_id: string | null;
+          id: string;
+          imo_id: string | null;
+          lead_count: number;
+          lead_freshness: Database["public"]["Enums"]["lead_freshness"];
+          notes: string | null;
+          policies_sold: number;
+          purchase_date: string;
+          purchase_name: string | null;
+          roi_percentage: number | null;
+          total_cost: number;
+          updated_at: string;
+          user_id: string;
+          vendor_id: string;
+        };
+        Insert: {
+          agency_id?: string | null;
+          commission_earned?: number;
+          cost_per_lead?: number | null;
+          created_at?: string;
+          expense_id?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          lead_count: number;
+          lead_freshness?: Database["public"]["Enums"]["lead_freshness"];
+          notes?: string | null;
+          policies_sold?: number;
+          purchase_date: string;
+          purchase_name?: string | null;
+          roi_percentage?: number | null;
+          total_cost: number;
+          updated_at?: string;
+          user_id: string;
+          vendor_id: string;
+        };
+        Update: {
+          agency_id?: string | null;
+          commission_earned?: number;
+          cost_per_lead?: number | null;
+          created_at?: string;
+          expense_id?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          lead_count?: number;
+          lead_freshness?: Database["public"]["Enums"]["lead_freshness"];
+          notes?: string | null;
+          policies_sold?: number;
+          purchase_date?: string;
+          purchase_name?: string | null;
+          roi_percentage?: number | null;
+          total_cost?: number;
+          updated_at?: string;
+          user_id?: string;
+          vendor_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lead_purchases_agency_id_fkey";
+            columns: ["agency_id"];
+            isOneToOne: false;
+            referencedRelation: "agencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_purchases_expense_id_fkey";
+            columns: ["expense_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_purchases_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_purchases_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_purchases_vendor_id_fkey";
+            columns: ["vendor_id"];
+            isOneToOne: false;
+            referencedRelation: "lead_vendors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lead_vendors: {
+        Row: {
+          contact_email: string | null;
+          contact_name: string | null;
+          contact_phone: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          imo_id: string;
+          is_active: boolean;
+          name: string;
+          notes: string | null;
+          updated_at: string;
+          website: string | null;
+        };
+        Insert: {
+          contact_email?: string | null;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean;
+          name: string;
+          notes?: string | null;
+          updated_at?: string;
+          website?: string | null;
+        };
+        Update: {
+          contact_email?: string | null;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean;
+          name?: string;
+          notes?: string | null;
+          updated_at?: string;
+          website?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lead_vendors_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lead_vendors_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
             referencedColumns: ["id"];
           },
         ];
@@ -4471,10 +5112,13 @@ export type Database = {
           id: string;
           imo_id: string;
           income_goals: string | null;
+          instagram_conversation_id: string | null;
+          instagram_username: string | null;
           insurance_experience: string;
           ip_address: unknown;
           is_licensed: boolean | null;
           last_name: string;
+          lead_source: string | null;
           phone: string;
           recruiter_id: string;
           referrer_url: string | null;
@@ -4507,10 +5151,13 @@ export type Database = {
           id?: string;
           imo_id: string;
           income_goals?: string | null;
+          instagram_conversation_id?: string | null;
+          instagram_username?: string | null;
           insurance_experience: string;
           ip_address?: unknown;
           is_licensed?: boolean | null;
           last_name: string;
+          lead_source?: string | null;
           phone: string;
           recruiter_id: string;
           referrer_url?: string | null;
@@ -4543,10 +5190,13 @@ export type Database = {
           id?: string;
           imo_id?: string;
           income_goals?: string | null;
+          instagram_conversation_id?: string | null;
+          instagram_username?: string | null;
           insurance_experience?: string;
           ip_address?: unknown;
           is_licensed?: boolean | null;
           last_name?: string;
+          lead_source?: string | null;
           phone?: string;
           recruiter_id?: string;
           referrer_url?: string | null;
@@ -4597,6 +5247,13 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_instagram_conversation_id_fkey";
+            columns: ["instagram_conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_conversations";
             referencedColumns: ["id"];
           },
           {
@@ -6476,6 +7133,47 @@ export type Database = {
           },
         ];
       };
+      user_expense_categories: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_expense_categories_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_mailbox_settings: {
         Row: {
           auto_reply_enabled: boolean | null;
@@ -7992,12 +8690,9 @@ export type Database = {
           carrier_name: string | null;
           commission_count: number | null;
           lapsed_policies: number | null;
-          latest_policy_update: string | null;
           persistency_rate: number | null;
-          policies_13mo_plus: number | null;
           total_commission_amount: number | null;
           total_policies: number | null;
-          total_premium: number | null;
           user_id: string | null;
         };
         Relationships: [
@@ -8865,6 +9560,21 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      create_lead_from_instagram: {
+        Args: {
+          p_availability?: string;
+          p_city?: string;
+          p_conversation_id: string;
+          p_email: string;
+          p_first_name: string;
+          p_insurance_experience?: string;
+          p_last_name: string;
+          p_phone: string;
+          p_state?: string;
+          p_why_interested?: string;
+        };
+        Returns: string;
+      };
       create_notification: {
         Args: {
           p_expires_at?: string;
@@ -8952,6 +9662,7 @@ export type Database = {
       delete_orphan_identity: { Args: { del_email: string }; Returns: Json };
       email_subject_hash: { Args: { subject: string }; Returns: string };
       ensure_system_labels: { Args: { p_user_id: string }; Returns: undefined };
+      expire_instagram_scheduled_messages: { Args: never; Returns: number };
       expire_old_invitations: {
         Args: never;
         Returns: {
@@ -9105,6 +9816,18 @@ export type Database = {
           description: string;
           label: string;
           metric: string;
+        }[];
+      };
+      get_all_expense_categories: {
+        Args: never;
+        Returns: {
+          category_type: string;
+          description: string;
+          id: string;
+          is_active: boolean;
+          is_global: boolean;
+          name: string;
+          sort_order: number;
         }[];
       };
       get_approaching_deadline_items: {
@@ -9556,6 +10279,42 @@ export type Database = {
           status: string;
           trigger_type: string;
           updated_at: string;
+        }[];
+      };
+      get_lead_purchase_stats: {
+        Args: {
+          p_end_date?: string;
+          p_start_date?: string;
+          p_user_id?: string;
+        };
+        Returns: {
+          avg_cost_per_lead: number;
+          avg_roi: number;
+          conversion_rate: number;
+          total_commission: number;
+          total_leads: number;
+          total_policies: number;
+          total_purchases: number;
+          total_spent: number;
+        }[];
+      };
+      get_lead_stats_by_vendor: {
+        Args: {
+          p_end_date?: string;
+          p_start_date?: string;
+          p_user_id?: string;
+        };
+        Returns: {
+          avg_cost_per_lead: number;
+          avg_roi: number;
+          conversion_rate: number;
+          total_commission: number;
+          total_leads: number;
+          total_policies: number;
+          total_purchases: number;
+          total_spent: number;
+          vendor_id: string;
+          vendor_name: string;
         }[];
       };
       get_license_expirations_for_check: {
@@ -10051,6 +10810,14 @@ export type Database = {
         Args: { p_provider: string; p_user_id: string };
         Returns: number;
       };
+      increment_template_usage: {
+        Args: { p_template_id: string };
+        Returns: undefined;
+      };
+      increment_template_use_count: {
+        Args: { p_template_id: string };
+        Returns: undefined;
+      };
       increment_usage: {
         Args: { p_increment?: number; p_metric: string; p_user_id: string };
         Returns: number;
@@ -10084,6 +10851,7 @@ export type Database = {
       is_imo_staff_role: { Args: never; Returns: boolean };
       is_same_agency: { Args: { target_user_id: string }; Returns: boolean };
       is_same_imo: { Args: { target_user_id: string }; Returns: boolean };
+      is_staff_role: { Args: never; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };
       is_upline_of: { Args: { target_user_id: string }; Returns: boolean };
       is_user_approved: { Args: never; Returns: boolean };
@@ -10538,6 +11306,10 @@ export type Database = {
         Args: { p_feature: string; p_user_id: string };
         Returns: boolean;
       };
+      user_has_instagram_access: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       validate_invitation_acceptance: {
         Args: { p_invitation_id: string; p_invitee_id: string };
         Returns: {
@@ -10611,6 +11383,24 @@ export type Database = {
         | "uncategorized";
       expense_type: "personal" | "business";
       file_type: "csv" | "pdf" | "xlsx";
+      instagram_connection_status:
+        | "connected"
+        | "disconnected"
+        | "expired"
+        | "error";
+      instagram_message_status:
+        | "pending"
+        | "sent"
+        | "delivered"
+        | "read"
+        | "failed";
+      instagram_message_type:
+        | "text"
+        | "media"
+        | "story_reply"
+        | "story_mention";
+      lead_freshness: "fresh" | "aged";
+      message_direction: "inbound" | "outbound";
       payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual";
       pipeline_automation_trigger:
         | "phase_enter"
@@ -10631,6 +11421,12 @@ export type Database = {
         | "indexed_universal_life"
         | "participating_whole_life";
       report_frequency: "weekly" | "monthly" | "quarterly";
+      scheduled_message_status:
+        | "pending"
+        | "sent"
+        | "cancelled"
+        | "failed"
+        | "expired";
       slack_connection_status:
         | "connected"
         | "disconnected"
@@ -10845,6 +11641,22 @@ export const Constants = {
       ],
       expense_type: ["personal", "business"],
       file_type: ["csv", "pdf", "xlsx"],
+      instagram_connection_status: [
+        "connected",
+        "disconnected",
+        "expired",
+        "error",
+      ],
+      instagram_message_status: [
+        "pending",
+        "sent",
+        "delivered",
+        "read",
+        "failed",
+      ],
+      instagram_message_type: ["text", "media", "story_reply", "story_mention"],
+      lead_freshness: ["fresh", "aged"],
+      message_direction: ["inbound", "outbound"],
       payment_frequency: ["monthly", "quarterly", "semi_annual", "annual"],
       pipeline_automation_trigger: [
         "phase_enter",
@@ -10867,6 +11679,13 @@ export const Constants = {
         "participating_whole_life",
       ],
       report_frequency: ["weekly", "monthly", "quarterly"],
+      scheduled_message_status: [
+        "pending",
+        "sent",
+        "cancelled",
+        "failed",
+        "expired",
+      ],
       slack_connection_status: [
         "connected",
         "disconnected",
