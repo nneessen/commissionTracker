@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Search, RefreshCw, Star, MessageSquare, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,7 +49,7 @@ export function InstagramSidebar({
 }: InstagramSidebarProps): ReactNode {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState(false);
-  const hasSyncedRef = useRef(false);
+  const hasSyncedRef = useRef<string | null>(null);
 
   const { data: conversations = [], isLoading } = useInstagramConversations(
     integration.id,
@@ -61,13 +62,22 @@ export function InstagramSidebar({
   const syncConversations = useSyncInstagramConversations();
   const isSyncing = syncConversations.isPending;
 
-  // Auto-sync on first load
+  // Auto-sync on first load (non-blocking) - only once per integration
   useEffect(() => {
-    if (!hasSyncedRef.current && integration.id) {
-      hasSyncedRef.current = true;
-      syncConversations.mutate({ integrationId: integration.id });
+    if (integration.id && hasSyncedRef.current !== integration.id) {
+      hasSyncedRef.current = integration.id;
+      syncConversations.mutate(
+        { integrationId: integration.id },
+        {
+          onError: (error) => {
+            console.warn("[InstagramSidebar] Sync failed:", error);
+            toast.error("Failed to sync conversations");
+          },
+        },
+      );
     }
-  }, [integration.id, syncConversations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [integration.id]);
 
   // Handler for manual refresh
   const handleRefresh = () => {

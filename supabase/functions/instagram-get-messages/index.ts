@@ -327,7 +327,8 @@ serve(async (req) => {
           mediaType = attachment.mime_type || null;
         }
 
-        // Upsert message
+        // Upsert message - use instagram_message_id as the unique constraint
+        // (see migration 20260103_006: instagram_message_id TEXT NOT NULL UNIQUE)
         const { error: upsertError } = await supabase
           .from("instagram_messages")
           .upsert(
@@ -348,7 +349,7 @@ serve(async (req) => {
               delivered_at: msg.created_time,
             },
             {
-              onConflict: "conversation_id,instagram_message_id",
+              onConflict: "instagram_message_id",
               ignoreDuplicates: false,
             },
           );

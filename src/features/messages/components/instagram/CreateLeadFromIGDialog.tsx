@@ -60,9 +60,13 @@ interface FormErrors {
 
 /**
  * Creates initial form data pre-filled from conversation
+ * Uses display name for first/last parsing, with username as fallback for first name
  */
 function getInitialFormData(conversation: InstagramConversation): FormData {
-  const parsed = parseInstagramName(conversation.participant_name);
+  const parsed = parseInstagramName(
+    conversation.participant_name,
+    conversation.participant_username, // Use username as fallback for first name
+  );
   return {
     firstName: parsed.firstName,
     lastName: parsed.lastName,

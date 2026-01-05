@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 14:46:26
+
+### Changed Files
+- `plans/active/CONTINUE_IG_CONVERSATION_BUG.md`
+- `src/features/messages/components/instagram/CreateLeadFromIGDialog.tsx`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/features/messages/components/instagram/InstagramSidebar.tsx`
+- `src/features/messages/components/instagram/InstagramTabContent.tsx`
+- `src/lib/nameParser.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+
+### Statistics
+```
+ 7 files changed, 138 insertions(+), 57 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 14:09:15
 
 ### Changed Files

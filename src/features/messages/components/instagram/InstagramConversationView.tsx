@@ -18,12 +18,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   useInstagramMessages,
-  useInstagramConversation,
   useSetInstagramPriority,
   useSendInstagramMessage,
   useSyncInstagramMessages,
 } from "@/hooks/instagram";
-import { instagramKeys } from "@/types/instagram.types";
+import {
+  instagramKeys,
+  type InstagramConversation,
+} from "@/types/instagram.types";
 import { InstagramMessageBubble } from "./InstagramMessageBubble";
 import { InstagramMessageInput } from "./InstagramMessageInput";
 import { InstagramWindowIndicator } from "./InstagramWindowIndicator";
@@ -96,35 +98,31 @@ function ConversationViewSkeleton(): ReactNode {
 }
 
 interface InstagramConversationViewProps {
-  conversationId: string;
+  /** Full conversation object from parent - avoids redundant fetch */
+  conversation: InstagramConversation;
   integrationId: string;
   /** When true, disables message input (e.g., token expired) */
   isTokenExpired?: boolean;
 }
 
 export function InstagramConversationView({
-  conversationId,
+  conversation: initialConversation,
   integrationId: _integrationId,
   isTokenExpired = false,
 }: InstagramConversationViewProps): ReactNode {
+  const conversationId = initialConversation.id;
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showCreateLeadDialog, setShowCreateLeadDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const hasSyncedRef = useRef<string | null>(null);
 
-  // Sync messages mutation - use ref to avoid dependency array issues
+  // Sync messages mutation
   const syncMessages = useSyncInstagramMessages();
-  const syncMessagesRef = useRef(syncMessages);
-  syncMessagesRef.current = syncMessages;
   const isSyncing = syncMessages.isPending;
 
-  // Fetch conversation details
-  const {
-    data: conversation,
-    isLoading: isLoadingConversation,
-    error: conversationError,
-  } = useInstagramConversation(conversationId);
+  // Use the passed conversation directly - no need to re-fetch
+  const conversation = initialConversation;
 
   // Fetch messages from local DB
   const {
@@ -139,7 +137,7 @@ export function InstagramConversationView({
   useEffect(() => {
     if (conversationId && hasSyncedRef.current !== conversationId) {
       hasSyncedRef.current = conversationId;
-      syncMessagesRef.current.mutate(
+      syncMessages.mutate(
         { conversationId },
         {
           onError: (error) => {
@@ -150,6 +148,7 @@ export function InstagramConversationView({
         },
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   // Manual refresh handler
@@ -202,14 +201,14 @@ export function InstagramConversationView({
     );
   };
 
-  // Loading state - only block on data queries, not sync (sync is non-blocking background operation)
-  if (isLoadingConversation || (isLoadingMessages && messages.length === 0)) {
+  // Loading state - only block on messages query (conversation is passed from parent)
+  if (isLoadingMessages && messages.length === 0) {
     return <ConversationViewSkeleton />;
   }
 
   // Error state
-  if (conversationError || messagesError) {
-    const error = conversationError || messagesError;
+  if (messagesError) {
+    const error = messagesError;
     return (
       <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
         <div className="text-center max-w-sm px-4">
@@ -237,16 +236,7 @@ export function InstagramConversationView({
     );
   }
 
-  if (!conversation) {
-    return (
-      <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-          Conversation not found
-        </p>
-      </div>
-    );
-  }
-
+  // conversation is always defined (required prop from parent)
   const displayName =
     conversation.participant_name ||
     conversation.participant_username ||

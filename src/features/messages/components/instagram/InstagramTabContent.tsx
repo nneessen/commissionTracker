@@ -213,7 +213,7 @@ function InstagramTabContentInner({
         )}
         <div className={isTokenExpired || onBack ? "flex-1" : "h-full"}>
           <InstagramConversationView
-            conversationId={selectedConversation.id}
+            conversation={selectedConversation}
             integrationId={integration.id}
             isTokenExpired={isTokenExpired}
           />
