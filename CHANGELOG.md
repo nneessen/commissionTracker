@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 14:09:15
+
+### Changed Files
+- `.serena/memories/slack-policy-notification-flow.md`
+- `docs/slack-policy-notification-system.md`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+
+### Statistics
+```
+ 3 files changed, 562 insertions(+), 13 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 13:01:05
 
 ### Changed Files

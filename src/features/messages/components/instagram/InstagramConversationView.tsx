@@ -113,6 +113,12 @@ export function InstagramConversationView({
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const hasSyncedRef = useRef<string | null>(null);
 
+  // Sync messages mutation - use ref to avoid dependency array issues
+  const syncMessages = useSyncInstagramMessages();
+  const syncMessagesRef = useRef(syncMessages);
+  syncMessagesRef.current = syncMessages;
+  const isSyncing = syncMessages.isPending;
+
   // Fetch conversation details
   const {
     data: conversation,
@@ -129,17 +135,22 @@ export function InstagramConversationView({
 
   const messages = messagesData?.messages || [];
 
-  // Sync messages from Instagram API
-  const syncMessages = useSyncInstagramMessages();
-  const isSyncing = syncMessages.isPending;
-
-  // Auto-sync messages when conversation changes
+  // Auto-sync messages when conversation changes (non-blocking)
   useEffect(() => {
     if (conversationId && hasSyncedRef.current !== conversationId) {
       hasSyncedRef.current = conversationId;
-      syncMessages.mutate({ conversationId });
+      syncMessagesRef.current.mutate(
+        { conversationId },
+        {
+          onError: (error) => {
+            // Log but don't block UI - sync failure shouldn't prevent viewing cached messages
+            console.warn("[InstagramConversationView] Sync failed:", error);
+            toast.error("Failed to sync latest messages");
+          },
+        },
+      );
     }
-  }, [conversationId, syncMessages]);
+  }, [conversationId]);
 
   // Manual refresh handler
   const handleRefresh = () => {
@@ -191,12 +202,8 @@ export function InstagramConversationView({
     );
   };
 
-  // Loading state - use skeleton for better UX
-  if (
-    isLoadingConversation ||
-    (isLoadingMessages && messages.length === 0) ||
-    (isSyncing && messages.length === 0)
-  ) {
+  // Loading state - only block on data queries, not sync (sync is non-blocking background operation)
+  if (isLoadingConversation || (isLoadingMessages && messages.length === 0)) {
     return <ConversationViewSkeleton />;
   }
 
