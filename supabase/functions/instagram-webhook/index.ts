@@ -297,13 +297,32 @@ async function processInboundMessage(
     console.error("[instagram-webhook] Error storing message:", msgError);
   }
 
-  // Check for pending scheduled messages to send immediately
-  await triggerPendingScheduledMessages(
+  // Enqueue media caching job if message has attachments
+  if (mediaUrl) {
+    await supabase.rpc("enqueue_instagram_job", {
+      p_job_type: "download_message_media",
+      p_payload: {
+        message_id: messageId,
+        conversation_id: conversation.id,
+        source_url: mediaUrl,
+        media_type: mediaType,
+      },
+      p_integration_id: integration.id,
+      p_priority: 0,
+    });
+    console.log(`[instagram-webhook] Enqueued media download for ${messageId}`);
+  }
+
+  // Fire-and-forget: Check for pending scheduled messages
+  // Don't await - let CRON catch any failures. Keeps webhook response fast (<500ms)
+  triggerPendingScheduledMessages(
     supabase,
     conversation.id,
     integration.id,
     newWindowExpiry.toISOString(),
-  );
+  ).catch((err) => {
+    console.error("[instagram-webhook] Background scheduled send error:", err);
+  });
 }
 
 /**
@@ -352,7 +371,101 @@ async function findOrCreateConversation(
 }
 
 /**
+ * Send a single scheduled message (helper for parallel execution)
+ */
+async function sendSingleScheduledMessage(
+  supabase: ReturnType<typeof createClient>,
+  pendingMsg: { id: string; message_text: string; template_id: string | null },
+  conversationId: string,
+  participantId: string,
+  integration: {
+    instagram_user_id: string;
+    instagram_username: string;
+  },
+  accessToken: string,
+): Promise<{ success: boolean; messageId: string }> {
+  const apiUrl = `https://graph.facebook.com/v18.0/${integration.instagram_user_id}/messages`;
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: participantId },
+      message: { text: pendingMsg.message_text },
+      access_token: accessToken,
+    }),
+  });
+
+  const result = await response.json();
+
+  if (result.error) {
+    console.error(
+      `[instagram-webhook] Failed to send scheduled message:`,
+      result.error,
+    );
+
+    await supabase
+      .from("instagram_scheduled_messages")
+      .update({
+        status: "failed",
+        error_message: result.error.message,
+        retry_count: 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pendingMsg.id);
+
+    return { success: false, messageId: pendingMsg.id };
+  }
+
+  // Success - run post-send updates in parallel
+  const sentMsgId = result.message_id;
+  const now = new Date().toISOString();
+
+  await Promise.all([
+    supabase.from("instagram_messages").insert({
+      conversation_id: conversationId,
+      instagram_message_id: sentMsgId,
+      message_text: pendingMsg.message_text,
+      message_type: "text",
+      direction: "outbound",
+      status: "sent",
+      sender_instagram_id: integration.instagram_user_id,
+      sender_username: integration.instagram_username,
+      sent_at: now,
+      template_id: pendingMsg.template_id,
+      scheduled_message_id: pendingMsg.id,
+    }),
+    supabase
+      .from("instagram_scheduled_messages")
+      .update({
+        status: "sent",
+        sent_at: now,
+        sent_message_id: sentMsgId,
+        updated_at: now,
+      })
+      .eq("id", pendingMsg.id),
+    supabase
+      .from("instagram_conversations")
+      .update({
+        last_message_at: now,
+        last_message_preview: pendingMsg.message_text.substring(0, 100),
+        last_message_direction: "outbound",
+      })
+      .eq("id", conversationId),
+    pendingMsg.template_id
+      ? supabase.rpc("increment_template_use_count", {
+          p_template_id: pendingMsg.template_id,
+        })
+      : Promise.resolve(),
+  ]);
+
+  console.log(`[instagram-webhook] Sent scheduled message ${pendingMsg.id}`);
+  return { success: true, messageId: pendingMsg.id };
+}
+
+/**
  * Trigger pending scheduled messages when window opens
+ * Runs as fire-and-forget from webhook, with parallel message sending
  */
 async function triggerPendingScheduledMessages(
   supabase: ReturnType<typeof createClient>,
@@ -360,9 +473,9 @@ async function triggerPendingScheduledMessages(
   integrationId: string,
   _newWindowExpiry: string,
 ) {
-  // Find pending scheduled messages that are due now
   const now = new Date().toISOString();
 
+  // Find pending scheduled messages that are due now
   const { data: pendingMessages, error } = await supabase
     .from("instagram_scheduled_messages")
     .select("id, message_text, template_id")
@@ -375,30 +488,28 @@ async function triggerPendingScheduledMessages(
   }
 
   console.log(
-    `[instagram-webhook] Found ${pendingMessages.length} pending messages to send`,
+    `[instagram-webhook] Found ${pendingMessages.length} pending messages to send (parallel)`,
   );
 
-  // Get integration details for sending
-  const { data: integration } = await supabase
-    .from("instagram_integrations")
-    .select("access_token_encrypted, instagram_user_id, instagram_username")
-    .eq("id", integrationId)
-    .single();
+  // Fetch integration and conversation details in parallel
+  const [integrationResult, conversationResult] = await Promise.all([
+    supabase
+      .from("instagram_integrations")
+      .select("access_token_encrypted, instagram_user_id, instagram_username")
+      .eq("id", integrationId)
+      .single(),
+    supabase
+      .from("instagram_conversations")
+      .select("participant_instagram_id")
+      .eq("id", conversationId)
+      .single(),
+  ]);
 
-  if (!integration) {
-    console.error("[instagram-webhook] Integration not found for sending");
-    return;
-  }
+  const integration = integrationResult.data;
+  const conversation = conversationResult.data;
 
-  // Get conversation details
-  const { data: conversation } = await supabase
-    .from("instagram_conversations")
-    .select("participant_instagram_id")
-    .eq("id", conversationId)
-    .single();
-
-  if (!conversation) {
-    console.error("[instagram-webhook] Conversation not found");
+  if (!integration || !conversation) {
+    console.error("[instagram-webhook] Integration or conversation not found");
     return;
   }
 
@@ -411,98 +522,28 @@ async function triggerPendingScheduledMessages(
     return;
   }
 
-  // Send each pending message
-  for (const pendingMsg of pendingMessages) {
-    try {
-      // Send via Meta Graph API
-      const apiUrl = `https://graph.facebook.com/v18.0/${integration.instagram_user_id}/messages`;
+  // Send all pending messages in parallel (limited to 5 concurrent)
+  const results = await Promise.allSettled(
+    pendingMessages.map((msg) =>
+      sendSingleScheduledMessage(
+        supabase,
+        msg,
+        conversationId,
+        conversation.participant_instagram_id,
+        integration,
+        accessToken,
+      ),
+    ),
+  );
 
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipient: { id: conversation.participant_instagram_id },
-          message: { text: pendingMsg.message_text },
-          access_token: accessToken,
-        }),
-      });
+  const sent = results.filter(
+    (r) => r.status === "fulfilled" && r.value.success,
+  ).length;
+  const failed = results.length - sent;
 
-      const result = await response.json();
-
-      if (result.error) {
-        console.error(
-          `[instagram-webhook] Failed to send scheduled message:`,
-          result.error,
-        );
-
-        // Mark as failed
-        await supabase
-          .from("instagram_scheduled_messages")
-          .update({
-            status: "failed",
-            error_message: result.error.message,
-            retry_count: 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", pendingMsg.id);
-
-        continue;
-      }
-
-      // Store sent message
-      const sentMsgId = result.message_id;
-      await supabase.from("instagram_messages").insert({
-        conversation_id: conversationId,
-        instagram_message_id: sentMsgId,
-        message_text: pendingMsg.message_text,
-        message_type: "text",
-        direction: "outbound",
-        status: "sent",
-        sender_instagram_id: integration.instagram_user_id,
-        sender_username: integration.instagram_username,
-        sent_at: new Date().toISOString(),
-        template_id: pendingMsg.template_id,
-        scheduled_message_id: pendingMsg.id,
-      });
-
-      // Mark scheduled message as sent
-      await supabase
-        .from("instagram_scheduled_messages")
-        .update({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          sent_message_id: sentMsgId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", pendingMsg.id);
-
-      // Update conversation last message
-      await supabase
-        .from("instagram_conversations")
-        .update({
-          last_message_at: new Date().toISOString(),
-          last_message_preview: pendingMsg.message_text.substring(0, 100),
-          last_message_direction: "outbound",
-        })
-        .eq("id", conversationId);
-
-      // Increment template use count if applicable
-      if (pendingMsg.template_id) {
-        await supabase.rpc("increment_template_use_count", {
-          p_template_id: pendingMsg.template_id,
-        });
-      }
-
-      console.log(
-        `[instagram-webhook] Sent scheduled message ${pendingMsg.id}`,
-      );
-    } catch (err) {
-      console.error(
-        `[instagram-webhook] Error sending scheduled message:`,
-        err,
-      );
-    }
-  }
+  console.log(
+    `[instagram-webhook] Scheduled sends complete: ${sent} sent, ${failed} failed`,
+  );
 }
 
 /**

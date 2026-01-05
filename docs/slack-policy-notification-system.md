@@ -12,6 +12,7 @@ This document provides a comprehensive A-Z breakdown of what happens when agents
 2. [Agency Hierarchy Scenarios](#2-agency-hierarchy-scenarios)
 3. [Slack Username Display Behavior](#3-slack-username-display)
 4. [Leaderboard Username Attachment](#4-leaderboard-usernames)
+   - 4A. [Rate Limiting & Error Handling](#4a-rate-limiting--error-handling)
 5. [First Seller Naming Dialog Logic](#5-first-seller-naming-dialog)
 6. [Manual Slack Posting Detection](#6-manual-posting-detection)
 7. [Missing Sales Detection Capability](#7-missing-sales-detection)
@@ -286,29 +287,184 @@ postSlackMessage(botToken, channelId, policyText, {
 
 ## 4. LEADERBOARD USERNAMES
 
-### Leaderboard Entry Format
+### Per-Workspace Member Lookup
 
-**YES** - Agent names appear, with @mention capability.
+**YES** - Agent names appear, with @mention capability via per-workspace lookup.
+
+**Important Architecture Note**: The `slack_member_id` stored in `user_slack_preferences` is per-IMO, NOT per-workspace. Since one IMO can have multiple Slack workspaces connected, using stored IDs would cause "private user info" errors when posting to workspaces where that member ID doesn't exist.
+
+**Solution**: The `slack-refresh-leaderboard` function looks up each agent in the CURRENT workspace before building the leaderboard:
 
 ```typescript
-// From get_daily_production_by_agent RPC
-{
-  agent_name: "John Smith",        // From user_profiles
-  slack_member_id: "U12345678",    // From user_slack_preferences
-  total_annual_premium: 15000,
-  policy_count: 2
-}
+// Step 1: Look up all agents in the current workspace by email
+const memberMap = await lookupAllSlackMembers(botToken, production);
 
-// Formatted as:
-const nameDisplay = entry.slack_member_id
-  ? `<@${entry.slack_member_id}>`  // @mention (clickable)
-  : entry.agent_name               // Plain text fallback
+// Step 2: For each leaderboard entry, use the workspace-specific member ID
+const slackMemberId = memberMap.get(entry.agent_id);
+const nameDisplay = slackMemberId
+  ? `<@${slackMemberId}>` // @mention (workspace-specific)
+  : entry.agent_name?.trim() || // Fallback to full name
+    entry.agent_email?.split("@")[0] ||
+    "Unknown";
+```
+
+**Lookup Function** (in `slack-refresh-leaderboard/index.ts`):
+
+```typescript
+async function lookupSlackMemberByEmail(
+  botToken: string,
+  email: string,
+): Promise<string | null> {
+  const response = await fetch(
+    `https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(email)}`,
+    { headers: { Authorization: `Bearer ${botToken}` } },
+  );
+  const data = await response.json();
+  return data.ok ? data.user.id : null;
+}
 ```
 
 **Result**:
 
-- If slack_member_id stored: `🥇 <@U12345> - $15,000 (2 policies)` (clickable @mention)
-- If not stored: `🥇 John Smith - $15,000 (2 policies)` (plain text)
+- If agent exists in workspace: `🥇 <@U12345> - $15,000 (2 policies)` (clickable @mention)
+- If agent NOT in workspace: `🥇 John Smith - $15,000 (2 policies)` (plain text fallback)
+
+### Name Fallback Chain
+
+If the Slack lookup fails, the system uses this fallback chain:
+
+1. `entry.agent_name?.trim()` - Full name from user_profiles
+2. `entry.agent_email?.split('@')[0]` - Email username portion
+3. `'Unknown'` - Final fallback
+
+### SQL NULL Handling Fix
+
+**Migration**: `20260105_001_fix_leaderboard_names.sql`
+
+The `get_daily_production_by_agent` function now properly handles NULL first/last names:
+
+```sql
+-- Old (buggy): NULL + ' ' + 'Smith' = NULL (entire concatenation becomes NULL)
+COALESCE(up.first_name || ' ' || up.last_name, up.email) as agent_name
+
+-- New (fixed): Handles NULL components individually
+COALESCE(
+  NULLIF(TRIM(COALESCE(up.first_name, '') || ' ' || COALESCE(up.last_name, '')), ''),
+  up.email,
+  'Unknown'
+) as agent_name
+```
+
+---
+
+## 4A. RATE LIMITING & ERROR HANDLING
+
+### Slack API Rate Limits
+
+The `users.lookupByEmail` API is rate-limited to approximately 20 requests per minute. To respect this limit:
+
+**Sequential Lookups**: Member lookups are performed sequentially (not in parallel):
+
+```typescript
+// In lookupAllSlackMembers():
+for (const entry of entries) {
+  const memberId = await lookupSlackMemberByEmail(botToken, entry.agent_email);
+  memberMap.set(entry.agent_id, memberId);
+}
+```
+
+This ensures we don't trigger rate limiting even with 10+ agents on the leaderboard.
+
+### Error Handling Strategy
+
+The `lookupSlackMemberByEmail` function handles different error types appropriately:
+
+| Error Type                                         | Handling                         | Retry?                      |
+| -------------------------------------------------- | -------------------------------- | --------------------------- |
+| `users_not_found`                                  | Expected - user not in workspace | No - return null silently   |
+| `ratelimited`                                      | Wait for `Retry-After` header    | Yes - up to 2 retries       |
+| `invalid_auth` / `token_revoked` / `token_expired` | Log as error                     | No - indicates config issue |
+| Network error                                      | Transient failure                | Yes - 1 retry after 500ms   |
+| Other Slack errors                                 | Log warning                      | No - return null            |
+
+**Implementation**:
+
+```typescript
+async function lookupSlackMemberByEmail(
+  botToken: string,
+  email: string,
+  retryCount: number = 0,
+): Promise<string | null> {
+  const MAX_RETRIES = 2;
+
+  try {
+    const response = await fetch(/* ... */);
+    const data = await response.json();
+
+    if (!data.ok) {
+      switch (data.error) {
+        case "users_not_found":
+          return null; // Expected, no logging
+
+        case "ratelimited":
+          if (retryCount < MAX_RETRIES) {
+            const retryAfter = parseInt(
+              response.headers.get("Retry-After") || "1",
+              10,
+            );
+            await new Promise((r) => setTimeout(r, retryAfter * 1000));
+            return lookupSlackMemberByEmail(botToken, email, retryCount + 1);
+          }
+          return null;
+
+        case "invalid_auth":
+        case "token_revoked":
+        case "token_expired":
+          console.error(`Slack auth error: ${data.error}`);
+          return null;
+
+        default:
+          console.warn(`Slack API error for ${email}: ${data.error}`);
+          return null;
+      }
+    }
+    return data.user?.id || null;
+  } catch (err) {
+    // Network error - retry once
+    if (retryCount < 1) {
+      await new Promise((r) => setTimeout(r, 500));
+      return lookupSlackMemberByEmail(botToken, email, retryCount + 1);
+    }
+    return null;
+  }
+}
+```
+
+### Leaderboard Settings Check
+
+The `slack-daily-leaderboard` function now respects the `include_leaderboard_with_policy` setting:
+
+```typescript
+// After checking if leaderboard channel is configured
+if (integration.include_leaderboard_with_policy === false) {
+  console.log(
+    "[slack-daily-leaderboard] Leaderboard posting disabled in settings",
+  );
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      skipped: true,
+      reason: "Leaderboard posting disabled",
+    }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
+  );
+}
+```
+
+This check occurs at line ~202 in `slack-daily-leaderboard/index.ts`.
 
 ---
 
@@ -458,15 +614,24 @@ The **first agent to sell a policy for a specific channel on a specific day**.
 | File                                                    | Purpose                                                              |
 | ------------------------------------------------------- | -------------------------------------------------------------------- |
 | `supabase/functions/slack-policy-notification/index.ts` | **CORE**: First sale detection, policy posting, leaderboard building |
-| `supabase/functions/slack-daily-leaderboard/index.ts`   | Manual leaderboard posting                                           |
+| `supabase/functions/slack-daily-leaderboard/index.ts`   | Manual leaderboard posting (respects settings toggle)                |
+| `supabase/functions/slack-refresh-leaderboard/index.ts` | Updates existing leaderboard with per-workspace member lookup        |
 
 ### Database Migrations
 
-| File                                       | Purpose                                |
-| ------------------------------------------ | -------------------------------------- |
-| `20251226_006_daily_sales_leaderboard.sql` | daily_sales_logs table, production RPC |
-| `20251226_012_first_seller_naming_rpc.sql` | set_leaderboard_title RPC              |
-| `20260105_003_multi_channel_naming.sql`    | Multi-channel naming support           |
+| File                                        | Purpose                                  |
+| ------------------------------------------- | ---------------------------------------- |
+| `20251226_004_fix_slack_trigger_config.sql` | app_config table for trigger auth        |
+| `20251226_006_daily_sales_leaderboard.sql`  | daily_sales_logs table, production RPC   |
+| `20251226_012_first_seller_naming_rpc.sql`  | set_leaderboard_title RPC                |
+| `20260105_001_fix_leaderboard_names.sql`    | NULL name handling fix in production RPC |
+| `20260105_003_multi_channel_naming.sql`     | Multi-channel naming support             |
+
+### Revert Migrations
+
+| File                                             | Purpose                         |
+| ------------------------------------------------ | ------------------------------- |
+| `reverts/20260105_001_fix_leaderboard_names.sql` | Rollback NULL name handling fix |
 
 ### Key RPC Functions
 
@@ -482,14 +647,15 @@ The **first agent to sell a policy for a specific channel on a specific day**.
 
 ## SUMMARY OF ANSWERS
 
-| Question                                  | Answer                                            |
-| ----------------------------------------- | ------------------------------------------------- |
-| Agent Slack username on policy posts?     | **YES** - looked up per-workspace by email        |
-| Leaderboard shows agent usernames?        | **YES** - with @mention if slack_member_id stored |
-| Manual Slack posts detected?              | **NO** - not implemented                          |
-| Missing sales detection?                  | **NO** - not implemented                          |
-| First seller in child agency gets dialog? | **YES** - for their agency's channel              |
-| Child agency policy posts to parent?      | **YES** - policy only (no leaderboard)            |
+| Question                                  | Answer                                             |
+| ----------------------------------------- | -------------------------------------------------- |
+| Agent Slack username on policy posts?     | **YES** - looked up per-workspace by email         |
+| Leaderboard shows agent usernames?        | **YES** - per-workspace lookup, fallback to name   |
+| Manual Slack posts detected?              | **NO** - not implemented                           |
+| Missing sales detection?                  | **NO** - not implemented                           |
+| First seller in child agency gets dialog? | **YES** - for their agency's channel               |
+| Child agency policy posts to parent?      | **YES** - policy only (no leaderboard)             |
+| Leaderboard respects settings toggle?     | **YES** - checks `include_leaderboard_with_policy` |
 
 ---
 
@@ -498,4 +664,12 @@ The **first agent to sell a policy for a specific channel on a specific day**.
 1. **No Slack → App data flow**: Manual posts are invisible to system
 2. **No reconciliation**: Can't detect discrepancies between Slack and database
 3. **Leaderboard only at depth=0**: Parent agencies don't get hierarchical leaderboards
-4. **Per-workspace lookup required**: Agent identity determined separately in each workspace
+
+### Previously Fixed Issues
+
+| Issue                                    | Fix Date   | Solution                                                       |
+| ---------------------------------------- | ---------- | -------------------------------------------------------------- |
+| "Private user info" on leaderboard names | 2026-01-05 | Per-workspace member lookup via `users.lookupByEmail` API      |
+| Leaderboard posting ignoring settings    | 2026-01-05 | Added `include_leaderboard_with_policy` check in edge function |
+| NULL name concatenation bug              | 2026-01-05 | Fixed SQL with proper COALESCE handling                        |
+| Policy trigger auth failures             | 2026-01-05 | Updated `app_config.supabase_service_role_key`                 |

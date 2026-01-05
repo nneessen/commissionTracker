@@ -292,12 +292,19 @@ serve(async (req) => {
       `[instagram-get-messages] Fetched ${messages.length} messages from API`,
     );
 
-    // Sync messages to database
+    // Sync messages to database using batch upsert for performance
+    // Previously: 50 messages = 50 DB calls. Now: 50 messages = 1 DB call
     if (syncToDb && messages.length > 0) {
-      // Track the latest inbound message for window calculation
-      let latestInboundAt: string | null = null;
+      // Find the latest inbound message for window calculation
+      const latestInboundAt =
+        messages
+          .filter((msg) => msg.from.id !== igUserId) // inbound only
+          .map((msg) => msg.created_time)
+          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ||
+        null;
 
-      for (const msg of messages) {
+      // Transform all messages into DB rows
+      const messageRows = messages.map((msg) => {
         const isInbound = msg.from.id !== igUserId;
         const messageType = msg.story
           ? msg.story.mention
@@ -306,13 +313,6 @@ serve(async (req) => {
           : msg.attachments?.data?.length
             ? "media"
             : "text";
-
-        // Track latest inbound message
-        if (isInbound) {
-          if (!latestInboundAt || msg.created_time > latestInboundAt) {
-            latestInboundAt = msg.created_time;
-          }
-        }
 
         // Get media URL if present
         let mediaUrl: string | null = null;
@@ -327,39 +327,42 @@ serve(async (req) => {
           mediaType = attachment.mime_type || null;
         }
 
-        // Upsert message - use instagram_message_id as the unique constraint
-        // (see migration 20260103_006: instagram_message_id TEXT NOT NULL UNIQUE)
-        const { error: upsertError } = await supabase
-          .from("instagram_messages")
-          .upsert(
-            {
-              conversation_id: conversationId,
-              instagram_message_id: msg.id,
-              message_text: msg.message || null,
-              message_type: messageType,
-              media_url: mediaUrl,
-              media_type: mediaType,
-              story_id: msg.story?.id || null,
-              story_url: msg.story?.mention?.link || null,
-              direction: isInbound ? "inbound" : "outbound",
-              status: "delivered", // Messages from API are already delivered
-              sender_instagram_id: msg.from.id,
-              sender_username: msg.from.username || null,
-              sent_at: msg.created_time,
-              delivered_at: msg.created_time,
-            },
-            {
-              onConflict: "instagram_message_id",
-              ignoreDuplicates: false,
-            },
-          );
+        return {
+          conversation_id: conversationId,
+          instagram_message_id: msg.id,
+          message_text: msg.message || null,
+          message_type: messageType,
+          media_url: mediaUrl,
+          media_type: mediaType,
+          story_id: msg.story?.id || null,
+          story_url: msg.story?.mention?.link || null,
+          direction: isInbound ? "inbound" : "outbound",
+          status: "delivered", // Messages from API are already delivered
+          sender_instagram_id: msg.from.id,
+          sender_username: msg.from.username || null,
+          sent_at: msg.created_time,
+          delivered_at: msg.created_time,
+        };
+      });
 
-        if (upsertError) {
-          console.error(
-            `[instagram-get-messages] Failed to upsert message ${msg.id}:`,
-            upsertError,
-          );
-        }
+      // Batch upsert all messages in a single DB call
+      // Uses instagram_message_id as the unique constraint for deduplication
+      const { error: upsertError } = await supabase
+        .from("instagram_messages")
+        .upsert(messageRows, {
+          onConflict: "instagram_message_id",
+          ignoreDuplicates: false,
+        });
+
+      if (upsertError) {
+        console.error(
+          `[instagram-get-messages] Failed to batch upsert ${messageRows.length} messages:`,
+          upsertError,
+        );
+      } else {
+        console.log(
+          `[instagram-get-messages] Batch upserted ${messageRows.length} messages`,
+        );
       }
 
       // Update conversation's last_inbound_at and can_reply_until if we have new inbound messages

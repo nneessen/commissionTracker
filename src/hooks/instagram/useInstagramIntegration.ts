@@ -361,7 +361,7 @@ export function useInstagramMessages(
       );
     },
     enabled: !!conversationId,
-    staleTime: 30 * 1000, // 30 seconds - messages update frequently
+    staleTime: 5 * 60 * 1000, // 5 minutes - realtime handles live updates
   });
 }
 

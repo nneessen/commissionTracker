@@ -2821,6 +2821,8 @@ export type Database = {
             | Database["public"]["Enums"]["message_direction"]
             | null;
           last_message_preview: string | null;
+          participant_avatar_cached_at: string | null;
+          participant_avatar_cached_url: string | null;
           participant_email: string | null;
           participant_instagram_id: string;
           participant_name: string | null;
@@ -2851,6 +2853,8 @@ export type Database = {
             | Database["public"]["Enums"]["message_direction"]
             | null;
           last_message_preview?: string | null;
+          participant_avatar_cached_at?: string | null;
+          participant_avatar_cached_url?: string | null;
           participant_email?: string | null;
           participant_instagram_id: string;
           participant_name?: string | null;
@@ -2881,6 +2885,8 @@ export type Database = {
             | Database["public"]["Enums"]["message_direction"]
             | null;
           last_message_preview?: string | null;
+          participant_avatar_cached_at?: string | null;
+          participant_avatar_cached_url?: string | null;
           participant_email?: string | null;
           participant_instagram_id?: string;
           participant_name?: string | null;
@@ -3008,6 +3014,65 @@ export type Database = {
           },
         ];
       };
+      instagram_job_queue: {
+        Row: {
+          attempts: number;
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          integration_id: string | null;
+          job_type: Database["public"]["Enums"]["instagram_job_type"];
+          last_error: string | null;
+          max_attempts: number;
+          payload: Json;
+          priority: number;
+          scheduled_for: string;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["instagram_job_status"];
+          updated_at: string;
+        };
+        Insert: {
+          attempts?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          integration_id?: string | null;
+          job_type: Database["public"]["Enums"]["instagram_job_type"];
+          last_error?: string | null;
+          max_attempts?: number;
+          payload: Json;
+          priority?: number;
+          scheduled_for?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["instagram_job_status"];
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          integration_id?: string | null;
+          job_type?: Database["public"]["Enums"]["instagram_job_type"];
+          last_error?: string | null;
+          max_attempts?: number;
+          payload?: Json;
+          priority?: number;
+          scheduled_for?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["instagram_job_status"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_job_queue_integration_id_fkey";
+            columns: ["integration_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       instagram_message_templates: {
         Row: {
           category: string | null;
@@ -3086,6 +3151,8 @@ export type Database = {
           direction: Database["public"]["Enums"]["message_direction"];
           id: string;
           instagram_message_id: string;
+          media_cached_at: string | null;
+          media_cached_url: string | null;
           media_type: string | null;
           media_url: string | null;
           message_text: string | null;
@@ -3107,6 +3174,8 @@ export type Database = {
           direction: Database["public"]["Enums"]["message_direction"];
           id?: string;
           instagram_message_id: string;
+          media_cached_at?: string | null;
+          media_cached_url?: string | null;
           media_type?: string | null;
           media_url?: string | null;
           message_text?: string | null;
@@ -3128,6 +3197,8 @@ export type Database = {
           direction?: Database["public"]["Enums"]["message_direction"];
           id?: string;
           instagram_message_id?: string;
+          media_cached_at?: string | null;
+          media_cached_url?: string | null;
           media_type?: string | null;
           media_url?: string | null;
           message_text?: string | null;
@@ -9517,7 +9588,39 @@ export type Database = {
         };
         Returns: Json;
       };
+      claim_instagram_jobs: {
+        Args: {
+          p_job_types: Database["public"]["Enums"]["instagram_job_type"][];
+          p_limit?: number;
+        };
+        Returns: {
+          attempts: number;
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          integration_id: string | null;
+          job_type: Database["public"]["Enums"]["instagram_job_type"];
+          last_error: string | null;
+          max_attempts: number;
+          payload: Json;
+          priority: number;
+          scheduled_for: string;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["instagram_job_status"];
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "instagram_job_queue";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       cleanup_expired_invitations: { Args: never; Returns: number };
+      cleanup_instagram_jobs: {
+        Args: { p_older_than?: unknown };
+        Returns: number;
+      };
       cleanup_old_audit_logs: {
         Args: never;
         Returns: {
@@ -9537,6 +9640,10 @@ export type Database = {
       clone_pipeline_template: {
         Args: { p_new_name: string; p_template_id: string };
         Returns: string;
+      };
+      complete_instagram_job: {
+        Args: { p_job_id: string; p_result?: Json };
+        Returns: undefined;
       };
       complete_scheduled_delivery: {
         Args: {
@@ -9711,6 +9818,16 @@ export type Database = {
       delete_alert_rule: { Args: { p_rule_id: string }; Returns: boolean };
       delete_orphan_identity: { Args: { del_email: string }; Returns: Json };
       email_subject_hash: { Args: { subject: string }; Returns: string };
+      enqueue_instagram_job: {
+        Args: {
+          p_integration_id?: string;
+          p_job_type: Database["public"]["Enums"]["instagram_job_type"];
+          p_payload: Json;
+          p_priority?: number;
+          p_scheduled_for?: string;
+        };
+        Returns: string;
+      };
       ensure_system_labels: { Args: { p_user_id: string }; Returns: undefined };
       expire_instagram_scheduled_messages: { Args: never; Returns: number };
       expire_old_invitations: {
@@ -9718,6 +9835,10 @@ export type Database = {
         Returns: {
           expired_count: number;
         }[];
+      };
+      fail_instagram_job: {
+        Args: { p_error: string; p_job_id: string };
+        Returns: undefined;
       };
       get_agencies_for_join: {
         Args: { p_imo_id: string };
@@ -11447,6 +11568,17 @@ export type Database = {
         | "disconnected"
         | "expired"
         | "error";
+      instagram_job_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "expired";
+      instagram_job_type:
+        | "download_profile_picture"
+        | "download_message_media"
+        | "send_scheduled_message"
+        | "refresh_participant_metadata";
       instagram_message_status:
         | "pending"
         | "sent"
@@ -11705,6 +11837,19 @@ export const Constants = {
         "disconnected",
         "expired",
         "error",
+      ],
+      instagram_job_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "expired",
+      ],
+      instagram_job_type: [
+        "download_profile_picture",
+        "download_message_media",
+        "send_scheduled_message",
+        "refresh_participant_metadata",
       ],
       instagram_message_status: [
         "pending",

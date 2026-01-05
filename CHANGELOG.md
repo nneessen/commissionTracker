@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 18:36:37
+
+### Changed Files
+- `docs/slack-policy-notification-system.md`
+- `plans/completed/ig-dm-performance-plan.md`
+- `plans/completed/update-slack-docs-continuation.md`
+- `src/features/messages/components/instagram/InstagramTabContent.tsx`
+- `src/hooks/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/hooks/instagram/useInstagramRealtime.ts`
+- `src/lib/instagram/index.ts`
+- `src/lib/instagram/selectors.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-process-jobs/index.ts`
+- `supabase/functions/instagram-process-scheduled/index.ts`
+- `supabase/functions/instagram-webhook/index.ts`
+- `supabase/migrations/20260105_011_instagram_job_queue.sql`
+- `supabase/migrations/20260105_012_instagram_realtime.sql`
+
+### Statistics
+```
+ 17 files changed, 11963 insertions(+), 10031 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 18:03:46
 
 ### Changed Files

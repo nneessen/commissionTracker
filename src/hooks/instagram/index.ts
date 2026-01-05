@@ -35,3 +35,11 @@ export {
   useCancelInstagramScheduledMessage,
   useScheduleInstagramMessage,
 } from "./useInstagramIntegration";
+
+// Realtime subscription hooks
+export {
+  useInstagramMessagesRealtime,
+  useInstagramConversationsRealtime,
+  useInstagramRealtime,
+  useInstagramUnreadCount,
+} from "./useInstagramRealtime";

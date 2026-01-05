@@ -6,6 +6,7 @@ import { FeatureGate } from "@/components/subscription";
 import {
   useActiveInstagramIntegration,
   useConnectInstagram,
+  useInstagramRealtime,
 } from "@/hooks/instagram";
 import { InstagramConnectCard } from "./InstagramConnectCard";
 import { InstagramConversationView } from "./InstagramConversationView";
@@ -118,6 +119,12 @@ function InstagramTabContentInner({
   } = useActiveInstagramIntegration();
   const connectInstagram = useConnectInstagram();
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  // Subscribe to realtime updates for messages and conversations
+  useInstagramRealtime(
+    integration?.id ?? null,
+    selectedConversation?.id ?? null,
+  );
 
   const handleConnect = async () => {
     setConnectionError(null);
