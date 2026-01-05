@@ -36,6 +36,20 @@ class InstagramServiceClass {
     this.templateRepo = new InstagramTemplateRepository();
   }
 
+  /**
+   * Get auth headers for edge function calls
+   * Retrieves the current user's session token
+   */
+  private async getAuthHeaders(): Promise<{ Authorization: string }> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Not authenticated");
+    }
+    return { Authorization: `Bearer ${session.access_token}` };
+  }
+
   // ============================================================================
   // OAuth & Integration (Edge Functions)
   // ============================================================================
@@ -142,9 +156,11 @@ class InstagramServiceClass {
     nextCursor?: string;
     syncedCount: number;
   }> {
+    const headers = await this.getAuthHeaders();
     const { data, error } = await supabase.functions.invoke(
       "instagram-get-conversations",
       {
+        headers,
         body: {
           integrationId,
           limit: options?.limit ?? 20,
@@ -251,9 +267,11 @@ class InstagramServiceClass {
     nextCursor?: string;
     syncedCount: number;
   }> {
+    const headers = await this.getAuthHeaders();
     const { data, error } = await supabase.functions.invoke(
       "instagram-get-messages",
       {
+        headers,
         body: {
           conversationId,
           limit: options?.limit ?? 50,
@@ -291,9 +309,11 @@ class InstagramServiceClass {
     messageText: string,
     templateId?: string,
   ): Promise<InstagramMessage> {
+    const headers = await this.getAuthHeaders();
     const { data, error } = await supabase.functions.invoke(
       "instagram-send-message",
       {
+        headers,
         body: {
           conversationId,
           messageText,
