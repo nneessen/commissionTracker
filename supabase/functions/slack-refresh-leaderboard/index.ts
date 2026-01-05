@@ -44,12 +44,131 @@ function getRankDisplay(rank: number): string {
 }
 
 /**
+ * Look up a Slack member ID by email in the current workspace
+ * Returns the member ID if found, null if not found or unrecoverable error
+ * Includes retry logic for rate limiting and transient failures
+ */
+async function lookupSlackMemberByEmail(
+  botToken: string,
+  email: string,
+  retryCount: number = 0,
+): Promise<string | null> {
+  if (!email) return null;
+
+  const MAX_RETRIES = 2;
+
+  try {
+    const response = await fetch(
+      `https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${botToken}`,
+        },
+      },
+    );
+    const data = await response.json();
+
+    if (data.ok && data.user?.id) {
+      return data.user.id;
+    }
+
+    // Handle specific Slack API errors
+    if (!data.ok) {
+      switch (data.error) {
+        case "users_not_found":
+          // Expected - user not in this workspace, no need to log as error
+          return null;
+
+        case "ratelimited":
+          // Rate limited - wait and retry
+          if (retryCount < MAX_RETRIES) {
+            const retryAfter = parseInt(
+              response.headers.get("Retry-After") || "1",
+              10,
+            );
+            console.warn(
+              `[slack-refresh-leaderboard] Rate limited, retrying after ${retryAfter}s for ${email}`,
+            );
+            await new Promise((r) => setTimeout(r, retryAfter * 1000));
+            return lookupSlackMemberByEmail(botToken, email, retryCount + 1);
+          }
+          console.error(
+            `[slack-refresh-leaderboard] Rate limit exceeded after ${MAX_RETRIES} retries for ${email}`,
+          );
+          return null;
+
+        case "invalid_auth":
+        case "token_revoked":
+        case "token_expired":
+          // Auth errors - log as error, these need investigation
+          console.error(
+            `[slack-refresh-leaderboard] Slack auth error: ${data.error}. Bot token may be invalid.`,
+          );
+          return null;
+
+        default:
+          // Unknown error - log for debugging
+          console.warn(
+            `[slack-refresh-leaderboard] Slack API error for ${email}: ${data.error}`,
+          );
+          return null;
+      }
+    }
+
+    return null;
+  } catch (err) {
+    // Network/transient error - retry once
+    if (retryCount < 1) {
+      console.warn(
+        `[slack-refresh-leaderboard] Network error for ${email}, retrying...`,
+      );
+      await new Promise((r) => setTimeout(r, 500));
+      return lookupSlackMemberByEmail(botToken, email, retryCount + 1);
+    }
+    console.error(
+      `[slack-refresh-leaderboard] Error looking up user ${email} after retry:`,
+      err,
+    );
+    return null;
+  }
+}
+
+/**
+ * Look up Slack member IDs for all agents in the production data
+ * Returns a map of agent_id -> slack_member_id (or null if not found)
+ *
+ * NOTE: Uses sequential lookups to respect Slack API rate limits (~1 req/sec).
+ * Parallel lookups would trigger rate limiting with >5 agents.
+ */
+async function lookupAllSlackMembers(
+  botToken: string,
+  entries: DailyProductionEntry[],
+): Promise<Map<string, string | null>> {
+  const memberMap = new Map<string, string | null>();
+
+  // Sequential lookups to respect Slack rate limits
+  // Slack's users.lookupByEmail is rate limited to ~20 requests/minute
+  for (const entry of entries) {
+    const memberId = await lookupSlackMemberByEmail(
+      botToken,
+      entry.agent_email,
+    );
+    memberMap.set(entry.agent_id, memberId);
+  }
+
+  return memberMap;
+}
+
+/**
  * Build the daily leaderboard text (simple text format)
+ * @param memberMap - Map of agent_id -> slack_member_id looked up in THIS workspace
  */
 function buildLeaderboardText(
   title: string,
   entries: DailyProductionEntry[],
   totalAP: number,
+  memberMap: Map<string, string | null>,
 ): string {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -69,10 +188,13 @@ function buildLeaderboardText(
       const policies = entry.policy_count;
       const policyText = policies === 1 ? "policy" : "policies";
 
-      // Use @mention if available
-      const nameDisplay = entry.slack_member_id
-        ? `<@${entry.slack_member_id}>`
-        : entry.agent_name;
+      // Use @mention if member exists in THIS workspace, otherwise use agent name
+      const slackMemberId = memberMap.get(entry.agent_id);
+      const nameDisplay = slackMemberId
+        ? `<@${slackMemberId}>`
+        : entry.agent_name?.trim() ||
+          entry.agent_email?.split("@")[0] ||
+          "Unknown";
 
       text += `${rankDisplay} ${nameDisplay} - ${ap} (${policies} ${policyText})\n`;
     });
@@ -161,6 +283,9 @@ serve(async (req) => {
       );
     }
 
+    // Decrypt bot token first (needed for member lookup)
+    const botToken = await decrypt(integration.bot_token_encrypted);
+
     // Get today's production for leaderboard
     const { data: productionData } = await supabase.rpc(
       "get_daily_production_by_agent",
@@ -176,16 +301,21 @@ serve(async (req) => {
       0,
     );
 
+    // Look up Slack member IDs for all agents in THIS workspace
+    // This ensures we use the correct member ID for @mentions
+    console.log(
+      `[slack-refresh-leaderboard] Looking up ${production.length} agents in workspace`,
+    );
+    const memberMap = await lookupAllSlackMembers(botToken, production);
+
     // Build the updated leaderboard text
     const leaderboardTitle = title || dailyLog.title || "Daily Sales";
     const leaderboardText = buildLeaderboardText(
       leaderboardTitle,
       production,
       totalAP,
+      memberMap,
     );
-
-    // Decrypt bot token
-    const botToken = await decrypt(integration.bot_token_encrypted);
 
     // Update the Slack message if we have the message_ts
     if (dailyLog.leaderboard_message_ts) {

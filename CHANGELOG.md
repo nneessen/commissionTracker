@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 18:03:46
+
+### Changed Files
+- `supabase/functions/slack-daily-leaderboard/index.ts`
+- `supabase/functions/slack-refresh-leaderboard/index.ts`
+- `supabase/migrations/20251226_004_fix_slack_trigger_config.sql`
+- `supabase/migrations/20260105_001_fix_leaderboard_names.sql`
+- `supabase/migrations/reverts/20260105_001_fix_leaderboard_names.sql`
+
+### Statistics
+```
+ 5 files changed, 277 insertions(+), 11 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 16:51:43
 
 ### Changed Files

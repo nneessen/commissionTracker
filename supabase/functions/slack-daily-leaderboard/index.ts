@@ -199,6 +199,24 @@ serve(async (req) => {
       );
     }
 
+    // Check if leaderboard posting is enabled in settings
+    if (integration.include_leaderboard_with_policy === false) {
+      console.log(
+        "[slack-daily-leaderboard] Leaderboard posting disabled in settings",
+      );
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          skipped: true,
+          reason: "Leaderboard posting disabled in settings",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // Get production data using RPC
     const { data: production, error: prodError } = await supabase.rpc(
       "get_agency_production_by_agent",

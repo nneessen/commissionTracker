@@ -31,13 +31,14 @@ CREATE POLICY "Postgres can read config"
   USING (true);
 
 -- Insert config values
+-- NOTE: Uses ON CONFLICT DO NOTHING to preserve existing values if already set correctly.
+-- The service_role_key should be updated manually via Supabase dashboard or direct SQL
+-- if it needs to change. Never commit actual keys to migration files.
 INSERT INTO app_config (key, value, description)
 VALUES
   ('supabase_project_url', 'https://pcyaqwodnyrpkaiojnpz.supabase.co', 'Supabase project URL for edge function calls'),
-  ('supabase_service_role_key', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjeWFxd29kbnlycGthaW9qbnB6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyNzcxNzg5NywiZXhwIjoyMDQzMjkzODk3fQ.HqoB18RlNqZ2VcxZu3XDdvxnI-MF8u0p3MfWWLLHW28', 'Service role key for authenticated edge function calls')
-ON CONFLICT (key) DO UPDATE SET
-  value = EXCLUDED.value,
-  updated_at = NOW();
+  ('supabase_service_role_key', 'SET_VIA_DASHBOARD_OR_MANUAL_SQL', 'Service role key for authenticated edge function calls - must be set manually')
+ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================================
 -- Update trigger function to use app_config instead of vault
