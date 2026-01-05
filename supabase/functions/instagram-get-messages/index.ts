@@ -190,8 +190,9 @@ serve(async (req) => {
     const igConversationId = conversation.instagram_conversation_id;
 
     // Fetch messages from Instagram Graph API
+    // Note: Instagram API for Business uses graph.instagram.com endpoints
     const apiUrl = new URL(
-      `https://graph.facebook.com/v18.0/${igConversationId}/messages`,
+      `https://graph.instagram.com/v21.0/${igConversationId}/messages`,
     );
     apiUrl.searchParams.set("access_token", accessToken);
     apiUrl.searchParams.set(
@@ -205,14 +206,47 @@ serve(async (req) => {
     }
 
     console.log(
-      `[instagram-get-messages] Fetching messages for conversation: ${conversationId}`,
+      `[instagram-get-messages] Fetching messages for conversation: ${conversationId}, ig_conv: ${igConversationId}`,
+    );
+    console.log(
+      `[instagram-get-messages] API URL (without token): ${apiUrl.toString().replace(accessToken, "REDACTED")}`,
     );
 
     const apiResponse = await fetch(apiUrl.toString());
-    const apiData: MetaMessagesResponse = await apiResponse.json();
+    const rawResponse = await apiResponse.text();
+
+    console.log(
+      `[instagram-get-messages] API response status: ${apiResponse.status}`,
+    );
+    console.log(
+      `[instagram-get-messages] API raw response: ${rawResponse.substring(0, 500)}`,
+    );
+
+    let apiData: MetaMessagesResponse;
+    try {
+      apiData = JSON.parse(rawResponse);
+    } catch (parseError) {
+      console.error(
+        "[instagram-get-messages] Failed to parse API response:",
+        parseError,
+      );
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: `Invalid API response: ${rawResponse.substring(0, 200)}`,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     if (apiData.error) {
-      console.error("[instagram-get-messages] Meta API error:", apiData.error);
+      console.error(
+        "[instagram-get-messages] Meta API error:",
+        JSON.stringify(apiData.error),
+      );
 
       // Handle token expiration
       if (

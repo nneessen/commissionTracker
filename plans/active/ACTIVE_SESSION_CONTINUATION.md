@@ -1,143 +1,115 @@
 # Instagram DM Integration - Continuation Prompt
 
-## Session Context
+**Last Updated:** 2026-01-05
+**Status:** BLOCKED - Meta Developer Console access issue
 
-Instagram OAuth is now working. User can successfully connect their Instagram Business account. The integration is stored in `instagram_integrations` table.
+---
 
-## What Was Just Completed
+## CRITICAL ISSUE
 
-1. **Fixed OAuth Flow** - Switched from Facebook OAuth to Instagram OAuth endpoint
-   - Uses Instagram App ID: `858157193486561`
-   - Uses `instagram.com/oauth/authorize` instead of `facebook.com/dialog/oauth`
-   - Scopes: `instagram_business_basic`, `instagram_business_manage_messages`, `instagram_business_manage_comments`, `instagram_business_content_publish`
+User cannot access Meta Developer Console. Getting "You don't have access. This feature isn't available to you yet." error when trying to access:
+- https://developers.facebook.com/apps/858157193486561/dashboard/
+- https://developers.facebook.com/apps/858157193486561/app-review/
 
-2. **Database Fix** - Made `facebook_page_id` and `facebook_page_name` columns nullable (no longer using Facebook Pages)
+This was working yesterday. Developer verification is complete. Need to resolve this access issue before the app can be switched to Live mode.
 
-3. **Vercel Redirect** - Added `/api/instagram-oauth-callback` redirect in `vercel.json` to proxy to Supabase
+---
 
-## Current State
+## Current Problem
 
-- **OAuth**: Working ✅
-- **Integration stored in DB**: Working ✅
-- **UI shows connected state**: Working ✅ (shows @username with "Connected" badge)
-- **Conversations list**: NOT WORKING - sidebar doesn't show conversations
-- **Send/Receive DMs**: NOT IMPLEMENTED
-- **Webhooks**: NOT CONFIGURED (needed for real-time messages)
+The Instagram tab in Messages page connects successfully but returns **empty conversations**.
 
-## What Needs To Be Done
-
-### Priority 1: Wire Up Instagram Sidebar in Messages Page
-
-The `InstagramSidebar.tsx` component exists but needs to be properly integrated into `MessagesPage.tsx`. Currently the Instagram tab shows the connected state but no conversation list.
-
-**Files to check:**
-- `src/features/messages/MessagesPage.tsx` - Main page, needs to render InstagramSidebar
-- `src/features/messages/components/instagram/InstagramSidebar.tsx` - Sidebar component
-- `src/features/messages/components/instagram/InstagramTabContent.tsx` - Tab content
-
-### Priority 2: Implement Conversation Sync from Instagram API
-
-Need edge functions to fetch conversations from Instagram Graph API:
-- `instagram-sync-conversations` - Fetch all conversations from IG API and store in DB
-- `instagram-get-conversations` - Read from local DB (already have hooks for this)
-
-**Instagram Graph API endpoint:**
-```
-GET https://graph.instagram.com/v21.0/me/conversations
-?access_token={token}
-&fields=participants,messages{message,from,created_time}
-```
-
-### Priority 3: Implement Send Message
-
-Need edge function:
-- `instagram-send-message` - Send DM via Instagram API (validates 24hr window)
-
-**Instagram Graph API endpoint:**
-```
-POST https://graph.instagram.com/v21.0/me/messages
+**API Response (200 OK):**
+```json
 {
-  "recipient": {"id": "<instagram_user_id>"},
-  "message": {"text": "Hello!"}
+  "data": [],
+  "paging": {"cursors": {"after": "..."}, "next": "..."}
 }
 ```
 
-### Priority 4: Set Up Webhooks for Real-Time Messages
+The API is working but returning no data. Possible causes:
+1. App still in Development mode (can't switch - no console access)
+2. Instagram account has no DM conversations
+3. Instagram account is not Professional (Business/Creator)
+4. Test user configuration issue
 
-The `instagram-webhook` edge function exists and is deployed. Need to:
-1. Configure webhook in Meta Developer Console
-2. Subscribe to `messages` event
-3. Handle inbound messages (store in DB, update conversation window)
+---
 
-**Webhook URL:** `https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-webhook`
-**Verify Token:** `thestandardhq_ig_webhook_2026`
+## Fixes Applied This Session (All Deployed)
 
-### Priority 5: Lead Integration
+### 1. Token Refresh - Fixed wrong API
+**File:** `supabase/functions/instagram-refresh-token/index.ts`
+- FROM: `graph.facebook.com` with `fb_exchange_token`
+- TO: `graph.instagram.com/refresh_access_token` with `ig_refresh_token`
 
-- `CreateLeadFromIGDialog.tsx` exists
-- Need to wire up to recruiting pipeline
-- Create lead from Instagram conversation with `lead_source = 'instagram_dm'`
+### 2. Get Conversations - Fixed endpoint
+**File:** `supabase/functions/instagram-get-conversations/index.ts`
+- FROM: `graph.facebook.com/v18.0/{userId}/conversations`
+- TO: `graph.instagram.com/v21.0/{userId}/conversations`
+- Added `platform=instagram` parameter
+- Added detailed logging
 
-## Key Files Reference
+### 3. Get Messages - Fixed endpoint
+**File:** `supabase/functions/instagram-get-messages/index.ts`
+- Changed to `graph.instagram.com/v21.0`
 
-### Existing Components (all in `src/features/messages/components/instagram/`)
-- `InstagramTabContent.tsx` - Main entry point ✅
-- `InstagramConnectCard.tsx` - OAuth button ✅
-- `InstagramSidebar.tsx` - Conversation list (needs wiring)
-- `InstagramConversationItem.tsx` - Single conversation row
-- `InstagramConversationView.tsx` - Message thread
-- `InstagramMessageBubble.tsx` - Message display
-- `InstagramMessageInput.tsx` - Compose input
-- `InstagramWindowIndicator.tsx` - 24hr window status
-- `InstagramPriorityBadge.tsx` - Priority indicator
-- `InstagramTemplateSelector.tsx` - Quick templates
-- `InstagramScheduleDialog.tsx` - Schedule messages
-- `CreateLeadFromIGDialog.tsx` - Convert to lead
+### 4. Send Message - Fixed endpoint
+**File:** `supabase/functions/instagram-send-message/index.ts`
+- Changed to `graph.instagram.com/v21.0/me/messages`
 
-### Services & Hooks
-- `src/services/instagram/InstagramService.ts` - Main service facade
-- `src/services/instagram/repositories/` - 5 repository classes
-- `src/hooks/instagram/useInstagramIntegration.ts` - TanStack Query hooks
+---
 
-### Edge Functions
-- `supabase/functions/instagram-oauth-init/` - OAuth start ✅
-- `supabase/functions/instagram-oauth-callback/` - OAuth callback ✅
-- `supabase/functions/instagram-webhook/` - Webhook handler (needs Meta config)
-- `supabase/functions/instagram-refresh-token/` - Token refresh CRON
+## Integration Details
 
-### Database Tables
-- `instagram_integrations` - OAuth tokens & connection status
-- `instagram_conversations` - DM threads
-- `instagram_messages` - Individual messages
-- `instagram_scheduled_messages` - Automation queue
-- `instagram_message_templates` - Reusable templates
+- **Instagram User ID:** `17841401907010491`
+- **Integration ID:** `fef2ba9a-6a79-46d9-92e9-51314127567d`
+- **Meta App ID:** `858157193486561`
 
-## Original Plan Location
+---
 
-See full implementation plan: `plans/active/instagram-dm-integration.md`
+## Next Steps
 
-## Meta App Configuration
+1. **Resolve Meta Console access** - User needs to regain access to developers.facebook.com to:
+   - Switch app from Development to Live mode
+   - Configure webhooks
+   - Check test user settings
 
-- **App ID:** `1168926578343790` (Facebook App)
-- **Instagram App ID:** `858157193486561`
-- **Redirect URI:** `https://www.thestandardhq.com/api/instagram-oauth-callback`
-- **Webhook URL:** `https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-webhook`
-- **Webhook Verify Token:** `thestandardhq_ig_webhook_2026`
+2. **Verify Instagram account:**
+   - Is it a Professional account (Business/Creator)?
+   - Does it have actual DM conversations?
 
-## Supabase Secrets Set
+3. **Alternative approaches if console access lost:**
+   - Create new Meta app
+   - Use different Facebook account
 
+---
+
+## Key Files
+
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-oauth-callback/index.ts`
+- `supabase/functions/instagram-refresh-token/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/features/messages/components/instagram/InstagramSidebar.tsx`
+
+---
+
+## Redeploy Commands
+
+```bash
+npx supabase functions deploy instagram-get-conversations --no-verify-jwt
+npx supabase functions deploy instagram-get-messages --no-verify-jwt
+npx supabase functions deploy instagram-send-message --no-verify-jwt
+npx supabase functions deploy instagram-refresh-token --no-verify-jwt
 ```
-INSTAGRAM_APP_ID=858157193486561
-INSTAGRAM_APP_SECRET=e4dfc03f8febf898ba192eef430ee5de
-META_APP_SECRET=864d8545e0157369e5cbd6ec31294f4d
-META_WEBHOOK_VERIFY_TOKEN=thestandardhq_ig_webhook_2026
-```
 
-## Instructions for Next Session
+---
 
-1. Read this file first
-2. Read `plans/active/instagram-dm-integration.md` for full context
-3. Start with Priority 1: Wire up InstagramSidebar in MessagesPage
-4. Then implement conversation sync (Priority 2)
-5. Then implement send message (Priority 3)
-6. User's goal: Full Instagram DM functionality for recruiting - send/receive messages, search users, add to recruiting pipeline
+## Resume Instructions
+
+1. Read this file and `plans/active/instagram-dm-integration.md`
+2. First priority: Help user regain Meta Developer Console access
+3. If console access restored: Switch app to Live mode
+4. Verify Instagram account is Professional with DM conversations
+5. Goal: Get conversations to actually appear in the Instagram tab

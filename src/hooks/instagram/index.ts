@@ -21,6 +21,8 @@ export {
   useSendInstagramMessage,
   // Priority hooks
   useSetInstagramPriority,
+  // Contact info hooks
+  useUpdateInstagramContactInfo,
   // Lead hooks
   useCreateLeadFromInstagram,
   // Template hooks

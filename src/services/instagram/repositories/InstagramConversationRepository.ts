@@ -104,6 +104,37 @@ export class InstagramConversationRepository extends BaseRepository<
   }
 
   /**
+   * Update manually-entered contact info for a conversation participant
+   * Requires userId for authorization verification
+   */
+  async updateContactInfo(
+    id: string,
+    userId: string,
+    contactInfo: {
+      email?: string;
+      phone?: string;
+      notes?: string;
+    },
+  ): Promise<void> {
+    // Verify ownership before updating
+    const owned = await this.verifyOwnership(id, userId);
+    if (!owned) {
+      throw new Error("Unauthorized: You do not own this conversation");
+    }
+
+    const { error } = await this.client
+      .from(this.tableName)
+      .update({
+        participant_email: contactInfo.email ?? null,
+        participant_phone: contactInfo.phone ?? null,
+        contact_notes: contactInfo.notes ?? null,
+      })
+      .eq("id", id);
+
+    if (error) throw this.handleError(error, "updateContactInfo");
+  }
+
+  /**
    * Verify that a user owns the conversation (via integration ownership)
    * Returns the conversation if owned, null otherwise
    */

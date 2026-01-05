@@ -405,6 +405,40 @@ export function useSetInstagramPriority() {
 }
 
 /**
+ * Update manually-entered contact info for a conversation participant
+ */
+export function useUpdateInstagramContactInfo() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      conversationId,
+      email,
+      phone,
+      notes,
+    }: {
+      conversationId: string;
+      email?: string;
+      phone?: string;
+      notes?: string;
+    }): Promise<void> => {
+      if (!user?.id) throw new Error("User not authenticated");
+      await instagramService.updateContactInfo(conversationId, user.id, {
+        email,
+        phone,
+        notes,
+      });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: instagramKeys.conversation(variables.conversationId),
+      });
+    },
+  });
+}
+
+/**
  * Create a recruiting lead from an Instagram conversation
  */
 export function useCreateLeadFromInstagram() {

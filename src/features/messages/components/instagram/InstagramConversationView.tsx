@@ -28,6 +28,7 @@ import { InstagramMessageBubble } from "./InstagramMessageBubble";
 import { InstagramMessageInput } from "./InstagramMessageInput";
 import { InstagramWindowIndicator } from "./InstagramWindowIndicator";
 import { InstagramPriorityBadge } from "./InstagramPriorityBadge";
+import { InstagramContactInfoPanel } from "./InstagramContactInfoPanel";
 import { CreateLeadFromIGDialog } from "./CreateLeadFromIGDialog";
 import { InstagramScheduleDialog } from "./InstagramScheduleDialog";
 
@@ -110,7 +111,7 @@ export function InstagramConversationView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showCreateLeadDialog, setShowCreateLeadDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const hasSyncedRef = useRef(false);
+  const hasSyncedRef = useRef<string | null>(null);
 
   // Fetch conversation details
   const {
@@ -132,10 +133,10 @@ export function InstagramConversationView({
   const syncMessages = useSyncInstagramMessages();
   const isSyncing = syncMessages.isPending;
 
-  // Auto-sync messages on first load
+  // Auto-sync messages when conversation changes
   useEffect(() => {
-    if (!hasSyncedRef.current && conversationId) {
-      hasSyncedRef.current = true;
+    if (conversationId && hasSyncedRef.current !== conversationId) {
+      hasSyncedRef.current = conversationId;
       syncMessages.mutate({ conversationId });
     }
   }, [conversationId, syncMessages]);
@@ -348,6 +349,9 @@ export function InstagramConversationView({
           </Button>
         </div>
       </div>
+
+      {/* Contact info panel (collapsible) */}
+      <InstagramContactInfoPanel conversation={conversation} />
 
       {/* Messages area */}
       <div className="flex-1 overflow-auto p-3">

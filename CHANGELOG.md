@@ -6,6 +6,100 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 12:12:12
+
+### Changed Files
+- `.serena/memories/instagram-app-credentials.md`
+- `.serena/memories/meta-developer-app-info.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/ACTIVE_SESSION_CONTINUATION.md`
+- `plans/active/ig-enhance.md`
+- `src/features/messages/components/instagram/CreateLeadFromIGDialog.tsx`
+- `src/features/messages/components/instagram/InstagramContactInfoPanel.tsx`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/hooks/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/lib/nameParser.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramConversationRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/instagram.types.ts`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-refresh-token/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+- `supabase/migrations/20260105_004_instagram_contact_info.sql`
+- `supabase/migrations/reverts/20251226_011_fix_agency_descendants.sql`
+- `supabase/migrations/reverts/20260105_004_instagram_contact_info.sql`
+
+### Statistics
+```
+ 23 files changed, 10561 insertions(+), 9799 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-05 12:11:59
+
+### Changed Files
+- `.serena/memories/instagram-app-credentials.md`
+- `.serena/memories/meta-developer-app-info.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/ACTIVE_SESSION_CONTINUATION.md`
+- `plans/active/ig-enhance.md`
+- `src/features/messages/components/instagram/CreateLeadFromIGDialog.tsx`
+- `src/features/messages/components/instagram/InstagramContactInfoPanel.tsx`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/hooks/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/lib/nameParser.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramConversationRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/instagram.types.ts`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-refresh-token/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+- `supabase/migrations/20260105_004_instagram_contact_info.sql`
+- `supabase/migrations/reverts/20251226_011_fix_agency_descendants.sql`
+- `supabase/migrations/reverts/20260105_004_instagram_contact_info.sql`
+
+### Statistics
+```
+ 23 files changed, 10527 insertions(+), 9797 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-05 12:11:47
+
+### Changed Files
+- `.serena/memories/instagram-app-credentials.md`
+- `.serena/memories/meta-developer-app-info.md`
+- `plans/active/ACTIVE_SESSION_CONTINUATION.md`
+- `plans/active/ig-enhance.md`
+- `src/features/messages/components/instagram/CreateLeadFromIGDialog.tsx`
+- `src/features/messages/components/instagram/InstagramContactInfoPanel.tsx`
+- `src/features/messages/components/instagram/InstagramConversationView.tsx`
+- `src/hooks/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/lib/nameParser.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/instagram/repositories/InstagramConversationRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/instagram.types.ts`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-refresh-token/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+- `supabase/migrations/20260105_004_instagram_contact_info.sql`
+- `supabase/migrations/reverts/20251226_011_fix_agency_descendants.sql`
+- `supabase/migrations/reverts/20260105_004_instagram_contact_info.sql`
+
+### Statistics
+```
+ 21 files changed, 10492 insertions(+), 9792 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-05 10:40:36
 
 ### Changed Files

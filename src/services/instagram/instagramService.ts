@@ -227,6 +227,26 @@ class InstagramServiceClass {
   }
 
   /**
+   * Update manually-entered contact info for a conversation participant
+   * Requires userId for authorization verification
+   */
+  async updateContactInfo(
+    conversationId: string,
+    userId: string,
+    contactInfo: {
+      email?: string;
+      phone?: string;
+      notes?: string;
+    },
+  ): Promise<void> {
+    return this.conversationRepo.updateContactInfo(
+      conversationId,
+      userId,
+      contactInfo,
+    );
+  }
+
+  /**
    * Create a recruiting lead from an Instagram conversation
    * Requires userId for authorization verification
    */

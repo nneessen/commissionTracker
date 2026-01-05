@@ -2809,6 +2809,7 @@ export type Database = {
           auto_reminder_hours: number | null;
           auto_reminder_template_id: string | null;
           can_reply_until: string | null;
+          contact_notes: string | null;
           created_at: string | null;
           id: string;
           instagram_conversation_id: string;
@@ -2820,8 +2821,10 @@ export type Database = {
             | Database["public"]["Enums"]["message_direction"]
             | null;
           last_message_preview: string | null;
+          participant_email: string | null;
           participant_instagram_id: string;
           participant_name: string | null;
+          participant_phone: string | null;
           participant_profile_picture_url: string | null;
           participant_username: string | null;
           priority_notes: string | null;
@@ -2836,6 +2839,7 @@ export type Database = {
           auto_reminder_hours?: number | null;
           auto_reminder_template_id?: string | null;
           can_reply_until?: string | null;
+          contact_notes?: string | null;
           created_at?: string | null;
           id?: string;
           instagram_conversation_id: string;
@@ -2847,8 +2851,10 @@ export type Database = {
             | Database["public"]["Enums"]["message_direction"]
             | null;
           last_message_preview?: string | null;
+          participant_email?: string | null;
           participant_instagram_id: string;
           participant_name?: string | null;
+          participant_phone?: string | null;
           participant_profile_picture_url?: string | null;
           participant_username?: string | null;
           priority_notes?: string | null;
@@ -2863,6 +2869,7 @@ export type Database = {
           auto_reminder_hours?: number | null;
           auto_reminder_template_id?: string | null;
           can_reply_until?: string | null;
+          contact_notes?: string | null;
           created_at?: string | null;
           id?: string;
           instagram_conversation_id?: string;
@@ -2874,8 +2881,10 @@ export type Database = {
             | Database["public"]["Enums"]["message_direction"]
             | null;
           last_message_preview?: string | null;
+          participant_email?: string | null;
           participant_instagram_id?: string;
           participant_name?: string | null;
+          participant_phone?: string | null;
           participant_profile_picture_url?: string | null;
           participant_username?: string | null;
           priority_notes?: string | null;
@@ -9694,6 +9703,15 @@ export type Database = {
           total_commissions_ytd: number;
           total_earned_ytd: number;
           total_unearned: number;
+        }[];
+      };
+      get_agency_descendants: {
+        Args: { p_agency_id: string };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          depth: number;
+          parent_agency_id: string;
         }[];
       };
       get_agency_hierarchy: {

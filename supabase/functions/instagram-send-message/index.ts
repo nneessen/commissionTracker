@@ -230,7 +230,8 @@ serve(async (req) => {
     const recipientId = conversation.participant_instagram_id;
 
     // Send message via Instagram Graph API
-    const apiUrl = `https://graph.facebook.com/v18.0/${igUserId}/messages`;
+    // Note: Instagram API for Business uses graph.instagram.com endpoints
+    const apiUrl = `https://graph.instagram.com/v21.0/me/messages`;
 
     console.log(
       `[instagram-send-message] Sending message to ${conversation.participant_username || recipientId}`,

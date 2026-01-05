@@ -69,6 +69,9 @@ export interface InstagramConversationRow {
   participant_username: string | null;
   participant_name: string | null;
   participant_profile_picture_url: string | null;
+  participant_email: string | null;
+  participant_phone: string | null;
+  contact_notes: string | null;
   last_message_at: string | null;
   last_message_preview: string | null;
   last_message_direction: MessageDirection | null;
@@ -426,6 +429,13 @@ export interface AutoReminderConfig {
   enabled: boolean;
   templateId?: string;
   hoursAfterLastOutbound: number;
+}
+
+export interface UpdateContactInfoInput {
+  conversationId: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
 }
 
 // ============================================================================

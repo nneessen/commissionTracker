@@ -165,8 +165,8 @@ serve(async (req) => {
  */
 async function refreshToken(
   integration: InstagramIntegration,
-  appId: string,
-  appSecret: string,
+  _appId: string,
+  _appSecret: string,
   supabase: ReturnType<typeof createClient>,
 ): Promise<RefreshResult> {
   const { id, instagram_username, access_token_encrypted } = integration;
@@ -175,18 +175,25 @@ async function refreshToken(
     // Decrypt current token
     const currentToken = await decrypt(access_token_encrypted);
 
-    // Call Meta's token refresh endpoint
-    // For long-lived Page Access Tokens, we use the same endpoint as initial exchange
+    // Call Instagram's token refresh endpoint
+    // For Instagram API with Instagram Login, use the ig_refresh_token endpoint
     const refreshUrl = new URL(
-      "https://graph.facebook.com/v18.0/oauth/access_token",
+      "https://graph.instagram.com/refresh_access_token",
     );
-    refreshUrl.searchParams.set("grant_type", "fb_exchange_token");
-    refreshUrl.searchParams.set("client_id", appId);
-    refreshUrl.searchParams.set("client_secret", appSecret);
-    refreshUrl.searchParams.set("fb_exchange_token", currentToken);
+    refreshUrl.searchParams.set("grant_type", "ig_refresh_token");
+    refreshUrl.searchParams.set("access_token", currentToken);
+
+    console.log(
+      `[instagram-refresh-token] Refreshing token for @${instagram_username}`,
+    );
 
     const response = await fetch(refreshUrl.toString());
     const data = await response.json();
+
+    console.log(
+      `[instagram-refresh-token] Refresh response for @${instagram_username}:`,
+      JSON.stringify(data),
+    );
 
     if (data.error || !data.access_token) {
       const errorMsg = data.error?.message || "Token refresh failed";

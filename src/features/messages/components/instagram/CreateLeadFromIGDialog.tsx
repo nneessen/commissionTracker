@@ -1,8 +1,9 @@
 // src/features/messages/components/instagram/CreateLeadFromIGDialog.tsx
 // Dialog to create a recruiting lead from an Instagram conversation
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import { UserPlus, Loader2 } from "lucide-react";
+import { parseInstagramName } from "@/lib/nameParser";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -57,17 +58,23 @@ interface FormErrors {
   phone?: string;
 }
 
-const initialFormData: FormData = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  city: "",
-  state: "",
-  availability: "exploring",
-  insuranceExperience: "none",
-  whyInterested: "",
-};
+/**
+ * Creates initial form data pre-filled from conversation
+ */
+function getInitialFormData(conversation: InstagramConversation): FormData {
+  const parsed = parseInstagramName(conversation.participant_name);
+  return {
+    firstName: parsed.firstName,
+    lastName: parsed.lastName,
+    email: conversation.participant_email || "",
+    phone: conversation.participant_phone || "",
+    city: "",
+    state: "",
+    availability: "exploring",
+    insuranceExperience: "none",
+    whyInterested: conversation.contact_notes || "",
+  };
+}
 
 export function CreateLeadFromIGDialog({
   open,
@@ -76,8 +83,18 @@ export function CreateLeadFromIGDialog({
   onSuccess,
 }: CreateLeadFromIGDialogProps): ReactNode {
   const createLead = useCreateLeadFromInstagram();
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(() =>
+    getInitialFormData(conversation),
+  );
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Reset form with pre-filled data when dialog opens or conversation changes
+  useEffect(() => {
+    if (open) {
+      setFormData(getInitialFormData(conversation));
+      setErrors({});
+    }
+  }, [open, conversation]);
 
   /**
    * Validates email using a more robust pattern
@@ -148,7 +165,7 @@ export function CreateLeadFromIGDialog({
       });
 
       toast.success("Lead created successfully");
-      setFormData(initialFormData);
+      setFormData(getInitialFormData(conversation));
       setErrors({});
       onOpenChange(false);
       onSuccess?.(leadId);
@@ -160,7 +177,7 @@ export function CreateLeadFromIGDialog({
   };
 
   const handleClose = () => {
-    setFormData(initialFormData);
+    setFormData(getInitialFormData(conversation));
     setErrors({});
     onOpenChange(false);
   };

@@ -15,6 +15,7 @@ interface MetaConversation {
       id: string;
       username?: string;
       name?: string;
+      profile_picture_url?: string;
     }>;
   };
   messages?: {
@@ -154,34 +155,68 @@ serve(async (req) => {
     const accessToken = await decrypt(integration.access_token_encrypted);
 
     // Fetch conversations from Instagram Graph API
-    // Note: Instagram API uses the me/conversations endpoint for DMs
+    // Note: Instagram API for Business uses graph.instagram.com endpoints
     const igUserId = integration.instagram_user_id;
+
+    // Use the user ID directly instead of /me for better compatibility
     const apiUrl = new URL(
-      `https://graph.facebook.com/v18.0/${igUserId}/conversations`,
+      `https://graph.instagram.com/v21.0/${igUserId}/conversations`,
     );
     apiUrl.searchParams.set("access_token", accessToken);
-    apiUrl.searchParams.set("platform", "instagram");
+    // Request profile_picture_url for participants to display avatars
     apiUrl.searchParams.set(
       "fields",
-      "id,updated_time,participants,messages.limit(1){id,message,created_time,from}",
+      "id,updated_time,participants{id,username,name,profile_picture_url},messages{id,message,created_time,from}",
     );
     apiUrl.searchParams.set("limit", String(limit));
+    // Required for Instagram conversations
+    apiUrl.searchParams.set("platform", "instagram");
 
     if (cursor) {
       apiUrl.searchParams.set("after", cursor);
     }
 
     console.log(
-      `[instagram-get-conversations] Fetching conversations for integration: ${integrationId}`,
+      `[instagram-get-conversations] Fetching conversations for integration: ${integrationId}, user: ${igUserId}`,
+    );
+    console.log(
+      `[instagram-get-conversations] API URL (without token): ${apiUrl.toString().replace(accessToken, "REDACTED")}`,
     );
 
     const apiResponse = await fetch(apiUrl.toString());
-    const apiData: MetaConversationsResponse = await apiResponse.json();
+    const rawResponse = await apiResponse.text();
+
+    console.log(
+      `[instagram-get-conversations] API response status: ${apiResponse.status}`,
+    );
+    console.log(
+      `[instagram-get-conversations] API raw response: ${rawResponse.substring(0, 500)}`,
+    );
+
+    let apiData: MetaConversationsResponse;
+    try {
+      apiData = JSON.parse(rawResponse);
+    } catch (parseError) {
+      console.error(
+        "[instagram-get-conversations] Failed to parse API response:",
+        parseError,
+      );
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: `Invalid API response: ${rawResponse.substring(0, 200)}`,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     if (apiData.error) {
       console.error(
         "[instagram-get-conversations] Meta API error:",
-        apiData.error,
+        JSON.stringify(apiData.error),
       );
 
       // Handle token expiration
@@ -254,6 +289,8 @@ serve(async (req) => {
             participant_instagram_id: otherParticipant.id,
             participant_username: otherParticipant.username || null,
             participant_name: otherParticipant.name || null,
+            participant_profile_picture_url:
+              otherParticipant.profile_picture_url || null,
             last_message_at: lastMessageAt,
             last_message_preview: lastMessagePreview,
             last_message_direction: isInbound ? "inbound" : "outbound",
