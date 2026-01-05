@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-05 13:01:05
+
+### Changed Files
+- `src/services/base/tables.ts`
+- `supabase/migrations/20260105_005_fix_user_creation.sql`
+- `supabase/migrations/20260105_006_revert_user_creation_fix.sql`
+- `supabase/migrations/20260105_007_fix_rls_for_trigger.sql`
+- `supabase/migrations/20260105_008_fix_seed_expense_trigger.sql`
+- `supabase/migrations/20260105_009_fix_admin_delete_expense_ref.sql`
+
+### Statistics
+```
+ 6 files changed, 547 insertions(+), 1 deletion(-)
+```
+
 ## [Checkpoint] - 2026-01-05 12:12:12
 
 ### Changed Files

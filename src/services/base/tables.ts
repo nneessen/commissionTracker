@@ -8,7 +8,8 @@ export const TABLES = {
   CHARGEBACKS: "chargebacks",
   OVERRIDE_COMMISSIONS: "override_commissions",
   EXPENSES: "expenses",
-  EXPENSE_CATEGORIES: "expense_categories",
+  EXPENSE_CATEGORIES: "user_expense_categories",
+  GLOBAL_EXPENSE_CATEGORIES: "global_expense_categories",
   EXPENSE_TEMPLATES: "expense_templates",
 
   // Reference data
