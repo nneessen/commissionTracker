@@ -80,10 +80,19 @@ export class LeadPurchaseRepository extends BaseRepository<
 
   /**
    * Find all purchases for the current user with optional filters
+   * Always filters by current user's user_id for data isolation
    */
   async findAllWithFilters(
     filters?: LeadPurchaseFilters,
   ): Promise<LeadPurchase[]> {
+    // Get current user for user_id filtering
+    const {
+      data: { user },
+    } = await this.client.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
     let query = this.client
       .from(this.tableName)
       .select(
@@ -92,6 +101,7 @@ export class LeadPurchaseRepository extends BaseRepository<
         lead_vendors (*)
       `,
       )
+      .eq("user_id", user.id) // Always filter by current user
       .order("purchase_date", { ascending: false });
 
     if (filters?.vendorId) {

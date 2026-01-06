@@ -428,23 +428,30 @@ export function LeadPurchaseDashboard() {
           )}
         </div>
 
-        {/* Top Vendors Bar (if available) */}
+        {/* Team Vendor Performance Bar */}
         {topVendors.length > 0 && (
-          <div className="flex items-center gap-3 px-3 py-1 border-b border-zinc-200 dark:border-zinc-800 text-[10px] bg-zinc-50/50 dark:bg-zinc-800/30">
-            <span className="text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-medium">
-              Top Vendors:
-            </span>
+          <div className="flex items-center gap-3 px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 text-[10px] bg-amber-50/50 dark:bg-amber-900/10">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-amber-700 dark:text-amber-400 font-semibold uppercase tracking-wider">
+                Team Insights
+              </span>
+              <span className="text-amber-600/70 dark:text-amber-500/70 ml-1">
+                Top performing vendors across your team:
+              </span>
+            </div>
+            <div className="h-3 w-px bg-amber-300 dark:bg-amber-700" />
             {topVendors.map((vendor, idx) => (
               <div key={vendor.vendorId} className="flex items-center gap-1">
                 {idx > 0 && (
-                  <div className="h-2.5 w-px bg-zinc-200 dark:bg-zinc-700" />
+                  <div className="h-2.5 w-px bg-amber-200 dark:bg-amber-800" />
                 )}
-                <span className="font-medium text-zinc-700 dark:text-zinc-300 ml-1">
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 ml-1">
                   {vendor.vendorName}
                 </span>
                 <span
                   className={cn(
-                    "font-mono",
+                    "font-mono font-bold",
                     vendor.avgRoi >= 0
                       ? "text-emerald-600 dark:text-emerald-400"
                       : "text-red-600 dark:text-red-400",
@@ -453,8 +460,10 @@ export function LeadPurchaseDashboard() {
                   {vendor.avgRoi >= 0 ? "+" : ""}
                   {vendor.avgRoi.toFixed(0)}%
                 </span>
-                <span className="text-zinc-400 dark:text-zinc-500">
-                  ({vendor.totalLeads} leads)
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  ({vendor.uniqueUsers} user
+                  {vendor.uniqueUsers !== 1 ? "s" : ""}, {vendor.totalLeads}{" "}
+                  leads)
                 </span>
               </div>
             ))}

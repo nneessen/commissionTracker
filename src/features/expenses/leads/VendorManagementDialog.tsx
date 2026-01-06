@@ -11,15 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Search,
-  MoreVertical,
   Edit,
   Power,
   Merge,
@@ -381,34 +373,33 @@ export function VendorManagementDialog({
                             </Button>
                           </div>
                         ) : (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                              >
-                                <MoreVertical className="h-3.5 w-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem
-                                onClick={() => handleStartEdit(vendor)}
-                                className="text-[11px]"
-                              >
-                                <Edit className="mr-2 h-3.5 w-3.5" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleToggleActive(vendor)}
-                                className="text-[11px]"
-                              >
-                                <Power className="mr-2 h-3.5 w-3.5" />
-                                {vendor.isActive ? "Deactivate" : "Activate"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex items-center gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                              onClick={() => handleStartEdit(vendor)}
+                              title="Edit vendor"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-6 w-6 p-0",
+                                vendor.isActive
+                                  ? "text-amber-500 hover:text-amber-600"
+                                  : "text-emerald-500 hover:text-emerald-600",
+                              )}
+                              onClick={() => handleToggleActive(vendor)}
+                              title={
+                                vendor.isActive ? "Deactivate" : "Activate"
+                              }
+                            >
+                              <Power className="h-3 w-3" />
+                            </Button>
+                          </div>
                         )}
                       </td>
                     </tr>
