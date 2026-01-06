@@ -90,6 +90,10 @@ export function InstagramMessageBubble({
           controls
           className="w-full min-w-[180px]"
           preload="metadata"
+          onError={(e) => {
+            // Hide broken audio player, will fall through to "Unsupported message"
+            e.currentTarget.style.display = "none";
+          }}
         />
       ) : message.media_type?.startsWith("video") ? (
         <video
