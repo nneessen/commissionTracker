@@ -11,6 +11,7 @@ import {
   Image,
   Film,
   FileText,
+  Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { selectMediaUrl } from "@/lib/instagram";
@@ -50,6 +51,9 @@ export function InstagramMessageBubble({
   const getMessageTypeIcon = () => {
     switch (message.message_type) {
       case "media":
+        if (message.media_type === "audio") {
+          return <Mic className="h-3 w-3" />;
+        }
         if (message.media_type?.startsWith("video")) {
           return <Film className="h-3 w-3" />;
         }
@@ -80,7 +84,14 @@ export function InstagramMessageBubble({
   const mediaUrl = selectMediaUrl(message.media_cached_url, message.media_url);
   const mediaContent = mediaUrl ? (
     <div className="mb-1 rounded overflow-hidden max-w-[200px]">
-      {message.media_type?.startsWith("video") ? (
+      {message.media_type === "audio" ? (
+        <audio
+          src={mediaUrl}
+          controls
+          className="w-full min-w-[180px]"
+          preload="metadata"
+        />
+      ) : message.media_type?.startsWith("video") ? (
         <video
           src={mediaUrl}
           controls

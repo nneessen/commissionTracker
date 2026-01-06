@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-06 15:13:14
+
+### Changed Files
+- `docs/leadGen/inbound-funnel.md`
+- `src/features/messages/components/instagram/InstagramMessageBubble.tsx`
+- `supabase/migrations/20260106_007_instagram_replica_identity.sql`
+
+### Statistics
+```
+ 3 files changed, 429 insertions(+), 1 deletion(-)
+```
+
 ## [Checkpoint] - 2026-01-06 14:43:58
 
 ### Changed Files
