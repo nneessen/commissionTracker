@@ -241,6 +241,29 @@ When context nears limits, create ACTIVE_SESSION_CONTINUATION with the exact nex
 
 When a new session starts, check continuation state (<72hrs). If present, resume task automatically.
 
+CRITICAL AUTH FLOWS - DO NOT BREAK
+
+Password Reset Flow (FRAGILE - READ BEFORE TOUCHING AUTH)
+
+The password reset flow has strict requirements due to Supabase redirect whitelisting:
+
+1. ALL password reset redirectTo URLs MUST use `/auth/callback`, NEVER `/auth/reset-password`
+2. The flow is: Email Link → Supabase → /auth/callback → /auth/reset-password
+3. Files involved:
+   - src/index.tsx (early hash capture - DO NOT REMOVE)
+   - src/features/auth/AuthCallback.tsx (recovery type handler)
+   - src/features/auth/ResetPassword.tsx (form with fallbacks)
+   - src/contexts/AuthContext.tsx (resetPassword function)
+   - src/features/admin/components/EditUserDialog.tsx (send confirmation)
+   - supabase/functions/send-password-reset/index.ts
+   - supabase/functions/create-auth-user/index.ts
+
+AFTER ANY AUTH CHANGES, TEST:
+- Login → Forgot Password → Click email link → Must see reset form (NOT dashboard)
+- Admin → Edit User → Actions → Send Confirmation → Click link → Must see reset form
+
+See memory file: CRITICAL_password_reset_flow.md for full documentation.
+
 FINAL PRINCIPLES
 
 Minimalism
