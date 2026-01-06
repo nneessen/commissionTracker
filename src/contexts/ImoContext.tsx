@@ -27,15 +27,43 @@ interface UserRoleInfo {
 const ImoContext = createContext<ImoContextType | undefined>(undefined);
 
 /**
+ * Default context value for when provider is not available
+ * Used to prevent errors during auth state transitions
+ */
+const DEFAULT_IMO_CONTEXT: ImoContextType = {
+  imo: null,
+  agency: null,
+  isImoOwner: false,
+  isImoAdmin: false,
+  isAgencyOwner: false,
+  isSuperAdmin: false,
+  loading: true,
+  error: null,
+  refetch: async () => {},
+};
+
+/**
  * Hook to access IMO context
- * Must be used within an ImoProvider
+ * Returns safe defaults if called outside provider (e.g., during auth transitions)
  */
 export const useImo = (): ImoContextType => {
   const context = useContext(ImoContext);
+  // Return safe defaults instead of throwing during auth transitions
+  // This handles the race condition where Sidebar may briefly render
+  // outside ImoProvider during auth state changes
   if (!context) {
-    throw new Error("useImo must be used within an ImoProvider");
+    return DEFAULT_IMO_CONTEXT;
   }
   return context;
+};
+
+/**
+ * Hook to check if ImoProvider is available
+ * Useful for conditional rendering based on provider presence
+ */
+export const useImoAvailable = (): boolean => {
+  const context = useContext(ImoContext);
+  return context !== undefined;
 };
 
 interface ImoProviderProps {
