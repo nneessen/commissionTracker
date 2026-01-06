@@ -5,6 +5,8 @@ import type {
   LeadVendor,
   CreateLeadVendorData,
   UpdateLeadVendorData,
+  VendorWithStats,
+  MergeVendorsResult,
 } from "@/types/lead-purchase.types";
 
 export class LeadVendorService extends BaseService<
@@ -129,6 +131,83 @@ export class LeadVendorService extends BaseService<
     }
 
     return super.create(data);
+  }
+
+  /**
+   * Get all vendors with purchase stats (for management UI)
+   */
+  async getAllWithStats(
+    includeInactive = false,
+  ): Promise<ServiceResponse<VendorWithStats[]>> {
+    try {
+      const vendors = await this.repository.findAllWithStats(includeInactive);
+      return { success: true, data: vendors };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Merge multiple vendors into one
+   */
+  async mergeVendors(
+    keepVendorId: string,
+    mergeVendorIds: string[],
+  ): Promise<ServiceResponse<MergeVendorsResult>> {
+    try {
+      if (!keepVendorId) {
+        return {
+          success: false,
+          error: new Error("Keep vendor ID is required"),
+        };
+      }
+
+      if (!mergeVendorIds || mergeVendorIds.length === 0) {
+        return {
+          success: false,
+          error: new Error("At least one vendor to merge is required"),
+        };
+      }
+
+      if (mergeVendorIds.includes(keepVendorId)) {
+        return {
+          success: false,
+          error: new Error("Cannot merge a vendor into itself"),
+        };
+      }
+
+      const result = await this.repository.mergeVendors(
+        keepVendorId,
+        mergeVendorIds,
+      );
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Toggle vendor active status
+   */
+  async toggleActive(
+    id: string,
+    isActive: boolean,
+  ): Promise<ServiceResponse<LeadVendor>> {
+    try {
+      const vendor = await this.repository.toggleActive(id, isActive);
+      return { success: true, data: vendor };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
   }
 }
 

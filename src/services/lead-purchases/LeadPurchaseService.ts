@@ -7,6 +7,7 @@ import type {
   UpdateLeadPurchaseData,
   LeadPurchaseStats,
   VendorStats,
+  VendorStatsAggregate,
   LeadPurchaseFilters,
 } from "@/types/lead-purchase.types";
 
@@ -160,6 +161,27 @@ export class LeadPurchaseService extends BaseService<
   ): Promise<ServiceResponse<VendorStats[]>> {
     try {
       const stats = await this.repository.getStatsByVendor(startDate, endDate);
+      return { success: true, data: stats };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get stats grouped by vendor - aggregated across ALL users in the IMO
+   */
+  async getStatsByVendorImoAggregate(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ServiceResponse<VendorStatsAggregate[]>> {
+    try {
+      const stats = await this.repository.getStatsByVendorImoAggregate(
+        startDate,
+        endDate,
+      );
       return { success: true, data: stats };
     } catch (error) {
       return {

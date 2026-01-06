@@ -126,6 +126,33 @@ export interface VendorStats extends LeadPurchaseStats {
   vendorName: string;
 }
 
+// IMO aggregate vendor stats (includes unique users count)
+export interface VendorStatsAggregate extends VendorStats {
+  uniqueUsers: number;
+}
+
+// Vendor with management stats (for admin UI)
+export interface VendorWithStats {
+  id: string;
+  name: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  website: string | null;
+  isActive: boolean;
+  createdAt: string;
+  createdBy: string;
+  totalPurchases: number;
+  totalSpent: number;
+  uniqueUsers: number;
+}
+
+// Merge vendors result
+export interface MergeVendorsResult {
+  reassignedCount: number;
+  mergedVendorCount: number;
+}
+
 // =============================================================================
 // FILTER TYPES
 // =============================================================================

@@ -6,6 +6,7 @@ import type {
   UpdateLeadPurchaseData,
   LeadPurchaseStats,
   VendorStats,
+  VendorStatsAggregate,
   LeadPurchaseFilters,
 } from "@/types/lead-purchase.types";
 import {
@@ -44,6 +45,37 @@ export class LeadPurchaseRepository extends BaseRepository<
     data: CreateLeadPurchaseData | UpdateLeadPurchaseData,
   ): Record<string, unknown> {
     return transformLeadPurchaseToDB(data) as Record<string, unknown>;
+  }
+
+  /**
+   * Override create to inject user_id from current authenticated user
+   */
+  async create(data: CreateLeadPurchaseData): Promise<LeadPurchase> {
+    // Get current user for user_id
+    const {
+      data: { user },
+    } = await this.client.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    // Transform data and add user_id
+    const dbData = {
+      ...this.transformToDB(data),
+      user_id: user.id,
+    };
+
+    const { data: result, error } = await this.client
+      .from(this.tableName)
+      .insert(dbData)
+      .select(`*, lead_vendors (*)`)
+      .single();
+
+    if (error) {
+      throw this.handleError(error, "create");
+    }
+
+    return this.transformFromDB(result);
   }
 
   /**
@@ -193,6 +225,43 @@ export class LeadPurchaseRepository extends BaseRepository<
         avgCostPerLead: Number(row.avg_cost_per_lead || 0),
         avgRoi: Number(row.avg_roi || 0),
         conversionRate: Number(row.conversion_rate || 0),
+      })) || []
+    );
+  }
+
+  /**
+   * Get stats grouped by vendor - aggregated across ALL users in the IMO
+   */
+  async getStatsByVendorImoAggregate(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<VendorStatsAggregate[]> {
+    const { data, error } = await this.client.rpc(
+      "get_lead_stats_by_vendor_imo_aggregate",
+      {
+        p_imo_id: null, // Will default to current user's IMO
+        p_start_date: startDate || null,
+        p_end_date: endDate || null,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "getStatsByVendorImoAggregate");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        vendorId: String(row.vendor_id),
+        vendorName: String(row.vendor_name),
+        totalPurchases: Number(row.total_purchases || 0),
+        totalLeads: Number(row.total_leads || 0),
+        totalSpent: Number(row.total_spent || 0),
+        totalPolicies: Number(row.total_policies || 0),
+        totalCommission: Number(row.total_commission || 0),
+        avgCostPerLead: Number(row.avg_cost_per_lead || 0),
+        avgRoi: Number(row.avg_roi || 0),
+        conversionRate: Number(row.conversion_rate || 0),
+        uniqueUsers: Number(row.unique_users || 0),
       })) || []
     );
   }

@@ -19,13 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, DollarSign } from "lucide-react";
+import { Loader2, DollarSign } from "lucide-react";
+import { VendorCombobox } from "./VendorCombobox";
 import { useLeadVendors } from "@/hooks/lead-purchases";
 import type {
   LeadPurchase,
   CreateLeadPurchaseData,
   LeadFreshness,
-  LeadVendor,
 } from "@/types/lead-purchase.types";
 import { LeadVendorDialog } from "./LeadVendorDialog";
 import { useCreateLeadVendor } from "@/hooks/lead-purchases";
@@ -144,35 +144,12 @@ export function LeadPurchaseDialog({
               <Label className="text-[11px] text-muted-foreground">
                 Vendor <span className="text-destructive">*</span>
               </Label>
-              <div className="flex gap-1">
-                <Select
-                  value={formData.vendorId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, vendorId: value })
-                  }
-                  required
-                >
-                  <SelectTrigger className="h-8 text-xs flex-1">
-                    <SelectValue placeholder="Select vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((vendor: LeadVendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2"
-                  onClick={() => setShowVendorDialog(true)}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
+              <VendorCombobox
+                vendors={vendors}
+                value={formData.vendorId}
+                onChange={(vendorId) => setFormData({ ...formData, vendorId })}
+                onAddVendor={() => setShowVendorDialog(true)}
+              />
             </div>
 
             {/* Purchase Name & Freshness */}

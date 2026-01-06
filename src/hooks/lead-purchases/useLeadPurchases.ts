@@ -10,6 +10,7 @@ import type {
   LeadPurchaseFilters,
   LeadPurchaseStats,
   VendorStats,
+  VendorStatsAggregate,
 } from "@/types/lead-purchase.types";
 
 // Query keys
@@ -22,6 +23,8 @@ export const leadPurchaseKeys = {
   detail: (id: string) => [...leadPurchaseKeys.details(), id] as const,
   stats: () => [...leadPurchaseKeys.all, "stats"] as const,
   statsByVendor: () => [...leadPurchaseKeys.all, "stats-by-vendor"] as const,
+  statsByVendorAggregate: () =>
+    [...leadPurchaseKeys.all, "stats-by-vendor-aggregate"] as const,
 };
 
 /**
@@ -123,6 +126,36 @@ export function useLeadStatsByVendor(startDate?: string, endDate?: string) {
         throw result.error;
       }
       return result.data as VendorStats[];
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Get stats grouped by vendor - aggregated across ALL users in the IMO
+ */
+export function useLeadStatsByVendorAggregate(
+  startDate?: string,
+  endDate?: string,
+) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [
+      ...leadPurchaseKeys.statsByVendorAggregate(),
+      startDate,
+      endDate,
+    ],
+    queryFn: async () => {
+      const result = await leadPurchaseService.getStatsByVendorImoAggregate(
+        startDate,
+        endDate,
+      );
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as VendorStatsAggregate[];
     },
     staleTime: 5 * 60 * 1000,
     enabled: !!user?.id,

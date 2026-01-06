@@ -4,6 +4,8 @@ import type {
   LeadVendor,
   CreateLeadVendorData,
   UpdateLeadVendorData,
+  VendorWithStats,
+  MergeVendorsResult,
 } from "@/types/lead-purchase.types";
 import {
   transformLeadVendorFromDB,
@@ -139,5 +141,77 @@ export class LeadVendorRepository extends BaseRepository<
     if (error) {
       throw this.handleError(error, "softDelete");
     }
+  }
+
+  /**
+   * Find all vendors with purchase stats (for management UI)
+   */
+  async findAllWithStats(includeInactive = false): Promise<VendorWithStats[]> {
+    const { data, error } = await this.client.rpc("get_vendors_with_stats", {
+      p_imo_id: null, // Will default to current user's IMO
+      p_include_inactive: includeInactive,
+    });
+
+    if (error) {
+      throw this.handleError(error, "findAllWithStats");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        id: String(row.vendor_id),
+        name: String(row.vendor_name),
+        contactName: row.contact_name ? String(row.contact_name) : null,
+        contactEmail: row.contact_email ? String(row.contact_email) : null,
+        contactPhone: row.contact_phone ? String(row.contact_phone) : null,
+        website: row.website ? String(row.website) : null,
+        isActive: Boolean(row.is_active),
+        createdAt: String(row.created_at),
+        createdBy: String(row.created_by),
+        totalPurchases: Number(row.total_purchases || 0),
+        totalSpent: Number(row.total_spent || 0),
+        uniqueUsers: Number(row.unique_users || 0),
+      })) || []
+    );
+  }
+
+  /**
+   * Merge multiple vendors into one (reassigns all purchases)
+   */
+  async mergeVendors(
+    keepVendorId: string,
+    mergeVendorIds: string[],
+  ): Promise<MergeVendorsResult> {
+    const { data, error } = await this.client.rpc("merge_vendors", {
+      p_keep_vendor_id: keepVendorId,
+      p_merge_vendor_ids: mergeVendorIds,
+    });
+
+    if (error) {
+      throw this.handleError(error, "mergeVendors");
+    }
+
+    const row = data?.[0];
+    return {
+      reassignedCount: Number(row?.reassigned_count || 0),
+      mergedVendorCount: Number(row?.merged_vendor_count || 0),
+    };
+  }
+
+  /**
+   * Toggle vendor active status
+   */
+  async toggleActive(id: string, isActive: boolean): Promise<LeadVendor> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .update({ is_active: isActive })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw this.handleError(error, "toggleActive");
+    }
+
+    return this.transformFromDB(data);
   }
 }

@@ -7,6 +7,8 @@ import type {
   LeadVendor,
   CreateLeadVendorData,
   UpdateLeadVendorData,
+  VendorWithStats,
+  MergeVendorsResult,
 } from "@/types/lead-purchase.types";
 
 // Query keys
@@ -17,6 +19,7 @@ export const leadVendorKeys = {
     [...leadVendorKeys.lists(), filters] as const,
   details: () => [...leadVendorKeys.all, "detail"] as const,
   detail: (id: string) => [...leadVendorKeys.details(), id] as const,
+  withStats: () => [...leadVendorKeys.all, "with-stats"] as const,
 };
 
 /**
@@ -139,6 +142,75 @@ export function useDeleteLeadVendor() {
       if (!result.success) {
         throw result.error;
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: leadVendorKeys.all });
+    },
+  });
+}
+
+/**
+ * Fetch all vendors with purchase stats (for management UI)
+ */
+export function useLeadVendorsWithStats(includeInactive = false) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [...leadVendorKeys.withStats(), includeInactive],
+    queryFn: async () => {
+      const result = await leadVendorService.getAllWithStats(includeInactive);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as VendorWithStats[];
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes for management data
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Merge multiple vendors into one
+ */
+export function useMergeVendors() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      keepVendorId,
+      mergeVendorIds,
+    }: {
+      keepVendorId: string;
+      mergeVendorIds: string[];
+    }) => {
+      const result = await leadVendorService.mergeVendors(
+        keepVendorId,
+        mergeVendorIds,
+      );
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as MergeVendorsResult;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: leadVendorKeys.all });
+    },
+  });
+}
+
+/**
+ * Toggle vendor active status
+ */
+export function useToggleVendorActive() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const result = await leadVendorService.toggleActive(id, isActive);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as LeadVendor;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leadVendorKeys.all });
