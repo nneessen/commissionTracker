@@ -10,6 +10,7 @@ import {
   removeFavoriteContact,
   getAvailableRoles,
   userHasDownlines,
+  getAllTeamContacts,
   type Contact,
   type ContactFilters,
   type ContactType,
@@ -168,6 +169,12 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     [addFavoriteMutation, removeFavoriteMutation],
   );
 
+  // Fetch all team contacts for bulk add feature
+  const fetchAllTeamContacts = useCallback(async (): Promise<Contact[]> => {
+    if (!user?.id) return [];
+    return getAllTeamContacts(user.id);
+  }, [user?.id]);
+
   return {
     // Data
     contacts: contactsQuery.data?.data || [],
@@ -197,6 +204,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     nextPage: handleNextPage,
     prevPage: handlePrevPage,
     toggleFavorite,
+    fetchAllTeamContacts,
 
     // Mutations loading
     isTogglingFavorite:

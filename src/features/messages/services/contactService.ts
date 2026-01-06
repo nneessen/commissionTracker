@@ -32,37 +32,27 @@ export interface PaginatedResult<T> {
 }
 
 // ============================================================================
-// HELPER: Get team root path for hierarchy visibility
+// HELPER: Get user's hierarchy context for team filtering
 // ============================================================================
 
 /**
- * Get the team root path for hierarchy visibility.
- * Returns upline's path so agent can see siblings/cousins in the tree.
- * This allows agents to email anyone in their upline's organization.
+ * Get the user's hierarchy_path and agency_id for team filtering.
+ * Used to show only the user's actual downlines within their agency.
  */
-async function getTeamRootPath(userId: string): Promise<string | null> {
+async function getUserHierarchyContext(userId: string): Promise<{
+  hierarchyPath: string | null;
+  agencyId: string | null;
+}> {
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("hierarchy_path, upline_id")
+    .select("hierarchy_path, agency_id")
     .eq("id", userId)
     .single();
 
-  if (!profile?.hierarchy_path) return null;
-
-  // If user has an upline, get upline's hierarchy_path
-  // This allows seeing the full team tree (siblings, cousins, etc.)
-  if (profile.upline_id) {
-    const { data: upline } = await supabase
-      .from("user_profiles")
-      .select("hierarchy_path")
-      .eq("id", profile.upline_id)
-      .single();
-
-    return upline?.hierarchy_path || profile.hierarchy_path;
-  }
-
-  // User is at root level, return their own path
-  return profile.hierarchy_path;
+  return {
+    hierarchyPath: profile?.hierarchy_path || null,
+    agencyId: profile?.agency_id || null,
+  };
 }
 
 // ============================================================================
@@ -124,14 +114,19 @@ export async function getPaginatedContacts(
         teamQuery = teamQuery.contains("roles", [role]);
       }
 
-      // Apply team filter - show full team tree from upline (siblings, cousins, etc.)
+      // Apply team filter - show only user's actual downlines within their agency
       if (teamOnly) {
-        const teamRootPath = await getTeamRootPath(userId);
-        if (teamRootPath) {
-          // Show upline + everyone under the team root
-          teamQuery = teamQuery.or(
-            `hierarchy_path.eq.${teamRootPath},hierarchy_path.like.${teamRootPath}.%`,
-          );
+        const { hierarchyPath, agencyId } =
+          await getUserHierarchyContext(userId);
+
+        // Filter by agency for data isolation
+        if (agencyId) {
+          teamQuery = teamQuery.eq("agency_id", agencyId);
+        }
+
+        // Only show user's downlines (hierarchy_path starts with user's path + ".")
+        if (hierarchyPath) {
+          teamQuery = teamQuery.like("hierarchy_path", `${hierarchyPath}.%`);
         }
       }
 
@@ -432,6 +427,48 @@ export async function getTeamContacts(
     page,
     pageSize,
   );
+}
+
+/**
+ * Get ALL team contacts (downlines) without pagination.
+ * Used for "Add Entire Team" bulk add feature.
+ */
+export async function getAllTeamContacts(userId: string): Promise<Contact[]> {
+  try {
+    const { hierarchyPath, agencyId } = await getUserHierarchyContext(userId);
+
+    if (!hierarchyPath) return [];
+
+    let query = supabase
+      .from("user_profiles")
+      .select("id, first_name, last_name, email, roles, hierarchy_depth")
+      .not("email", "is", null)
+      .eq("approval_status", "approved")
+      .neq("id", userId)
+      .like("hierarchy_path", `${hierarchyPath}.%`)
+      .order("first_name");
+
+    // Filter by agency for data isolation
+    if (agencyId) {
+      query = query.eq("agency_id", agencyId);
+    }
+
+    const { data: team } = await query;
+
+    if (!team) return [];
+
+    return team.map((t) => ({
+      id: t.id,
+      name: `${t.first_name || ""} ${t.last_name || ""}`.trim() || t.email,
+      email: t.email,
+      type: "team" as ContactType,
+      role: Array.isArray(t.roles) ? t.roles[0] : undefined,
+      hierarchyDepth: t.hierarchy_depth || undefined,
+    }));
+  } catch (error) {
+    console.error("Error in getAllTeamContacts:", error);
+    return [];
+  }
 }
 
 // ============================================================================

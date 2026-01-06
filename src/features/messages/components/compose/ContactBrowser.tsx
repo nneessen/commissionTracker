@@ -2,7 +2,7 @@
 // Contact browser sheet for email compose with tabs, filtering, and favorites
 // Uses zinc palette and compact design patterns
 
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,6 +28,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -68,9 +69,11 @@ export function ContactBrowser({
     prevPage,
     toggleFavorite,
     isTogglingFavorite,
+    fetchAllTeamContacts,
   } = useContactBrowser({ pageSize: 50 });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isAddingAll, setIsAddingAll] = useState(false);
 
   // Filter out already selected contacts
   const availableContacts = contacts.filter(
@@ -98,6 +101,22 @@ export function ContactBrowser({
     },
     [toggleFavorite],
   );
+
+  // Add entire team handler
+  const handleAddAll = useCallback(async () => {
+    setIsAddingAll(true);
+    try {
+      const allTeamContacts = await fetchAllTeamContacts();
+      const unselected = allTeamContacts.filter(
+        (c) => !selectedEmails.includes(c.email.toLowerCase()),
+      );
+      unselected.forEach((contact) => {
+        onSelectContact(contact);
+      });
+    } finally {
+      setIsAddingAll(false);
+    }
+  }, [fetchAllTeamContacts, selectedEmails, onSelectContact]);
 
   // Focus search when sheet opens
   useEffect(() => {
@@ -187,6 +206,34 @@ export function ContactBrowser({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        )}
+
+        {/* Add Entire Team button - only on My Team tab */}
+        {activeTab === "team" && total > 0 && (
+          <div className="px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+            <button
+              onClick={handleAddAll}
+              disabled={isAddingAll}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium rounded transition-colors w-full justify-center",
+                isAddingAll
+                  ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                  : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300",
+              )}
+            >
+              {isAddingAll ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-3 w-3" />
+                  Add Entire Team ({total})
+                </>
+              )}
+            </button>
           </div>
         )}
 
@@ -293,18 +340,31 @@ function EmptyState({
   activeTab: ContactTab;
   search: string;
 }) {
+  const getMessage = () => {
+    if (search.length >= 2) return "No contacts found";
+    switch (activeTab) {
+      case "favorites":
+        return "No favorites yet";
+      case "team":
+        return "No team members under you";
+      default:
+        return "No contacts available";
+    }
+  };
+
   return (
     <div className="text-center py-8">
       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-        {search.length >= 2
-          ? "No contacts found"
-          : activeTab === "favorites"
-            ? "No favorites yet"
-            : "No contacts available"}
+        {getMessage()}
       </p>
       {activeTab === "favorites" && search.length < 2 && (
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
           Click the star icon on any contact to add favorites
+        </p>
+      )}
+      {activeTab === "team" && search.length < 2 && (
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+          Your downlines will appear here
         </p>
       )}
     </div>

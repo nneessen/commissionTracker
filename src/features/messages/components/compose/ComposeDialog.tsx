@@ -178,23 +178,18 @@ export function ComposeDialog({
       const email = contact.email.toLowerCase();
       switch (activeRecipientField) {
         case "to":
-          if (!to.includes(email)) {
-            setTo([...to, email]);
-          }
+          // Use functional update to handle rapid successive calls (e.g., Add Entire Team)
+          setTo((prev) => (prev.includes(email) ? prev : [...prev, email]));
           break;
         case "cc":
-          if (!cc.includes(email)) {
-            setCc([...cc, email]);
-          }
+          setCc((prev) => (prev.includes(email) ? prev : [...prev, email]));
           break;
         case "bcc":
-          if (!bcc.includes(email)) {
-            setBcc([...bcc, email]);
-          }
+          setBcc((prev) => (prev.includes(email) ? prev : [...prev, email]));
           break;
       }
     },
-    [activeRecipientField, to, cc, bcc],
+    [activeRecipientField],
   );
 
   const removeRecipient = (email: string, field: "to" | "cc" | "bcc") => {
