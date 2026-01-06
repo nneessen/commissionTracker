@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-06 16:33:46
+
+### Changed Files
+- `supabase/functions/_shared/temporaryAccess.ts`
+- `supabase/functions/instagram-oauth-init/index.ts`
+- `supabase/migrations/20260106_011_fix_instagram_access_function.sql`
+- `supabase/migrations/20260106_012_create_subscription_on_user_creation.sql`
+- `supabase/migrations/20260106_013_backfill_missing_subscriptions.sql`
+
+### Statistics
+```
+ 5 files changed, 270 insertions(+), 34 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-06 16:07:33
 
 ### Changed Files

@@ -6,6 +6,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { createSignedState } from "../_shared/hmac.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
+import { shouldGrantTemporaryInstagramAccess } from "../_shared/temporaryAccess.ts";
 
 interface OAuthInitRequest {
   imoId: string;
@@ -67,45 +68,40 @@ serve(async (req) => {
       );
     }
 
-    // Verify user has Team tier subscription (instagram_messaging feature)
+    // Check Instagram access with temporary free access period support
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get user's subscription with plan features
-    const { data: subscription, error: subError } = await supabase
-      .from("user_subscriptions")
-      .select(
-        `
-        id,
-        status,
-        plan:subscription_plans(
-          id,
-          name,
-          features
-        )
-      `,
-      )
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    let hasInstagramAccess = false;
 
-    if (subError) {
-      console.error(
-        "[instagram-oauth-init] Error checking subscription:",
-        subError,
+    // During temporary free access period (until Feb 1, 2026), grant access to all users
+    if (shouldGrantTemporaryInstagramAccess()) {
+      console.log(
+        `[instagram-oauth-init] User ${userId} granted access via temporary free access period`,
+      );
+      hasInstagramAccess = true;
+    } else {
+      // After Feb 1, 2026: Check subscription using the database function
+      const { data: accessResult, error: accessError } = await supabase.rpc(
+        "user_has_instagram_access",
+        { p_user_id: userId },
+      );
+
+      if (accessError) {
+        console.error(
+          "[instagram-oauth-init] Error checking Instagram access:",
+          accessError,
+        );
+      }
+
+      hasInstagramAccess = accessResult === true;
+      console.log(
+        `[instagram-oauth-init] User ${userId} subscription check result: ${hasInstagramAccess}`,
       );
     }
 
-    // Check if instagram_messaging feature is enabled in the plan
-    const planFeatures = subscription?.plan?.features as
-      | Record<string, boolean>
-      | undefined;
-    const hasInstagramFeature = planFeatures?.instagram_messaging === true;
-
-    if (!hasInstagramFeature) {
+    if (!hasInstagramAccess) {
       console.warn(
-        `[instagram-oauth-init] User ${userId} does not have instagram_messaging feature. Plan: ${subscription?.plan?.name || "none"}`,
+        `[instagram-oauth-init] User ${userId} does not have Instagram access`,
       );
       return new Response(
         JSON.stringify({
@@ -121,7 +117,7 @@ serve(async (req) => {
     }
 
     console.log(
-      `[instagram-oauth-init] User ${userId} has instagram_messaging feature via ${subscription?.plan?.name} plan`,
+      `[instagram-oauth-init] User ${userId} has Instagram access, proceeding with OAuth`,
     );
 
     // Create signed state (includes userId, imoId, timestamp for callback verification)
