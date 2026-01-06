@@ -371,6 +371,7 @@ export function useInstagramMessages(
 
 /**
  * Set priority status for a conversation
+ * Uses optimistic updates for immediate UI feedback
  */
 export function useSetInstagramPriority() {
   const queryClient = useQueryClient();
@@ -394,12 +395,64 @@ export function useSetInstagramPriority() {
         notes,
       );
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ conversationId, isPriority }) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "instagram" &&
+          query.queryKey[1] === "conversations",
+      });
+
+      // Snapshot all conversations queries for rollback
+      const snapshots: Array<
+        [readonly unknown[], InstagramConversation[] | undefined]
+      > = [];
+      queryClient
+        .getQueriesData<InstagramConversation[]>({
+          predicate: (query) =>
+            query.queryKey[0] === "instagram" &&
+            query.queryKey[1] === "conversations",
+        })
+        .forEach(([queryKey, data]) => {
+          snapshots.push([queryKey, data]);
+        });
+
+      // Optimistically update all matching conversations queries
+      queryClient.setQueriesData<InstagramConversation[]>(
+        {
+          predicate: (query) =>
+            query.queryKey[0] === "instagram" &&
+            query.queryKey[1] === "conversations",
+        },
+        (old) =>
+          old?.map((conv) =>
+            conv.id === conversationId
+              ? {
+                  ...conv,
+                  is_priority: isPriority,
+                  priority_set_at: isPriority ? new Date().toISOString() : null,
+                }
+              : conv,
+          ),
+      );
+
+      return { snapshots };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback all snapshots on error
+      context?.snapshots?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+    onSettled: (_, __, variables) => {
+      // Refetch to ensure server state consistency
       queryClient.invalidateQueries({
         queryKey: instagramKeys.conversation(variables.conversationId),
       });
       queryClient.invalidateQueries({
-        queryKey: instagramKeys.all,
+        predicate: (query) =>
+          query.queryKey[0] === "instagram" &&
+          query.queryKey[1] === "conversations",
       });
     },
   });

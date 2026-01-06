@@ -30,9 +30,11 @@ import { SlackTabContent, SlackSidebar } from "./components/slack";
 import { InstagramTabContent, InstagramSidebar } from "./components/instagram";
 import { InstagramTemplatesSettings } from "./components/instagram/templates";
 import { useUserSlackPreferences, useSlackIntegrations } from "@/hooks/slack";
-import { useActiveInstagramIntegration } from "@/hooks/instagram";
+import {
+  useActiveInstagramIntegration,
+  useInstagramConversations,
+} from "@/hooks/instagram";
 import type { SlackChannel } from "@/types/slack.types";
-import type { InstagramConversation } from "@/types/instagram.types";
 import { ResizablePanel } from "@/components/ui/resizable-panel";
 import { useResizableSidebar, useIsMobile } from "@/hooks/ui";
 
@@ -58,9 +60,9 @@ export function MessagesPage() {
   >(null);
   const [hasAppliedDefaults, setHasAppliedDefaults] = useState(false);
 
-  // Instagram state
-  const [selectedInstagramConversation, setSelectedInstagramConversation] =
-    useState<InstagramConversation | null>(null);
+  // Instagram state - store ID only, derive full object from query
+  const [selectedInstagramConversationId, setSelectedInstagramConversationId] =
+    useState<string | null>(null);
 
   // Mobile detection
   const isMobile = useIsMobile();
@@ -75,6 +77,20 @@ export function MessagesPage() {
 
   // Get active Instagram integration
   const { data: instagramIntegration } = useActiveInstagramIntegration();
+
+  // Get Instagram conversations - used to derive selected conversation from ID
+  // This ensures the conversation object updates when query cache is invalidated
+  const { data: instagramConversations = [] } = useInstagramConversations(
+    instagramIntegration?.id,
+    {},
+  );
+
+  // Derive selected conversation from query data (not stale state)
+  const selectedInstagramConversation = selectedInstagramConversationId
+    ? (instagramConversations.find(
+        (c) => c.id === selectedInstagramConversationId,
+      ) ?? null)
+    : null;
 
   // Initialize selected integration from user preferences or first available
   useEffect(() => {
@@ -292,10 +308,10 @@ export function MessagesPage() {
               >
                 <InstagramSidebar
                   integration={instagramIntegration}
-                  selectedConversationId={
-                    selectedInstagramConversation?.id || null
+                  selectedConversationId={selectedInstagramConversationId}
+                  onConversationSelect={(conversation) =>
+                    setSelectedInstagramConversationId(conversation.id)
                   }
-                  onConversationSelect={setSelectedInstagramConversation}
                 />
               </ResizablePanel>
             )
@@ -398,7 +414,7 @@ export function MessagesPage() {
                 selectedConversation={selectedInstagramConversation}
                 onBack={
                   isMobile && selectedInstagramConversation
-                    ? () => setSelectedInstagramConversation(null)
+                    ? () => setSelectedInstagramConversationId(null)
                     : undefined
                 }
               />

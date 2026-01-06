@@ -60,18 +60,37 @@ export function InstagramSidebar({
   const isSyncing = syncConversations.isPending;
 
   // Auto-sync on first load (non-blocking) - only once per integration
+  // Includes timeout mechanism to prevent infinite spinner if Edge Function hangs
   useEffect(() => {
     if (integration.id && hasSyncedRef.current !== integration.id) {
       hasSyncedRef.current = integration.id;
+
+      // Set timeout to reset mutation if it hangs (Edge Function timeout is 60s, we use 30s)
+      const timeoutId = setTimeout(() => {
+        if (syncConversations.isPending) {
+          syncConversations.reset();
+          console.warn(
+            "[InstagramSidebar] Sync timed out after 30s, resetting state",
+          );
+        }
+      }, 30000);
+
       syncConversations.mutate(
         { integrationId: integration.id },
         {
+          onSettled: () => {
+            clearTimeout(timeoutId);
+          },
           onError: (error) => {
             console.warn("[InstagramSidebar] Sync failed:", error);
             toast.error("Failed to sync conversations");
+            // Allow retry on next mount/integration change
+            hasSyncedRef.current = null;
           },
         },
       );
+
+      return () => clearTimeout(timeoutId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integration.id]);
