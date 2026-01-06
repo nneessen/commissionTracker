@@ -1,6 +1,8 @@
 // src/services/reports/forecastingService.ts
 
 import { supabase } from "../base/supabase";
+import { logger } from "../base/logger";
+import { ReportDataFetchError } from "./reportGenerationService";
 
 export interface ForecastResult {
   nextMonth: number;
@@ -102,8 +104,15 @@ export class ForecastingService {
       .order("payment_date", { ascending: true });
 
     if (error) {
-      console.error("Error fetching commission history:", error);
-      return [];
+      logger.error(
+        "Error fetching commission history",
+        error,
+        "ForecastingService",
+      );
+      throw new ReportDataFetchError(
+        "commission history for forecasting",
+        error,
+      );
     }
 
     return data || [];

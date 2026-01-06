@@ -224,6 +224,28 @@ export const slackService = {
   },
 
   /**
+   * Toggle integration active status (enable/disable posting without disconnecting)
+   */
+  async toggleIntegrationActive(
+    integrationId: string,
+    active: boolean,
+  ): Promise<SlackIntegration> {
+    const { data, error } = await supabase
+      .from("slack_integrations")
+      .update({ is_active: active })
+      .eq("id", integrationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[slackService] Error toggling integration active:", error);
+      throw error;
+    }
+
+    return transformIntegrationRow(data);
+  },
+
+  /**
    * Disconnect a specific Slack workspace by integration ID
    */
   async disconnectById(integrationId: string): Promise<void> {

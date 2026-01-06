@@ -195,6 +195,36 @@ export function useDisconnectSlackById() {
 }
 
 /**
+ * Toggle integration active status (enable/disable notifications)
+ */
+export function useToggleSlackIntegrationActive() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async ({
+      integrationId,
+      active,
+    }: {
+      integrationId: string;
+      active: boolean;
+    }): Promise<SlackIntegration> => {
+      return slackService.toggleIntegrationActive(integrationId, active);
+    },
+    onSuccess: (_, variables) => {
+      if (profile?.imo_id) {
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.integrations(profile.imo_id),
+        });
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.integration(variables.integrationId),
+        });
+      }
+    },
+  });
+}
+
+/**
  * Disconnect Slack workspace (deprecated - disconnects first integration)
  * @deprecated Use useDisconnectSlackById() for multi-workspace support
  */

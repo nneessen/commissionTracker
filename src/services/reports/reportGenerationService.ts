@@ -11,11 +11,31 @@ import { supabase } from "../base/supabase";
 import { InsightsService } from "./insightsService";
 import { ForecastingService } from "./forecastingService";
 import { formatCurrency, formatPercent } from "../../lib/format";
+import { logger } from "../base/logger";
 
 interface GenerateReportOptions {
   userId: string;
   type: ReportType;
   filters: ReportFilters;
+}
+
+/**
+ * Custom error class for report data fetch failures
+ * Provides context about which data source failed
+ */
+export class ReportDataFetchError extends Error {
+  constructor(
+    public readonly dataSource: string,
+    public readonly originalError: unknown,
+  ) {
+    const message = `Failed to fetch ${dataSource}: ${
+      originalError instanceof Error
+        ? originalError.message
+        : String(originalError)
+    }`;
+    super(message);
+    this.name = "ReportDataFetchError";
+  }
 }
 
 /**
@@ -898,8 +918,12 @@ export class ReportGenerationService {
       .eq("status", "paid");
 
     if (error) {
-      console.error("Error fetching carrier performance:", error);
-      return [];
+      logger.error(
+        "Error fetching carrier performance",
+        error,
+        "ReportGenerationService",
+      );
+      throw new ReportDataFetchError("carrier performance", error);
     }
 
     if (!commissions) return [];
@@ -981,8 +1005,15 @@ export class ReportGenerationService {
       .order("bucket_order", { ascending: true });
 
     if (error) {
-      console.error("Error fetching commission aging:", error);
-      return [];
+      logger.error(
+        "Error fetching commission aging",
+        error,
+        "ReportGenerationService",
+      );
+      throw new ReportDataFetchError(
+        "commission aging (mv_commission_aging)",
+        error,
+      );
     }
     return data || [];
   }
@@ -998,8 +1029,12 @@ export class ReportGenerationService {
       .eq("user_id", userId);
 
     if (error) {
-      console.error("Error fetching client LTV:", error);
-      return [];
+      logger.error(
+        "Error fetching client LTV",
+        error,
+        "ReportGenerationService",
+      );
+      throw new ReportDataFetchError("client LTV (mv_client_ltv)", error);
     }
     return data || [];
   }
@@ -1016,8 +1051,15 @@ export class ReportGenerationService {
       .order("cohort_month", { ascending: false });
 
     if (error) {
-      console.error("Error fetching cohort retention:", error);
-      return [];
+      logger.error(
+        "Error fetching cohort retention",
+        error,
+        "ReportGenerationService",
+      );
+      throw new ReportDataFetchError(
+        "cohort retention (mv_cohort_retention)",
+        error,
+      );
     }
     return data || [];
   }
@@ -1035,8 +1077,15 @@ export class ReportGenerationService {
       .limit(12); // Last 12 weeks
 
     if (error) {
-      console.error("Error fetching production velocity:", error);
-      return [];
+      logger.error(
+        "Error fetching production velocity",
+        error,
+        "ReportGenerationService",
+      );
+      throw new ReportDataFetchError(
+        "production velocity (mv_production_velocity)",
+        error,
+      );
     }
     return data || [];
   }
@@ -1053,8 +1102,15 @@ export class ReportGenerationService {
       .order("expense_month", { ascending: false });
 
     if (error) {
-      console.error("Error fetching expense summary:", error);
-      return [];
+      logger.error(
+        "Error fetching expense summary",
+        error,
+        "ReportGenerationService",
+      );
+      throw new ReportDataFetchError(
+        "expense summary (mv_expense_summary)",
+        error,
+      );
     }
     return data || [];
   }

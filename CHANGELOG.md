@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-06 12:09:04
+
+### Changed Files
+- `plans/active/reports-debug.md`
+- `src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx`
+- `src/hooks/slack/index.ts`
+- `src/hooks/slack/useSlackIntegration.ts`
+- `src/services/reports/forecastingService.ts`
+- `src/services/reports/reportGenerationService.ts`
+- `src/services/slack/slackService.ts`
+- `supabase/migrations/20260106_001_fix_team_comparison_ambiguity.sql`
+
+### Statistics
+```
+ 8 files changed, 600 insertions(+), 20 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-06 09:24:33
 
 ### Changed Files

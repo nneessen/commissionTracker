@@ -37,6 +37,7 @@ import {
   useConnectSlack,
   useReauthorizeSlackIntegration,
   useDisconnectSlackById,
+  useToggleSlackIntegrationActive,
   useTestSlackConnectionById,
   useSlackChannelsById,
   useUpdateSlackIntegrationSettings,
@@ -109,6 +110,32 @@ function WorkspaceCard({
   const testConnection = useTestSlackConnectionById();
   const updateSettings = useUpdateSlackIntegrationSettings();
   const joinChannel = useJoinSlackChannelById();
+  const toggleActive = useToggleSlackIntegrationActive();
+
+  const handleToggleActive = async (active: boolean) => {
+    if (!active) {
+      if (
+        !confirm(
+          "Turn off notifications for this workspace? No policy sales or leaderboards will be posted until re-enabled.",
+        )
+      ) {
+        return;
+      }
+    }
+    try {
+      await toggleActive.mutateAsync({
+        integrationId: integration.id,
+        active,
+      });
+      toast.success(
+        active
+          ? `Notifications enabled for ${integration.team_name}`
+          : `Notifications disabled for ${integration.team_name}`,
+      );
+    } catch {
+      toast.error("Failed to update workspace status");
+    }
+  };
 
   // Filter to only show channels the bot is a member of
   const availableChannels = useMemo(() => {
@@ -268,9 +295,16 @@ function WorkspaceCard({
   };
 
   const isConnected = integration.isConnected;
+  const isActive = integration.is_active;
 
   return (
-    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
+    <div
+      className={`border rounded-lg overflow-hidden ${
+        !isActive
+          ? "border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10"
+          : "border-zinc-200 dark:border-zinc-700"
+      }`}
+    >
       {/* Workspace Header */}
       <div
         className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${
@@ -288,8 +322,12 @@ function WorkspaceCard({
         </div>
 
         {/* Workspace Icon */}
-        <div className="p-1.5 rounded bg-purple-100 dark:bg-purple-900/30">
-          <Building2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <div
+          className={`p-1.5 rounded ${!isActive ? "bg-amber-100 dark:bg-amber-900/30" : "bg-purple-100 dark:bg-purple-900/30"}`}
+        >
+          <Building2
+            className={`h-4 w-4 ${!isActive ? "text-amber-600 dark:text-amber-400" : "text-purple-600 dark:text-purple-400"}`}
+          />
         </div>
 
         {/* Workspace Info */}
@@ -298,7 +336,15 @@ function WorkspaceCard({
             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
               {integration.display_name || integration.team_name}
             </span>
-            {isConnected ? (
+            {!isActive ? (
+              <Badge
+                variant="secondary"
+                className="text-[8px] h-4 px-1 bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+              >
+                <XCircle className="h-2 w-2 mr-0.5" />
+                Paused
+              </Badge>
+            ) : isConnected ? (
               <Badge
                 variant="default"
                 className="text-[8px] h-4 px-1 bg-green-600"
@@ -332,15 +378,31 @@ function WorkspaceCard({
 
         {/* Quick Actions */}
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-2"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Active Toggle - Admin Only */}
+          {isAdmin && (
+            <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-zinc-200 dark:border-zinc-700">
+              <Switch
+                checked={isActive}
+                onCheckedChange={handleToggleActive}
+                disabled={toggleActive.isPending}
+                className="scale-75"
+              />
+              <span
+                className={`text-[9px] font-medium ${isActive ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}
+              >
+                {isActive ? "ON" : "OFF"}
+              </span>
+            </div>
+          )}
           <Button
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0"
             onClick={handleTestConnection}
-            disabled={testConnection.isPending}
+            disabled={testConnection.isPending || !isActive}
             title="Test connection"
           >
             {testConnection.isPending ? (
