@@ -29,30 +29,44 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
     const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
-    const SITE_URL = Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
+    const SITE_URL =
+      Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error("[send-password-reset] Missing Supabase credentials");
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
     if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
       console.error("[send-password-reset] Missing Mailgun credentials");
       return new Response(
-        JSON.stringify({ success: false, error: "Email service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          error: "Email service not configured",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+    const supabaseAdmin = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
       },
-    });
+    );
 
     const body: PasswordResetRequest = await req.json();
     const { email, redirectTo } = body;
@@ -60,48 +74,73 @@ serve(async (req) => {
     if (!email) {
       return new Response(
         JSON.stringify({ success: false, error: "Email is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
     console.log("[send-password-reset] Generating recovery link for:", email);
 
     // Generate password reset link using Supabase Admin SDK
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email: email,
-      options: {
-        redirectTo: redirectTo || `${SITE_URL}/auth/reset-password`,
-      },
-    });
+    // Use /auth/callback as redirect - it's whitelisted and handles recovery type
+    const { data: linkData, error: linkError } =
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: email,
+        options: {
+          redirectTo: redirectTo || `${SITE_URL}/auth/callback`,
+        },
+      });
 
     if (linkError) {
-      console.error("[send-password-reset] Failed to generate link:", linkError);
+      console.error(
+        "[send-password-reset] Failed to generate link:",
+        linkError,
+      );
 
       // Check if user doesn't exist
       if (linkError.message?.includes("User not found")) {
         return new Response(
-          JSON.stringify({ success: false, error: "No account found with this email address" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            success: false,
+            error: "No account found with this email address",
+          }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
         );
       }
 
       return new Response(
         JSON.stringify({ success: false, error: linkError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
     if (!linkData?.properties?.action_link) {
       console.error("[send-password-reset] No action link in response");
       return new Response(
-        JSON.stringify({ success: false, error: "Failed to generate reset link" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          error: "Failed to generate reset link",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
     const resetLink = linkData.properties.action_link;
-    console.log("[send-password-reset] Link generated, sending email via Mailgun");
+    console.log(
+      "[send-password-reset] Link generated, sending email via Mailgun",
+    );
 
     // Build the email HTML
     const emailHtml = `
@@ -206,7 +245,10 @@ If you didn't request this password reset, you can safely ignore this email.
       console.error("[send-password-reset] Mailgun API error:", responseText);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to send email" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -217,7 +259,10 @@ If you didn't request this password reset, you can safely ignore this email.
       mailgunData = { id: "unknown" };
     }
 
-    console.log("[send-password-reset] Email sent successfully:", mailgunData.id);
+    console.log(
+      "[send-password-reset] Email sent successfully:",
+      mailgunData.id,
+    );
 
     return new Response(
       JSON.stringify({
@@ -225,7 +270,10 @@ If you didn't request this password reset, you can safely ignore this email.
         message: "Password reset email sent",
         mailgunId: mailgunData.id,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   } catch (err) {
     console.error("[send-password-reset] Error:", err);
@@ -233,7 +281,10 @@ If you didn't request this password reset, you can safely ignore this email.
 
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
 });

@@ -1,4 +1,28 @@
 // src/index.tsx
+
+// CRITICAL: Capture recovery tokens BEFORE Supabase client can process them
+// This must run before any other imports to prevent race conditions
+(function handleRecoveryRedirect() {
+  const hash = window.location.hash;
+  const pathname = window.location.pathname;
+
+  // Check if hash contains recovery tokens
+  if (hash && hash.includes("type=recovery")) {
+    // Store the hash in sessionStorage as backup (Supabase may clear it)
+    sessionStorage.setItem("recovery_hash", hash);
+
+    // If not already on the reset-password page or callback page, redirect immediately
+    if (
+      !pathname.includes("/auth/reset-password") &&
+      !pathname.includes("/auth/callback")
+    ) {
+      // Use replace to avoid back-button issues - this will reload the page
+      window.location.replace("/auth/reset-password" + hash);
+      return; // Stop execution (page will reload)
+    }
+  }
+})();
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";

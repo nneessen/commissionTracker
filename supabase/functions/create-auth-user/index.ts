@@ -257,12 +257,13 @@ serve(async (req) => {
         );
       } else {
         // Generate a password reset link using Supabase Admin SDK
+        // Use /auth/callback which is whitelisted and handles recovery type
         const { data: linkData, error: linkError } =
           await supabaseAdmin.auth.admin.generateLink({
             type: "recovery",
             email: normalizedEmail,
             options: {
-              redirectTo: `${siteUrl}/auth/reset-password`,
+              redirectTo: `${siteUrl}/auth/callback`,
             },
           });
 

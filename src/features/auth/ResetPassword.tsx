@@ -20,33 +20,57 @@ import { LogoSpinner } from "@/components/ui/logo-spinner";
  */
 export const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
-  const { updatePassword } = useAuth();
+  const { updatePassword, session, loading: authLoading } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [hasToken, setHasToken] = useState(false);
+  const [checkedAuth, setCheckedAuth] = useState(false);
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking
+    if (authLoading) {
+      return;
+    }
+
     // Check if we have a valid recovery token in the URL
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-    const type = hashParams.get("type");
+    let accessToken = hashParams.get("access_token");
+    let type = hashParams.get("type");
 
-    if (type === "recovery" && accessToken) {
+    // Fallback: Check sessionStorage for recovery hash (stored by index.tsx before Supabase could clear it)
+    if (!accessToken || !type) {
+      const storedHash = sessionStorage.getItem("recovery_hash");
+      if (storedHash) {
+        const storedParams = new URLSearchParams(storedHash.substring(1));
+        accessToken = storedParams.get("access_token");
+        type = storedParams.get("type");
+        // Clear stored hash after reading
+        sessionStorage.removeItem("recovery_hash");
+        logger.auth("Using stored recovery hash from sessionStorage");
+      }
+    }
+
+    // Check for hash tokens OR existing session
+    // Supabase client may have already processed the hash and cleared it,
+    // but the session is still valid for password reset
+    if ((type === "recovery" && accessToken) || session) {
       setHasToken(true);
-      logger.auth("Password recovery token found");
+      setCheckedAuth(true);
+      logger.auth("Password recovery token found or session active");
     } else {
-      logger.auth("No valid recovery token found");
+      logger.auth("No valid recovery token or session found");
       setError(
         "Invalid or expired password reset link. Please request a new one.",
       );
+      setCheckedAuth(true);
       setTimeout(() => {
         navigate({ to: "/login" });
       }, 3000);
     }
-  }, [navigate]);
+  }, [navigate, session, authLoading]);
 
   const validatePasswords = (): string | null => {
     if (!password) {
@@ -92,8 +116,16 @@ export const ResetPassword: React.FC = () => {
     }
   };
 
-  if (!hasToken && !error) {
-    return null; // Still checking for token
+  // Show loading state while auth is being checked
+  if (authLoading || (!checkedAuth && !hasToken && !error)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <LogoSpinner size="xl" className="mb-4" />
+          <p className="text-muted-foreground">Verifying your reset link...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

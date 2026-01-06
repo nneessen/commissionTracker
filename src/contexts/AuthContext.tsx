@@ -330,12 +330,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
 
       // Use custom Mailgun edge function instead of Supabase's built-in email
+      // Route to /auth/callback which is whitelisted and handles recovery type
       const { data, error: fnError } = await supabase.functions.invoke(
         "send-password-reset",
         {
           body: {
             email,
-            redirectTo: `${window.location.origin}/auth/reset-password`,
+            redirectTo: `${window.location.origin}/auth/callback`,
           },
         },
       );

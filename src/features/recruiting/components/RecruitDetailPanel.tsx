@@ -221,12 +221,13 @@ export function RecruitDetailPanel({
     setResendingInvite(true);
     try {
       // First, try to send password reset (works if auth user exists)
+      // Use /auth/callback which is whitelisted and handles recovery type
       const { data, error: fnError } = await supabase.functions.invoke(
         "send-password-reset",
         {
           body: {
             email: recruit.email,
-            redirectTo: `${window.location.origin}/auth/reset-password`,
+            redirectTo: `${window.location.origin}/auth/callback`,
           },
         },
       );

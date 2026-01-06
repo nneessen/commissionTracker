@@ -46,6 +46,10 @@ export const AuthCallback: React.FC = () => {
           logger.auth(
             "Password recovery callback, redirecting to reset password",
           );
+          // Store hash in sessionStorage before redirect (backup in case Supabase clears it)
+          if (window.location.hash) {
+            sessionStorage.setItem("recovery_hash", window.location.hash);
+          }
           // Redirect to reset password page with hash intact so it can read the tokens
           setStatus("success");
           setMessage("Redirecting to password reset...");

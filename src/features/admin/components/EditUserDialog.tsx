@@ -472,13 +472,13 @@ export default function EditUserDialog({
 
     try {
       // Use custom Mailgun edge function instead of Supabase's built-in email
-      // Route directly to reset-password page (not callback) to prevent auto-login
+      // Route to /auth/callback which is whitelisted and handles recovery type
       const { data, error: fnError } = await supabase.functions.invoke(
         "send-password-reset",
         {
           body: {
             email: user.email,
-            redirectTo: `${window.location.origin}/auth/reset-password`,
+            redirectTo: `${window.location.origin}/auth/callback`,
           },
         },
       );
