@@ -308,10 +308,9 @@ function buildLeaderboardText(
       const policies = entry.policy_count;
       const policyText = policies === 1 ? "policy" : "policies";
 
-      // Use @mention if available
-      const nameDisplay = entry.slack_member_id
-        ? `<@${entry.slack_member_id}>`
-        : entry.agent_name;
+      // Always use agent_name - slack_member_id is workspace-specific and unreliable
+      // (causes "Private user" when agent isn't in that Slack workspace)
+      const nameDisplay = entry.agent_name || "Unknown";
 
       text += `${rankDisplay} ${nameDisplay} - ${ap} (${policies} ${policyText})\n`;
     });
@@ -387,7 +386,9 @@ async function handleCompleteFirstSale(
   // Get the Slack integration
   const { data: integration, error: intError } = await supabase
     .from("slack_integrations")
-    .select("id, bot_token_encrypted, agency_id")
+    .select(
+      "id, bot_token_encrypted, agency_id, include_leaderboard_with_policy",
+    )
     .eq("id", log.slack_integration_id)
     .single();
 
@@ -423,41 +424,43 @@ async function handleCompleteFirstSale(
     return { ok: false, error: "Failed to post policy notification" };
   }
 
-  // ALL integrations now get leaderboards (multi-channel naming enabled)
+  // Only post leaderboard if the integration has it enabled
   let leaderboardOk = false;
   let leaderboardMessageTs: string | null = null;
 
-  // Get today's production for leaderboard
-  const { data: productionData } = await supabase.rpc(
-    "get_daily_production_by_agent",
-    {
-      p_imo_id: log.imo_id,
-      p_agency_id: integration.agency_id,
-    },
-  );
+  if (integration.include_leaderboard_with_policy) {
+    // Get today's production for leaderboard
+    const { data: productionData } = await supabase.rpc(
+      "get_daily_production_by_agent",
+      {
+        p_imo_id: log.imo_id,
+        p_agency_id: integration.agency_id,
+      },
+    );
 
-  const production: DailyProductionEntry[] = productionData || [];
-  const totalAP = production.reduce(
-    (sum, e) => sum + (e.total_annual_premium || 0),
-    0,
-  );
+    const production: DailyProductionEntry[] = productionData || [];
+    const totalAP = production.reduce(
+      (sum, e) => sum + (e.total_annual_premium || 0),
+      0,
+    );
 
-  // Build leaderboard with the title (use default if not set)
-  // Sanitize user-provided title to prevent Slack injection
-  const title = log.title
-    ? sanitizeSlackTitle(log.title)
-    : getDefaultDailyTitle();
-  const leaderboardText = buildLeaderboardText(title, production, totalAP);
+    // Build leaderboard with the title (use default if not set)
+    // Sanitize user-provided title to prevent Slack injection
+    const title = log.title
+      ? sanitizeSlackTitle(log.title)
+      : getDefaultDailyTitle();
+    const leaderboardText = buildLeaderboardText(title, production, totalAP);
 
-  // Post the leaderboard
-  const leaderboardResult = await postSlackMessage(
-    botToken,
-    log.channel_id,
-    leaderboardText,
-  );
+    // Post the leaderboard
+    const leaderboardResult = await postSlackMessage(
+      botToken,
+      log.channel_id,
+      leaderboardText,
+    );
 
-  leaderboardOk = leaderboardResult.ok;
-  leaderboardMessageTs = leaderboardResult.ts || null;
+    leaderboardOk = leaderboardResult.ok;
+    leaderboardMessageTs = leaderboardResult.ts || null;
+  }
 
   // Update the log: clear pending_policy_data, save leaderboard message_ts (if any)
   const { error: updateError } = await supabase
@@ -1133,9 +1136,9 @@ serve(async (req) => {
 
         // =====================================================================
         // Handle daily leaderboard for subsequent sales
-        // ALL integrations now get leaderboards (not just direct agency)
+        // Only post leaderboard if the integration has it enabled
         // =====================================================================
-        if (existingLog) {
+        if (existingLog && integration.include_leaderboard) {
           // Subsequent sale - delete old leaderboard and post fresh one
           // This ensures leaderboard always appears AFTER the latest policy notification
           // Sanitize user-provided title to prevent Slack injection

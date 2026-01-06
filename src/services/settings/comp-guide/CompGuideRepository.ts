@@ -293,12 +293,10 @@ export class CompGuideRepository extends BaseRepository<
       .eq("carrier_id", carrierId)
       .eq("product_type", productType)
       .eq("contract_level", contractLevel)
-      .single();
+      .limit(1) // Prevent errors if duplicates exist
+      .maybeSingle(); // Returns null if no entry exists
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return null;
-      }
       throw this.handleError(error, "getCommissionRate");
     }
 
