@@ -437,7 +437,7 @@ export function LeadPurchaseDashboard() {
                 Team Insights
               </span>
               <span className="text-amber-600/70 dark:text-amber-500/70 ml-1">
-                Top performing vendors across your team:
+                Top performing vendors across the organization:
               </span>
             </div>
             <div className="h-3 w-px bg-amber-300 dark:bg-amber-700" />
