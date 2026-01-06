@@ -187,7 +187,9 @@ async function refreshToken(
       `[instagram-refresh-token] Refreshing token for @${instagram_username}`,
     );
 
-    const response = await fetch(refreshUrl.toString());
+    const response = await fetch(refreshUrl.toString(), {
+      method: "POST",
+    });
     const data = await response.json();
 
     console.log(

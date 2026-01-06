@@ -179,7 +179,9 @@ serve(async (req) => {
       "[instagram-oauth-callback] Exchanging for long-lived token...",
     );
 
-    const longLivedResponse = await fetch(longLivedUrl.toString());
+    const longLivedResponse = await fetch(longLivedUrl.toString(), {
+      method: "POST",
+    });
     const longLivedData = await longLivedResponse.json();
 
     if (!longLivedData.access_token) {
