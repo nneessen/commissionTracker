@@ -44,13 +44,14 @@ export class InstagramTemplateRepository extends BaseRepository<
   }
 
   /**
-   * Find active templates for a user (personal templates)
+   * Find active templates for a user (personal + system templates)
+   * Includes system templates (user_id = NULL) and user-specific templates
    */
   async findByUserId(userId: string): Promise<InstagramMessageTemplate[]> {
     const { data, error } = await this.client
       .from(this.tableName)
       .select("*")
-      .eq("user_id", userId)
+      .or(`user_id.is.null,user_id.eq.${userId}`)
       .eq("is_active", true)
       .order("use_count", { ascending: false });
 
@@ -60,6 +61,7 @@ export class InstagramTemplateRepository extends BaseRepository<
 
   /**
    * Find templates filtered by prospect type and/or message stage
+   * Includes system templates (user_id = NULL) and user-specific templates
    */
   async findByFilters(
     userId: string,
@@ -71,7 +73,7 @@ export class InstagramTemplateRepository extends BaseRepository<
     let query = this.client
       .from(this.tableName)
       .select("*")
-      .eq("user_id", userId)
+      .or(`user_id.is.null,user_id.eq.${userId}`)
       .eq("is_active", true);
 
     if (filters.prospectType) {

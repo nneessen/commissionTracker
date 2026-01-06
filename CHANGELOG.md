@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-06 16:07:33
+
+### Changed Files
+- `src/features/messages/components/instagram/InstagramTemplateSelector.tsx`
+- `src/features/messages/components/instagram/templates/TemplateList.tsx`
+- `src/services/instagram/repositories/InstagramTemplateRepository.ts`
+- `src/types/instagram.types.ts`
+- `supabase/migrations/20260106_008_seed_engagement_templates.sql`
+- `supabase/migrations/20260106_009_seed_discovery_templates.sql`
+- `supabase/migrations/20260106_010_fix_system_templates_rls.sql`
+
+### Statistics
+```
+ 7 files changed, 284 insertions(+), 4 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-06 15:18:48
 
 ### Changed Files

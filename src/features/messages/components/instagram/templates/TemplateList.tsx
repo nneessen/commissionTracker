@@ -50,6 +50,10 @@ export function TemplateList({
         return "default";
       case "follow_up":
         return "secondary";
+      case "engagement":
+        return "secondary";
+      case "discovery":
+        return "destructive";
       case "closer":
         return "outline";
       default:

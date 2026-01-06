@@ -57,6 +57,7 @@ const STAGE_ORDER: MessageStage[] = [
   "opener",
   "follow_up",
   "engagement",
+  "discovery",
   "closer",
 ];
 
@@ -496,6 +497,8 @@ function StageChip({
       "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     engagement:
       "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+    discovery:
+      "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
     closer:
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   };
@@ -544,6 +547,8 @@ function TemplateCard({
       "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     engagement:
       "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+    discovery:
+      "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
     closer:
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   };
