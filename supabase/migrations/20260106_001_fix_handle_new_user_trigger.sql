@@ -1,6 +1,11 @@
--- supabase/migrations/20260105_006_revert_user_creation_fix.sql
--- REVERT: Restore original handle_new_user function
--- If the previous fix broke things, this restores the original
+-- supabase/migrations/20260106_001_fix_handle_new_user_trigger.sql
+-- Fix: Restore proper handle_new_user trigger with explicit agent_status
+--
+-- This migration fixes the user creation 400 error by restoring the trigger
+-- that was broken by 20260105_006_revert_user_creation_fix.sql
+--
+-- Root cause: The reverted trigger did not explicitly set agent_status,
+-- causing INSERT failures in user_profiles.
 
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER
@@ -69,7 +74,8 @@ BEGIN
 
   -- ========================================================================
   -- STEP 3: Insert into user_profiles with ON CONFLICT handling
-  -- REVERTED: Removed agent_status to match original behavior
+  -- CRITICAL: Explicitly set agent_status and onboarding_status to prevent
+  -- database errors. This was the root cause of the 400 Bad Request.
   -- ========================================================================
   BEGIN
     INSERT INTO user_profiles (
@@ -81,20 +87,23 @@ BEGIN
       upline_id,
       roles,
       first_name,
-      last_name
-      -- Note: subscription_tier has DEFAULT 'free', no need to specify
-      -- Note: created_at/updated_at have defaults
+      last_name,
+      -- CRITICAL: Explicitly set these fields to prevent INSERT failures
+      onboarding_status,
+      agent_status
     )
     VALUES (
       NEW.id,
       NEW.email,
-      'pending',  -- All new users start as pending (service layer updates after)
-      false,      -- Not admin by default (service layer updates after)
-      NULL,       -- Not approved yet
-      NULL,       -- No upline yet (service layer updates after)
+      'pending',          -- All new users start as pending (service layer updates after)
+      false,              -- Not admin by default (service layer updates after)
+      NULL,               -- Not approved yet
+      NULL,               -- No upline yet (service layer updates after)
       v_roles,
       v_first_name,
-      v_last_name
+      v_last_name,
+      NULL,               -- onboarding_status: NULL for new users
+      'not_applicable'    -- agent_status: safe default, service layer updates based on role
     )
     ON CONFLICT (id) DO UPDATE SET
       -- Profile already exists (race condition) → just update email and timestamp
@@ -126,4 +135,11 @@ $$;
 
 COMMENT ON FUNCTION handle_new_user() IS
 'Creates user profile when new auth user is created.
-Reverted 2025-01-05 - removed agent_status field from INSERT.';
+Fixed 2025-01-06 to explicitly set agent_status and onboarding_status.
+This prevents the "Database error creating new user" 400 error.
+
+Key fields that MUST be explicitly set:
+- agent_status: ''not_applicable'' (default, service layer updates based on role)
+- onboarding_status: NULL (service layer sets if needed)
+
+See docs/architecture/user-creation-flow.md for full documentation.';
