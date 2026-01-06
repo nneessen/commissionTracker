@@ -61,7 +61,7 @@ import { LeadPurchaseDialog } from "./LeadPurchaseDialog";
 import { LeadVendorDialog } from "./LeadVendorDialog";
 import { VendorManagementDialog } from "./VendorManagementDialog";
 import { useCreateLeadVendor } from "@/hooks/lead-purchases";
-import { useAuth } from "@/contexts/AuthContext";
+import { useImo } from "@/contexts/ImoContext";
 import { toast } from "sonner";
 import type {
   LeadPurchase,
@@ -109,8 +109,7 @@ export function LeadPurchaseDashboard() {
     direction: "desc",
   });
 
-  const { user } = useAuth();
-  const isSuperAdmin = user?.is_super_admin || false;
+  const { isSuperAdmin } = useImo();
 
   const {
     data: purchases = [],
