@@ -169,6 +169,8 @@ export interface InstagramConversationRow {
   participant_username: string | null;
   participant_name: string | null;
   participant_profile_picture_url: string | null;
+  participant_avatar_cached_url: string | null;
+  participant_avatar_cached_at: string | null;
   participant_email: string | null;
   participant_phone: string | null;
   contact_notes: string | null;
@@ -197,6 +199,8 @@ export interface InstagramMessageRow {
   message_text: string | null;
   message_type: InstagramMessageType;
   media_url: string | null;
+  media_cached_url: string | null;
+  media_cached_at: string | null;
   media_type: string | null;
   story_id: string | null;
   story_url: string | null;
@@ -340,12 +344,9 @@ export interface InstagramIntegration extends InstagramIntegrationRow {
 }
 
 export interface InstagramConversation extends InstagramConversationRow {
-  /** Computed: messaging window status */
-  windowStatus: "open" | "closing_soon" | "closed";
-  /** Computed: time remaining in window (null if closed) */
-  windowTimeRemaining: number | null;
   /** Whether this conversation is linked to a recruiting lead */
   hasLinkedLead: boolean;
+  // Note: windowStatus and windowTimeRemaining are now computed in UI via lib/instagram selectors
 }
 
 export interface InstagramMessage extends InstagramMessageRow {
@@ -613,44 +614,6 @@ export const instagramKeys = {
 // Helper Types
 // ============================================================================
 
-/** Calculates the messaging window status */
-export function getWindowStatus(
-  canReplyUntil: string | null,
-): "open" | "closing_soon" | "closed" {
-  if (!canReplyUntil) return "closed";
-
-  const expiresAt = new Date(canReplyUntil);
-  const now = new Date();
-  const hoursRemaining =
-    (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-  if (hoursRemaining <= 0) return "closed";
-  if (hoursRemaining <= 2) return "closing_soon";
-  return "open";
-}
-
-/** Calculates time remaining in window (in ms) */
-export function getWindowTimeRemaining(
-  canReplyUntil: string | null,
-): number | null {
-  if (!canReplyUntil) return null;
-
-  const expiresAt = new Date(canReplyUntil);
-  const now = new Date();
-  const remaining = expiresAt.getTime() - now.getTime();
-
-  return remaining > 0 ? remaining : null;
-}
-
-/** Formats the window time remaining as human-readable */
-export function formatWindowTimeRemaining(ms: number | null): string {
-  if (ms === null || ms <= 0) return "Window closed";
-
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m remaining`;
-  }
-  return `${minutes}m remaining`;
-}
+// Note: Window status helpers (getWindowStatus, getWindowTimeRemaining, formatWindowTimeRemaining)
+// have been moved to src/lib/instagram/selectors.ts to avoid duplication and ensure
+// values are computed fresh at render time rather than stored in DB transforms.

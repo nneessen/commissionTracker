@@ -13,6 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { selectMediaUrl } from "@/lib/instagram";
 import type { InstagramMessage } from "@/types/instagram.types";
 
 interface InstagramMessageBubbleProps {
@@ -75,21 +76,25 @@ export function InstagramMessageBubble({
       </div>
     ) : null;
 
-  // Media content
-  const mediaContent = message.media_url ? (
+  // Media content - prefer cached URL, fall back to original
+  const mediaUrl = selectMediaUrl(message.media_cached_url, message.media_url);
+  const mediaContent = mediaUrl ? (
     <div className="mb-1 rounded overflow-hidden max-w-[200px]">
       {message.media_type?.startsWith("video") ? (
         <video
-          src={message.media_url}
+          src={mediaUrl}
           controls
           className="w-full max-h-[200px] object-contain bg-zinc-100 dark:bg-zinc-800"
         />
       ) : (
         <img
-          src={message.media_url}
+          src={mediaUrl}
           alt="Shared media"
           className="w-full max-h-[200px] object-contain bg-zinc-100 dark:bg-zinc-800"
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
         />
       )}
     </div>
@@ -136,7 +141,7 @@ export function InstagramMessageBubble({
           )}
 
           {/* Empty message placeholder */}
-          {!message.message_text && !message.media_url && (
+          {!message.message_text && !mediaUrl && (
             <div className="flex items-center gap-1 text-[10px] opacity-70">
               {getMessageTypeIcon()}
               <span>

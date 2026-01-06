@@ -7,10 +7,6 @@ import type {
   InstagramConversationUpdate,
   ConversationFilters,
 } from "@/types/instagram.types";
-import {
-  getWindowStatus,
-  getWindowTimeRemaining,
-} from "@/types/instagram.types";
 
 export class InstagramConversationRepository extends BaseRepository<
   InstagramConversation,
@@ -27,8 +23,7 @@ export class InstagramConversationRepository extends BaseRepository<
     const row = dbRecord as unknown as InstagramConversationRow;
     return {
       ...row,
-      windowStatus: getWindowStatus(row.can_reply_until),
-      windowTimeRemaining: getWindowTimeRemaining(row.can_reply_until),
+      // windowStatus, windowTimeRemaining computed in UI via lib/instagram selectors
       hasLinkedLead: !!row.recruiting_lead_id,
     };
   }

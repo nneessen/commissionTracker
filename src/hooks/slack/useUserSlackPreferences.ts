@@ -26,21 +26,12 @@ export function useUserSlackPreferences() {
     queryKey: slackKeys.userPreferences(user?.id ?? "", imoId ?? ""),
     queryFn: async (): Promise<UserSlackPreferences | null> => {
       if (!user?.id || !imoId) {
-        console.log("[useUserSlackPreferences] Missing user or imoId:", {
-          userId: user?.id,
-          imoId,
-        });
         return null;
       }
-      console.log("[useUserSlackPreferences] Fetching preferences for:", {
-        userId: user.id,
-        imoId,
-      });
       const result = await userSlackPreferencesService.getPreferences(
         user.id,
         imoId,
       );
-      console.log("[useUserSlackPreferences] Got preferences:", result);
       return result;
     },
     enabled: !!user?.id && !!imoId,
@@ -60,11 +51,6 @@ export function useUpdateUserSlackPreferences() {
     mutationFn: async (
       input: UpdatePreferencesInput,
     ): Promise<UserSlackPreferences> => {
-      console.log("[useUpdateUserSlackPreferences] Mutation called with:", {
-        userId: user?.id,
-        imoId: profile?.imo_id,
-        input,
-      });
       if (!user?.id || !profile?.imo_id) {
         console.error("[useUpdateUserSlackPreferences] Missing user or imoId!");
         throw new Error("User not authenticated or no IMO assigned");
@@ -74,15 +60,9 @@ export function useUpdateUserSlackPreferences() {
         profile.imo_id,
         input,
       );
-      console.log("[useUpdateUserSlackPreferences] Upsert result:", result);
       return result;
     },
     onSuccess: (data) => {
-      console.log("[useUpdateUserSlackPreferences] Success, updating cache:", {
-        userId: user?.id,
-        imoId: profile?.imo_id,
-        data,
-      });
       if (user?.id && profile?.imo_id) {
         // Update cache immediately
         queryClient.setQueryData(

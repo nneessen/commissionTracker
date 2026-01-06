@@ -392,8 +392,9 @@ serve(async (req) => {
 });
 
 /**
- * Enqueue profile picture download jobs for conversations that need them
- * Checks if avatar is already cached before queueing
+ * Enqueue metadata refresh jobs for conversations that need profile pictures
+ * The metadata refresh job will call Meta's User API to get profile_picture_url
+ * then enqueue a download job if successful
  */
 async function enqueueProfilePictureDownloads(
   supabase: ReturnType<typeof createClient>,
@@ -404,52 +405,62 @@ async function enqueueProfilePictureDownloads(
     participant_profile_picture_url: string | null;
   }>,
 ): Promise<void> {
-  // Filter to only conversations with profile pictures
-  const conversationsWithPics = conversations.filter(
-    (c) => c.participant_profile_picture_url,
-  );
-
-  if (conversationsWithPics.length === 0) return;
-
   // Get existing conversations to check for cached avatars
   const { data: existingConvs } = await supabase
     .from("instagram_conversations")
-    .select("id, instagram_conversation_id, participant_avatar_cached_url")
+    .select(
+      "id, instagram_conversation_id, participant_avatar_cached_url, participant_profile_picture_url",
+    )
     .eq("integration_id", integrationId)
     .in(
       "instagram_conversation_id",
-      conversationsWithPics.map((c) => c.instagram_conversation_id),
+      conversations.map((c) => c.instagram_conversation_id),
     );
 
   const existingMap = new Map(
     existingConvs?.map((c) => [c.instagram_conversation_id, c]) || [],
   );
 
-  // Queue downloads for conversations without cached avatars
+  // Queue metadata refresh for conversations without cached avatars OR without profile picture URL
   let queued = 0;
-  for (const conv of conversationsWithPics) {
+  for (const conv of conversations) {
     const existing = existingMap.get(conv.instagram_conversation_id);
-
-    // Skip if already cached
-    if (existing?.participant_avatar_cached_url) continue;
     if (!existing?.id) continue;
 
-    await supabase.rpc("enqueue_instagram_job", {
-      p_job_type: "download_profile_picture",
-      p_payload: {
-        conversation_id: existing.id,
-        participant_id: conv.participant_instagram_id,
-        source_url: conv.participant_profile_picture_url,
-      },
-      p_integration_id: integrationId,
-      p_priority: -1, // Lower priority than message media
-    });
-    queued++;
+    // Skip if already cached
+    if (existing.participant_avatar_cached_url) continue;
+
+    // If we have a profile picture URL from API, queue direct download
+    if (conv.participant_profile_picture_url) {
+      await supabase.rpc("enqueue_instagram_job", {
+        p_job_type: "download_profile_picture",
+        p_payload: {
+          conversation_id: existing.id,
+          participant_id: conv.participant_instagram_id,
+          source_url: conv.participant_profile_picture_url,
+        },
+        p_integration_id: integrationId,
+        p_priority: -1,
+      });
+      queued++;
+    } else {
+      // No profile picture URL from conversations API - fetch via User API
+      await supabase.rpc("enqueue_instagram_job", {
+        p_job_type: "refresh_participant_metadata",
+        p_payload: {
+          conversation_id: existing.id,
+          participant_id: conv.participant_instagram_id,
+        },
+        p_integration_id: integrationId,
+        p_priority: -2, // Even lower priority
+      });
+      queued++;
+    }
   }
 
   if (queued > 0) {
     console.log(
-      `[instagram-get-conversations] Queued ${queued} profile picture downloads`,
+      `[instagram-get-conversations] Queued ${queued} profile picture/metadata jobs`,
     );
   }
 }

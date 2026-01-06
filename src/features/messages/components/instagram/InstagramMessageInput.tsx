@@ -12,10 +12,10 @@ import { Send, Loader2, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  getWindowStatus,
-  type InstagramConversation,
-  type InstagramMessage,
+import { selectWindowStatus } from "@/lib/instagram";
+import type {
+  InstagramConversation,
+  InstagramMessage,
 } from "@/types/instagram.types";
 import { InstagramTemplateSelector } from "./InstagramTemplateSelector";
 
@@ -52,7 +52,7 @@ export function InstagramMessageInput({
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const windowStatus = getWindowStatus(canReplyUntil);
+  const windowStatus = selectWindowStatus(canReplyUntil);
   const isWindowClosed = windowStatus === "closed";
   const isDisabled = disabled || isSending || isWindowClosed;
   const charCount = text.length;

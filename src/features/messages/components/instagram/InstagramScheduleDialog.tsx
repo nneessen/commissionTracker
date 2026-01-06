@@ -26,13 +26,13 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
+  selectWindowTimeRemaining,
+  formatTimeRemaining,
+} from "@/lib/instagram";
+import {
   useScheduleInstagramMessage,
   useInstagramTemplates,
 } from "@/hooks/instagram/useInstagramIntegration";
-import {
-  formatWindowTimeRemaining,
-  getWindowTimeRemaining,
-} from "@/types/instagram.types";
 import type {
   InstagramConversation,
   InstagramScheduledMessage,
@@ -71,7 +71,7 @@ export function InstagramScheduleDialog({
     ? parseISO(conversation.can_reply_until)
     : null;
   const minScheduleTime = addMinutes(now, MIN_SCHEDULE_MINUTES);
-  const windowTimeRemaining = getWindowTimeRemaining(
+  const windowTimeRemaining = selectWindowTimeRemaining(
     conversation.can_reply_until,
   );
 
@@ -311,8 +311,7 @@ export function InstagramScheduleDialog({
                   Window closing soon
                 </p>
                 <p className="text-[10px] text-amber-600 dark:text-amber-500">
-                  {formatWindowTimeRemaining(windowTimeRemaining)} until window
-                  closes
+                  {formatTimeRemaining(windowTimeRemaining)} until window closes
                   {windowExpiryFormatted && ` (${windowExpiryFormatted})`}
                 </p>
               </div>

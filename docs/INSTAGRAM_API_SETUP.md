@@ -23,10 +23,12 @@ Before starting, you need:
 If you already have an Instagram Business account connected to a Facebook Page, skip to Part 2.
 
 ### Step 1.1: Download Instagram App
+
 - Download the Instagram app on your phone (iOS or Android)
 - Create an account or log in to your existing account
 
 ### Step 1.2: Convert to Professional Account
+
 1. Open Instagram app
 2. Tap your **profile picture** (bottom right)
 3. Tap the **hamburger menu** (☰) top right
@@ -38,6 +40,7 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 9. Tap **Done**
 
 ### Step 1.3: Create a Facebook Page (if you don't have one)
+
 1. Go to **facebook.com/pages/create** in a browser
 2. Choose **Business or Brand**
 3. Enter your Page name (e.g., "Your Company Name")
@@ -46,6 +49,7 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 6. Add a profile picture and cover photo (optional but recommended)
 
 ### Step 1.4: Connect Instagram to Facebook Page
+
 1. Open Instagram app
 2. Go to your **Profile** → tap **Edit profile**
 3. Tap **Page** (under "Links")
@@ -61,12 +65,14 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 ## Part 2: Create a Meta Developer Account
 
 ### Step 2.1: Go to Meta for Developers
+
 1. Open your browser
 2. Go to: **https://developers.facebook.com/**
 3. Click **Log In** (top right)
 4. Log in with the **same Facebook account** that owns your Facebook Page
 
 ### Step 2.2: Register as a Developer
+
 1. If this is your first time, you'll see a "Register" prompt
 2. Click **Get Started**
 3. Accept the Meta Platform Terms
@@ -81,12 +87,14 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 ## Part 3: Create a Meta App
 
 ### Step 3.1: Create New App
+
 1. From the dashboard, click **Create App** (or **My Apps** → **Create App**)
 2. You'll see "What do you want your app to do?"
 3. Select **Other** → Click **Next**
 4. Select **Business** as the app type → Click **Next**
 
 ### Step 3.2: Configure App Details
+
 1. **App name:** Enter a name (e.g., "Commission Tracker Instagram")
 2. **App contact email:** Enter your email
 3. **Business Account:**
@@ -102,26 +110,31 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 ## Part 4: Add Instagram Graph API to Your App
 
 ### Step 4.1: Add the Instagram Product
+
 1. On your app dashboard, scroll down to **Add products to your app**
 2. Find **Instagram** (it should show "Instagram Graph API")
 3. Click **Set up** on the Instagram card
 
 ### Step 4.2: Configure Instagram API Settings
+
 1. In the left sidebar, click **Instagram** → **Basic Display** (or **Instagram Graph API**)
 2. Click **Create New App** if prompted
 3. Fill in the OAuth settings:
 
    **Valid OAuth Redirect URIs:**
+
    ```
    https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-oauth-callback
    ```
 
    **Deauthorize Callback URL:**
+
    ```
    https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-webhook
    ```
 
    **Data Deletion Request URL:**
+
    ```
    https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-webhook
    ```
@@ -133,11 +146,13 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 ## Part 5: Configure Messenger Platform for Instagram DMs
 
 ### Step 5.1: Add Messenger Product
+
 1. Go back to your app dashboard
 2. Click **Add Product**
 3. Find **Messenger** and click **Set up**
 
 ### Step 5.2: Configure Instagram Messaging
+
 1. In the left sidebar, click **Messenger** → **Instagram Settings**
 2. Click **Add or Remove Pages**
 3. Select the Facebook Page that's connected to your Instagram
@@ -145,6 +160,7 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 5. You should see your Instagram account listed
 
 ### Step 5.3: Generate Page Access Token
+
 1. Under the Facebook Page listing, click **Generate Token**
 2. **COPY THIS TOKEN AND SAVE IT** - you'll need it later
 3. This is your Page Access Token
@@ -154,21 +170,23 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 ## Part 6: Configure Permissions
 
 ### Step 6.1: Request Required Permissions
+
 1. In the left sidebar, click **App Review** → **Permissions and Features**
 2. Search for and request these permissions:
 
-   | Permission | Description |
-   |------------|-------------|
-   | `instagram_basic` | Access Instagram profile info |
+   | Permission                  | Description                    |
+   | --------------------------- | ------------------------------ |
+   | `instagram_basic`           | Access Instagram profile info  |
    | `instagram_manage_messages` | Send and receive Instagram DMs |
-   | `pages_manage_metadata` | Access Page metadata |
-   | `pages_read_engagement` | Read Page engagement data |
-   | `pages_messaging` | Send messages from Page |
+   | `pages_manage_metadata`     | Access Page metadata           |
+   | `pages_read_engagement`     | Read Page engagement data      |
+   | `pages_messaging`           | Send messages from Page        |
 
 3. For each permission, click **Request**
 4. Some may require App Review (see Part 8)
 
 ### Step 6.2: Add Test Users (for development)
+
 1. Go to **App Roles** → **Roles**
 2. Click **Add People**
 3. Add your own Facebook account as a **Tester** or **Developer**
@@ -179,6 +197,7 @@ If you already have an Instagram Business account connected to a Facebook Page, 
 ## Part 7: Get Your App Credentials
 
 ### Step 7.1: Find App ID and App Secret
+
 1. In the left sidebar, click **Settings** → **Basic**
 2. You'll see:
    - **App ID:** A number like `123456789012345`
@@ -197,12 +216,14 @@ npx supabase secrets set INSTAGRAM_APP_SECRET=YOUR_APP_SECRET_HERE
 ```
 
 **Example:**
+
 ```bash
 npx supabase secrets set INSTAGRAM_APP_ID=123456789012345
 npx supabase secrets set INSTAGRAM_APP_SECRET=abc123def456ghi789
 ```
 
 ### Step 7.3: Verify Secrets Were Set
+
 ```bash
 npx supabase secrets list | grep INSTAGRAM
 ```
@@ -216,6 +237,7 @@ You should see both secrets listed.
 **Note:** For development/testing, you can skip this. Your app will work with your own account and any test users you add. For production with other users, you need App Review.
 
 ### Step 8.1: Submit for App Review
+
 1. Go to **App Review** → **Requests**
 2. For each permission you need, click **Request**
 3. You'll need to:
@@ -224,6 +246,7 @@ You should see both secrets listed.
    - Submit business verification documents
 
 ### Step 8.2: Make App Live
+
 1. Once approved, go to **Settings** → **Basic**
 2. Toggle **App Mode** from **Development** to **Live**
 
@@ -232,6 +255,7 @@ You should see both secrets listed.
 ## Part 9: Configure Webhooks (for Real-time Messages)
 
 ### Step 9.1: Set Up Webhook URL
+
 1. Go to **Messenger** → **Instagram Settings**
 2. Under **Webhooks**, click **Add Callback URL**
 3. Enter:
@@ -241,12 +265,15 @@ You should see both secrets listed.
 4. Click **Verify and Save**
 
 ### Step 9.2: Subscribe to Events
+
 After webhook is verified, subscribe to these events:
+
 - [ ] `messages` - New message received
 - [ ] `messaging_postbacks` - User clicked a button
 - [ ] `messaging_optins` - User opted in
 
 ### Step 9.3: Add Verify Token to Supabase
+
 ```bash
 npx supabase secrets set INSTAGRAM_WEBHOOK_VERIFY_TOKEN=my_verify_token_12345
 ```
@@ -256,11 +283,13 @@ npx supabase secrets set INSTAGRAM_WEBHOOK_VERIFY_TOKEN=my_verify_token_12345
 ## Part 10: Test the Integration
 
 ### Step 10.1: Restart Your App
+
 ```bash
 npm run dev
 ```
 
 ### Step 10.2: Test Connection
+
 1. Go to your app → Messages → Instagram tab
 2. Click **Connect Instagram**
 3. You should be redirected to Facebook/Instagram to authorize
@@ -268,6 +297,7 @@ npm run dev
 5. You should be redirected back to your app
 
 ### Step 10.3: Verify Connection
+
 - Your Instagram username should appear in the app
 - Status should show "Connected"
 
@@ -276,18 +306,22 @@ npm run dev
 ## Troubleshooting
 
 ### Error: "Instagram integration not configured"
+
 - Verify secrets are set: `npx supabase secrets list | grep INSTAGRAM`
 - Redeploy functions: `npx supabase functions deploy instagram-oauth-init`
 
 ### Error: "Invalid redirect URI"
+
 - Check that your OAuth Redirect URI in Meta exactly matches:
   `https://pcyaqwodnyrpkaiojnpz.supabase.co/functions/v1/instagram-oauth-callback`
 
 ### Error: "User is not a tester"
+
 - Add yourself as a test user in App Roles
 - Make sure you accepted the test user invitation
 
 ### Error: "App not authorized"
+
 - Make sure your Instagram account is connected to a Facebook Page
 - Make sure that Facebook Page is connected in Messenger → Instagram Settings
 
@@ -295,11 +329,11 @@ npm run dev
 
 ## Quick Reference
 
-| Secret Name | Where to Find It |
-|-------------|------------------|
-| `INSTAGRAM_APP_ID` | Settings → Basic → App ID |
-| `INSTAGRAM_APP_SECRET` | Settings → Basic → App Secret (click Show) |
-| `INSTAGRAM_WEBHOOK_VERIFY_TOKEN` | You create this (any random string) |
+| Secret Name                      | Where to Find It                           |
+| -------------------------------- | ------------------------------------------ |
+| `INSTAGRAM_APP_ID`               | Settings → Basic → App ID                  |
+| `INSTAGRAM_APP_SECRET`           | Settings → Basic → App Secret (click Show) |
+| `INSTAGRAM_WEBHOOK_VERIFY_TOKEN` | You create this (any random string)        |
 
 ---
 

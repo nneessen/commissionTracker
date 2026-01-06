@@ -1,5 +1,4 @@
 // src/features/messages/components/instagram/InstagramSidebar.tsx
-// Instagram conversation list sidebar
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Search, RefreshCw, Star, MessageSquare, X } from "lucide-react";
@@ -24,9 +23,7 @@ import type {
 function ConversationSkeleton(): ReactNode {
   return (
     <div className="flex items-start gap-2 p-2">
-      {/* Avatar skeleton */}
       <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
-      {/* Content skeleton */}
       <div className="flex-1 min-w-0 space-y-1.5">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-2.5 w-full" />

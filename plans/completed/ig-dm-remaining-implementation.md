@@ -16,6 +16,7 @@ This plan covers the remaining work needed to fully complete the Instagram DM Pe
 **Action:** Create `instagram-media` bucket in Supabase Dashboard or via migration
 
 **Migration Option:** `supabase/migrations/20260106_001_instagram_storage_bucket.sql`
+
 ```sql
 -- Create storage bucket for Instagram media caching
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -69,6 +70,7 @@ USING (
 ```
 
 ### 1.3 Files to Create/Modify
+
 - `supabase/migrations/20260106_001_instagram_storage_bucket.sql` (new)
 
 ---
@@ -80,10 +82,12 @@ USING (
 **Action:** Add CRON trigger for the job processor
 
 **Option A: Supabase Dashboard**
+
 - Navigate to Edge Functions → instagram-process-jobs
 - Add schedule: `*/1 * * * *` (every minute)
 
 **Option B: Via pg_cron (if enabled)**
+
 ```sql
 SELECT cron.schedule(
   'instagram-process-jobs',
@@ -98,6 +102,7 @@ SELECT cron.schedule(
 ```
 
 ### 2.2 Verify Existing CRON Jobs
+
 - Ensure `instagram-process-scheduled` still runs every 5 minutes
 - Ensure `instagram-refresh-token` runs daily
 
@@ -108,24 +113,28 @@ SELECT cron.schedule(
 ### 3.1 Update Avatar Display Components
 
 **Files to Modify:**
+
 - `src/features/messages/components/instagram/InstagramConversationItem.tsx`
 - `src/features/messages/components/instagram/InstagramConversationView.tsx`
 - `src/features/messages/components/instagram/InstagramSidebar.tsx`
 
 **Change Pattern:**
+
 ```tsx
 // Before
-<AvatarImage src={conversation.participant_profile_picture_url} />
+<AvatarImage src={conversation.participant_profile_picture_url} />;
 
 // After
 import { selectAvatarUrl } from "@/lib/instagram";
 
 <AvatarImage
-  src={selectAvatarUrl(
-    conversation.participant_avatar_cached_url,
-    conversation.participant_profile_picture_url
-  ) ?? undefined}
-/>
+  src={
+    selectAvatarUrl(
+      conversation.participant_avatar_cached_url,
+      conversation.participant_profile_picture_url,
+    ) ?? undefined
+  }
+/>;
 ```
 
 ### 3.2 Update Message Media Display
@@ -133,25 +142,31 @@ import { selectAvatarUrl } from "@/lib/instagram";
 **File:** `src/features/messages/components/instagram/InstagramMessageBubble.tsx`
 
 **Change Pattern:**
+
 ```tsx
 // Before
-{message.media_url && <img src={message.media_url} />}
+{
+  message.media_url && <img src={message.media_url} />;
+}
 
 // After
 import { selectMediaUrl } from "@/lib/instagram";
 
 const mediaUrl = selectMediaUrl(message.media_cached_url, message.media_url);
-{mediaUrl && <img src={mediaUrl} />}
+{
+  mediaUrl && <img src={mediaUrl} />;
+}
 ```
 
 ### 3.3 Add Broken Image Fallback
 
 **Pattern for all avatar/media components:**
+
 ```tsx
 <img
   src={mediaUrl}
   onError={(e) => {
-    e.currentTarget.style.display = 'none';
+    e.currentTarget.style.display = "none";
     // Or show fallback icon
   }}
 />
@@ -164,18 +179,24 @@ const mediaUrl = selectMediaUrl(message.media_cached_url, message.media_url);
 ### 4.1 Replace windowStatus/windowTimeRemaining Usage
 
 **Files to Modify:**
+
 - `src/features/messages/components/instagram/InstagramWindowIndicator.tsx`
 - `src/features/messages/components/instagram/InstagramConversationView.tsx`
 - `src/features/messages/components/instagram/InstagramMessageInput.tsx`
 
 **Change Pattern:**
+
 ```tsx
 // Before (using computed field from DB transform)
 const status = conversation.windowStatus;
 const remaining = conversation.windowTimeRemaining;
 
 // After (compute at render time)
-import { selectWindowStatus, selectWindowTimeRemaining, formatTimeRemaining } from "@/lib/instagram";
+import {
+  selectWindowStatus,
+  selectWindowTimeRemaining,
+  formatTimeRemaining,
+} from "@/lib/instagram";
 
 const status = selectWindowStatus(conversation.can_reply_until);
 const remaining = selectWindowTimeRemaining(conversation.can_reply_until);
@@ -185,18 +206,20 @@ const formattedRemaining = formatTimeRemaining(remaining);
 ### 4.2 Replace Other Computed Fields
 
 **Display Name:**
+
 ```tsx
 import { selectDisplayName, selectInitials } from "@/lib/instagram";
 
 const displayName = selectDisplayName(
   conversation.participant_name,
   conversation.participant_username,
-  conversation.participant_instagram_id
+  conversation.participant_instagram_id,
 );
 const initials = selectInitials(displayName);
 ```
 
 **Message Direction:**
+
 ```tsx
 import { selectIsOutbound } from "@/lib/instagram";
 
@@ -204,6 +227,7 @@ const isOutbound = selectIsOutbound(message.direction);
 ```
 
 **Message Time:**
+
 ```tsx
 import { formatMessageTime } from "@/lib/instagram";
 
@@ -219,6 +243,7 @@ const formattedTime = formatMessageTime(message.sent_at);
 **File:** `src/services/instagram/repositories/` (check each repository)
 
 Look for transforms that compute:
+
 - `windowStatus`
 - `windowTimeRemaining`
 - `isOutbound`
@@ -228,6 +253,7 @@ Look for transforms that compute:
 ### 5.2 Remove/Simplify Transforms
 
 **Before (in repository):**
+
 ```typescript
 function transformConversation(row: ConversationRow): InstagramConversation {
   return {
@@ -240,6 +266,7 @@ function transformConversation(row: ConversationRow): InstagramConversation {
 ```
 
 **After:**
+
 ```typescript
 function transformConversation(row: ConversationRow): InstagramConversation {
   return {
@@ -265,36 +292,39 @@ Remove computed fields from `InstagramConversation` and `InstagramMessage` types
 **File:** `src/hooks/instagram/useInstagramIntegration.ts`
 
 **Current (aggressive):**
+
 ```typescript
 onSuccess: () => {
   queryClient.invalidateQueries({ queryKey: instagramKeys.all });
-}
+};
 ```
 
 **Target (selective):**
+
 ```typescript
 // For sending a message
 onSuccess: (data, { conversationId }) => {
   // Update messages for this conversation only
   queryClient.invalidateQueries({
-    queryKey: instagramKeys.messages(conversationId)
+    queryKey: instagramKeys.messages(conversationId),
   });
   // Update conversation metadata (last_message_at, etc.)
   queryClient.invalidateQueries({
-    queryKey: instagramKeys.conversation(conversationId)
+    queryKey: instagramKeys.conversation(conversationId),
   });
-}
+};
 ```
 
 ### 6.2 Use setQueryData for Optimistic Updates
 
 **Pattern:**
+
 ```typescript
 onSuccess: (newMessage, { conversationId }) => {
   // Optimistically add message to cache
   queryClient.setQueryData(
     instagramKeys.messages(conversationId),
-    (old: Message[]) => [newMessage, ...old]
+    (old: Message[]) => [newMessage, ...old],
   );
 
   // Update conversation preview
@@ -304,10 +334,10 @@ onSuccess: (newMessage, { conversationId }) => {
       ...old,
       last_message_at: newMessage.sent_at,
       last_message_preview: newMessage.message_text?.substring(0, 100),
-      last_message_direction: 'outbound',
-    })
+      last_message_direction: "outbound",
+    }),
   );
-}
+};
 ```
 
 ---
@@ -317,10 +347,12 @@ onSuccess: (newMessage, { conversationId }) => {
 ### 7.1 Add Refresh Job Enqueuing
 
 **When to refresh:**
+
 - On conversation sync if `participant_avatar_cached_at` > 30 days old
 - When avatar returns 403/404 (detected in UI, enqueue via API)
 
 **Add to conversation sync:**
+
 ```typescript
 // In instagram-get-conversations edge function
 if (
@@ -340,6 +372,7 @@ if (
 ### 7.2 Add Manual Refresh API (Optional)
 
 **New endpoint or service method:**
+
 ```typescript
 async function requestAvatarRefresh(conversationId: string) {
   // Enqueue a job to re-download the avatar
@@ -353,20 +386,22 @@ async function requestAvatarRefresh(conversationId: string) {
 ### 8.1 Handle Media Download Failures
 
 **In job processor:**
+
 - If download fails 3 times, mark conversation/message with `avatar_fetch_failed: true`
 - UI should show fallback gracefully
 
 ### 8.2 Handle Realtime Disconnects
 
 **Add reconnection logic:**
+
 ```typescript
 // In useInstagramRealtime.ts
 channel.subscribe((status) => {
-  if (status === 'SUBSCRIBED') {
-    console.log('[realtime] Connected');
+  if (status === "SUBSCRIBED") {
+    console.log("[realtime] Connected");
   }
-  if (status === 'CHANNEL_ERROR') {
-    console.error('[realtime] Error, will retry');
+  if (status === "CHANNEL_ERROR") {
+    console.error("[realtime] Error, will retry");
     // Supabase client handles reconnection automatically
   }
 });
@@ -375,6 +410,7 @@ channel.subscribe((status) => {
 ### 8.3 Fallback to Polling
 
 **If realtime fails:**
+
 ```typescript
 // Keep refetchInterval as fallback (longer interval since realtime handles most)
 useQuery({
@@ -388,29 +424,32 @@ useQuery({
 
 ## Implementation Order
 
-| Step | Task | Effort | Priority |
-|------|------|--------|----------|
-| 1 | Create storage bucket + policies | Small | High |
-| 2 | Schedule CRON for instagram-process-jobs | Small | High |
-| 3 | Update avatar display to use cached URLs | Small | High |
-| 4 | Update message media to use cached URLs | Small | Medium |
-| 5 | Replace windowStatus with selectors in UI | Medium | Medium |
-| 6 | Remove computed fields from repository transforms | Medium | Medium |
-| 7 | Implement selective cache invalidation | Medium | Medium |
-| 8 | Add profile picture refresh policy | Small | Low |
-| 9 | Add error handling & fallbacks | Small | Low |
+| Step | Task                                              | Effort | Priority |
+| ---- | ------------------------------------------------- | ------ | -------- |
+| 1    | Create storage bucket + policies                  | Small  | High     |
+| 2    | Schedule CRON for instagram-process-jobs          | Small  | High     |
+| 3    | Update avatar display to use cached URLs          | Small  | High     |
+| 4    | Update message media to use cached URLs           | Small  | Medium   |
+| 5    | Replace windowStatus with selectors in UI         | Medium | Medium   |
+| 6    | Remove computed fields from repository transforms | Medium | Medium   |
+| 7    | Implement selective cache invalidation            | Medium | Medium   |
+| 8    | Add profile picture refresh policy                | Small  | Low      |
+| 9    | Add error handling & fallbacks                    | Small  | Low      |
 
 ---
 
 ## Files to Modify Summary
 
 **Migrations (new):**
+
 - `supabase/migrations/20260106_001_instagram_storage_bucket.sql`
 
 **Edge Functions:**
+
 - `supabase/functions/instagram-get-conversations/index.ts` (avatar refresh logic)
 
 **Components:**
+
 - `src/features/messages/components/instagram/InstagramConversationItem.tsx`
 - `src/features/messages/components/instagram/InstagramConversationView.tsx`
 - `src/features/messages/components/instagram/InstagramSidebar.tsx`
@@ -419,10 +458,12 @@ useQuery({
 - `src/features/messages/components/instagram/InstagramMessageInput.tsx`
 
 **Hooks:**
+
 - `src/hooks/instagram/useInstagramIntegration.ts` (selective invalidation)
 - `src/hooks/instagram/useInstagramRealtime.ts` (error handling)
 
 **Services/Types:**
+
 - `src/services/instagram/repositories/*.ts` (remove computed fields)
 - `src/types/instagram.types.ts` (update types)
 

@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Star, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { selectAvatarUrl } from "@/lib/instagram";
 import { InstagramWindowIndicator } from "./InstagramWindowIndicator";
 import type { InstagramConversation } from "@/types/instagram.types";
 
@@ -49,7 +50,12 @@ export function InstagramConversationItem({
       <div className="relative flex-shrink-0">
         <Avatar className="h-8 w-8">
           <AvatarImage
-            src={conversation.participant_profile_picture_url || undefined}
+            src={
+              selectAvatarUrl(
+                conversation.participant_avatar_cached_url,
+                conversation.participant_profile_picture_url,
+              ) ?? undefined
+            }
             alt={displayName}
           />
           <AvatarFallback className="text-[10px] bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white">

@@ -397,9 +397,10 @@ async function processSendScheduledMessage(
 
 /**
  * Refresh participant metadata from Instagram API
+ * Fetches username, name, and profile_picture_url for a participant
  */
 async function processRefreshParticipantMetadata(
-  _supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient>,
   job: Job,
 ): Promise<void> {
   const { conversation_id, participant_id } = job.payload as {
@@ -407,9 +408,80 @@ async function processRefreshParticipantMetadata(
     participant_id: string;
   };
 
-  // TODO: Implement when needed
-  // This would call the Meta API to refresh username/name for a participant
+  if (!job.integration_id) {
+    throw new Error("Missing integration_id for metadata refresh");
+  }
+
+  // Get the integration's access token
+  const { data: integration, error: intError } = await supabase
+    .from("instagram_integrations")
+    .select("access_token_encrypted")
+    .eq("id", job.integration_id)
+    .single();
+
+  if (intError || !integration) {
+    throw new Error(`Integration not found: ${job.integration_id}`);
+  }
+
+  // Decrypt access token
+  const { decrypt } = await import("../_shared/encryption.ts");
+  const accessToken = await decrypt(integration.access_token_encrypted);
+
+  // Call Meta API to get participant info
+  // Using the Instagram-scoped user ID to fetch their profile
+  const apiUrl = new URL(`https://graph.instagram.com/v21.0/${participant_id}`);
+  apiUrl.searchParams.set("fields", "username,name,profile_picture_url");
+  apiUrl.searchParams.set("access_token", accessToken);
+
+  const response = await fetch(apiUrl.toString());
+  const userData = await response.json();
+
+  if (userData.error) {
+    // Some errors are expected (user privacy settings, deleted accounts)
+    console.log(
+      `[instagram-process-jobs] Could not fetch metadata for ${participant_id}: ${userData.error.message}`,
+    );
+    return; // Don't throw - this is expected for some users
+  }
+
+  // Update conversation with new metadata
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (userData.username) {
+    updateData.participant_username = userData.username;
+  }
+  if (userData.name) {
+    updateData.participant_name = userData.name;
+  }
+  if (userData.profile_picture_url) {
+    updateData.participant_profile_picture_url = userData.profile_picture_url;
+  }
+
+  await supabase
+    .from("instagram_conversations")
+    .update(updateData)
+    .eq("id", conversation_id);
+
   console.log(
-    `[instagram-process-jobs] Metadata refresh for ${participant_id} in ${conversation_id} - not yet implemented`,
+    `[instagram-process-jobs] Updated metadata for participant ${participant_id}`,
   );
+
+  // If we got a profile picture URL, enqueue a download job
+  if (userData.profile_picture_url) {
+    await supabase.rpc("enqueue_instagram_job", {
+      p_job_type: "download_profile_picture",
+      p_payload: {
+        conversation_id,
+        participant_id,
+        source_url: userData.profile_picture_url,
+      },
+      p_integration_id: job.integration_id,
+      p_priority: -1, // Lower priority
+    });
+    console.log(
+      `[instagram-process-jobs] Enqueued profile picture download for ${participant_id}`,
+    );
+  }
 }

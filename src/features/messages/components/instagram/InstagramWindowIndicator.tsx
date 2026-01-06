@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
-  getWindowStatus,
-  getWindowTimeRemaining,
-  formatWindowTimeRemaining,
-} from "@/types/instagram.types";
+  selectWindowStatus,
+  selectWindowTimeRemaining,
+  formatTimeRemaining,
+} from "@/lib/instagram";
 
 interface InstagramWindowIndicatorProps {
   canReplyUntil: string | null;
@@ -29,9 +29,9 @@ export function InstagramWindowIndicator({
   className,
   showTooltip = true,
 }: InstagramWindowIndicatorProps): ReactNode {
-  const status = getWindowStatus(canReplyUntil);
-  const timeRemaining = getWindowTimeRemaining(canReplyUntil);
-  const formattedTime = formatWindowTimeRemaining(timeRemaining);
+  const status = selectWindowStatus(canReplyUntil);
+  const timeRemaining = selectWindowTimeRemaining(canReplyUntil);
+  const formattedTime = formatTimeRemaining(timeRemaining);
 
   const getStatusConfig = () => {
     switch (status) {
