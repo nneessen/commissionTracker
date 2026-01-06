@@ -316,8 +316,9 @@ export function MessagesPage() {
               </ResizablePanel>
             )
           ) : activeTab === "instagram" &&
-            !instagramIntegration /* No sidebar when not connected */ ? null : (
-            /* Email folders sidebar - fixed width for now */
+            !instagramIntegration ? /* No sidebar when Instagram not connected */
+          null : activeTab === "email" ? (
+            /* Email folders sidebar - only shown on email tab */
             <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
               <div className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
                 <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide px-2 mb-1.5">
@@ -375,7 +376,8 @@ export function MessagesPage() {
                 </div>
               </div>
             </div>
-          )}
+          ) : /* No sidebar for settings, templates, analytics tabs */
+          null}
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden min-h-0">
