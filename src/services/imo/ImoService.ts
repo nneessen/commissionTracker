@@ -34,6 +34,7 @@ import {
   parseTopPerformersReport,
   formatDateForQuery,
   validateReportDateRange,
+  buildDateRangeParams,
   type ImoPerformanceReport,
   type TeamComparisonReport,
   type TopPerformersReport,
@@ -284,10 +285,22 @@ class ImoService {
   /**
    * Get IMO dashboard metrics (aggregated for IMO admins)
    * Uses RPC function for efficient single-query execution
+   * @param dateRange - Optional date range for filtering policies and commissions
    */
-  async getDashboardMetrics(): Promise<ImoDashboardMetrics | null> {
+  async getDashboardMetrics(
+    dateRange?: ReportDateRange,
+  ): Promise<ImoDashboardMetrics | null> {
     try {
-      const { data, error } = await supabase.rpc("get_imo_dashboard_metrics");
+      // Validate date range if provided
+      validateReportDateRange(dateRange);
+
+      // Build params using centralized utility (defaults to YTD)
+      const params = buildDateRangeParams(dateRange);
+
+      const { data, error } = await supabase.rpc(
+        "get_imo_dashboard_metrics",
+        params,
+      );
 
       if (error) {
         // Handle access denied gracefully using error codes
@@ -335,11 +348,21 @@ class ImoService {
   /**
    * Get production breakdown by agency for IMO admins
    * Uses RPC function for efficient single-query execution
+   * @param dateRange - Optional date range for filtering policies and commissions
    */
-  async getProductionByAgency(): Promise<ImoProductionByAgency[]> {
+  async getProductionByAgency(
+    dateRange?: ReportDateRange,
+  ): Promise<ImoProductionByAgency[]> {
     try {
+      // Validate date range if provided
+      validateReportDateRange(dateRange);
+
+      // Build params using centralized utility (defaults to YTD)
+      const params = buildDateRangeParams(dateRange);
+
       const { data, error } = await supabase.rpc(
         "get_imo_production_by_agency",
+        params,
       );
 
       if (error) {
@@ -669,10 +692,22 @@ class ImoService {
   /**
    * Get IMO override commission summary
    * Uses RPC function for efficient single-query execution
+   * @param dateRange - Optional date range for filtering by policy effective date
    */
-  async getOverrideSummary(): Promise<ImoOverrideSummary | null> {
+  async getOverrideSummary(
+    dateRange?: ReportDateRange,
+  ): Promise<ImoOverrideSummary | null> {
     try {
-      const { data, error } = await supabase.rpc("get_imo_override_summary");
+      // Validate date range if provided
+      validateReportDateRange(dateRange);
+
+      // Build params using centralized utility (defaults to YTD)
+      const params = buildDateRangeParams(dateRange);
+
+      const { data, error } = await supabase.rpc(
+        "get_imo_override_summary",
+        params,
+      );
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {

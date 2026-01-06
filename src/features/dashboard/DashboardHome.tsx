@@ -351,6 +351,7 @@ export const DashboardHome: React.FC = () => {
                 dashboardFeatures.isAdmin || dashboardFeatures.isImoAdmin
               }
               isAgencyOwner={dashboardFeatures.isAgencyOwner}
+              dateRange={dateRange}
             />
 
             {/* Team & Recruiting Section (Premium - Team tier) */}

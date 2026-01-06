@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-06 14:43:58
+
+### Changed Files
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/OrgMetricsSection.tsx`
+- `src/hooks/imo/useImoQueries.ts`
+- `src/services/agency/AgencyService.ts`
+- `src/services/imo/ImoService.ts`
+- `src/types/team-reports.schemas.ts`
+- `supabase/migrations/20260106_005_org_metrics_date_range.sql`
+- `supabase/migrations/20260106_006_fix_org_metrics_date_filter.sql`
+- `supabase/migrations/reverts/20260106_005_org_metrics_date_range_revert.sql`
+
+### Statistics
+```
+ 9 files changed, 1391 insertions(+), 51 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-06 13:29:10
 
 ### Changed Files

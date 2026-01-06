@@ -1,16 +1,16 @@
 // src/hooks/imo/useImoQueries.ts
 // TanStack Query hooks for IMO and Agency data
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { imoService } from '../../services/imo';
-import { agencyService } from '../../services/agency';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { imoService } from "../../services/imo";
+import { agencyService } from "../../services/agency";
 import type {
   CreateImoData,
   CreateAgencyData,
   ImoUpdate,
   AgencyUpdate,
-} from '../../types/imo.types';
-import type { ReportDateRange } from '../../types/team-reports.schemas';
+} from "../../types/imo.types";
+import type { ReportDateRange } from "../../types/team-reports.schemas";
 
 /**
  * Serialize a date range to a stable string for use in query keys.
@@ -20,53 +20,98 @@ import type { ReportDateRange } from '../../types/team-reports.schemas';
  */
 function serializeDateRange(dateRange?: ReportDateRange): string | undefined {
   if (!dateRange) return undefined;
-  return `${dateRange.startDate.toISOString().split('T')[0]}_${dateRange.endDate.toISOString().split('T')[0]}`;
+  return `${dateRange.startDate.toISOString().split("T")[0]}_${dateRange.endDate.toISOString().split("T")[0]}`;
 }
 
 // Query keys
 export const imoKeys = {
-  all: ['imos'] as const,
-  lists: () => [...imoKeys.all, 'list'] as const,
+  all: ["imos"] as const,
+  lists: () => [...imoKeys.all, "list"] as const,
   list: (filters?: object) => [...imoKeys.lists(), filters] as const,
-  details: () => [...imoKeys.all, 'detail'] as const,
+  details: () => [...imoKeys.all, "detail"] as const,
   detail: (id: string) => [...imoKeys.details(), id] as const,
-  myImo: () => [...imoKeys.all, 'my'] as const,
-  metrics: (id: string) => [...imoKeys.detail(id), 'metrics'] as const,
-  // Dashboard metrics keys (Phase 5)
-  dashboardMetrics: () => [...imoKeys.all, 'dashboardMetrics'] as const,
-  productionByAgency: () => [...imoKeys.all, 'productionByAgency'] as const,
+  myImo: () => [...imoKeys.all, "my"] as const,
+  metrics: (id: string) => [...imoKeys.detail(id), "metrics"] as const,
+  // Dashboard metrics keys (Phase 5) - now with dateRange support
+  dashboardMetrics: (dateRange?: ReportDateRange) =>
+    [
+      ...imoKeys.all,
+      "dashboardMetrics",
+      serializeDateRange(dateRange),
+    ] as const,
+  productionByAgency: (dateRange?: ReportDateRange) =>
+    [
+      ...imoKeys.all,
+      "productionByAgency",
+      serializeDateRange(dateRange),
+    ] as const,
   // Team report keys (Phase 6) - dateRange serialized to prevent cache thrashing
-  performanceReport: (dateRange?: ReportDateRange) => [...imoKeys.all, 'performanceReport', serializeDateRange(dateRange)] as const,
-  teamComparison: (dateRange?: ReportDateRange) => [...imoKeys.all, 'teamComparison', serializeDateRange(dateRange)] as const,
-  topPerformers: (limit: number, dateRange?: ReportDateRange) => [...imoKeys.all, 'topPerformers', limit, serializeDateRange(dateRange)] as const,
-  // Override summary keys (Phase 7)
-  overrideSummary: () => [...imoKeys.all, 'overrideSummary'] as const,
-  overridesByAgency: () => [...imoKeys.all, 'overridesByAgency'] as const,
+  performanceReport: (dateRange?: ReportDateRange) =>
+    [
+      ...imoKeys.all,
+      "performanceReport",
+      serializeDateRange(dateRange),
+    ] as const,
+  teamComparison: (dateRange?: ReportDateRange) =>
+    [...imoKeys.all, "teamComparison", serializeDateRange(dateRange)] as const,
+  topPerformers: (limit: number, dateRange?: ReportDateRange) =>
+    [
+      ...imoKeys.all,
+      "topPerformers",
+      limit,
+      serializeDateRange(dateRange),
+    ] as const,
+  // Override summary keys (Phase 7) - now with dateRange support
+  overrideSummary: (dateRange?: ReportDateRange) =>
+    [...imoKeys.all, "overrideSummary", serializeDateRange(dateRange)] as const,
+  overridesByAgency: () => [...imoKeys.all, "overridesByAgency"] as const,
   // Recruiting summary keys (Phase 8)
-  recruitingSummary: () => [...imoKeys.all, 'recruitingSummary'] as const,
-  recruitingByAgency: () => [...imoKeys.all, 'recruitingByAgency'] as const,
+  recruitingSummary: () => [...imoKeys.all, "recruitingSummary"] as const,
+  recruitingByAgency: () => [...imoKeys.all, "recruitingByAgency"] as const,
 };
 
 export const agencyKeys = {
-  all: ['agencies'] as const,
-  lists: () => [...agencyKeys.all, 'list'] as const,
+  all: ["agencies"] as const,
+  lists: () => [...agencyKeys.all, "list"] as const,
   listByImo: (imoId: string) => [...agencyKeys.lists(), { imoId }] as const,
-  details: () => [...agencyKeys.all, 'detail'] as const,
+  details: () => [...agencyKeys.all, "detail"] as const,
   detail: (id: string) => [...agencyKeys.details(), id] as const,
-  myAgency: () => [...agencyKeys.all, 'my'] as const,
-  myImoAgencies: () => [...agencyKeys.all, 'myImo'] as const,
-  metrics: (id: string) => [...agencyKeys.detail(id), 'metrics'] as const,
-  // Dashboard metrics keys (Phase 5)
-  dashboardMetrics: (id?: string) => [...agencyKeys.all, 'dashboardMetrics', id] as const,
-  productionByAgent: (id?: string) => [...agencyKeys.all, 'productionByAgent', id] as const,
+  myAgency: () => [...agencyKeys.all, "my"] as const,
+  myImoAgencies: () => [...agencyKeys.all, "myImo"] as const,
+  metrics: (id: string) => [...agencyKeys.detail(id), "metrics"] as const,
+  // Dashboard metrics keys (Phase 5) - now with dateRange support
+  dashboardMetrics: (id?: string, dateRange?: ReportDateRange) =>
+    [
+      ...agencyKeys.all,
+      "dashboardMetrics",
+      id,
+      serializeDateRange(dateRange),
+    ] as const,
+  productionByAgent: (id?: string) =>
+    [...agencyKeys.all, "productionByAgent", id] as const,
   // Team report keys (Phase 6) - dateRange serialized to prevent cache thrashing
-  performanceReport: (id?: string, dateRange?: ReportDateRange) => [...agencyKeys.all, 'performanceReport', id, serializeDateRange(dateRange)] as const,
-  // Override summary keys (Phase 7)
-  overrideSummary: (id?: string) => [...agencyKeys.all, 'overrideSummary', id] as const,
-  overridesByAgent: (id?: string) => [...agencyKeys.all, 'overridesByAgent', id] as const,
+  performanceReport: (id?: string, dateRange?: ReportDateRange) =>
+    [
+      ...agencyKeys.all,
+      "performanceReport",
+      id,
+      serializeDateRange(dateRange),
+    ] as const,
+  // Override summary keys (Phase 7) - now with dateRange support
+  overrideSummary: (id?: string, dateRange?: ReportDateRange) =>
+    [
+      ...agencyKeys.all,
+      "overrideSummary",
+      id,
+      serializeDateRange(dateRange),
+    ] as const,
+  overridesByAgent: (id?: string) =>
+    [...agencyKeys.all, "overridesByAgent", id] as const,
   // Recruiting summary keys (Phase 8)
-  recruitingSummary: (id?: string) => [...agencyKeys.all, 'recruitingSummary', id] as const,
-  recruitingByRecruiter: (id?: string) => [...agencyKeys.all, 'recruitingByRecruiter', id] as const,
+  recruitingSummary: (id?: string) =>
+    [...agencyKeys.all, "recruitingSummary", id] as const,
+  recruitingByRecruiter: (id?: string) =>
+    [...agencyKeys.all, "recruitingByRecruiter", id] as const,
 };
 
 // =============================================================================
@@ -101,7 +146,7 @@ export function useImoById(imoId: string | undefined) {
  */
 export function useImoWithAgencies(imoId: string | undefined) {
   return useQuery({
-    queryKey: [...imoKeys.detail(imoId!), 'agencies'],
+    queryKey: [...imoKeys.detail(imoId!), "agencies"],
     queryFn: () => imoService.getImoWithAgencies(imoId!),
     enabled: !!imoId,
     staleTime: 5 * 60 * 1000,
@@ -210,7 +255,7 @@ export function useAgencyById(agencyId: string | undefined) {
  */
 export function useAgencyWithOwner(agencyId: string | undefined) {
   return useQuery({
-    queryKey: [...agencyKeys.detail(agencyId!), 'owner'],
+    queryKey: [...agencyKeys.detail(agencyId!), "owner"],
     queryFn: () => agencyService.getAgencyWithOwner(agencyId!),
     enabled: !!agencyId,
     staleTime: 5 * 60 * 1000,
@@ -233,7 +278,7 @@ export function useMyImoAgencies() {
  */
 export function useAllActiveAgencies() {
   return useQuery({
-    queryKey: [...agencyKeys.lists(), 'allActive'],
+    queryKey: [...agencyKeys.lists(), "allActive"],
     queryFn: () => agencyService.getAllActiveAgencies(),
     staleTime: 5 * 60 * 1000,
   });
@@ -330,8 +375,13 @@ export function useAssignAgentToAgency() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ agentId, agencyId }: { agentId: string; agencyId: string }) =>
-      agencyService.assignAgentToAgency(agentId, agencyId),
+    mutationFn: ({
+      agentId,
+      agencyId,
+    }: {
+      agentId: string;
+      agencyId: string;
+    }) => agencyService.assignAgentToAgency(agentId, agencyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agencyKeys.all });
     },
@@ -360,11 +410,15 @@ export function useTransferAgencyOwnership(agencyId: string) {
 /**
  * Get IMO dashboard metrics (aggregated for IMO admins)
  * Only returns data if user is IMO admin, IMO owner, or super admin
+ * @param dateRange - Optional date range for filtering policies and commissions
  */
-export function useImoDashboardMetrics(options?: { enabled?: boolean }) {
+export function useImoDashboardMetrics(
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: imoKeys.dashboardMetrics(),
-    queryFn: () => imoService.getDashboardMetrics(),
+    queryKey: imoKeys.dashboardMetrics(dateRange),
+    queryFn: () => imoService.getDashboardMetrics(dateRange),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });
@@ -373,11 +427,15 @@ export function useImoDashboardMetrics(options?: { enabled?: boolean }) {
 /**
  * Get IMO production breakdown by agency
  * Only returns data if user is IMO admin, IMO owner, or super admin
+ * @param dateRange - Optional date range for filtering policies and commissions
  */
-export function useImoProductionByAgency(options?: { enabled?: boolean }) {
+export function useImoProductionByAgency(
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: imoKeys.productionByAgency(),
-    queryFn: () => imoService.getProductionByAgency(),
+    queryKey: imoKeys.productionByAgency(dateRange),
+    queryFn: () => imoService.getProductionByAgency(dateRange),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });
@@ -386,15 +444,17 @@ export function useImoProductionByAgency(options?: { enabled?: boolean }) {
 /**
  * Get agency dashboard metrics (aggregated for agency owners)
  * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * @param dateRange - Optional date range for filtering policies and commissions
  * Only returns data if user is agency owner, IMO admin, or super admin
  */
 export function useAgencyDashboardMetrics(
   agencyId?: string,
-  options?: { enabled?: boolean }
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: agencyKeys.dashboardMetrics(agencyId),
-    queryFn: () => agencyService.getDashboardMetrics(agencyId),
+    queryKey: agencyKeys.dashboardMetrics(agencyId, dateRange),
+    queryFn: () => agencyService.getDashboardMetrics(agencyId, dateRange),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });
@@ -407,7 +467,7 @@ export function useAgencyDashboardMetrics(
  */
 export function useAgencyProductionByAgent(
   agencyId?: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: agencyKeys.productionByAgent(agencyId),
@@ -427,7 +487,7 @@ export function useAgencyProductionByAgent(
  */
 export function useImoPerformanceReport(
   dateRange?: ReportDateRange,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: imoKeys.performanceReport(dateRange),
@@ -443,7 +503,7 @@ export function useImoPerformanceReport(
  */
 export function useTeamComparisonReport(
   dateRange?: ReportDateRange,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: imoKeys.teamComparison(dateRange),
@@ -460,7 +520,7 @@ export function useTeamComparisonReport(
 export function useTopPerformersReport(
   limit: number = 20,
   dateRange?: ReportDateRange,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: imoKeys.topPerformers(limit, dateRange),
@@ -478,7 +538,7 @@ export function useTopPerformersReport(
 export function useAgencyPerformanceReport(
   agencyId?: string,
   dateRange?: ReportDateRange,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: agencyKeys.performanceReport(agencyId, dateRange),
@@ -495,11 +555,15 @@ export function useAgencyPerformanceReport(
 /**
  * Get IMO override commission summary
  * Only returns data if user is IMO admin, IMO owner, or super admin
+ * @param dateRange - Optional date range for filtering by policy effective date
  */
-export function useImoOverrideSummary(options?: { enabled?: boolean }) {
+export function useImoOverrideSummary(
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: imoKeys.overrideSummary(),
-    queryFn: () => imoService.getOverrideSummary(),
+    queryKey: imoKeys.overrideSummary(dateRange),
+    queryFn: () => imoService.getOverrideSummary(dateRange),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });
@@ -521,15 +585,17 @@ export function useImoOverridesByAgency(options?: { enabled?: boolean }) {
 /**
  * Get agency override commission summary
  * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * @param dateRange - Optional date range for filtering by policy effective date
  * Only returns data if user is agency owner, IMO admin, or super admin
  */
 export function useAgencyOverrideSummary(
   agencyId?: string,
-  options?: { enabled?: boolean }
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: agencyKeys.overrideSummary(agencyId),
-    queryFn: () => agencyService.getOverrideSummary(agencyId),
+    queryKey: agencyKeys.overrideSummary(agencyId, dateRange),
+    queryFn: () => agencyService.getOverrideSummary(agencyId, dateRange),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });
@@ -542,7 +608,7 @@ export function useAgencyOverrideSummary(
  */
 export function useAgencyOverridesByAgent(
   agencyId?: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: agencyKeys.overridesByAgent(agencyId),
@@ -589,7 +655,7 @@ export function useImoRecruitingByAgency(options?: { enabled?: boolean }) {
  */
 export function useAgencyRecruitingSummary(
   agencyId?: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: agencyKeys.recruitingSummary(agencyId),
@@ -606,7 +672,7 @@ export function useAgencyRecruitingSummary(
  */
 export function useAgencyRecruitingByRecruiter(
   agencyId?: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: agencyKeys.recruitingByRecruiter(agencyId),

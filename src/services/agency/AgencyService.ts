@@ -34,6 +34,7 @@ import {
   parseAgencyPerformanceReport,
   formatDateForQuery,
   validateReportDateRange,
+  buildDateRangeParams,
   type AgencyPerformanceReport,
   type ReportDateRange,
 } from "../../types/team-reports.schemas";
@@ -518,15 +519,24 @@ class AgencyService {
    * Get agency dashboard metrics (aggregated for agency owners)
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   * @param dateRange - Optional date range for filtering policies and commissions
    */
   async getDashboardMetrics(
     agencyId?: string,
+    dateRange?: ReportDateRange,
   ): Promise<AgencyDashboardMetrics | null> {
     try {
+      // Validate date range if provided
+      validateReportDateRange(dateRange);
+
+      // Build params using centralized utility (defaults to YTD)
+      const dateParams = buildDateRangeParams(dateRange);
+
       const { data, error } = await supabase.rpc(
         "get_agency_dashboard_metrics",
         {
           p_agency_id: agencyId || null,
+          ...dateParams,
         },
       );
 
@@ -750,15 +760,24 @@ class AgencyService {
    * Get agency override commission summary
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   * @param dateRange - Optional date range for filtering by policy effective date
    */
   async getOverrideSummary(
     agencyId?: string,
+    dateRange?: ReportDateRange,
   ): Promise<AgencyOverrideSummary | null> {
     try {
+      // Validate date range if provided
+      validateReportDateRange(dateRange);
+
+      // Build params using centralized utility (defaults to YTD)
+      const dateParams = buildDateRangeParams(dateRange);
+
       const { data, error } = await supabase.rpc(
         "get_agency_override_summary",
         {
           p_agency_id: agencyId || null,
+          ...dateParams,
         },
       );
 

@@ -19,6 +19,8 @@ import {
   useImoOverrideSummary,
   useAgencyOverrideSummary,
 } from "@/hooks/imo";
+import type { ReportDateRange } from "@/types/team-reports.schemas";
+import type { DateRange } from "@/utils/dateRange";
 
 // Maximum agencies to display in production breakdown
 const MAX_AGENCIES_DISPLAYED = 5;
@@ -42,15 +44,15 @@ const MetricItem: React.FC<MetricItemProps> = ({
       <span
         className={cn(
           "font-mono font-semibold",
-          highlight
-            ? "text-[hsl(var(--success))]"
-            : "text-foreground",
+          highlight ? "text-[hsl(var(--success))]" : "text-foreground",
         )}
       >
         {value}
       </span>
       {subtext && (
-        <span className="text-[9px] text-muted-foreground/70 ml-1">{subtext}</span>
+        <span className="text-[9px] text-muted-foreground/70 ml-1">
+          {subtext}
+        </span>
       )}
     </div>
   </div>
@@ -76,10 +78,46 @@ const ErrorState: React.FC<{ message?: string }> = ({ message }) => (
 );
 
 /**
+ * Empty state component for when no data exists for selected period
+ */
+const EmptyState: React.FC<{ title: string }> = ({ title }) => (
+  <div className="bg-card rounded-lg border border-border p-3 h-full">
+    <div className="flex flex-col items-center justify-center h-full text-center py-6">
+      <BarChart3 className="h-6 w-6 text-muted-foreground/50 mb-2" />
+      <div className="text-[11px] text-muted-foreground font-medium">
+        {title}
+      </div>
+      <div className="text-[10px] text-muted-foreground/70 mt-1">
+        No data for this period
+      </div>
+    </div>
+  </div>
+);
+
+/**
+ * Helper to convert DateRange to ReportDateRange
+ */
+function toReportDateRange(dateRange: DateRange): ReportDateRange {
+  return {
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  };
+}
+
+interface PanelProps {
+  dateRange: DateRange;
+}
+
+/**
  * IMO Metrics Panel - For IMO admins/owners
  */
-const ImoMetricsPanel: React.FC = () => {
-  const { data: metrics, isLoading, error } = useImoDashboardMetrics();
+const ImoMetricsPanel: React.FC<PanelProps> = ({ dateRange }) => {
+  const reportDateRange = toReportDateRange(dateRange);
+  const {
+    data: metrics,
+    isLoading,
+    error,
+  } = useImoDashboardMetrics(reportDateRange);
 
   if (isLoading) {
     return (
@@ -103,7 +141,7 @@ const ImoMetricsPanel: React.FC = () => {
   }
 
   if (!metrics) {
-    return null;
+    return <EmptyState title="IMO Overview" />;
   }
 
   return (
@@ -123,13 +161,17 @@ const ImoMetricsPanel: React.FC = () => {
           <div className="text-lg font-bold text-foreground">
             {formatNumber(metrics.agency_count)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Agencies</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Agencies
+          </div>
         </div>
         <div className="text-center p-2 bg-muted rounded">
           <div className="text-lg font-bold text-foreground">
             {formatNumber(metrics.agent_count)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Agents</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Agents
+          </div>
         </div>
       </div>
 
@@ -145,12 +187,12 @@ const ImoMetricsPanel: React.FC = () => {
         />
         <div className="border-t border-border my-1.5" />
         <MetricItem
-          label="Commissions YTD"
+          label="Commissions"
           value={formatCurrency(metrics.total_commissions_ytd)}
           highlight={metrics.total_commissions_ytd > 0}
         />
         <MetricItem
-          label="Earned YTD"
+          label="Earned"
           value={formatCurrency(metrics.total_earned_ytd)}
         />
         <MetricItem
@@ -171,8 +213,13 @@ const ImoMetricsPanel: React.FC = () => {
 /**
  * Agency Metrics Panel - For agency owners
  */
-const AgencyMetricsPanel: React.FC = () => {
-  const { data: metrics, isLoading, error } = useAgencyDashboardMetrics();
+const AgencyMetricsPanel: React.FC<PanelProps> = ({ dateRange }) => {
+  const reportDateRange = toReportDateRange(dateRange);
+  const {
+    data: metrics,
+    isLoading,
+    error,
+  } = useAgencyDashboardMetrics(undefined, reportDateRange);
 
   if (isLoading) {
     return (
@@ -196,7 +243,7 @@ const AgencyMetricsPanel: React.FC = () => {
   }
 
   if (!metrics) {
-    return null;
+    return <EmptyState title="Agency Overview" />;
   }
 
   return (
@@ -216,13 +263,17 @@ const AgencyMetricsPanel: React.FC = () => {
           <div className="text-lg font-bold text-foreground">
             {formatNumber(metrics.agent_count)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Agents</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Agents
+          </div>
         </div>
         <div className="text-center p-2 bg-[hsl(var(--success))]/10 rounded">
           <div className="text-lg font-bold text-[hsl(var(--success))]">
             {formatNumber(metrics.active_policies)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Policies</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Policies
+          </div>
         </div>
       </div>
 
@@ -233,12 +284,12 @@ const AgencyMetricsPanel: React.FC = () => {
           highlight={metrics.total_annual_premium > 0}
         />
         <MetricItem
-          label="Commissions YTD"
+          label="Commissions"
           value={formatCurrency(metrics.total_commissions_ytd)}
           highlight={metrics.total_commissions_ytd > 0}
         />
         <MetricItem
-          label="Earned YTD"
+          label="Earned"
           value={formatCurrency(metrics.total_earned_ytd)}
         />
         <MetricItem
@@ -277,8 +328,13 @@ const AgencyMetricsPanel: React.FC = () => {
 /**
  * IMO Override Summary Panel - For IMO admins
  */
-const ImoOverrideSummaryPanel: React.FC = () => {
-  const { data: summary, isLoading, error } = useImoOverrideSummary();
+const ImoOverrideSummaryPanel: React.FC<PanelProps> = ({ dateRange }) => {
+  const reportDateRange = toReportDateRange(dateRange);
+  const {
+    data: summary,
+    isLoading,
+    error,
+  } = useImoOverrideSummary(reportDateRange);
 
   if (isLoading) {
     return (
@@ -302,7 +358,7 @@ const ImoOverrideSummaryPanel: React.FC = () => {
   }
 
   if (!summary) {
-    return null;
+    return <EmptyState title="Override Commissions" />;
   }
 
   return (
@@ -319,13 +375,17 @@ const ImoOverrideSummaryPanel: React.FC = () => {
           <div className="text-lg font-bold text-foreground">
             {formatNumber(summary.total_override_count)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Overrides</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Overrides
+          </div>
         </div>
         <div className="text-center p-2 bg-[hsl(var(--success))]/10 rounded">
           <div className="text-lg font-bold text-[hsl(var(--success))]">
             {formatCurrency(summary.total_override_amount)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Total</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Total
+          </div>
         </div>
       </div>
 
@@ -369,8 +429,13 @@ const ImoOverrideSummaryPanel: React.FC = () => {
 /**
  * Agency Override Summary Panel - For agency owners
  */
-const AgencyOverrideSummaryPanel: React.FC = () => {
-  const { data: summary, isLoading, error } = useAgencyOverrideSummary();
+const AgencyOverrideSummaryPanel: React.FC<PanelProps> = ({ dateRange }) => {
+  const reportDateRange = toReportDateRange(dateRange);
+  const {
+    data: summary,
+    isLoading,
+    error,
+  } = useAgencyOverrideSummary(undefined, reportDateRange);
 
   if (isLoading) {
     return (
@@ -394,7 +459,7 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
   }
 
   if (!summary) {
-    return null;
+    return <EmptyState title="Override Commissions" />;
   }
 
   return (
@@ -411,13 +476,17 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
           <div className="text-lg font-bold text-foreground">
             {formatNumber(summary.total_override_count)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Overrides</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Overrides
+          </div>
         </div>
         <div className="text-center p-2 bg-[hsl(var(--success))]/10 rounded">
           <div className="text-lg font-bold text-[hsl(var(--success))]">
             {formatCurrency(summary.total_override_amount)}
           </div>
-          <div className="text-[9px] text-muted-foreground uppercase">Total</div>
+          <div className="text-[9px] text-muted-foreground uppercase">
+            Total
+          </div>
         </div>
       </div>
 
@@ -462,8 +531,13 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
 /**
  * Production Breakdown Panel - For IMO admins (by agency)
  */
-const ProductionBreakdownPanel: React.FC = () => {
-  const { data: agencies, isLoading, error } = useImoProductionByAgency();
+const ProductionBreakdownPanel: React.FC<PanelProps> = ({ dateRange }) => {
+  const reportDateRange = toReportDateRange(dateRange);
+  const {
+    data: agencies,
+    isLoading,
+    error,
+  } = useImoProductionByAgency(reportDateRange);
 
   if (isLoading) {
     return (
@@ -487,7 +561,7 @@ const ProductionBreakdownPanel: React.FC = () => {
   }
 
   if (!agencies || agencies.length === 0) {
-    return null;
+    return <EmptyState title="Production by Agency" />;
   }
 
   // Take top agencies by production (using named constant)
@@ -500,7 +574,9 @@ const ProductionBreakdownPanel: React.FC = () => {
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Production by Agency
         </span>
-        <span className="text-[9px] text-muted-foreground/70 ml-auto">Top 5</span>
+        <span className="text-[9px] text-muted-foreground/70 ml-auto">
+          Top 5
+        </span>
       </div>
 
       <div className="space-y-2">
@@ -557,6 +633,7 @@ const ProductionBreakdownPanel: React.FC = () => {
 interface OrgMetricsSectionProps {
   isImoAdmin: boolean;
   isAgencyOwner: boolean;
+  dateRange: DateRange;
 }
 
 /**
@@ -565,6 +642,7 @@ interface OrgMetricsSectionProps {
 export const OrgMetricsSection: React.FC<OrgMetricsSectionProps> = ({
   isImoAdmin,
   isAgencyOwner,
+  dateRange,
 }) => {
   // Don't render if user has no org role
   if (!isImoAdmin && !isAgencyOwner) {
@@ -577,9 +655,9 @@ export const OrgMetricsSection: React.FC<OrgMetricsSectionProps> = ({
     return (
       <div className="space-y-2">
         <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[300px_300px_1fr]">
-          <ImoMetricsPanel />
-          <ImoOverrideSummaryPanel />
-          <ProductionBreakdownPanel />
+          <ImoMetricsPanel dateRange={dateRange} />
+          <ImoOverrideSummaryPanel dateRange={dateRange} />
+          <ProductionBreakdownPanel dateRange={dateRange} />
         </div>
       </div>
     );
@@ -590,8 +668,8 @@ export const OrgMetricsSection: React.FC<OrgMetricsSectionProps> = ({
   if (isAgencyOwner) {
     return (
       <div className="grid gap-2 grid-cols-1 md:grid-cols-[300px_300px]">
-        <AgencyMetricsPanel />
-        <AgencyOverrideSummaryPanel />
+        <AgencyMetricsPanel dateRange={dateRange} />
+        <AgencyOverrideSummaryPanel dateRange={dateRange} />
       </div>
     );
   }

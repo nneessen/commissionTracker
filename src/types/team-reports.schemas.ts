@@ -2,7 +2,7 @@
 // Zod schemas for team performance report RPC responses
 // Provides runtime type validation for database responses
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Schema for monthly performance report row (IMO or Agency)
@@ -70,7 +70,9 @@ export type TopPerformerRow = z.infer<typeof TopPerformerRowSchema>;
  * Parse and validate IMO performance report response
  * @throws ZodError if validation fails
  */
-export function parseImoPerformanceReport(data: unknown[]): MonthlyPerformanceRow[] {
+export function parseImoPerformanceReport(
+  data: unknown[],
+): MonthlyPerformanceRow[] {
   return z.array(MonthlyPerformanceRowSchema).parse(data);
 }
 
@@ -78,7 +80,9 @@ export function parseImoPerformanceReport(data: unknown[]): MonthlyPerformanceRo
  * Parse and validate Agency performance report response
  * @throws ZodError if validation fails
  */
-export function parseAgencyPerformanceReport(data: unknown[]): MonthlyPerformanceRow[] {
+export function parseAgencyPerformanceReport(
+  data: unknown[],
+): MonthlyPerformanceRow[] {
   return z.array(MonthlyPerformanceRowSchema).parse(data);
 }
 
@@ -86,7 +90,9 @@ export function parseAgencyPerformanceReport(data: unknown[]): MonthlyPerformanc
  * Parse and validate team comparison report response
  * @throws ZodError if validation fails
  */
-export function parseTeamComparisonReport(data: unknown[]): TeamComparisonRow[] {
+export function parseTeamComparisonReport(
+  data: unknown[],
+): TeamComparisonRow[] {
   return z.array(TeamComparisonRowSchema).parse(data);
 }
 
@@ -164,7 +170,7 @@ export const MAX_REPORT_DATE_RANGE_MONTHS = 24;
 export class DateRangeValidationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'DateRangeValidationError';
+    this.name = "DateRangeValidationError";
   }
 }
 
@@ -179,22 +185,22 @@ export function validateReportDateRange(dateRange?: ReportDateRange): void {
 
   // Check dates are valid
   if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
-    throw new DateRangeValidationError('Invalid start date');
+    throw new DateRangeValidationError("Invalid start date");
   }
   if (!(endDate instanceof Date) || isNaN(endDate.getTime())) {
-    throw new DateRangeValidationError('Invalid end date');
+    throw new DateRangeValidationError("Invalid end date");
   }
 
   // Check start is before end
   if (startDate > endDate) {
-    throw new DateRangeValidationError('Start date must be before end date');
+    throw new DateRangeValidationError("Start date must be before end date");
   }
 
   // Check range doesn't exceed maximum
   const monthsDiff = getMonthsDifference(startDate, endDate);
   if (monthsDiff > MAX_REPORT_DATE_RANGE_MONTHS) {
     throw new DateRangeValidationError(
-      `Date range exceeds maximum of ${MAX_REPORT_DATE_RANGE_MONTHS} months (requested: ${monthsDiff} months)`
+      `Date range exceeds maximum of ${MAX_REPORT_DATE_RANGE_MONTHS} months (requested: ${monthsDiff} months)`,
     );
   }
 
@@ -202,7 +208,7 @@ export function validateReportDateRange(dateRange?: ReportDateRange): void {
   const now = new Date();
   const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   if (startDate > endOfCurrentMonth) {
-    throw new DateRangeValidationError('Start date cannot be in the future');
+    throw new DateRangeValidationError("Start date cannot be in the future");
   }
 }
 
@@ -229,7 +235,9 @@ export function clampDateRange(dateRange: ReportDateRange): ReportDateRange {
 
   // Clamp start date to be MAX_REPORT_DATE_RANGE_MONTHS before end date
   const clampedStart = new Date(endDate);
-  clampedStart.setMonth(clampedStart.getMonth() - MAX_REPORT_DATE_RANGE_MONTHS + 1);
+  clampedStart.setMonth(
+    clampedStart.getMonth() - MAX_REPORT_DATE_RANGE_MONTHS + 1,
+  );
   clampedStart.setDate(1); // First of month
 
   return {
@@ -242,5 +250,28 @@ export function clampDateRange(dateRange: ReportDateRange): ReportDateRange {
  * Format date for PostgreSQL query parameters
  */
 export function formatDateForQuery(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
+}
+
+/**
+ * Build RPC date range parameters with YTD defaults.
+ * Centralizes the common pattern of defaulting to YTD when no date range provided.
+ * @param dateRange - Optional date range; if not provided, defaults to YTD
+ * @returns Object with p_start_date and p_end_date formatted for PostgreSQL
+ */
+export function buildDateRangeParams(dateRange?: ReportDateRange): {
+  p_start_date: string;
+  p_end_date: string;
+} {
+  const now = new Date();
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+
+  return {
+    p_start_date: dateRange
+      ? formatDateForQuery(dateRange.startDate)
+      : formatDateForQuery(yearStart),
+    p_end_date: dateRange
+      ? formatDateForQuery(dateRange.endDate)
+      : formatDateForQuery(now),
+  };
 }

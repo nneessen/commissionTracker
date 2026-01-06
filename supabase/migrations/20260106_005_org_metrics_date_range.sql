@@ -1,0 +1,592 @@
+-- Migration: Add date range parameters to org metrics RPC functions
+-- Allows OrgMetricsSection to respect the dashboard time period selector
+
+-- =====================================================
+-- 1. Update get_imo_dashboard_metrics with date range params
+-- =====================================================
+
+DROP FUNCTION IF EXISTS get_imo_dashboard_metrics();
+
+CREATE OR REPLACE FUNCTION get_imo_dashboard_metrics(
+  p_start_date date DEFAULT date_trunc('year', CURRENT_DATE)::date,
+  p_end_date date DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+  imo_id uuid,
+  imo_name text,
+  total_active_policies bigint,
+  total_annual_premium numeric,
+  total_commissions_ytd numeric,
+  total_earned_ytd numeric,
+  total_unearned numeric,
+  agent_count bigint,
+  agency_count bigint,
+  avg_production_per_agent numeric
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_imo_id uuid;
+BEGIN
+  -- Check access: must be IMO admin/owner or super admin
+  IF NOT (is_imo_admin() OR is_super_admin()) THEN
+    RAISE EXCEPTION 'Access denied: IMO admin or super admin required';
+  END IF;
+
+  -- Get current user's IMO
+  v_imo_id := get_my_imo_id();
+  IF v_imo_id IS NULL THEN
+    RAISE EXCEPTION 'User is not associated with an IMO';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    i.id as imo_id,
+    i.name as imo_name,
+    COALESCE(policy_stats.active_policies, 0)::bigint as total_active_policies,
+    COALESCE(policy_stats.total_annual_premium, 0)::numeric as total_annual_premium,
+    COALESCE(commission_stats.total_commissions_ytd, 0)::numeric as total_commissions_ytd,
+    COALESCE(commission_stats.total_earned_ytd, 0)::numeric as total_earned_ytd,
+    COALESCE(commission_stats.total_unearned, 0)::numeric as total_unearned,
+    COALESCE(user_stats.agent_count, 0)::bigint as agent_count,
+    COALESCE(agency_stats.agency_count, 0)::bigint as agency_count,
+    CASE
+      WHEN COALESCE(user_stats.agent_count, 0) > 0
+      THEN ROUND(COALESCE(policy_stats.total_annual_premium, 0) / user_stats.agent_count, 2)
+      ELSE 0
+    END::numeric as avg_production_per_agent
+  FROM imos i
+  LEFT JOIN LATERAL (
+    SELECT
+      COUNT(*) FILTER (
+        WHERE p.status = 'active'
+          AND p.effective_date >= p_start_date
+          AND p.effective_date <= p_end_date
+      ) as active_policies,
+      SUM(p.annual_premium) FILTER (
+        WHERE p.status = 'active'
+          AND p.effective_date >= p_start_date
+          AND p.effective_date <= p_end_date
+      ) as total_annual_premium
+    FROM policies p
+    WHERE p.imo_id = i.id
+  ) policy_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT
+      SUM(c.amount) FILTER (
+        WHERE c.payment_date >= p_start_date
+          AND c.payment_date <= p_end_date
+      ) as total_commissions_ytd,
+      SUM(c.earned_amount) FILTER (
+        WHERE c.payment_date >= p_start_date
+          AND c.payment_date <= p_end_date
+      ) as total_earned_ytd,
+      SUM(c.unearned_amount) as total_unearned
+    FROM commissions c
+    WHERE c.imo_id = i.id
+  ) commission_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT COUNT(*) as agent_count
+    FROM user_profiles up
+    WHERE up.imo_id = i.id
+      AND up.approval_status = 'approved'
+      AND up.archived_at IS NULL
+  ) user_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT COUNT(*) as agency_count
+    FROM agencies a
+    WHERE a.imo_id = i.id
+      AND a.is_active = true
+  ) agency_stats ON true
+  WHERE i.id = v_imo_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_imo_dashboard_metrics(date, date) TO authenticated;
+
+COMMENT ON FUNCTION get_imo_dashboard_metrics(date, date) IS
+'Returns aggregated dashboard metrics for the current user''s IMO.
+Accepts optional date range for filtering policies and commissions.
+Defaults to YTD if no dates provided.
+Requires IMO admin, IMO owner, or super admin role.';
+
+
+-- =====================================================
+-- 2. Update get_agency_dashboard_metrics with date range params
+-- =====================================================
+
+DROP FUNCTION IF EXISTS get_agency_dashboard_metrics(uuid);
+
+CREATE OR REPLACE FUNCTION get_agency_dashboard_metrics(
+  p_agency_id uuid DEFAULT NULL,
+  p_start_date date DEFAULT date_trunc('year', CURRENT_DATE)::date,
+  p_end_date date DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+  agency_id uuid,
+  agency_name text,
+  imo_id uuid,
+  active_policies bigint,
+  total_annual_premium numeric,
+  total_commissions_ytd numeric,
+  total_earned_ytd numeric,
+  total_unearned numeric,
+  agent_count bigint,
+  avg_production_per_agent numeric,
+  top_producer_id uuid,
+  top_producer_name text,
+  top_producer_premium numeric
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_agency_id uuid;
+  v_imo_id uuid;
+  v_is_owner boolean;
+BEGIN
+  -- Determine which agency to query
+  IF p_agency_id IS NOT NULL THEN
+    v_agency_id := p_agency_id;
+  ELSE
+    -- Default to user's own agency
+    v_agency_id := get_my_agency_id();
+  END IF;
+
+  IF v_agency_id IS NULL THEN
+    RAISE EXCEPTION 'No agency specified and user is not associated with an agency';
+  END IF;
+
+  -- Get the IMO for this agency
+  SELECT a.imo_id INTO v_imo_id
+  FROM agencies a
+  WHERE a.id = v_agency_id;
+
+  IF v_imo_id IS NULL THEN
+    RAISE EXCEPTION 'Agency not found';
+  END IF;
+
+  -- Check if user is owner of this agency
+  SELECT EXISTS(
+    SELECT 1 FROM agencies
+    WHERE id = v_agency_id AND owner_id = auth.uid()
+  ) INTO v_is_owner;
+
+  -- Access check: must be agency owner, IMO admin (same IMO), or super admin
+  IF NOT (v_is_owner OR (is_imo_admin() AND get_my_imo_id() = v_imo_id) OR is_super_admin()) THEN
+    RAISE EXCEPTION 'Access denied: must be agency owner, IMO admin, or super admin';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    a.id as agency_id,
+    a.name as agency_name,
+    a.imo_id,
+    COALESCE(policy_stats.active_policies, 0)::bigint as active_policies,
+    COALESCE(policy_stats.total_annual_premium, 0)::numeric as total_annual_premium,
+    COALESCE(commission_stats.total_commissions_ytd, 0)::numeric as total_commissions_ytd,
+    COALESCE(commission_stats.total_earned_ytd, 0)::numeric as total_earned_ytd,
+    COALESCE(commission_stats.total_unearned, 0)::numeric as total_unearned,
+    COALESCE(user_stats.agent_count, 0)::bigint as agent_count,
+    CASE
+      WHEN COALESCE(user_stats.agent_count, 0) > 0
+      THEN ROUND(COALESCE(policy_stats.total_annual_premium, 0) / user_stats.agent_count, 2)
+      ELSE 0
+    END::numeric as avg_production_per_agent,
+    top_producer.user_id as top_producer_id,
+    top_producer.producer_name as top_producer_name,
+    COALESCE(top_producer.total_premium, 0)::numeric as top_producer_premium
+  FROM agencies a
+  LEFT JOIN LATERAL (
+    SELECT
+      COUNT(*) FILTER (
+        WHERE p.status = 'active'
+          AND p.effective_date >= p_start_date
+          AND p.effective_date <= p_end_date
+      ) as active_policies,
+      SUM(p.annual_premium) FILTER (
+        WHERE p.status = 'active'
+          AND p.effective_date >= p_start_date
+          AND p.effective_date <= p_end_date
+      ) as total_annual_premium
+    FROM policies p
+    INNER JOIN user_profiles up ON p.user_id = up.id
+    WHERE up.agency_id = a.id
+  ) policy_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT
+      SUM(c.amount) FILTER (
+        WHERE c.payment_date >= p_start_date
+          AND c.payment_date <= p_end_date
+      ) as total_commissions_ytd,
+      SUM(c.earned_amount) FILTER (
+        WHERE c.payment_date >= p_start_date
+          AND c.payment_date <= p_end_date
+      ) as total_earned_ytd,
+      SUM(c.unearned_amount) as total_unearned
+    FROM commissions c
+    INNER JOIN user_profiles up ON c.user_id = up.id
+    WHERE up.agency_id = a.id
+  ) commission_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT COUNT(*) as agent_count
+    FROM user_profiles up
+    WHERE up.agency_id = a.id
+      AND up.approval_status = 'approved'
+      AND up.archived_at IS NULL
+  ) user_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT
+      up.id as user_id,
+      COALESCE(up.first_name || ' ' || up.last_name, up.email) as producer_name,
+      SUM(p.annual_premium) as total_premium
+    FROM user_profiles up
+    INNER JOIN policies p ON p.user_id = up.id
+    WHERE up.agency_id = a.id
+      AND p.status = 'active'
+      AND p.effective_date >= p_start_date
+      AND p.effective_date <= p_end_date
+      AND up.approval_status = 'approved'
+      AND up.archived_at IS NULL
+    GROUP BY up.id, up.first_name, up.last_name, up.email
+    ORDER BY total_premium DESC NULLS LAST
+    LIMIT 1
+  ) top_producer ON true
+  WHERE a.id = v_agency_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_agency_dashboard_metrics(uuid, date, date) TO authenticated;
+
+COMMENT ON FUNCTION get_agency_dashboard_metrics(uuid, date, date) IS
+'Returns aggregated dashboard metrics for a specific agency.
+If no agency_id provided, defaults to user''s own agency.
+Accepts optional date range for filtering policies and commissions.
+Defaults to YTD if no dates provided.
+Requires agency owner, IMO admin (same IMO), or super admin role.';
+
+
+-- =====================================================
+-- 3. Update get_imo_production_by_agency with date range params
+-- =====================================================
+
+DROP FUNCTION IF EXISTS get_imo_production_by_agency();
+
+CREATE OR REPLACE FUNCTION get_imo_production_by_agency(
+  p_start_date date DEFAULT date_trunc('year', CURRENT_DATE)::date,
+  p_end_date date DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+  agency_id uuid,
+  agency_name text,
+  agency_code text,
+  owner_name text,
+  active_policies bigint,
+  total_annual_premium numeric,
+  commissions_ytd numeric,
+  agent_count bigint,
+  avg_production numeric,
+  pct_of_imo_production numeric
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_imo_id uuid;
+  v_total_imo_premium numeric;
+BEGIN
+  -- Check access: must be IMO admin/owner or super admin
+  IF NOT (is_imo_admin() OR is_super_admin()) THEN
+    RAISE EXCEPTION 'Access denied: IMO admin or super admin required';
+  END IF;
+
+  -- Get current user's IMO
+  v_imo_id := get_my_imo_id();
+  IF v_imo_id IS NULL THEN
+    RAISE EXCEPTION 'User is not associated with an IMO';
+  END IF;
+
+  -- Get total IMO premium for percentage calculation (filtered by date range)
+  SELECT COALESCE(SUM(p.annual_premium), 0)
+  INTO v_total_imo_premium
+  FROM policies p
+  WHERE p.imo_id = v_imo_id
+    AND p.status = 'active'
+    AND p.effective_date >= p_start_date
+    AND p.effective_date <= p_end_date;
+
+  RETURN QUERY
+  SELECT
+    a.id as agency_id,
+    a.name as agency_name,
+    a.code as agency_code,
+    COALESCE(owner.first_name || ' ' || owner.last_name, owner.email, 'No Owner') as owner_name,
+    COALESCE(policy_stats.active_policies, 0)::bigint as active_policies,
+    COALESCE(policy_stats.total_premium, 0)::numeric as total_annual_premium,
+    COALESCE(commission_stats.commissions_ytd, 0)::numeric as commissions_ytd,
+    COALESCE(user_stats.agent_count, 0)::bigint as agent_count,
+    CASE
+      WHEN COALESCE(user_stats.agent_count, 0) > 0
+      THEN ROUND(COALESCE(policy_stats.total_premium, 0) / user_stats.agent_count, 2)
+      ELSE 0
+    END::numeric as avg_production,
+    CASE
+      WHEN v_total_imo_premium > 0
+      THEN ROUND(COALESCE(policy_stats.total_premium, 0) / v_total_imo_premium * 100, 1)
+      ELSE 0
+    END::numeric as pct_of_imo_production
+  FROM agencies a
+  LEFT JOIN user_profiles owner ON a.owner_id = owner.id
+  LEFT JOIN LATERAL (
+    SELECT
+      COUNT(*) FILTER (
+        WHERE p.status = 'active'
+          AND p.effective_date >= p_start_date
+          AND p.effective_date <= p_end_date
+      ) as active_policies,
+      SUM(p.annual_premium) FILTER (
+        WHERE p.status = 'active'
+          AND p.effective_date >= p_start_date
+          AND p.effective_date <= p_end_date
+      ) as total_premium
+    FROM policies p
+    INNER JOIN user_profiles up ON p.user_id = up.id
+    WHERE up.agency_id = a.id
+  ) policy_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT SUM(c.amount) as commissions_ytd
+    FROM commissions c
+    INNER JOIN user_profiles up ON c.user_id = up.id
+    WHERE up.agency_id = a.id
+      AND c.payment_date >= p_start_date
+      AND c.payment_date <= p_end_date
+  ) commission_stats ON true
+  LEFT JOIN LATERAL (
+    SELECT COUNT(*) as agent_count
+    FROM user_profiles up
+    WHERE up.agency_id = a.id
+      AND up.approval_status = 'approved'
+      AND up.archived_at IS NULL
+  ) user_stats ON true
+  WHERE a.imo_id = v_imo_id
+    AND a.is_active = true
+  ORDER BY COALESCE(policy_stats.total_premium, 0) DESC;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_imo_production_by_agency(date, date) TO authenticated;
+
+COMMENT ON FUNCTION get_imo_production_by_agency(date, date) IS
+'Returns production breakdown by agency for the current user''s IMO.
+Accepts optional date range for filtering policies and commissions.
+Defaults to YTD if no dates provided.
+Requires IMO admin, IMO owner, or super admin role.';
+
+
+-- =====================================================
+-- 4. Update get_imo_override_summary with date range params
+-- =====================================================
+
+DROP FUNCTION IF EXISTS get_imo_override_summary();
+
+CREATE OR REPLACE FUNCTION get_imo_override_summary(
+  p_start_date date DEFAULT date_trunc('year', CURRENT_DATE)::date,
+  p_end_date date DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+  imo_id uuid,
+  imo_name text,
+  total_override_count bigint,
+  total_override_amount numeric,
+  pending_amount numeric,
+  earned_amount numeric,
+  paid_amount numeric,
+  chargeback_amount numeric,
+  unique_uplines bigint,
+  unique_downlines bigint,
+  avg_override_per_policy numeric
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_imo_id uuid;
+  v_is_imo_admin boolean;
+BEGIN
+  -- Get user's IMO and verify access
+  SELECT up.imo_id INTO v_imo_id
+  FROM user_profiles up
+  WHERE up.id = auth.uid();
+
+  IF v_imo_id IS NULL THEN
+    RAISE EXCEPTION 'User is not assigned to an IMO'
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Check if user is IMO admin
+  SELECT is_imo_admin() INTO v_is_imo_admin;
+
+  IF NOT v_is_imo_admin THEN
+    RAISE EXCEPTION 'Access denied: IMO admin role required'
+      USING ERRCODE = 'P0003';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    i.id AS imo_id,
+    i.name AS imo_name,
+    COUNT(oc.id) AS total_override_count,
+    COALESCE(SUM(oc.override_commission_amount), 0) AS total_override_amount,
+    COALESCE(SUM(CASE WHEN oc.status = 'pending' THEN oc.override_commission_amount ELSE 0 END), 0) AS pending_amount,
+    COALESCE(SUM(CASE WHEN oc.status = 'earned' THEN oc.override_commission_amount ELSE 0 END), 0) AS earned_amount,
+    COALESCE(SUM(CASE WHEN oc.status = 'paid' THEN oc.override_commission_amount ELSE 0 END), 0) AS paid_amount,
+    COALESCE(SUM(oc.chargeback_amount), 0) AS chargeback_amount,
+    COUNT(DISTINCT oc.override_agent_id) AS unique_uplines,
+    COUNT(DISTINCT oc.base_agent_id) AS unique_downlines,
+    CASE
+      WHEN COUNT(DISTINCT oc.policy_id) > 0
+      THEN ROUND(SUM(oc.override_commission_amount) / COUNT(DISTINCT oc.policy_id), 2)
+      ELSE 0
+    END AS avg_override_per_policy
+  FROM imos i
+  LEFT JOIN override_commissions oc ON oc.imo_id = i.id
+  LEFT JOIN policies p ON oc.policy_id = p.id
+  WHERE i.id = v_imo_id
+    AND (oc.id IS NULL OR (p.effective_date >= p_start_date AND p.effective_date <= p_end_date))
+  GROUP BY i.id, i.name;
+END;
+$$;
+
+COMMENT ON FUNCTION get_imo_override_summary(date, date) IS
+  'Returns override commission summary for IMO admins.
+Accepts optional date range for filtering by policy effective date.
+Defaults to YTD if no dates provided.';
+
+GRANT EXECUTE ON FUNCTION get_imo_override_summary(date, date) TO authenticated;
+
+
+-- =====================================================
+-- 5. Update get_agency_override_summary with date range params
+-- =====================================================
+
+DROP FUNCTION IF EXISTS get_agency_override_summary(uuid);
+
+CREATE OR REPLACE FUNCTION get_agency_override_summary(
+  p_agency_id uuid DEFAULT NULL,
+  p_start_date date DEFAULT date_trunc('year', CURRENT_DATE)::date,
+  p_end_date date DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+  agency_id uuid,
+  agency_name text,
+  total_override_count bigint,
+  total_override_amount numeric,
+  pending_amount numeric,
+  earned_amount numeric,
+  paid_amount numeric,
+  chargeback_amount numeric,
+  unique_uplines bigint,
+  unique_downlines bigint,
+  avg_override_per_policy numeric,
+  top_earner_id uuid,
+  top_earner_name text,
+  top_earner_amount numeric
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_agency_id uuid;
+  v_user_agency_id uuid;
+  v_is_owner boolean;
+  v_is_imo_admin boolean;
+BEGIN
+  -- Get user's agency
+  SELECT up.agency_id INTO v_user_agency_id
+  FROM user_profiles up
+  WHERE up.id = auth.uid();
+
+  -- Determine target agency
+  v_agency_id := COALESCE(p_agency_id, v_user_agency_id);
+
+  IF v_agency_id IS NULL THEN
+    RAISE EXCEPTION 'No agency specified and user is not assigned to an agency'
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Verify access: must be agency owner or IMO admin
+  SELECT is_agency_owner(v_agency_id) INTO v_is_owner;
+  SELECT is_imo_admin() INTO v_is_imo_admin;
+
+  IF NOT v_is_owner AND NOT v_is_imo_admin THEN
+    RAISE EXCEPTION 'Access denied: Agency owner or IMO admin role required'
+      USING ERRCODE = 'P0003';
+  END IF;
+
+  RETURN QUERY
+  WITH filtered_overrides AS (
+    SELECT oc.*
+    FROM override_commissions oc
+    INNER JOIN policies p ON oc.policy_id = p.id
+    WHERE oc.agency_id = v_agency_id
+      AND p.effective_date >= p_start_date
+      AND p.effective_date <= p_end_date
+  ),
+  override_stats AS (
+    SELECT
+      fo.override_agent_id,
+      SUM(fo.override_commission_amount) AS agent_total
+    FROM filtered_overrides fo
+    GROUP BY fo.override_agent_id
+    ORDER BY agent_total DESC
+    LIMIT 1
+  ),
+  top_earner AS (
+    SELECT
+      os.override_agent_id,
+      COALESCE(up.first_name || ' ' || up.last_name, up.email) AS name,
+      os.agent_total
+    FROM override_stats os
+    LEFT JOIN user_profiles up ON up.id = os.override_agent_id
+  )
+  SELECT
+    a.id AS agency_id,
+    a.name AS agency_name,
+    COUNT(fo.id) AS total_override_count,
+    COALESCE(SUM(fo.override_commission_amount), 0) AS total_override_amount,
+    COALESCE(SUM(CASE WHEN fo.status = 'pending' THEN fo.override_commission_amount ELSE 0 END), 0) AS pending_amount,
+    COALESCE(SUM(CASE WHEN fo.status = 'earned' THEN fo.override_commission_amount ELSE 0 END), 0) AS earned_amount,
+    COALESCE(SUM(CASE WHEN fo.status = 'paid' THEN fo.override_commission_amount ELSE 0 END), 0) AS paid_amount,
+    COALESCE(SUM(fo.chargeback_amount), 0) AS chargeback_amount,
+    COUNT(DISTINCT fo.override_agent_id) AS unique_uplines,
+    COUNT(DISTINCT fo.base_agent_id) AS unique_downlines,
+    CASE
+      WHEN COUNT(DISTINCT fo.policy_id) > 0
+      THEN ROUND(SUM(fo.override_commission_amount) / COUNT(DISTINCT fo.policy_id), 2)
+      ELSE 0
+    END AS avg_override_per_policy,
+    te.override_agent_id AS top_earner_id,
+    te.name AS top_earner_name,
+    COALESCE(te.agent_total, 0) AS top_earner_amount
+  FROM agencies a
+  LEFT JOIN filtered_overrides fo ON fo.agency_id = a.id
+  LEFT JOIN top_earner te ON true
+  WHERE a.id = v_agency_id
+  GROUP BY a.id, a.name, te.override_agent_id, te.name, te.agent_total;
+END;
+$$;
+
+COMMENT ON FUNCTION get_agency_override_summary(uuid, date, date) IS
+  'Returns override commission summary for agency owners/IMO admins.
+Accepts optional date range for filtering by policy effective date.
+Defaults to YTD if no dates provided.';
+
+GRANT EXECUTE ON FUNCTION get_agency_override_summary(uuid, date, date) TO authenticated;
