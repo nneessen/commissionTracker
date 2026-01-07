@@ -58,7 +58,14 @@ type RecruitWithRelations = UserProfile & {
 
 function RecruitingDashboardContent() {
   const { user, supabaseUser } = useAuth();
-  const { data: recruitsData, isLoading: recruitsLoading } = useRecruits();
+  // Filter to only show recruits where current user is the recruiter
+  // Disable query until user is loaded to prevent fetching all recruits
+  const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
+    { recruiter_id: user?.id },
+    1,
+    50,
+    { enabled: !!user?.id },
+  );
 
   // Check if current user is the super admin (nickneessen@thestandardhq.com)
   const showPreviewBanner = !isSuperAdminEmail(supabaseUser?.email);
