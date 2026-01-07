@@ -160,46 +160,26 @@ serve(async (req) => {
       );
     }
 
-    const shortLivedToken = tokenData.access_token;
+    const accessToken = tokenData.access_token;
     const instagramUserId = tokenData.user_id;
     console.log(
-      "[instagram-oauth-callback] Short-lived token obtained, user_id:",
+      "[instagram-oauth-callback] Access token obtained, user_id:",
       instagramUserId,
     );
 
     // =========================================================================
-    // Step 2: Exchange short-lived token for long-lived token (~60 days)
+    // Step 2: Use the token directly (skip long-lived exchange)
     // =========================================================================
-    const longLivedUrl = new URL("https://graph.instagram.com/access_token");
-    longLivedUrl.searchParams.set("grant_type", "ig_exchange_token");
-    longLivedUrl.searchParams.set("client_secret", INSTAGRAM_APP_SECRET);
-    longLivedUrl.searchParams.set("access_token", shortLivedToken);
-
-    console.log(
-      "[instagram-oauth-callback] Exchanging for long-lived token...",
-    );
-
-    const longLivedResponse = await fetch(longLivedUrl.toString(), {
-      method: "POST",
-    });
-    const longLivedData = await longLivedResponse.json();
-
-    if (!longLivedData.access_token) {
-      console.error(
-        "[instagram-oauth-callback] Long-lived token exchange failed:",
-        longLivedData,
-      );
-      return Response.redirect(
-        `${redirectUrl}?instagram=error&reason=long_lived_token`,
-      );
-    }
-
-    const longLivedToken = longLivedData.access_token;
-    const expiresInSeconds = longLivedData.expires_in || 5184000; // Default 60 days
+    // NOTE: The Instagram API with Instagram Login (instagram_business_* scopes)
+    // does NOT support the ig_exchange_token endpoint - that's for Basic Display API.
+    // The token from api.instagram.com/oauth/access_token works directly.
+    // Token expiry is handled via refresh_access_token endpoint later if needed.
+    // Default to 60 days expiry (Instagram's standard for these tokens).
+    const expiresInSeconds = tokenData.expires_in || 5184000; // 60 days default
     const tokenExpiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
     console.log(
-      `[instagram-oauth-callback] Long-lived token obtained, expires in ${Math.round(expiresInSeconds / 86400)} days`,
+      `[instagram-oauth-callback] Using access token directly, setting expiry to ${Math.round(expiresInSeconds / 86400)} days`,
     );
 
     // =========================================================================
@@ -208,7 +188,7 @@ serve(async (req) => {
     console.log("[instagram-oauth-callback] Fetching Instagram profile...");
 
     const igProfileUrl = new URL(`https://graph.instagram.com/v21.0/me`);
-    igProfileUrl.searchParams.set("access_token", longLivedToken);
+    igProfileUrl.searchParams.set("access_token", accessToken);
     igProfileUrl.searchParams.set(
       "fields",
       "user_id,username,name,profile_picture_url,account_type",
@@ -241,7 +221,7 @@ serve(async (req) => {
     // =========================================================================
     // Step 4: Encrypt tokens and store in database
     // =========================================================================
-    const encryptedAccessToken = await encrypt(longLivedToken);
+    const encryptedAccessToken = await encrypt(accessToken);
 
     // Check if integration already exists for this Instagram account
     const { data: existingIntegration } = await supabase

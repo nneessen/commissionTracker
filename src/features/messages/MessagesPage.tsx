@@ -2,6 +2,8 @@
 // Communications Hub - Redesigned with zinc palette and compact design patterns
 
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessagesLayout } from "./components/layout/MessagesLayout";
@@ -68,6 +70,58 @@ export function MessagesPage() {
 
   // Mobile detection
   const isMobile = useIsMobile();
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
+
+  // Handle Instagram OAuth callback query params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const instagramStatus = urlParams.get("instagram");
+    const account = urlParams.get("account");
+    const reason = urlParams.get("reason");
+
+    if (instagramStatus === "success") {
+      toast.success(`Instagram connected: @${account || "Unknown"}`);
+      // Invalidate Instagram queries to refresh state
+      queryClient.invalidateQueries({ queryKey: ["instagram"] });
+      // Switch to Instagram tab
+      setActiveTab("instagram");
+      // Clean URL
+      urlParams.delete("instagram");
+      urlParams.delete("account");
+      const newUrl =
+        urlParams.toString().length > 0
+          ? `${window.location.pathname}?${urlParams.toString()}`
+          : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    } else if (instagramStatus === "error") {
+      const errorMessages: Record<string, string> = {
+        config: "Server configuration error. Contact support.",
+        missing_params: "OAuth failed - missing parameters.",
+        invalid_state: "Session expired. Please try again.",
+        expired: "OAuth session expired. Please try again.",
+        token_exchange: "Failed to connect Instagram. Try again.",
+        long_lived_token: "Failed to get long-term access. Try again.",
+        profile_fetch: "Could not fetch Instagram profile.",
+        save_failed: "Failed to save connection. Try again.",
+        unexpected: "Unexpected error occurred.",
+      };
+      toast.error(
+        errorMessages[reason || ""] ||
+          `Instagram connection failed: ${reason || "Unknown error"}`,
+      );
+      // Clean URL
+      urlParams.delete("instagram");
+      urlParams.delete("reason");
+      urlParams.delete("details");
+      const newUrl =
+        urlParams.toString().length > 0
+          ? `${window.location.pathname}?${urlParams.toString()}`
+          : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [queryClient]);
 
   // Get email quota
   const { remainingDaily, percentUsed, quota } = useEmailQuota();
