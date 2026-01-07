@@ -196,13 +196,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth("Session refreshed");
     } catch (err) {
-      logger.error(
-        "Error refreshing session",
+      // Don't sign out on refresh errors - the existing session may still be valid
+      // This prevents logout during OAuth redirects or transient network issues
+      logger.warn(
+        "Session refresh failed, continuing with existing session",
         err instanceof Error ? err : String(err),
         "Auth",
       );
-      await signOut();
-      throw err;
+      // Don't throw - allow the app to continue with the existing session
     }
   };
 
