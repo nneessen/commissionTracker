@@ -220,13 +220,26 @@ serve(async (req) => {
     // =========================================================================
     const encryptedAccessToken = await encrypt(accessToken);
 
-    // Check if integration already exists for this Instagram account
-    const { data: existingIntegration } = await supabase
+    // Check if integration already exists for this user/IMO or Instagram account
+    // The unique constraint is on (user_id, imo_id), so check both cases:
+    // 1. Same user reconnecting (possibly with different Instagram account)
+    // 2. Same Instagram account being reconnected
+    const { data: existingByUser } = await supabase
+      .from("instagram_integrations")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("imo_id", imoId)
+      .maybeSingle();
+
+    const { data: existingByInstagram } = await supabase
       .from("instagram_integrations")
       .select("id")
       .eq("instagram_user_id", instagramBusinessAccountId)
       .eq("imo_id", imoId)
       .maybeSingle();
+
+    // Prefer user match (to handle reconnecting with different Instagram account)
+    const existingIntegration = existingByUser || existingByInstagram;
 
     const integrationData = {
       imo_id: imoId,

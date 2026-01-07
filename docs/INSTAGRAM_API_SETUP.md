@@ -325,6 +325,34 @@ npm run dev
 - Make sure your Instagram account is connected to a Facebook Page
 - Make sure that Facebook Page is connected in Messenger → Instagram Settings
 
+### Error: "Unsupported request - method type: get" (IGApiException code 100)
+
+This error occurs in the profile fetch step of OAuth. Despite the misleading message, it's caused by **invalid field names**, not the HTTP method.
+
+**Root cause:** The Instagram Graph API profile endpoint (`/me`) requires specific field names:
+- ✅ Correct: `id,username,name,account_type`
+- ❌ Wrong: `user_id` (should be `id`)
+- ❌ Wrong: `profile_picture_url` (not supported for Business API)
+
+**Fix location:** `supabase/functions/instagram-oauth-callback/index.ts` lines 192-195
+
+```typescript
+// CORRECT fields for Instagram Business API
+igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
+```
+
+### Error: "duplicate key value violates unique constraint"
+
+This occurs when a user tries to reconnect their Instagram account.
+
+**Root cause:** The unique constraint is on `(user_id, imo_id)`, but the code was only checking for existing records by `(instagram_user_id, imo_id)`.
+
+**Fix:** The OAuth callback now checks for existing integrations by BOTH:
+1. `user_id + imo_id` (same user reconnecting, possibly different Instagram)
+2. `instagram_user_id + imo_id` (same Instagram account)
+
+**Fix location:** `supabase/functions/instagram-oauth-callback/index.ts` lines 223-242
+
 ---
 
 ## Quick Reference
