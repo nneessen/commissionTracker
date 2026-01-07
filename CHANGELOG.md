@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-07 13:24:55
+
+### Changed Files
+- `.serena/memories/instagram-app-credentials.md`
+- `plans/active/ACTIVE_SESSION_CONTINUATION_instagram_oauth.md`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-oauth-callback/index.ts`
+- `supabase/functions/instagram-webhook/index.ts`
+
+### Statistics
+```
+ 5 files changed, 166 insertions(+), 133 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 12:42:51
 
 ### Changed Files

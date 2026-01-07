@@ -1,139 +1,124 @@
-# ACTIVE SESSION CONTINUATION - Instagram OAuth Fix for All Users
+# ACTIVE SESSION CONTINUATION - Instagram OAuth Fix
 
 **Created:** 2026-01-07
-**Priority:** P0 - Blocking feature for all users except nickneessen
+**Updated:** 2026-01-07
+**Status:** ✅ FIXES DEPLOYED - READY FOR TESTING
 
 ---
 
-## THE PROBLEM
+## FIXES APPLIED (Jan 7, 2026)
 
-Instagram integration is broken for users OTHER than nickneessen:
+### 1. OAuth Callback - Profile Fetch (P0 FIX)
+**File:** `supabase/functions/instagram-oauth-callback/index.ts`
 
-1. **OAuth fails** for kerryglass.ffl@gmail.com with error:
-   ```
-   "Unsupported request - method type: get"
-   IGApiException code: 100
-   ```
+**Problem:** Requesting `user_id` field from Instagram API caused "Unsupported request - method type: get" error for some account types.
 
-2. **Conversations sidebar showed wrong usernames** - all showed @nickneessen instead of actual participants (manually fixed for nickneessen only)
+**Fix:**
+- Changed from `/{user_id}` endpoint to `/me` endpoint
+- Removed `user_id` from requested fields
+- Now only requests: `id,username,name,account_type`
+- Stores `igProfile.id` directly (the IGSID format that matches webhooks)
 
----
+### 2. OAuth Callback - ID Storage (P0 FIX)
+**File:** `supabase/functions/instagram-oauth-callback/index.ts`
 
-## WHAT WAS TRIED AND CURRENT STATE
+**Problem:** Stored ID format didn't match webhook `entry.id` format.
 
-### OAuth Callback (`supabase/functions/instagram-oauth-callback/index.ts`)
+**Fix:**
+- Now stores ONLY `igProfile.id` from `/me` response
+- Added validation to fail if `id` is missing
+- Removed fallback logic that could store wrong ID format
 
-**Original working code:**
-```typescript
-const igProfileUrl = new URL(`https://graph.instagram.com/v21.0/me`);
-igProfileUrl.searchParams.set("fields", "user_id,username,name,profile_picture_url,account_type");
-const instagramBusinessAccountId = igProfile.user_id || instagramUserId;
-```
+### 3. Webhook Scheduled Messages - API Endpoint (P1 FIX)
+**File:** `supabase/functions/instagram-webhook/index.ts`
 
-**Current code after multiple fix attempts:**
-```typescript
-const igProfileUrl = new URL(`https://graph.instagram.com/v21.0/${instagramUserId}`);
-igProfileUrl.searchParams.set("fields", "id,user_id,username,name,account_type");
-const instagramBusinessAccountId = igProfile.user_id || igProfile.id || String(instagramUserId);
-```
+**Problem:** Used `graph.facebook.com/v18.0` while other functions use `graph.instagram.com/v21.0`.
 
-Changes made:
-- Changed `/me` endpoint to `/{user_id}` (because /me didn't work for some accounts)
-- Changed fields from `user_id` to `id` then back to `id,user_id`
-- Added fallback logic for ID storage
+**Fix:**
+- Changed to `https://graph.instagram.com/v21.0/me/messages`
+- Consistent with `instagram-send-message` function
 
-### Conversations Fetch (`supabase/functions/instagram-get-conversations/index.ts`)
+### 4. Conversations - Participant Matching (P1 FIX)
+**File:** `supabase/functions/instagram-get-conversations/index.ts`
 
-Added username matching to identify "self" vs "other" participants:
-```typescript
-const otherParticipant = conv.participants.data.find(
-  (p) =>
-    p.username?.toLowerCase() !== igUsername?.toLowerCase() &&
-    String(p.id) !== String(igUserId),
-);
-```
+**Problem:** Username matching had null safety issues and used incorrect AND logic.
 
-### Database Fix (nickneessen only)
-- Manually updated `instagram_user_id` from `25704725202515864` to `17841401907010491`
-- Cleared corrupted conversation data
+**Fix:**
+- Now uses OR logic: participant is "us" if username matches OR ID matches
+- Added proper null handling for usernames
+- Same logic applied to inbound message detection
 
 ---
 
-## ROOT CAUSE ANALYSIS
+## DEPLOYED FUNCTIONS
 
-Instagram has **multiple different user ID formats**:
-
-| ID Type | Example | Source |
-|---------|---------|--------|
-| Token user_id | `25704725202515864` | `api.instagram.com/oauth/access_token` response |
-| Profile id | Different number | `graph.instagram.com/{user_id}?fields=id` |
-| IGSID | `17841401907010491` | Conversations API participant IDs |
-
-These are ALL DIFFERENT for the same user. The `instagram_user_id` we store must match what the conversations API returns, or participant matching fails.
-
----
-
-## WHAT NEEDS TO BE FIXED
-
-### 1. OAuth Must Work for ALL Users
-kerryglass is still getting "Unsupported request - method type: get" error. Need to:
-- Check edge function logs when they try to connect
-- Verify the deployed code is actually the latest version
-- Test if `/{user_id}` endpoint works for their account type
-
-### 2. Stored ID Must Match Conversations API
-When storing `instagram_user_id`, we need to store the ID format that matches what conversations API returns. Options:
-- Use `user_id` field from profile (if available)
-- Or just rely on username matching (more robust)
-
-### 3. Fix Must Work for New Connections
-Any new user connecting Instagram should:
-- Complete OAuth successfully
-- Have correct `instagram_user_id` stored
-- See correct usernames in conversations sidebar
-
----
-
-## KEY FILES
-
-```
-supabase/functions/instagram-oauth-callback/index.ts  # OAuth flow
-supabase/functions/instagram-get-conversations/index.ts  # Conversation fetch
-```
+All three functions deployed successfully:
+- ✅ `instagram-oauth-callback`
+- ✅ `instagram-get-conversations`
+- ✅ `instagram-webhook`
 
 ---
 
 ## TESTING CHECKLIST
 
-- [ ] kerryglass.ffl@gmail.com can complete OAuth
-- [ ] kerryglass's conversations show correct participant usernames
-- [ ] nickneessen's conversations still work correctly
-- [ ] New user can connect and see correct conversations
+### kerryglass OAuth Test
+- [ ] kerryglass.ffl@gmail.com attempts to connect Instagram
+- [ ] OAuth completes without "Unsupported request" error
+- [ ] Integration record created with correct `instagram_user_id` (IGSID format)
+- [ ] Conversations load with correct participant names
+
+### nickneessen Regression Test
+- [ ] nickneessen's existing integration still works
+- [ ] Conversations display correctly
+- [ ] Can send messages
+- [ ] Webhooks still route correctly
+
+### New User Test
+- [ ] New user can complete OAuth
+- [ ] Correct ID stored in database
+- [ ] Conversations show correct participant info
 
 ---
 
-## DIAGNOSTIC STEPS
+## HOW TO VERIFY
 
-1. Have kerryglass try to connect Instagram again
-2. Check Supabase edge function logs for `instagram-oauth-callback`
-3. Look for the profile fetch step - what URL is being called? What response?
-4. Compare with nickneessen's successful connection
+1. **Check Supabase logs** during OAuth attempt:
+   ```
+   Look for: "[instagram-oauth-callback] Fetching Instagram profile via /me endpoint"
+   Look for: "[instagram-oauth-callback] Storing instagram_user_id: XXXX (from /me endpoint id field)"
+   ```
+
+2. **Check database** after OAuth:
+   ```sql
+   SELECT instagram_user_id, instagram_username, connection_status
+   FROM instagram_integrations
+   WHERE user_id = '<user-uuid>';
+   ```
+   The `instagram_user_id` should be in IGSID format (e.g., `17841401907010491`)
+
+3. **Test webhook matching**:
+   - Have someone DM the connected Instagram account
+   - Check logs for: `"[instagram-webhook] Processing inbound message from XXX"`
+   - Verify message appears in conversations
 
 ---
 
-## IMPORTANT CONTEXT
+## IF STILL FAILING
 
-- nickneessen's account works because we manually fixed the DB
-- The username matching code should handle ID mismatches
-- But OAuth itself must complete for any of this to matter
-- The error "method type: get" is misleading - it's usually about invalid fields/endpoint, not HTTP method
+If kerryglass still can't connect:
+
+1. Check edge function logs for exact error message
+2. Verify the deployed function has the latest code:
+   ```bash
+   npx supabase functions deploy instagram-oauth-callback --no-verify-jwt
+   ```
+3. The `/me` endpoint should work for ALL Instagram Business accounts - if it doesn't, there may be a permissions issue with the Meta app configuration
 
 ---
 
-## NEXT STEPS
+## RELATED FILES
 
-1. Deploy latest OAuth callback code (verify it's deployed)
-2. Have kerryglass attempt connection
-3. Check logs to see exactly where/why it fails
-4. Fix the specific issue for their account type
-5. Verify conversations work after successful OAuth
+- `supabase/functions/instagram-oauth-callback/index.ts` - OAuth flow
+- `supabase/functions/instagram-get-conversations/index.ts` - Conversation sync
+- `supabase/functions/instagram-webhook/index.ts` - Inbound message handling
+- `.serena/memories/instagram-app-credentials.md` - Configuration docs

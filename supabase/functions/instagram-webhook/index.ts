@@ -384,7 +384,8 @@ async function sendSingleScheduledMessage(
   },
   accessToken: string,
 ): Promise<{ success: boolean; messageId: string }> {
-  const apiUrl = `https://graph.facebook.com/v18.0/${integration.instagram_user_id}/messages`;
+  // Use same API endpoint as instagram-send-message function for consistency
+  const apiUrl = "https://graph.instagram.com/v21.0/me/messages";
 
   const response = await fetch(apiUrl, {
     method: "POST",

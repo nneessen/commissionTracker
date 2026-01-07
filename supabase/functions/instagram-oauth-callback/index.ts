@@ -185,21 +185,19 @@ serve(async (req) => {
     // =========================================================================
     // Step 3: Get Instagram profile details
     // =========================================================================
-    // NOTE: The /me endpoint doesn't work reliably for all Instagram Business accounts.
-    // Use /{user_id} directly instead - we already have user_id from token response.
+    // NOTE: Use /me endpoint with basic fields only.
+    // DO NOT request user_id field - it doesn't exist on all account types and causes
+    // "Unsupported request - method type: get" errors (IGApiException code 100).
+    // The id field from /me IS the IGSID that matches webhook entry.id and conversation participant IDs.
     console.log(
-      `[instagram-oauth-callback] Fetching Instagram profile for user_id: ${instagramUserId}`,
+      `[instagram-oauth-callback] Fetching Instagram profile via /me endpoint`,
     );
 
-    const igProfileUrl = new URL(
-      `https://graph.instagram.com/v21.0/${instagramUserId}`,
-    );
+    const igProfileUrl = new URL("https://graph.instagram.com/v21.0/me");
     igProfileUrl.searchParams.set("access_token", accessToken);
-    // IMPORTANT: Request user_id field (not just id) - user_id matches conversation participant IDs
-    igProfileUrl.searchParams.set(
-      "fields",
-      "id,user_id,username,name,account_type",
-    );
+    // CRITICAL: Only request fields that work for ALL Instagram Business account types
+    // Do NOT use: user_id (causes errors), profile_picture_url (not supported in Business API)
+    igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
 
     const igProfileResponse = await fetch(igProfileUrl.toString());
     const igProfile = await igProfileResponse.json();
@@ -219,15 +217,27 @@ serve(async (req) => {
       );
     }
 
-    // Use user_id (not id) - this matches participant IDs in conversations API
-    const instagramBusinessAccountId =
-      igProfile.user_id || igProfile.id || String(instagramUserId);
+    // CRITICAL: Use igProfile.id - this is the IGSID that matches:
+    // 1. Webhook entry.id (for routing incoming messages)
+    // 2. Conversation participant IDs (for matching self vs other)
+    // The token's user_id is a different format and should NOT be stored.
+    const instagramBusinessAccountId = igProfile.id;
+
+    if (!instagramBusinessAccountId) {
+      console.error(
+        "[instagram-oauth-callback] No id in profile response:",
+        igProfile,
+      );
+      return Response.redirect(
+        `${redirectUrl}?instagram=error&reason=missing_id`,
+      );
+    }
 
     console.log(
       `[instagram-oauth-callback] Instagram profile: @${igProfile.username} (${igProfile.name || "No name"})`,
     );
     console.log(
-      `[instagram-oauth-callback] IDs - user_id: ${igProfile.user_id}, id: ${igProfile.id}, token_user_id: ${instagramUserId}, stored: ${instagramBusinessAccountId}`,
+      `[instagram-oauth-callback] Storing instagram_user_id: ${instagramBusinessAccountId} (from /me endpoint id field)`,
     );
 
     // =========================================================================

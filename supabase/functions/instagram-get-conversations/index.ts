@@ -288,13 +288,27 @@ serve(async (req) => {
       const conversationsToUpsert = conversations
         .map((conv) => {
           // Find the other participant (not our instagram user)
-          // Use USERNAME matching as primary (more reliable than ID matching)
-          // because token user_id may differ from conversations API participant ID
-          const otherParticipant = conv.participants.data.find(
-            (p) =>
-              p.username?.toLowerCase() !== igUsername?.toLowerCase() &&
-              String(p.id) !== String(igUserId),
-          );
+          // Use BOTH username AND ID matching for robustness.
+          // A participant is "us" if EITHER:
+          // - Their username matches our username (case-insensitive)
+          // - Their ID matches our stored ID
+          // A participant is "other" if NEITHER condition is true.
+          const normalizedIgUsername = igUsername?.toLowerCase() ?? "";
+          const normalizedIgUserId = String(igUserId);
+
+          const otherParticipant = conv.participants.data.find((p) => {
+            const participantUsername = p.username?.toLowerCase() ?? "";
+            const participantId = String(p.id);
+
+            // This participant is "us" if username OR id matches
+            const isUs =
+              (normalizedIgUsername &&
+                participantUsername === normalizedIgUsername) ||
+              participantId === normalizedIgUserId;
+
+            // Return true if this is NOT us (i.e., it's the other participant)
+            return !isUs;
+          });
 
           if (!otherParticipant) return null;
 
@@ -304,11 +318,18 @@ serve(async (req) => {
           const lastMessagePreview =
             lastMessage?.message?.substring(0, 100) || null;
           // Check if message is inbound (from the other participant, not us)
-          // Use username matching as primary since IDs may not match
+          // Message is inbound if sender is NOT us (neither username nor ID matches)
           const isInbound = lastMessage?.from
-            ? lastMessage.from.username?.toLowerCase() !==
-                igUsername?.toLowerCase() &&
-              String(lastMessage.from.id) !== String(igUserId)
+            ? (() => {
+                const senderUsername =
+                  lastMessage.from.username?.toLowerCase() ?? "";
+                const senderId = String(lastMessage.from.id);
+                const senderIsUs =
+                  (normalizedIgUsername &&
+                    senderUsername === normalizedIgUsername) ||
+                  senderId === normalizedIgUserId;
+                return !senderIsUs;
+              })()
             : false;
 
           return {
