@@ -275,8 +275,11 @@ serve(async (req) => {
       const conversationsToUpsert = conversations
         .map((conv) => {
           // Find the other participant (not our instagram user)
+          // IMPORTANT: Use String() comparison because API may return id as number
+          // while igUserId from DB is a string. Without this, type mismatch causes
+          // wrong participant to be selected (e.g., owner's username shown for all convos)
           const otherParticipant = conv.participants.data.find(
-            (p) => p.id !== igUserId,
+            (p) => String(p.id) !== String(igUserId),
           );
 
           if (!otherParticipant) return null;
@@ -286,12 +289,15 @@ serve(async (req) => {
           const lastMessageAt = lastMessage?.created_time || conv.updated_time;
           const lastMessagePreview =
             lastMessage?.message?.substring(0, 100) || null;
-          const isInbound = lastMessage?.from?.id !== igUserId;
+          // Same type comparison fix for message direction
+          const isInbound = lastMessage?.from?.id
+            ? String(lastMessage.from.id) !== String(igUserId)
+            : false;
 
           return {
             integration_id: integrationId,
             instagram_conversation_id: conv.id,
-            participant_instagram_id: otherParticipant.id,
+            participant_instagram_id: String(otherParticipant.id),
             participant_username: otherParticipant.username || null,
             participant_name: otherParticipant.name || null,
             participant_profile_picture_url:

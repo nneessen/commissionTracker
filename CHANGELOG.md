@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-07 11:58:42
+
+### Changed Files
+- `docs/INSTAGRAM_API_SETUP.md`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-oauth-callback/index.ts`
+
+### Statistics
+```
+ 3 files changed, 51 insertions(+), 13 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 10:07:10
 
 ### Changed Files

@@ -185,9 +185,15 @@ serve(async (req) => {
     // =========================================================================
     // Step 3: Get Instagram profile details
     // =========================================================================
-    console.log("[instagram-oauth-callback] Fetching Instagram profile...");
+    // NOTE: The /me endpoint doesn't work reliably for all Instagram Business accounts.
+    // Use /{user_id} directly instead - we already have user_id from token response.
+    console.log(
+      `[instagram-oauth-callback] Fetching Instagram profile for user_id: ${instagramUserId}`,
+    );
 
-    const igProfileUrl = new URL(`https://graph.instagram.com/v21.0/me`);
+    const igProfileUrl = new URL(
+      `https://graph.instagram.com/v21.0/${instagramUserId}`,
+    );
     igProfileUrl.searchParams.set("access_token", accessToken);
     igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
 

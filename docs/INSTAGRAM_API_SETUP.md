@@ -327,19 +327,23 @@ npm run dev
 
 ### Error: "Unsupported request - method type: get" (IGApiException code 100)
 
-This error occurs in the profile fetch step of OAuth. Despite the misleading message, it's caused by **invalid field names**, not the HTTP method.
+This error occurs in the profile fetch step of OAuth. The `/me` endpoint doesn't work reliably for all Instagram Business accounts.
 
-**Root cause:** The Instagram Graph API profile endpoint (`/me`) requires specific field names:
-- ✅ Correct: `id,username,name,account_type`
-- ❌ Wrong: `user_id` (should be `id`)
-- ❌ Wrong: `profile_picture_url` (not supported for Business API)
-
-**Fix location:** `supabase/functions/instagram-oauth-callback/index.ts` lines 192-195
+**Solution:** Use `/{user_id}` endpoint instead of `/me`. The token response already includes the user_id, so we use it directly:
 
 ```typescript
-// CORRECT fields for Instagram Business API
+// Use user_id from token response instead of /me
+const igProfileUrl = new URL(
+  `https://graph.instagram.com/v21.0/${instagramUserId}`,
+);
+igProfileUrl.searchParams.set("access_token", accessToken);
 igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
 ```
+
+**Valid fields:** `id,username,name,account_type`
+**Invalid fields:** `user_id` (use `id`), `profile_picture_url` (not supported)
+
+**Fix location:** `supabase/functions/instagram-oauth-callback/index.ts` lines 194-198
 
 ### Error: "duplicate key value violates unique constraint"
 
@@ -352,6 +356,28 @@ This occurs when a user tries to reconnect their Instagram account.
 2. `instagram_user_id + imo_id` (same Instagram account)
 
 **Fix location:** `supabase/functions/instagram-oauth-callback/index.ts` lines 223-242
+
+### Sidebar shows wrong usernames (owner's username for all conversations)
+
+This occurs when the API returns participant IDs as numbers but the database stores them as strings.
+
+**Root cause:** JavaScript type comparison: `12345 !== "12345"` is `true` (different types), causing the "other participant" detection to fail.
+
+**Solution:** Use `String()` for comparisons:
+
+```typescript
+// Find the other participant - use String() for type-safe comparison
+const otherParticipant = conv.participants.data.find(
+  (p) => String(p.id) !== String(igUserId),
+);
+
+// Same fix for message direction
+const isInbound = lastMessage?.from?.id
+  ? String(lastMessage.from.id) !== String(igUserId)
+  : false;
+```
+
+**Fix location:** `supabase/functions/instagram-get-conversations/index.ts` lines 281-294
 
 ---
 
