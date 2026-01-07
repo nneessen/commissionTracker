@@ -874,10 +874,15 @@ export default function AdminControlCenter() {
                           ? `${recruit.first_name} ${recruit.last_name}`
                           : recruit.email;
 
-                      const uplineName = recruit.upline
-                        ? recruit.upline.first_name && recruit.upline.last_name
-                          ? `${recruit.upline.first_name} ${recruit.upline.last_name}`
-                          : recruit.upline.email
+                      // Look up the upline user from allUsers by ID
+                      const uplineUser = recruit.upline_id
+                        ? allUsers?.find((u) => u.id === recruit.upline_id)
+                        : null;
+
+                      const uplineName = uplineUser
+                        ? uplineUser.first_name && uplineUser.last_name
+                          ? `${uplineUser.first_name} ${uplineUser.last_name}`
+                          : uplineUser.email
                         : null;
 
                       const currentPhase =
@@ -918,7 +923,7 @@ export default function AdminControlCenter() {
                           </TableCell>
                           <TableCell className="py-1.5">
                             <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
-                              {recruit.resident_state || "-"}
+                              {recruit.resident_state || recruit.state || "-"}
                             </span>
                           </TableCell>
                           <TableCell className="py-1.5">
