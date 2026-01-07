@@ -40,7 +40,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import type { RoleName } from "@/types/permissions.types";
 
-export function SettingsDashboard() {
+interface SettingsDashboardProps {
+  initialTab?: string;
+}
+
+export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
   const { can } = usePermissionCheck();
   const { isSuperAdmin, isImoAdmin, loading: _imoLoading } = useImo();
   const { user } = useAuth();
@@ -83,14 +87,36 @@ export function SettingsDashboard() {
   const canManageAgencies = isImoAdmin || isSuperAdmin;
   const canViewAuditTrail = isImoAdmin || isSuperAdmin;
 
-  // Default tab: prioritize IMO management for super admins
-  const defaultTab = canManageImos
+  // Valid tab values
+  const validTabs = [
+    "imos",
+    "agencies",
+    "carriers",
+    "products",
+    "rates",
+    "constants",
+    "agents",
+    "integrations",
+    "agency-request",
+    "join-request",
+    "notifications",
+    "audit-trail",
+    "billing",
+  ];
+
+  // Default tab: use initialTab if valid, otherwise prioritize based on permissions
+  const computedDefaultTab = canManageImos
     ? "imos"
     : canManageAgencies
       ? "agencies"
       : canManageCarriers
         ? "carriers"
         : "agents";
+
+  const defaultTab =
+    initialTab && validTabs.includes(initialTab)
+      ? initialTab
+      : computedDefaultTab;
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">

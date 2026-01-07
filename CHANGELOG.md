@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-07 17:01:00
+
+### Changed Files
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/integrations/components/instagram/InstagramIntegrationCard.tsx`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/router.tsx`
+
+### Statistics
+```
+ 4 files changed, 82 insertions(+), 13 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 16:11:58
 
 ### Changed Files

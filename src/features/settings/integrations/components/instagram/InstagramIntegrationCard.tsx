@@ -27,9 +27,12 @@ import {
   useConnectInstagram,
   useDisconnectInstagram,
 } from "@/hooks/instagram";
+import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 
 export function InstagramIntegrationCard() {
   const { data: integration, isLoading } = useActiveInstagramIntegration();
+  const { data: profile, isLoading: isProfileLoading } =
+    useCurrentUserProfile();
   const connectInstagram = useConnectInstagram();
   const disconnectInstagram = useDisconnectInstagram();
 
@@ -40,12 +43,37 @@ export function InstagramIntegrationCard() {
   const hasError = integration?.connection_status === "error";
   const hasIntegration = !!integration;
 
+  // Check if we're ready to connect (profile must be loaded with imo_id)
+  const canConnect = !!profile?.imo_id && !isProfileLoading;
+
   const handleConnect = async () => {
+    console.log("[InstagramIntegrationCard] handleConnect called", {
+      canConnect,
+      profileImoId: profile?.imo_id,
+      isProfileLoading,
+    });
+
+    if (!canConnect) {
+      toast.error("Please wait while your profile loads...");
+      return;
+    }
     try {
       const returnUrl = `${window.location.origin}/settings?tab=integrations`;
+      console.log(
+        "[InstagramIntegrationCard] Calling mutateAsync with returnUrl:",
+        returnUrl,
+      );
       await connectInstagram.mutateAsync(returnUrl);
-    } catch {
-      toast.error("Failed to initiate Instagram connection");
+      console.log(
+        "[InstagramIntegrationCard] mutateAsync completed (should have redirected)",
+      );
+    } catch (err) {
+      console.error("[InstagramIntegrationCard] Error in handleConnect:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to initiate Instagram connection";
+      toast.error(message);
     }
   };
 
@@ -61,7 +89,7 @@ export function InstagramIntegrationCard() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isProfileLoading) {
     return (
       <div className="flex items-center justify-center p-4">
         <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
@@ -130,7 +158,7 @@ export function InstagramIntegrationCard() {
               size="sm"
               className="h-7 px-3 text-[10px]"
               onClick={handleConnect}
-              disabled={connectInstagram.isPending}
+              disabled={connectInstagram.isPending || !canConnect}
             >
               {connectInstagram.isPending ? (
                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -179,7 +207,7 @@ export function InstagramIntegrationCard() {
                   size="sm"
                   className="h-6 px-2 text-[9px]"
                   onClick={handleConnect}
-                  disabled={connectInstagram.isPending}
+                  disabled={connectInstagram.isPending || !canConnect}
                 >
                   {connectInstagram.isPending ? (
                     <Loader2 className="h-3 w-3 animate-spin mr-1" />

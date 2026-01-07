@@ -91,16 +91,28 @@ export function useConnectInstagram() {
 
   return useMutation({
     mutationFn: async (returnUrl?: string): Promise<void> => {
+      console.log("[useConnectInstagram] mutationFn called", {
+        profileImoId: profile?.imo_id,
+        userId: user?.id,
+        returnUrl,
+      });
+
       if (!profile?.imo_id || !user?.id) {
+        console.error("[useConnectInstagram] Missing profile or user", {
+          profile,
+          user,
+        });
         throw new Error("User not authenticated or no IMO assigned");
       }
 
+      console.log("[useConnectInstagram] Calling initiateOAuth...");
       const oauthUrl = await instagramService.initiateOAuth(
         profile.imo_id,
         user.id,
         returnUrl || "/messages",
       );
 
+      console.log("[useConnectInstagram] Got OAuth URL:", oauthUrl);
       // Redirect to Meta OAuth
       window.location.href = oauthUrl;
     },

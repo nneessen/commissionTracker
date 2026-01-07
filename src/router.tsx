@@ -153,16 +153,24 @@ const compGuideRoute = createRoute({
   ),
 });
 
-// Settings route - allow pending users
+// Settings route - allow pending users, supports optional ?tab= search param
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "settings",
-  component: () => (
-    <RouteGuard allowPending>
-      <SettingsDashboard />
-    </RouteGuard>
-  ),
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
+  component: SettingsRouteComponent,
 });
+
+function SettingsRouteComponent() {
+  const { tab } = settingsRoute.useSearch();
+  return (
+    <RouteGuard allowPending>
+      <SettingsDashboard initialTab={tab} />
+    </RouteGuard>
+  );
+}
 
 // Targets route - requires approval, blocks recruits and staff roles, requires targets_basic subscription feature
 const targetsRoute = createRoute({
