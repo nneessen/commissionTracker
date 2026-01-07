@@ -172,6 +172,7 @@ export function useReauthorizeSlackIntegration() {
 
 /**
  * Disconnect a specific Slack workspace by integration ID
+ * Sets is_active = false and connection_status = 'disconnected', but preserves data
  */
 export function useDisconnectSlackById() {
   const queryClient = useQueryClient();
@@ -180,6 +181,31 @@ export function useDisconnectSlackById() {
   return useMutation({
     mutationFn: async (integrationId: string): Promise<void> => {
       await slackService.disconnectById(integrationId);
+    },
+    onSuccess: () => {
+      if (profile?.imo_id) {
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.integrations(profile.imo_id),
+        });
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.all,
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Permanently delete a Slack workspace integration
+ * Removes the integration record and all related data (channel configs, messages)
+ */
+export function useDeleteSlackIntegration() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async (integrationId: string): Promise<void> => {
+      await slackService.deleteIntegrationById(integrationId);
     },
     onSuccess: () => {
       if (profile?.imo_id) {

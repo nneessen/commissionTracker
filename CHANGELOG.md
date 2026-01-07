@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-07 17:19:39
+
+### Changed Files
+- `src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx`
+- `src/hooks/slack/index.ts`
+- `src/hooks/slack/useSlackIntegration.ts`
+
+### Statistics
+```
+ 3 files changed, 59 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 17:01:00
 
 ### Changed Files

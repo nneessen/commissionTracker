@@ -6,6 +6,7 @@ export {
   useSlackIntegrations,
   useSlackIntegrationById,
   useDisconnectSlackById,
+  useDeleteSlackIntegration,
   useToggleSlackIntegrationActive,
   useTestSlackConnectionById,
   useUpdateSlackIntegrationSettings,

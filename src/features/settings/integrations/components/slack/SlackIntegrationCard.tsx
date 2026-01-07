@@ -37,6 +37,7 @@ import {
   useConnectSlack,
   useReauthorizeSlackIntegration,
   useDisconnectSlackById,
+  useDeleteSlackIntegration,
   useToggleSlackIntegrationActive,
   useTestSlackConnectionById,
   useSlackChannelsById,
@@ -106,6 +107,7 @@ function WorkspaceCard({
     useSlackChannelsById(isExpanded ? integration.id : undefined);
 
   const disconnectSlack = useDisconnectSlackById();
+  const deleteSlack = useDeleteSlackIntegration();
   const reauthorize = useReauthorizeSlackIntegration();
   const testConnection = useTestSlackConnectionById();
   const updateSettings = useUpdateSlackIntegrationSettings();
@@ -155,6 +157,22 @@ function WorkspaceCard({
       toast.success(`Disconnected from ${integration.team_name}`);
     } catch {
       toast.error("Failed to disconnect workspace");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (
+      !confirm(
+        `Are you sure you want to PERMANENTLY DELETE "${integration.display_name || integration.team_name}"?\n\nThis will:\n• Remove all channel configurations\n• Delete all message history\n• This action cannot be undone!`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await deleteSlack.mutateAsync(integration.id);
+      toast.success(`Deleted workspace ${integration.team_name}`);
+    } catch {
+      toast.error("Failed to delete workspace");
     }
   };
 
@@ -430,11 +448,20 @@ function WorkspaceCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 px-2 text-[9px] text-red-500 hover:text-red-600"
+                className="h-6 px-2 text-[9px] text-amber-500 hover:text-amber-600"
                 onClick={handleDisconnect}
                 disabled={disconnectSlack.isPending}
               >
-                Remove
+                Disconnect
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[9px] text-red-600 hover:text-red-700 font-medium"
+                onClick={handleDelete}
+                disabled={deleteSlack.isPending}
+              >
+                Delete
               </Button>
             </>
           )}
@@ -1305,10 +1332,10 @@ export function SlackIntegrationCard() {
   const updateWebhook = useUpdateSlackWebhook();
   const deleteWebhook = useDeleteSlackWebhook();
 
-  const { imo, isImoAdmin, isSuperAdmin } = useImo();
+  const { imo, isSuperAdmin } = useImo();
 
-  // Super admin always has access, plus IMO admins
-  const canManageSlack = isImoAdmin || isSuperAdmin;
+  // Only super admin can manage Slack integrations (re-authorize, delete, etc.)
+  const canManageSlack = isSuperAdmin;
 
   const [showUserPrefs, setShowUserPrefs] = useState(false);
   const [showAddWebhook, setShowAddWebhook] = useState(false);
