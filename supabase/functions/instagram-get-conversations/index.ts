@@ -115,7 +115,7 @@ serve(async (req) => {
     const { data: integration, error: fetchError } = await supabase
       .from("instagram_integrations")
       .select(
-        "id, instagram_user_id, access_token_encrypted, connection_status, is_active",
+        "id, instagram_user_id, instagram_username, access_token_encrypted, connection_status, is_active",
       )
       .eq("id", integrationId)
       .eq("user_id", user.id) // Verify ownership
@@ -159,6 +159,7 @@ serve(async (req) => {
     const igUserId = integration.instagram_user_id;
 
     // Use the user ID directly instead of /me for better compatibility
+    const igUsername = integration.instagram_username;
     const apiUrl = new URL(
       `https://graph.instagram.com/v21.0/${igUserId}/conversations`,
     );
@@ -269,17 +270,30 @@ serve(async (req) => {
       `[instagram-get-conversations] Fetched ${conversations.length} conversations from API`,
     );
 
+    // DEBUG: Log participants data to understand what API returns
+    if (conversations.length > 0) {
+      const firstConv = conversations[0];
+      console.log(
+        `[instagram-get-conversations] DEBUG - igUserId from DB: "${igUserId}" (type: ${typeof igUserId})`,
+      );
+      console.log(
+        `[instagram-get-conversations] DEBUG - First conversation participants:`,
+        JSON.stringify(firstConv.participants?.data, null, 2),
+      );
+    }
+
     // Optionally sync conversations to database (batch upsert for performance)
     if (syncToDb && conversations.length > 0) {
       // Build batch of conversations to upsert
       const conversationsToUpsert = conversations
         .map((conv) => {
           // Find the other participant (not our instagram user)
-          // IMPORTANT: Use String() comparison because API may return id as number
-          // while igUserId from DB is a string. Without this, type mismatch causes
-          // wrong participant to be selected (e.g., owner's username shown for all convos)
+          // Use USERNAME matching as primary (more reliable than ID matching)
+          // because token user_id may differ from conversations API participant ID
           const otherParticipant = conv.participants.data.find(
-            (p) => String(p.id) !== String(igUserId),
+            (p) =>
+              p.username?.toLowerCase() !== igUsername?.toLowerCase() &&
+              String(p.id) !== String(igUserId),
           );
 
           if (!otherParticipant) return null;
@@ -289,9 +303,12 @@ serve(async (req) => {
           const lastMessageAt = lastMessage?.created_time || conv.updated_time;
           const lastMessagePreview =
             lastMessage?.message?.substring(0, 100) || null;
-          // Same type comparison fix for message direction
-          const isInbound = lastMessage?.from?.id
-            ? String(lastMessage.from.id) !== String(igUserId)
+          // Check if message is inbound (from the other participant, not us)
+          // Use username matching as primary since IDs may not match
+          const isInbound = lastMessage?.from
+            ? lastMessage.from.username?.toLowerCase() !==
+                igUsername?.toLowerCase() &&
+              String(lastMessage.from.id) !== String(igUserId)
             : false;
 
           return {

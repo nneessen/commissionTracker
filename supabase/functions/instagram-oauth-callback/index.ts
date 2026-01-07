@@ -195,7 +195,11 @@ serve(async (req) => {
       `https://graph.instagram.com/v21.0/${instagramUserId}`,
     );
     igProfileUrl.searchParams.set("access_token", accessToken);
-    igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
+    // IMPORTANT: Request user_id field (not just id) - user_id matches conversation participant IDs
+    igProfileUrl.searchParams.set(
+      "fields",
+      "id,user_id,username,name,account_type",
+    );
 
     const igProfileResponse = await fetch(igProfileUrl.toString());
     const igProfile = await igProfileResponse.json();
@@ -215,10 +219,15 @@ serve(async (req) => {
       );
     }
 
-    const instagramBusinessAccountId = igProfile.id || String(instagramUserId);
+    // Use user_id (not id) - this matches participant IDs in conversations API
+    const instagramBusinessAccountId =
+      igProfile.user_id || igProfile.id || String(instagramUserId);
 
     console.log(
       `[instagram-oauth-callback] Instagram profile: @${igProfile.username} (${igProfile.name || "No name"})`,
+    );
+    console.log(
+      `[instagram-oauth-callback] IDs - user_id: ${igProfile.user_id}, id: ${igProfile.id}, token_user_id: ${instagramUserId}, stored: ${instagramBusinessAccountId}`,
     );
 
     // =========================================================================
