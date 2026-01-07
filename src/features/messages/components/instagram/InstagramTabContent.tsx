@@ -114,6 +114,7 @@ function InstagramTabContentInner({
   const {
     data: integration,
     isLoading,
+    isPending,
     error,
     refetch,
   } = useActiveInstagramIntegration();
@@ -147,7 +148,8 @@ function InstagramTabContentInner({
     integration?.connection_status === "error";
 
   // Loading state - use skeleton for better UX
-  if (isLoading) {
+  // Also show skeleton when query is pending (e.g., waiting for auth to load)
+  if (isLoading || isPending) {
     return <TabContentSkeleton />;
   }
 
