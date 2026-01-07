@@ -163,10 +163,11 @@ serve(async (req) => {
       `https://graph.instagram.com/v21.0/${igUserId}/conversations`,
     );
     apiUrl.searchParams.set("access_token", accessToken);
-    // Request profile_picture_url for participants to display avatars
+    // Request conversation fields - profile_picture_url must be fetched separately via User API
+    // The conversations endpoint doesn't support profile_picture_url in participants subfields
     apiUrl.searchParams.set(
       "fields",
-      "id,updated_time,participants{id,username,name,profile_picture_url},messages{id,message,created_time,from}",
+      "id,updated_time,participants{id,username,name},messages{id,message,created_time,from}",
     );
     apiUrl.searchParams.set("limit", String(limit));
     // Required for Instagram conversations
@@ -217,6 +218,10 @@ serve(async (req) => {
       console.error(
         "[instagram-get-conversations] Meta API error:",
         JSON.stringify(apiData.error),
+      );
+      console.error(
+        "[instagram-get-conversations] Full response:",
+        rawResponse.substring(0, 1000),
       );
 
       // Handle token expiration
