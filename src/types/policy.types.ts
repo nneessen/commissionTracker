@@ -1,32 +1,42 @@
 // src/types/policy.types.ts
 // Policy type definitions - DATABASE-FIRST pattern with app-level transformations
 
-import type { Database } from './database.types';
-import type { ProductType } from './product.types';
-import type { Product } from './product.types';
+import type { Database } from "./database.types";
+import type { ProductType } from "./product.types";
+import type { Product } from "./product.types";
 
 // =============================================================================
 // DATABASE-DERIVED TYPES (Source of Truth)
 // =============================================================================
 
 /** Raw database row type for policies table */
-export type PolicyRow = Database['public']['Tables']['policies']['Row'];
+export type PolicyRow = Database["public"]["Tables"]["policies"]["Row"];
 
 /** Insert type for creating new policies */
-export type PolicyInsert = Database['public']['Tables']['policies']['Insert'];
+export type PolicyInsert = Database["public"]["Tables"]["policies"]["Insert"];
 
 /** Update type for modifying policies */
-export type PolicyUpdate = Database['public']['Tables']['policies']['Update'];
+export type PolicyUpdate = Database["public"]["Tables"]["policies"]["Update"];
 
 /** Payment frequency enum from database */
-export type PaymentFrequencyDB = Database['public']['Enums']['payment_frequency'];
+export type PaymentFrequencyDB =
+  Database["public"]["Enums"]["payment_frequency"];
 
 // =============================================================================
 // APP-LEVEL TYPES (CamelCase for React components)
 // =============================================================================
 
-export type PolicyStatus = 'pending' | 'active' | 'lapsed' | 'cancelled' | 'matured';
-export type PaymentFrequency = 'annual' | 'semi-annual' | 'quarterly' | 'monthly';
+export type PolicyStatus =
+  | "pending"
+  | "active"
+  | "lapsed"
+  | "cancelled"
+  | "matured";
+export type PaymentFrequency =
+  | "annual"
+  | "semi-annual"
+  | "quarterly"
+  | "monthly";
 
 // Base client interface with common properties
 export interface PolicyClientBase {
@@ -58,7 +68,7 @@ export interface PolicyClientExtended extends PolicyClientBase {
  */
 export interface Policy {
   id: string;
-  policyNumber: string;
+  policyNumber: string | null;
   status: PolicyStatus;
 
   // Client Information - flexible to support both formats
@@ -165,7 +175,7 @@ export interface PolicySummary {
  * Uses camelCase for app layer, transforms to snake_case for DB
  */
 export interface CreatePolicyData {
-  policyNumber: string;
+  policyNumber?: string | null;
   clientId: string;
   carrierId: string;
   userId: string;
@@ -192,7 +202,7 @@ export type UpdatePolicyData = Partial<CreatePolicyData>;
  */
 export function policyRowToPolicy(
   row: PolicyRow,
-  client: PolicyClient | PolicyClientExtended
+  client: PolicyClient | PolicyClientExtended,
 ): Policy {
   return {
     id: row.id,
@@ -208,7 +218,7 @@ export function policyRowToPolicy(
     expirationDate: row.expiration_date || undefined,
     annualPremium: row.annual_premium || 0,
     monthlyPremium: row.monthly_premium,
-    paymentFrequency: (row.payment_frequency as PaymentFrequency) || 'monthly',
+    paymentFrequency: (row.payment_frequency as PaymentFrequency) || "monthly",
     commissionPercentage: row.commission_percentage || 0,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
@@ -219,23 +229,21 @@ export function policyRowToPolicy(
 /**
  * Transform app-level data to database insert
  */
-export function createPolicyDataToInsert(
-  data: CreatePolicyData
-): PolicyInsert {
+export function createPolicyDataToInsert(data: CreatePolicyData): PolicyInsert {
   return {
     policy_number: data.policyNumber,
     client_id: data.clientId,
     carrier_id: data.carrierId,
     user_id: data.userId,
     product: data.product,
-    effective_date: data.effectiveDate.toISOString().split('T')[0],
+    effective_date: data.effectiveDate.toISOString().split("T")[0],
     term_length: data.termLength,
-    expiration_date: data.expirationDate?.toISOString().split('T')[0],
+    expiration_date: data.expirationDate?.toISOString().split("T")[0],
     annual_premium: data.annualPremium,
     monthly_premium: data.monthlyPremium,
     payment_frequency: data.paymentFrequency as PaymentFrequencyDB,
     commission_percentage: data.commissionPercentage,
     notes: data.notes,
-    status: data.status || 'pending',
+    status: data.status || "pending",
   };
 }

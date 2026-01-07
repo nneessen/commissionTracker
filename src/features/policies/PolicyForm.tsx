@@ -301,8 +301,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
     if (!formData.carrierId) newErrors.carrierId = "Carrier is required";
     if (!formData.productId) newErrors.productId = "Product is required";
-    if (!formData.policyNumber)
-      newErrors.policyNumber = "Policy number is required";
+    // policyNumber is optional - validation removed
     if (!formData.submitDate) newErrors.submitDate = "Submit date is required";
     if (!formData.effectiveDate)
       newErrors.effectiveDate = "Effective date is required";
@@ -583,7 +582,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               htmlFor="policyNumber"
               className="text-[11px] text-muted-foreground"
             >
-              Policy Number *
+              Policy Number
             </Label>
             <Input
               id="policyNumber"
@@ -594,6 +593,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               className={`h-8 text-[11px] ${errors.policyNumber ? "border-destructive" : "border-input"}`}
               placeholder="POL-123456"
             />
+            <span className="text-[10px] text-muted-foreground">
+              Optional - leave blank if not yet assigned
+            </span>
             {errors.policyNumber && (
               <span className="text-[10px] text-destructive">
                 {errors.policyNumber}

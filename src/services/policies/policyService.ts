@@ -58,11 +58,65 @@ class PolicyService {
   }
 
   /**
+   * Check if a policy number already exists
+   * @param policyNumber - The policy number to check
+   * @param excludePolicyId - Optional ID to exclude (for updates)
+   * @returns true if duplicate exists
+   */
+  async checkPolicyNumberExists(
+    policyNumber: string,
+    excludePolicyId?: string,
+  ): Promise<boolean> {
+    if (!policyNumber || policyNumber.trim() === "") {
+      return false;
+    }
+
+    const existing = await this.repository.findByPolicyNumber(
+      policyNumber.trim(),
+    );
+    if (!existing) {
+      return false;
+    }
+
+    // When updating, exclude the current policy from duplicate check
+    if (excludePolicyId && existing.id === excludePolicyId) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * Create a new policy and its associated commission record.
    */
   async create(policyData: CreatePolicyData): Promise<Policy> {
+    // Check for duplicate policy number before creating
+    if (policyData.policyNumber) {
+      const isDuplicate = await this.checkPolicyNumberExists(
+        policyData.policyNumber,
+      );
+      if (isDuplicate) {
+        throw new ValidationError(
+          "A policy with this number already exists. Please use a unique policy number.",
+          [
+            {
+              field: "policyNumber",
+              message: "This policy number already exists",
+              value: policyData.policyNumber,
+            },
+          ],
+        );
+      }
+    }
+
+    // Normalize empty string to null for database
+    const normalizedData = {
+      ...policyData,
+      policyNumber: policyData.policyNumber?.trim() || null,
+    };
+
     // Create policy record
-    const policy = await this.repository.create(policyData);
+    const policy = await this.repository.create(normalizedData);
 
     // Create commission record for this policy
     try {
@@ -138,6 +192,32 @@ class PolicyService {
     id: string,
     updates: Partial<CreatePolicyData>,
   ): Promise<Policy> {
+    // Check for duplicate policy number when updating
+    if (updates.policyNumber !== undefined) {
+      if (updates.policyNumber && updates.policyNumber.trim() !== "") {
+        const isDuplicate = await this.checkPolicyNumberExists(
+          updates.policyNumber,
+          id,
+        );
+        if (isDuplicate) {
+          throw new ValidationError(
+            "A policy with this number already exists. Please use a unique policy number.",
+            [
+              {
+                field: "policyNumber",
+                message: "This policy number already exists",
+                value: updates.policyNumber,
+              },
+            ],
+          );
+        }
+        updates.policyNumber = updates.policyNumber.trim();
+      } else {
+        // Normalize empty string to null
+        updates.policyNumber = null;
+      }
+    }
+
     return this.repository.update(id, updates);
   }
 

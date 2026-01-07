@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-07 09:20:42
+
+### Changed Files
+- `src/features/policies/PolicyForm.tsx`
+- `src/services/analytics/forecastService.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/database.types.ts`
+- `src/types/policy.types.ts`
+- `supabase/migrations/20260107_001_policy_number_optional_unique.sql`
+- `supabase/migrations/reverts/20260107_001_policy_number_optional_unique.sql`
+
+### Statistics
+```
+ 7 files changed, 124 insertions(+), 10 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 08:15:36
 
 ### Changed Files

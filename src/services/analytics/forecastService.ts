@@ -25,7 +25,7 @@ export interface RenewalForecast {
 
 export interface ChargebackRiskScore {
   policyId: string;
-  policyNumber: string;
+  policyNumber: string | null;
   clientName: string;
   riskScore: number; // 0-100 (higher = more risk)
   riskLevel: "low" | "medium" | "high" | "critical";

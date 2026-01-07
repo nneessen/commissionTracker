@@ -4607,7 +4607,7 @@ export type Database = {
           payment_frequency:
             | Database["public"]["Enums"]["payment_frequency"]
             | null;
-          policy_number: string;
+          policy_number: string | null;
           product: Database["public"]["Enums"]["product_type"];
           product_id: string | null;
           referral_source: string | null;
@@ -4634,7 +4634,7 @@ export type Database = {
           payment_frequency?:
             | Database["public"]["Enums"]["payment_frequency"]
             | null;
-          policy_number: string;
+          policy_number?: string | null;
           product: Database["public"]["Enums"]["product_type"];
           product_id?: string | null;
           referral_source?: string | null;
@@ -4661,7 +4661,7 @@ export type Database = {
           payment_frequency?:
             | Database["public"]["Enums"]["payment_frequency"]
             | null;
-          policy_number?: string;
+          policy_number?: string | null;
           product?: Database["public"]["Enums"]["product_type"];
           product_id?: string | null;
           referral_source?: string | null;
