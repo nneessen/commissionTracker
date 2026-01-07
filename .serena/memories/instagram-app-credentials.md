@@ -20,15 +20,22 @@ The following are stored as encrypted Supabase secrets:
 ## OAuth Callback (FIXED Jan 7, 2026)
 
 ### Profile Fetch - CORRECT Configuration
-Use the `/me` endpoint with ONLY these fields:
+
+**Instagram Graph API does NOT have a `/me` endpoint!** That's Facebook's API.
+
+Use `/{user_id}` endpoint where `user_id` comes from the token response:
 ```
-id,username,name,account_type
+GET https://graph.instagram.com/v21.0/{instagramUserId}?fields=id,username,name,account_type
 ```
 
 **CRITICAL - DO NOT USE:**
-- `user_id` - Does NOT exist on all account types, causes IGApiException code 100: "Unsupported request - method type: get"
+- `/me` endpoint - Does NOT exist for Instagram Graph API (causes IGApiException 100)
+- `user_id` as a FIELD - It's only valid in the URL path, not as a requested field
 - `profile_picture_url` - Not supported in Instagram Business API
-- `/{user_id}` endpoint - Use `/me` instead for universal compatibility
+
+**The distinction:**
+- `instagramUserId` (from token) = goes in URL PATH: `/{instagramUserId}`
+- `id` (from response) = the IGSID we store, matches webhooks
 
 ### ID Storage - CRITICAL
 The `instagram_user_id` column MUST store the value from `igProfile.id` returned by `/me`.

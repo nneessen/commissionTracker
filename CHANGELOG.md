@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-07 16:11:58
+
+### Changed Files
+- `.serena/memories/instagram-app-credentials.md`
+- `src/features/messages/components/instagram/templates/CategoryManager.tsx`
+- `src/features/messages/components/instagram/templates/InstagramTemplatesSettings.tsx`
+- `src/features/messages/components/instagram/templates/TemplateList.tsx`
+- `src/features/messages/components/settings/InstagramSettingsPanel.tsx`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/instagram/InstagramIntegrationCard.tsx`
+- `src/features/settings/integrations/components/instagram/index.ts`
+- `supabase/functions/instagram-oauth-callback/index.ts`
+
+### Statistics
+```
+ 9 files changed, 618 insertions(+), 103 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 15:42:42
 
 ### Changed Files

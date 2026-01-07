@@ -18,6 +18,7 @@ import {
 } from "@/hooks/integrations";
 import { IntegrationDialog } from "./components/IntegrationDialog";
 import { SlackIntegrationCard } from "./components/slack";
+import { InstagramIntegrationCard } from "./components/instagram";
 import type {
   SchedulingIntegration,
   SchedulingIntegrationType,
@@ -112,12 +113,13 @@ export function IntegrationsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Slack Integration Section */}
-      <div className="space-y-2">
+      {/* Messaging Integrations Section */}
+      <div className="space-y-4">
         <h3 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 px-1">
           Messaging Integrations
         </h3>
         <SlackIntegrationCard />
+        <InstagramIntegrationCard />
       </div>
 
       {/* Scheduling Integrations Section */}

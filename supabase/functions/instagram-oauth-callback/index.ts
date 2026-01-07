@@ -185,18 +185,26 @@ serve(async (req) => {
     // =========================================================================
     // Step 3: Get Instagram profile details
     // =========================================================================
-    // NOTE: Use /me endpoint with basic fields only.
-    // DO NOT request user_id field - it doesn't exist on all account types and causes
-    // "Unsupported request - method type: get" errors (IGApiException code 100).
-    // The id field from /me IS the IGSID that matches webhook entry.id and conversation participant IDs.
+    // IMPORTANT: Instagram Graph API does NOT have a /me endpoint like Facebook.
+    // Must use /{user-id} where user-id comes from the token response.
+    //
+    // The error "Unsupported request - method type: get" (IGApiException 100) happens when:
+    // 1. Using /me endpoint (doesn't exist for Instagram API)
+    // 2. Requesting user_id as a FIELD (it's not a valid field - it's only in the URL)
+    //
+    // CORRECT: Use /{instagramUserId} with fields: id,username,name,account_type
+    // The returned 'id' field is the IGSID that matches webhooks and conversations.
     console.log(
-      `[instagram-oauth-callback] Fetching Instagram profile via /me endpoint`,
+      `[instagram-oauth-callback] Fetching Instagram profile for user: ${instagramUserId}`,
     );
 
-    const igProfileUrl = new URL("https://graph.instagram.com/v21.0/me");
+    const igProfileUrl = new URL(
+      `https://graph.instagram.com/v21.0/${instagramUserId}`,
+    );
     igProfileUrl.searchParams.set("access_token", accessToken);
-    // CRITICAL: Only request fields that work for ALL Instagram Business account types
-    // Do NOT use: user_id (causes errors), profile_picture_url (not supported in Business API)
+    // CRITICAL: Only request valid fields. DO NOT include:
+    // - user_id (not a valid field - causes IGApiException 100)
+    // - profile_picture_url (not supported in Business API)
     igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
 
     const igProfileResponse = await fetch(igProfileUrl.toString());
@@ -237,7 +245,7 @@ serve(async (req) => {
       `[instagram-oauth-callback] Instagram profile: @${igProfile.username} (${igProfile.name || "No name"})`,
     );
     console.log(
-      `[instagram-oauth-callback] Storing instagram_user_id: ${instagramBusinessAccountId} (from /me endpoint id field)`,
+      `[instagram-oauth-callback] Storing instagram_user_id: ${instagramBusinessAccountId} (IGSID from /${instagramUserId} endpoint)`,
     );
 
     // =========================================================================

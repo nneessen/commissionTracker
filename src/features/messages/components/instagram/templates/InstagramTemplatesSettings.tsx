@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useImo } from "@/contexts/ImoContext";
 import {
   useInstagramTemplates,
   useInstagramTemplateCategories,
@@ -28,6 +29,7 @@ import { TemplateForm } from "./TemplateForm";
 import { CategoryManager } from "./CategoryManager";
 
 export function InstagramTemplatesSettings(): ReactNode {
+  const { isSuperAdmin } = useImo();
   const [search, setSearch] = useState("");
   const [prospectTypeFilter, setProspectTypeFilter] = useState<string>("all");
   const [messageStageFilter, setMessageStageFilter] = useState<string>("all");
@@ -37,6 +39,9 @@ export function InstagramTemplatesSettings(): ReactNode {
 
   const { data: templates = [], isLoading } = useInstagramTemplates();
   const { data: customCategories = [] } = useInstagramTemplateCategories();
+
+  // Only super-admin can edit templates
+  const canEdit = isSuperAdmin;
 
   // Filter templates based on search and filters
   const filteredTemplates = useMemo(() => {
@@ -118,7 +123,11 @@ export function InstagramTemplatesSettings(): ReactNode {
     <div className="h-full flex bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
       {/* Sidebar - Categories */}
       <div className="w-48 border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
-        <CategoryManager />
+        <CategoryManager
+          selectedCategory={prospectTypeFilter}
+          onSelectCategory={setProspectTypeFilter}
+          canEdit={canEdit}
+        />
       </div>
 
       {/* Main Content - Templates */}
@@ -197,15 +206,17 @@ export function InstagramTemplatesSettings(): ReactNode {
             </Select>
           </div>
 
-          {/* New Template Button */}
-          <Button
-            size="sm"
-            onClick={handleNewTemplate}
-            className="h-7 text-[11px]"
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            New Template
-          </Button>
+          {/* New Template Button - Super Admin Only */}
+          {canEdit && (
+            <Button
+              size="sm"
+              onClick={handleNewTemplate}
+              className="h-7 text-[11px]"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              New Template
+            </Button>
+          )}
         </div>
 
         {/* Template List */}
@@ -214,6 +225,7 @@ export function InstagramTemplatesSettings(): ReactNode {
             templates={filteredTemplates}
             isLoading={isLoading}
             onEdit={handleEditTemplate}
+            canEdit={canEdit}
           />
         </div>
       </div>

@@ -39,10 +39,21 @@ import {
 import {
   PROSPECT_TYPE_LABELS,
   BUILT_IN_PROSPECT_TYPES,
+  createCustomCategoryValue,
 } from "@/types/instagram.types";
 import type { InstagramTemplateCategory } from "@/types/instagram.types";
 
-export function CategoryManager(): ReactNode {
+interface CategoryManagerProps {
+  selectedCategory: string;
+  onSelectCategory: (category: string) => void;
+  canEdit: boolean;
+}
+
+export function CategoryManager({
+  selectedCategory,
+  onSelectCategory,
+  canEdit,
+}: CategoryManagerProps): ReactNode {
   const [builtInOpen, setBuiltInOpen] = useState(true);
   const [customOpen, setCustomOpen] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -132,6 +143,20 @@ export function CategoryManager(): ReactNode {
       </div>
 
       <div className="flex-1 overflow-auto p-2 space-y-2">
+        {/* All Categories - Filter Reset */}
+        <button
+          type="button"
+          onClick={() => onSelectCategory("all")}
+          className={cn(
+            "w-full px-2 py-1.5 text-[11px] text-left rounded-sm transition-colors",
+            selectedCategory === "all"
+              ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium"
+              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+          )}
+        >
+          All Categories
+        </button>
+
         {/* Built-in Categories */}
         <Collapsible open={builtInOpen} onOpenChange={setBuiltInOpen}>
           <CollapsibleTrigger className="flex items-center gap-1 w-full px-2 py-1 text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide hover:text-zinc-700 dark:hover:text-zinc-300">
@@ -140,15 +165,19 @@ export function CategoryManager(): ReactNode {
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-1 space-y-0.5">
             {BUILT_IN_PROSPECT_TYPES.map((type) => (
-              <div
+              <button
                 key={type}
+                type="button"
+                onClick={() => onSelectCategory(type)}
                 className={cn(
-                  "px-2 py-1.5 text-[11px] text-zinc-600 dark:text-zinc-400",
-                  "bg-zinc-50 dark:bg-zinc-800/50 rounded-sm",
+                  "w-full px-2 py-1.5 text-[11px] text-left rounded-sm transition-colors",
+                  selectedCategory === type
+                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
                 )}
               >
                 {PROSPECT_TYPE_LABELS[type]}
-              </div>
+              </button>
             ))}
           </CollapsibleContent>
         </Collapsible>
@@ -165,49 +194,69 @@ export function CategoryManager(): ReactNode {
                 No custom categories
               </p>
             )}
-            {customCategories.map((category) => (
-              <div
-                key={category.id}
-                className={cn(
-                  "group flex items-center px-2 py-1.5 text-[11px]",
-                  "text-zinc-600 dark:text-zinc-400",
-                  "hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-sm",
-                )}
-              >
-                <span className="flex-1 truncate">{category.name}</span>
-                <div className="hidden group-hover:flex items-center gap-0.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5"
-                    onClick={() => handleOpenEdit(category)}
-                    title="Edit category"
+            {customCategories.map((category) => {
+              const categoryValue = createCustomCategoryValue(category.id);
+              return (
+                <div
+                  key={category.id}
+                  className={cn(
+                    "group flex items-center px-2 py-1.5 text-[11px] rounded-sm transition-colors",
+                    selectedCategory === categoryValue
+                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onSelectCategory(categoryValue)}
+                    className="flex-1 truncate text-left"
                   >
-                    <Edit2 className="h-2.5 w-2.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 text-red-500 hover:text-red-600"
-                    onClick={() => setDeleteCategory(category)}
-                    title="Delete category"
-                  >
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </Button>
+                    {category.name}
+                  </button>
+                  {canEdit && (
+                    <div className="hidden group-hover:flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEdit(category);
+                        }}
+                        title="Edit category"
+                      >
+                        <Edit2 className="h-2.5 w-2.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-red-500 hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteCategory(category);
+                        }}
+                        title="Delete category"
+                      >
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
-            {/* Add New Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start h-7 text-[11px] text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-              onClick={handleOpenCreate}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Add Category
-            </Button>
+            {/* Add New Button - Super Admin Only */}
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start h-7 text-[11px] text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                onClick={handleOpenCreate}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Category
+              </Button>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </div>

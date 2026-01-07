@@ -26,12 +26,14 @@ interface TemplateListProps {
   templates: InstagramMessageTemplate[];
   isLoading: boolean;
   onEdit: (template: InstagramMessageTemplate) => void;
+  canEdit: boolean;
 }
 
 export function TemplateList({
   templates,
   isLoading,
   onEdit,
+  canEdit,
 }: TemplateListProps): ReactNode {
   const [deleteTemplate, setDeleteTemplate] =
     useState<InstagramMessageTemplate | null>(null);
@@ -77,7 +79,9 @@ export function TemplateList({
           No templates found
         </p>
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-          Create a template to get started
+          {canEdit
+            ? "Create a template to get started"
+            : "No templates match your filter criteria"}
         </p>
       </div>
     );
@@ -103,9 +107,11 @@ export function TemplateList({
             <TableHead className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 h-8 w-16 text-right">
               Uses
             </TableHead>
-            <TableHead className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 h-8 w-20">
-              Actions
-            </TableHead>
+            {canEdit && (
+              <TableHead className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 h-8 w-20">
+                Actions
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -142,28 +148,30 @@ export function TemplateList({
               <TableCell className="py-2 text-[11px] text-zinc-500 dark:text-zinc-400 text-right tabular-nums">
                 {template.use_count || 0}
               </TableCell>
-              <TableCell className="py-2">
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => onEdit(template)}
-                    title="Edit template"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-                    onClick={() => setDeleteTemplate(template)}
-                    title="Delete template"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </TableCell>
+              {canEdit && (
+                <TableCell className="py-2">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => onEdit(template)}
+                      title="Edit template"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      onClick={() => setDeleteTemplate(template)}
+                      title="Delete template"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
