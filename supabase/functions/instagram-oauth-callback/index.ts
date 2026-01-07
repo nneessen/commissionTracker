@@ -189,10 +189,7 @@ serve(async (req) => {
 
     const igProfileUrl = new URL(`https://graph.instagram.com/v21.0/me`);
     igProfileUrl.searchParams.set("access_token", accessToken);
-    igProfileUrl.searchParams.set(
-      "fields",
-      "user_id,username,name,profile_picture_url,account_type",
-    );
+    igProfileUrl.searchParams.set("fields", "id,username,name,account_type");
 
     const igProfileResponse = await fetch(igProfileUrl.toString());
     const igProfile = await igProfileResponse.json();
@@ -212,7 +209,7 @@ serve(async (req) => {
       );
     }
 
-    const instagramBusinessAccountId = igProfile.user_id || instagramUserId;
+    const instagramBusinessAccountId = igProfile.id || String(instagramUserId);
 
     console.log(
       `[instagram-oauth-callback] Instagram profile: @${igProfile.username} (${igProfile.name || "No name"})`,
@@ -237,7 +234,7 @@ serve(async (req) => {
       instagram_user_id: instagramBusinessAccountId,
       instagram_username: igProfile.username,
       instagram_name: igProfile.name || null,
-      instagram_profile_picture_url: igProfile.profile_picture_url || null,
+      instagram_profile_picture_url: null, // Not available in Instagram Business API
       facebook_page_id: null,
       facebook_page_name: null,
       access_token_encrypted: encryptedAccessToken,
