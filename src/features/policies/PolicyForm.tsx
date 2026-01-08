@@ -101,6 +101,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     Record<string, number>
   >({});
 
+  // Track initial productId to detect user-initiated changes in edit mode
+  // This allows commission updates when user explicitly changes product
+  const [initialProductId, setInitialProductId] = useState<string | null>(null);
+
   // Fetch products for selected carrier
   const {
     data: products = [],
@@ -154,6 +158,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     };
 
     setFormData(newFormData);
+    // Track initial productId to detect user-initiated changes
+    setInitialProductId(policy.productId || null);
   }, [policyId, policy]);
 
   // When products load and we're editing a policy without productId, auto-match by product type
@@ -217,9 +223,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   // Update commission percentage when comp_guide data changes or fallback to product commission
   useEffect(() => {
-    // Don't override commission percentage when editing an existing policy
+    // For edit mode: only skip update if product hasn't changed from initial
     if (policyId) {
-      return;
+      // If product hasn't changed from initial, preserve original commission
+      if (!formData.productId || formData.productId === initialProductId) {
+        return;
+      }
+      // Product was explicitly changed by user - continue to update commission
     }
 
     if (formData.productId && compGuideData) {
@@ -238,7 +248,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           : 0,
       }));
     }
-  }, [formData.productId, compGuideData, products, policyId]);
+  }, [formData.productId, compGuideData, products, policyId, initialProductId]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -283,18 +293,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     // Handle product change - commission will be set by useEffect watching compGuideData
     else if (name === "productId") {
       const selectedProduct = products.find((p) => p.id === value);
-      setFormData((prev) => {
-        // Only reset commission if product actually changed
-        const productChanged = prev.productId !== value;
-        return {
-          ...prev,
-          productId: value,
-          product:
-            selectedProduct?.product_type || ("term_life" as ProductType),
-          // Only reset commission if product actually changed (not initial population)
-          commissionPercentage: productChanged ? 0 : prev.commissionPercentage,
-        };
-      });
+      setFormData((prev) => ({
+        ...prev,
+        productId: value,
+        product: selectedProduct?.product_type || ("term_life" as ProductType),
+        // Don't reset commission here - let the useEffect handle it based on comp_guide data
+      }));
     }
     // Handle other select fields
     else {

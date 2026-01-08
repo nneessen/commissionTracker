@@ -149,7 +149,8 @@ serve(async (req) => {
     const notifyUrl = `${SUPABASE_URL}/functions/v1/linkedin-hosted-auth-callback`;
 
     const unipileRequest = {
-      type: accountType,
+      type: "create",
+      providers: [accountType],
       api_url: `https://${UNIPILE_DSN}`,
       expiresOn: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min expiry
       notify_url: notifyUrl,
