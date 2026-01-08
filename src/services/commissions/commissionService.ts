@@ -81,6 +81,7 @@ class CommissionService {
 
   async calculateCommissionWithCompGuide(data: {
     carrierId: string;
+    productId?: string; // Specific product ID for accurate comp_guide lookup
     product: string;
     monthlyPremium: number;
     userId?: string;

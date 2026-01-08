@@ -140,6 +140,7 @@ class PolicyService {
         policyId: policy.id,
         userId: policy.userId,
         carrierId: policy.carrierId,
+        productId: policy.productId, // CRITICAL: Pass productId for accurate comp_guide lookup
         product: policy.product,
         client: clientInfo,
         calculationBasis: "annual_premium",

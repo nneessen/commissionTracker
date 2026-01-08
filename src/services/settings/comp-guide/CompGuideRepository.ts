@@ -302,4 +302,32 @@ export class CompGuideRepository extends BaseRepository<
 
     return data?.commission_percentage || null;
   }
+
+  /**
+   * Get commission rate for specific product_id and contract level
+   * This is the preferred method for accurate comp_guide lookup when product_id is available
+   */
+  async getCommissionRateByProductId(
+    productId: string,
+    contractLevel: number,
+  ): Promise<number | null> {
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("commission_percentage")
+      .eq("product_id", productId)
+      .eq("contract_level", contractLevel)
+      .lte("effective_date", today)
+      .or(`expiration_date.is.null,expiration_date.gte.${today}`)
+      .order("effective_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw this.handleError(error, "getCommissionRateByProductId");
+    }
+
+    return data?.commission_percentage || null;
+  }
 }

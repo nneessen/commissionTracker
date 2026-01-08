@@ -25,11 +25,13 @@ import {
   Mail,
   MessageSquare,
   Instagram,
+  Linkedin,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlackTabContent, SlackSidebar } from "./components/slack";
 import { InstagramTabContent, InstagramSidebar } from "./components/instagram";
+import { LinkedInTabContent, LinkedInSidebar } from "./components/linkedin";
 import { InstagramTemplatesSettings } from "./components/instagram/templates";
 import { MessagesSettingsContainer } from "./components/settings";
 import { MessagingAnalyticsDashboard } from "./components/analytics";
@@ -38,14 +40,20 @@ import {
   useActiveInstagramIntegration,
   useInstagramConversations,
 } from "@/hooks/instagram";
+import {
+  useActiveLinkedInIntegration,
+  useLinkedInConversations,
+} from "@/hooks/linkedin";
 import type { SlackChannel } from "@/types/slack.types";
 import { ResizablePanel } from "@/components/ui/resizable-panel";
+import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { useResizableSidebar, useIsMobile } from "@/hooks/ui";
 
 type TabType =
   | "email"
   | "slack"
   | "instagram"
+  | "linkedin"
   | "templates"
   | "analytics"
   | "settings";
@@ -66,6 +74,10 @@ export function MessagesPage() {
 
   // Instagram state - store ID only, derive full object from query
   const [selectedInstagramConversationId, setSelectedInstagramConversationId] =
+    useState<string | null>(null);
+
+  // LinkedIn state - store ID only, derive full object from query
+  const [selectedLinkedInConversationId, setSelectedLinkedInConversationId] =
     useState<string | null>(null);
 
   // Mobile detection
@@ -121,6 +133,55 @@ export function MessagesPage() {
           : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
+
+    // Handle LinkedIn OAuth callback (using same param pattern as Instagram)
+    const linkedinStatus = urlParams.get("linkedin");
+    const linkedinAccount = urlParams.get("linkedinAccount");
+    const linkedinReason = urlParams.get("linkedinReason");
+
+    if (linkedinStatus === "success") {
+      // Sanitize user-controlled input before displaying
+      const sanitizedAccount = linkedinAccount
+        ? linkedinAccount.replace(/[<>"'&]/g, "").slice(0, 100)
+        : "Account";
+      toast.success(`LinkedIn connected: ${sanitizedAccount}`);
+      // Invalidate LinkedIn queries to refresh state
+      queryClient.invalidateQueries({ queryKey: ["linkedin"] });
+      // Switch to LinkedIn tab
+      setActiveTab("linkedin");
+      // Clean URL
+      urlParams.delete("linkedin");
+      urlParams.delete("linkedinAccount");
+      const cleanUrl =
+        urlParams.toString().length > 0
+          ? `${window.location.pathname}?${urlParams.toString()}`
+          : window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    } else if (linkedinStatus === "error") {
+      const linkedinErrorMessages: Record<string, string> = {
+        config: "Server configuration error. Contact support.",
+        missing_params: "OAuth failed - missing parameters.",
+        invalid_state: "Session expired. Please try again.",
+        expired: "OAuth session expired. Please try again.",
+        auth_failed: "Failed to connect LinkedIn. Try again.",
+        save_failed: "Failed to save connection. Try again.",
+        unexpected: "Unexpected error occurred.",
+      };
+      // Use predefined message or generic fallback - never display raw reason
+      const errorMessage =
+        linkedinErrorMessages[linkedinReason || ""] ||
+        "LinkedIn connection failed. Please try again.";
+      toast.error(errorMessage);
+      // Clean URL
+      urlParams.delete("linkedin");
+      urlParams.delete("linkedinReason");
+      urlParams.delete("linkedinDetails");
+      const cleanUrl =
+        urlParams.toString().length > 0
+          ? `${window.location.pathname}?${urlParams.toString()}`
+          : window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
   }, [queryClient]);
 
   // Get email quota
@@ -145,6 +206,22 @@ export function MessagesPage() {
   const selectedInstagramConversation = selectedInstagramConversationId
     ? (instagramConversations.find(
         (c) => c.id === selectedInstagramConversationId,
+      ) ?? null)
+    : null;
+
+  // Get active LinkedIn integration
+  const { data: linkedInIntegration } = useActiveLinkedInIntegration();
+
+  // Get LinkedIn conversations - used to derive selected conversation from ID
+  const { data: linkedInConversations = [] } = useLinkedInConversations(
+    linkedInIntegration?.id,
+    {},
+  );
+
+  // Derive selected LinkedIn conversation from query data (not stale state)
+  const selectedLinkedInConversation = selectedLinkedInConversationId
+    ? (linkedInConversations.find(
+        (c) => c.id === selectedLinkedInConversationId,
       ) ?? null)
     : null;
 
@@ -195,6 +272,14 @@ export function MessagesPage() {
     maxWidth: 400,
   });
 
+  // Resizable sidebar for LinkedIn
+  const linkedInSidebar = useResizableSidebar({
+    storageKey: "messages-linkedin-sidebar-width",
+    defaultWidth: 200,
+    minWidth: 160,
+    maxWidth: 400,
+  });
+
   const handleThreadSelect = (threadId: string) => {
     setSelectedThreadId(threadId);
   };
@@ -208,6 +293,7 @@ export function MessagesPage() {
     { id: "email", label: "Email", icon: Mail },
     { id: "slack", label: "Slack", icon: MessageSquare },
     { id: "instagram", label: "Instagram", icon: Instagram },
+    { id: "linkedin", label: "LinkedIn", icon: Linkedin },
     { id: "templates", label: "Templates", icon: FileText },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "settings", label: "Settings", icon: Settings },
@@ -373,6 +459,28 @@ export function MessagesPage() {
             )
           ) : activeTab === "instagram" &&
             !instagramIntegration /* No sidebar when Instagram not connected */ ? null : activeTab ===
+              "linkedin" && linkedInIntegration ? (
+            /* LinkedIn conversations sidebar - resizable, hidden on mobile when conversation selected */
+            (!isMobile || !selectedLinkedInConversation) && (
+              <ResizablePanel
+                width={isMobile ? 280 : linkedInSidebar.width}
+                isResizing={!isMobile && linkedInSidebar.isResizing}
+                onMouseDown={
+                  isMobile ? () => {} : linkedInSidebar.handleMouseDown
+                }
+                className="flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+              >
+                <LinkedInSidebar
+                  integration={linkedInIntegration}
+                  selectedConversationId={selectedLinkedInConversationId}
+                  onConversationSelect={(conversation) =>
+                    setSelectedLinkedInConversationId(conversation.id)
+                  }
+                />
+              </ResizablePanel>
+            )
+          ) : activeTab === "linkedin" &&
+            !linkedInIntegration /* No sidebar when LinkedIn not connected */ ? null : activeTab ===
             "email" ? (
             /* Email folders sidebar - only shown on email tab */
             <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -476,6 +584,19 @@ export function MessagesPage() {
                     : undefined
                 }
               />
+            )}
+
+            {activeTab === "linkedin" && (
+              <ChunkErrorBoundary context="LinkedIn messages">
+                <LinkedInTabContent
+                  selectedConversation={selectedLinkedInConversation}
+                  onBack={
+                    isMobile && selectedLinkedInConversation
+                      ? () => setSelectedLinkedInConversationId(null)
+                      : undefined
+                  }
+                />
+              </ChunkErrorBoundary>
             )}
 
             {activeTab === "templates" && (

@@ -30,6 +30,7 @@ export interface CreateCommissionData {
     zipCode?: string;
   };
   carrierId: string;
+  productId?: string; // Specific product ID for accurate comp_guide lookup
   product: string;
   type: string;
   status: string;

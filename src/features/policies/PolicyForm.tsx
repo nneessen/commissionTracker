@@ -54,7 +54,30 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
 
-  const userContractLevel = user?.contract_level || 100;
+  // CRITICAL FIX: Fetch contract_level from user_profiles table, not auth metadata
+  // The auth metadata often doesn't have contract_level, causing wrong comp lookups
+  const [dbContractLevel, setDbContractLevel] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchContractLevel = async () => {
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("contract_level")
+        .eq("id", user.id)
+        .single();
+
+      if (!error && data?.contract_level) {
+        setDbContractLevel(data.contract_level);
+      }
+    };
+
+    fetchContractLevel();
+  }, [user?.id]);
+
+  // Use DB contract_level if available, fall back to auth metadata, then default to 100
+  const userContractLevel = dbContractLevel || user?.contract_level || 100;
 
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",

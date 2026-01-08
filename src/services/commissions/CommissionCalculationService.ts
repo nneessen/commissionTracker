@@ -94,6 +94,7 @@ class CommissionCalculationService {
    */
   async calculateCommissionWithCompGuide(data: {
     carrierId: string;
+    productId?: string; // Specific product ID for accurate comp_guide lookup
     product: string;
     monthlyPremium: number;
     userId?: string;
@@ -168,6 +169,7 @@ class CommissionCalculationService {
 
       // Get commission percentage from comp guide (with retry for external service)
       // Note: product_type in comp_guide is an enum, so pass the raw product type directly
+      // CRITICAL: Pass productId for accurate lookup when available
       const rateResult = await withRetry(
         () =>
           compGuideService.getCommissionRate(
@@ -175,6 +177,7 @@ class CommissionCalculationService {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
             data.product as any, // Cast to any - product types match DB enum values
             contractCompLevel,
+            data.productId, // Pass productId for accurate comp_guide lookup
           ),
         { maxAttempts: 3 },
       );
@@ -304,6 +307,7 @@ class CommissionCalculationService {
       ) {
         const calculation = await this.calculateCommissionWithCompGuide({
           carrierId: commissionData.carrierId,
+          productId: commissionData.productId, // CRITICAL: Pass productId for accurate lookup
           product: commissionData.product,
           monthlyPremium: finalData.monthlyPremium,
           userId: commissionData.userId,

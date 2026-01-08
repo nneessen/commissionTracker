@@ -6,6 +6,114 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-08 14:29:40
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/ig-reel-script.md`
+- `plans/active/commission-calculation-bug-continuation.md`
+- `plans/active/linkedin-integration-continuation.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/linkedin/LinkedInConnectCard.tsx`
+- `src/features/messages/components/linkedin/LinkedInConversationItem.tsx`
+- `src/features/messages/components/linkedin/LinkedInConversationView.tsx`
+- `src/features/messages/components/linkedin/LinkedInMessageBubble.tsx`
+- `src/features/messages/components/linkedin/LinkedInMessageInput.tsx`
+- `src/features/messages/components/linkedin/LinkedInPriorityBadge.tsx`
+- `src/features/messages/components/linkedin/LinkedInSidebar.tsx`
+- `src/features/messages/components/linkedin/LinkedInTabContent.tsx`
+- `src/features/messages/components/linkedin/index.ts`
+- `src/features/messages/components/settings/LinkedInSettingsPanel.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/hooks/linkedin/index.ts`
+- `src/hooks/linkedin/useLinkedInIntegration.ts`
+- `src/hooks/linkedin/useLinkedInRealtime.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/services/linkedin/index.ts`
+- `src/services/linkedin/linkedinService.ts`
+- `src/services/linkedin/repositories/LinkedInConversationRepository.ts`
+- `src/services/linkedin/repositories/LinkedInIntegrationRepository.ts`
+- `src/services/linkedin/repositories/LinkedInMessageRepository.ts`
+- `src/services/linkedin/repositories/LinkedInScheduledMessageRepository.ts`
+- `src/services/linkedin/repositories/index.ts`
+- `src/services/policies/policyService.ts`
+- `src/services/settings/comp-guide/CompGuideRepository.ts`
+- `src/services/settings/comp-guide/CompGuideService.ts`
+- `src/types/linkedin.types.ts`
+- `supabase/functions/linkedin-get-conversations/index.ts`
+- `supabase/functions/linkedin-get-messages/index.ts`
+- `supabase/functions/linkedin-hosted-auth-callback/index.ts`
+- `supabase/functions/linkedin-hosted-auth-init/index.ts`
+- `supabase/functions/linkedin-send-message/index.ts`
+- `supabase/functions/linkedin-webhook/index.ts`
+- `supabase/migrations/20260108_001_linkedin_enums.sql`
+- `supabase/migrations/20260108_002_linkedin_integrations.sql`
+- `supabase/migrations/20260108_003_linkedin_conversations_messages.sql`
+- `supabase/migrations/20260108_004_linkedin_scheduled.sql`
+- `supabase/migrations/20260108_005_unified_templates.sql`
+- `supabase/migrations/20260108_006_unipile_config.sql`
+
+### Statistics
+```
+ 46 files changed, 7542 insertions(+), 38 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-08 14:26:56
+
+### Changed Files
+- `docs/ig-reel-script.md`
+- `plans/active/commission-calculation-bug-continuation.md`
+- `plans/active/linkedin-integration-continuation.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/linkedin/LinkedInConnectCard.tsx`
+- `src/features/messages/components/linkedin/LinkedInConversationItem.tsx`
+- `src/features/messages/components/linkedin/LinkedInConversationView.tsx`
+- `src/features/messages/components/linkedin/LinkedInMessageBubble.tsx`
+- `src/features/messages/components/linkedin/LinkedInMessageInput.tsx`
+- `src/features/messages/components/linkedin/LinkedInPriorityBadge.tsx`
+- `src/features/messages/components/linkedin/LinkedInSidebar.tsx`
+- `src/features/messages/components/linkedin/LinkedInTabContent.tsx`
+- `src/features/messages/components/linkedin/index.ts`
+- `src/features/messages/components/settings/LinkedInSettingsPanel.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/hooks/linkedin/index.ts`
+- `src/hooks/linkedin/useLinkedInIntegration.ts`
+- `src/hooks/linkedin/useLinkedInRealtime.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/services/linkedin/index.ts`
+- `src/services/linkedin/linkedinService.ts`
+- `src/services/linkedin/repositories/LinkedInConversationRepository.ts`
+- `src/services/linkedin/repositories/LinkedInIntegrationRepository.ts`
+- `src/services/linkedin/repositories/LinkedInMessageRepository.ts`
+- `src/services/linkedin/repositories/LinkedInScheduledMessageRepository.ts`
+- `src/services/linkedin/repositories/index.ts`
+- `src/services/policies/policyService.ts`
+- `src/services/settings/comp-guide/CompGuideRepository.ts`
+- `src/services/settings/comp-guide/CompGuideService.ts`
+- `src/types/linkedin.types.ts`
+- `supabase/functions/linkedin-get-conversations/index.ts`
+- `supabase/functions/linkedin-get-messages/index.ts`
+- `supabase/functions/linkedin-hosted-auth-callback/index.ts`
+- `supabase/functions/linkedin-hosted-auth-init/index.ts`
+- `supabase/functions/linkedin-send-message/index.ts`
+- `supabase/functions/linkedin-webhook/index.ts`
+- `supabase/migrations/20260108_001_linkedin_enums.sql`
+- `supabase/migrations/20260108_002_linkedin_integrations.sql`
+- `supabase/migrations/20260108_003_linkedin_conversations_messages.sql`
+- `supabase/migrations/20260108_004_linkedin_scheduled.sql`
+- `supabase/migrations/20260108_005_unified_templates.sql`
+- `supabase/migrations/20260108_006_unipile_config.sql`
+
+### Statistics
+```
+ 44 files changed, 7487 insertions(+), 33 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-08 12:00:04
 
 ### Changed Files

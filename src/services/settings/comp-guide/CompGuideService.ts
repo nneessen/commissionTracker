@@ -286,14 +286,34 @@ class CompGuideServiceClass extends BaseService<
   /**
    * Get commission rate for specific carrier, product type, and contract level
    * This is the main lookup function used by commission calculations
+   * @param carrierName - Carrier name (used for fallback lookup)
+   * @param productType - Product type enum (used for fallback lookup)
+   * @param contractLevel - User's contract level
+   * @param productId - Optional specific product ID (PREFERRED - more accurate lookup)
    */
   async getCommissionRate(
     carrierName: string,
     productType: Database["public"]["Enums"]["product_type"],
     contractLevel: number,
+    productId?: string,
   ): Promise<{ data: number | null; error: Error | null }> {
     try {
-      // First get the carrier ID by name
+      const repository = this.repository as CompGuideRepository;
+
+      // PREFERRED: If productId is available, use the more accurate lookup
+      if (productId) {
+        const rate = await repository.getCommissionRateByProductId(
+          productId,
+          contractLevel,
+        );
+        if (rate !== null) {
+          return { data: rate, error: null };
+        }
+        // Fall through to legacy lookup if productId lookup returns no result
+      }
+
+      // FALLBACK: Legacy lookup by carrier name + product type
+      // This is less accurate when carrier has multiple products of same type
       const { data: carrier, error: carrierError } = await supabase
         .from("carriers")
         .select("id")
@@ -307,7 +327,6 @@ class CompGuideServiceClass extends BaseService<
         };
       }
 
-      const repository = this.repository as CompGuideRepository;
       const rate = await repository.getCommissionRate(
         carrier.id,
         productType,
