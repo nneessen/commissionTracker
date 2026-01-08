@@ -6,7 +6,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { createSignedState } from "../_shared/hmac.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
-import { shouldGrantTemporaryInstagramAccess } from "../_shared/temporaryAccess.ts";
+import {
+  shouldGrantTemporaryInstagramAccess,
+  hasPermanentInstagramAccess,
+} from "../_shared/temporaryAccess.ts";
 
 interface OAuthInitRequest {
   imoId: string;
@@ -71,10 +74,21 @@ serve(async (req) => {
     // Check Instagram access with temporary free access period support
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Fetch user email for permanent access check
+    const { data: userData } = await supabase.auth.admin.getUserById(userId);
+    const userEmail = userData?.user?.email;
+
     let hasInstagramAccess = false;
 
+    // Check for permanent access (Meta App Review accounts)
+    if (hasPermanentInstagramAccess(userEmail)) {
+      console.log(
+        `[instagram-oauth-init] User ${userId} (${userEmail}) granted permanent Instagram access`,
+      );
+      hasInstagramAccess = true;
+    }
     // During temporary free access period (until Feb 1, 2026), grant access to all users
-    if (shouldGrantTemporaryInstagramAccess()) {
+    else if (shouldGrantTemporaryInstagramAccess()) {
       console.log(
         `[instagram-oauth-init] User ${userId} granted access via temporary free access period`,
       );

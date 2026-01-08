@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-08 12:00:04
+
+### Changed Files
+- `src/lib/temporaryAccess.ts`
+- `supabase/functions/_shared/temporaryAccess.ts`
+- `supabase/functions/instagram-oauth-init/index.ts`
+
+### Statistics
+```
+ 3 files changed, 55 insertions(+), 3 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-08 10:51:12
 
 ### Changed Files

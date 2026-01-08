@@ -15,6 +15,12 @@ const TEMPORARY_ACCESS_END_DATE = new Date("2026-02-01T00:00:00Z");
 const EXCLUDED_FEATURES = ["recruiting"];
 
 /**
+ * Emails with permanent Instagram access (for Meta App Review).
+ * These accounts bypass subscription checks indefinitely.
+ */
+const PERMANENT_INSTAGRAM_ACCESS_EMAILS = ["meta-reviewer@thestandardhq.com"];
+
+/**
  * Check if we are currently in the temporary free access period.
  * Returns true until Feb 1, 2026 00:00 UTC.
  */
@@ -23,11 +29,25 @@ export function isTemporaryFreeAccessPeriod(): boolean {
 }
 
 /**
+ * Check if an email has permanent Instagram access (for Meta App Review).
+ */
+export function hasPermanentInstagramAccess(email?: string): boolean {
+  if (!email) return false;
+  return PERMANENT_INSTAGRAM_ACCESS_EMAILS.includes(email.toLowerCase());
+}
+
+/**
  * Check if Instagram access should be granted during temporary period.
  * Instagram messaging is NOT in the excluded features list,
  * so this returns true until Feb 1, 2026.
+ * Also grants permanent access to specific emails (Meta App Review accounts).
  */
-export function shouldGrantTemporaryInstagramAccess(): boolean {
+export function shouldGrantTemporaryInstagramAccess(email?: string): boolean {
+  // Permanent access for Meta reviewer accounts
+  if (hasPermanentInstagramAccess(email)) {
+    return true;
+  }
+
   if (!isTemporaryFreeAccessPeriod()) {
     return false;
   }

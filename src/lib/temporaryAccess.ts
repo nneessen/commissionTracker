@@ -22,6 +22,12 @@ const EXCLUDED_FEATURES: FeatureKey[] = ["recruiting"];
 export const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
 
 /**
+ * Emails with permanent Instagram access (for Meta App Review).
+ * These accounts bypass subscription checks indefinitely.
+ */
+const PERMANENT_INSTAGRAM_ACCESS_EMAILS = ["meta-reviewer@thestandardhq.com"];
+
+/**
  * Check if we are currently in the temporary free access period.
  * Returns true until Feb 1, 2026 00:00 UTC.
  */
@@ -52,6 +58,16 @@ export function shouldGrantTemporaryAccess(feature: FeatureKey): boolean {
 export function isSuperAdminEmail(email: string | undefined | null): boolean {
   if (!email) return false;
   return email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+}
+
+/**
+ * Check if an email has permanent Instagram access (for Meta App Review).
+ */
+export function hasPermanentInstagramAccess(
+  email: string | undefined | null,
+): boolean {
+  if (!email) return false;
+  return PERMANENT_INSTAGRAM_ACCESS_EMAILS.includes(email.toLowerCase());
 }
 
 /**
