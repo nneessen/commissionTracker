@@ -225,11 +225,11 @@ export function HierarchyDashboardCompact() {
           <PendingInvitationBanner />
 
           {/* Timeframe Selector */}
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
-            <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+            <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide shrink-0">
               Team Metrics
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
               <TimePeriodSwitcher
                 timePeriod={timePeriod}
                 onTimePeriodChange={handleTimePeriodChange}

@@ -53,6 +53,20 @@ export function AgentDetailPage() {
     enabled: !!agentId,
   });
 
+  // A POLICY OBJECT
+  //   {
+  //     "id": "2e403634-78f7-4799-a53d-c6c32aa66031",
+  //     "policyNumber": "A1313395",
+  //     "clientName": "JOSEPH MORAN",
+  //     "product": "term_life",
+  //     "carrier": "Baltimore Life",
+  //     "annualPremium": 1534.8,
+  //     "status": "pending",
+  //     "createdAt": "2026-01-03T16:47:08.79648+00:00",
+  //     "effectiveDate": "2026-01-28",
+  //     "issueDate": "2026-01-28" is this suppose to be submitDate? are they the same?
+  // }
+
   const { data: commissions, isLoading: loadingCommissions } = useQuery({
     queryKey: ["agent-commissions", agentId],
     queryFn: () => hierarchyService.getAgentCommissions(agentId),
@@ -119,7 +133,7 @@ export function AgentDetailPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mtdPolicies = policyList.filter((p: any) => {
-    const pDate = new Date(p.issueDate);
+    const pDate = new Date(p.createdAt);
     return (
       pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear
     );
@@ -127,7 +141,7 @@ export function AgentDetailPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ytdPolicies = policyList.filter((p: any) => {
-    const pDate = new Date(p.issueDate);
+    const pDate = new Date(p.createdAt);
     return pDate.getFullYear() === currentYear;
   });
 
@@ -149,7 +163,6 @@ export function AgentDetailPage() {
     ),
   };
 
-  // FIXED: Correct commission metrics mapping
   const commissionMetrics = {
     advances: commissions?.advances || 0,
     earned: commissions?.totalEarned || 0,
@@ -157,20 +170,15 @@ export function AgentDetailPage() {
     chargebacks: commissions?.chargebacks || 0,
   };
 
-  // Agent's own override earnings from their downlines
   const agentOverrideEarnings = {
     mtd: overrides?.agentEarnings?.mtd || overrides?.mtd || 0,
     ytd: overrides?.agentEarnings?.ytd || overrides?.ytd || 0,
   };
 
-  // What the viewer (current user) earns from this agent
   const viewerEarningsFromAgent = {
     mtd: overrides?.viewerEarningsFromAgent?.mtd || 0,
     ytd: overrides?.viewerEarningsFromAgent?.ytd || 0,
   };
-
-  // For backward compatibility (used in header display)
-  const _overrideMetrics = agentOverrideEarnings;
 
   const agentName =
     agentData.first_name && agentData.last_name
@@ -364,6 +372,9 @@ export function AgentDetailPage() {
                     Policy #
                   </TableHead>
                   <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Client
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
                     Product
                   </TableHead>
                   <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
@@ -384,7 +395,7 @@ export function AgentDetailPage() {
                 {loadingPolicies ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
                     >
                       Loading policies...
@@ -393,7 +404,7 @@ export function AgentDetailPage() {
                 ) : policyList.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
                     >
                       No policies found
@@ -408,6 +419,9 @@ export function AgentDetailPage() {
                     >
                       <TableCell className="py-1.5 text-[11px] font-mono text-zinc-900 dark:text-zinc-100">
                         {policy.policyNumber}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                        {policy.clientName}
                       </TableCell>
                       <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
                         {policy.product}
