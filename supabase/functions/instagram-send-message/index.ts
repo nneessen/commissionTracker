@@ -268,11 +268,13 @@ serve(async (req) => {
     if (apiData.error) {
       console.error("[instagram-send-message] Meta API error:", apiData.error);
 
-      // Handle specific error codes
-      if (
-        apiData.error.code === 190 ||
-        apiData.error.type === "OAuthException"
-      ) {
+      // Handle token expiration - only mark expired for code 190 (Invalid Access Token)
+      // Do NOT mark expired for rate limits (codes 4, 17, 32, 613) or server errors (1, 2)
+      const isTokenInvalid = apiData.error.code === 190;
+      const isRateLimit = [4, 17, 32, 613].includes(apiData.error.code);
+      const isServerError = [1, 2].includes(apiData.error.code);
+
+      if (isTokenInvalid) {
         await supabase
           .from("instagram_integrations")
           .update({
@@ -290,6 +292,41 @@ serve(async (req) => {
           }),
           {
             status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      if (isRateLimit) {
+        console.warn(
+          `[instagram-send-message] Rate limited: ${apiData.error.message}`,
+        );
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "Rate limited by Instagram. Please try again later.",
+            code: "RATE_LIMITED",
+            retryAfter: 60,
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      if (isServerError) {
+        console.warn(
+          `[instagram-send-message] Meta server error: ${apiData.error.message}`,
+        );
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "Instagram is temporarily unavailable. Please try again.",
+            code: "SERVER_ERROR",
+          }),
+          {
+            status: 503,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           },
         );

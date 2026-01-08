@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-08 18:02:01
+
+### Changed Files
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-process-scheduled/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+- `supabase/functions/linkedin-hosted-auth-callback/index.ts`
+- `supabase/functions/linkedin-hosted-auth-init/index.ts`
+
+### Statistics
+```
+ 6 files changed, 239 insertions(+), 49 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-08 17:16:10
 
 ### Changed Files

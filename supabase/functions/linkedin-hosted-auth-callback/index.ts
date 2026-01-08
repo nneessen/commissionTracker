@@ -72,13 +72,11 @@ serve(async (req) => {
     }
 
     // Verify signed state
-    let state: StatePayload;
-    try {
-      state = await parseSignedState<StatePayload>(signedState);
-    } catch (err) {
+    const state = await parseSignedState<StatePayload>(signedState);
+
+    if (!state) {
       console.error(
-        "[linkedin-hosted-auth-callback] Invalid state signature:",
-        err,
+        "[linkedin-hosted-auth-callback] Invalid or missing state signature",
       );
       return new Response(
         JSON.stringify({ ok: false, error: "Invalid state signature" }),
@@ -89,9 +87,9 @@ serve(async (req) => {
       );
     }
 
-    // Verify timestamp (10 minute expiry for callback)
+    // Verify timestamp (60 minute expiry for callback - OAuth flow may take time)
     const stateAge = Date.now() - state.timestamp;
-    if (stateAge > 10 * 60 * 1000) {
+    if (stateAge > 60 * 60 * 1000) {
       console.error("[linkedin-hosted-auth-callback] State expired");
       return new Response(
         JSON.stringify({ ok: false, error: "State expired" }),
@@ -107,6 +105,36 @@ serve(async (req) => {
     console.log(
       `[linkedin-hosted-auth-callback] Processing callback for user ${userId}, status: ${status}`,
     );
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Idempotency check: see if this account was already processed
+    const { data: existingIntegration } = await supabase
+      .from("linkedin_integrations")
+      .select("id, connection_status, unipile_account_id")
+      .eq("unipile_account_id", account_id)
+      .maybeSingle();
+
+    if (
+      existingIntegration &&
+      existingIntegration.connection_status === "connected"
+    ) {
+      console.log(
+        `[linkedin-hosted-auth-callback] Integration already exists and connected: ${existingIntegration.id}, skipping duplicate`,
+      );
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          integrationId: existingIntegration.id,
+          status: existingIntegration.connection_status,
+          message: "Already processed",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     // Handle error status
     if (status === "ERROR") {
@@ -174,8 +202,6 @@ serve(async (req) => {
       (s) => s.id?.includes("linkedin") || s.profile_url?.includes("linkedin"),
     );
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     // Upsert integration record
     const integrationData = {
       imo_id: imoId,
@@ -191,34 +217,89 @@ serve(async (req) => {
       linkedin_headline: linkedinSource?.headline || null,
       linkedin_profile_url: linkedinSource?.profile_url || null,
       linkedin_profile_picture_url: linkedinSource?.picture_url || null,
-      connection_status: status === "CONNECTED" ? "connected" : "credentials",
-      is_active: status === "CONNECTED",
+      // Treat both CONNECTED and CREDENTIALS as connected (CREDENTIALS means auth succeeded, sync in progress)
+      connection_status:
+        status === "CONNECTED" || status === "CREDENTIALS"
+          ? "connected"
+          : "error",
+      is_active: status === "CONNECTED" || status === "CREDENTIALS",
       last_connected_at: new Date().toISOString(),
       last_error: null,
       last_error_at: null,
     };
 
     console.log(
-      "[linkedin-hosted-auth-callback] Upserting integration:",
+      "[linkedin-hosted-auth-callback] Saving integration:",
       JSON.stringify(integrationData),
     );
 
-    const { data: integration, error: upsertError } = await supabase
+    // Check if integration already exists for this user/IMO
+    const { data: existingByUserImo } = await supabase
       .from("linkedin_integrations")
-      .upsert(integrationData, {
-        onConflict: "user_id,imo_id",
-        ignoreDuplicates: false,
-      })
-      .select()
-      .single();
+      .select("id")
+      .eq("user_id", userId)
+      .eq("imo_id", imoId)
+      .maybeSingle();
 
-    if (upsertError) {
+    let integration;
+    let saveError;
+
+    if (existingByUserImo) {
+      // Update existing integration
+      console.log(
+        `[linkedin-hosted-auth-callback] Updating existing integration: ${existingByUserImo.id}`,
+      );
+      const { data, error } = await supabase
+        .from("linkedin_integrations")
+        .update({
+          ...integrationData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingByUserImo.id)
+        .select()
+        .single();
+      integration = data;
+      saveError = error;
+    } else {
+      // Insert new integration
+      console.log("[linkedin-hosted-auth-callback] Inserting new integration");
+      const { data, error } = await supabase
+        .from("linkedin_integrations")
+        .insert(integrationData)
+        .select()
+        .single();
+      integration = data;
+      saveError = error;
+    }
+
+    if (saveError) {
       console.error(
-        "[linkedin-hosted-auth-callback] Error upserting integration:",
-        upsertError,
+        "[linkedin-hosted-auth-callback] Error saving integration:",
+        JSON.stringify(saveError),
       );
       return new Response(
-        JSON.stringify({ ok: false, error: "Failed to save integration" }),
+        JSON.stringify({
+          ok: false,
+          error: "Failed to save integration",
+          details: saveError.message,
+          code: saveError.code,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (!integration) {
+      console.error(
+        "[linkedin-hosted-auth-callback] No integration returned after save",
+      );
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "Failed to save integration - no data returned",
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -196,11 +196,12 @@ async function processSingleMessage(
         apiResult.error,
       );
 
-      // Handle token expiration
-      if (
-        apiResult.error.code === 190 ||
-        apiResult.error.type === "OAuthException"
-      ) {
+      // Handle token expiration - only mark expired for code 190 (Invalid Access Token)
+      // Do NOT mark expired for rate limits (codes 4, 17, 32, 613) or server errors (1, 2)
+      const isTokenInvalid = apiResult.error.code === 190;
+      const isRateLimit = [4, 17, 32, 613].includes(apiResult.error.code);
+
+      if (isTokenInvalid) {
         await supabase
           .from("instagram_integrations")
           .update({
@@ -209,6 +210,11 @@ async function processSingleMessage(
             last_error_at: now,
           })
           .eq("id", integration.id);
+      } else if (isRateLimit) {
+        // Just log rate limits, don't mark as failed
+        console.warn(
+          `[instagram-process-scheduled] Rate limited: ${apiResult.error.message}`,
+        );
       }
 
       // Handle window closed error

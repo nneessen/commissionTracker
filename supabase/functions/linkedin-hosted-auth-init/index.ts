@@ -148,6 +148,25 @@ serve(async (req) => {
     const APP_URL = Deno.env.get("APP_URL") || "https://www.thestandardhq.com";
     const notifyUrl = `${SUPABASE_URL}/functions/v1/linkedin-hosted-auth-callback`;
 
+    // Ensure redirect URLs are absolute (Unipile requires absolute URLs)
+    const makeAbsoluteUrl = (
+      path: string | undefined,
+      defaultPath: string,
+    ): string => {
+      if (!path) return `${APP_URL}${defaultPath}`;
+      // If path is already absolute, return it
+      if (path.startsWith("http://") || path.startsWith("https://"))
+        return path;
+      // Otherwise prepend APP_URL
+      return `${APP_URL}${path.startsWith("/") ? path : `/${path}`}`;
+    };
+
+    const successUrl = makeAbsoluteUrl(
+      returnUrl,
+      "/messages?linkedin=connected",
+    );
+    const failureUrl = makeAbsoluteUrl(returnUrl, "/messages?linkedin=failed");
+
     const unipileRequest = {
       type: "create",
       providers: [accountType],
@@ -155,9 +174,8 @@ serve(async (req) => {
       expiresOn: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min expiry
       notify_url: notifyUrl,
       name: signedState, // Store signed state in name field for callback verification
-      success_redirect_url:
-        returnUrl || `${APP_URL}/messages?linkedin=connected`,
-      failure_redirect_url: returnUrl || `${APP_URL}/messages?linkedin=failed`,
+      success_redirect_url: successUrl,
+      failure_redirect_url: failureUrl,
     };
 
     console.log("[linkedin-hosted-auth-init] Calling Unipile hosted auth API");
