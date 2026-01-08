@@ -548,35 +548,37 @@ class HierarchyService {
         teamPendingAPTotal += pendingAP;
         teamPendingPoliciesCount += pendingPolicies.length;
 
-        // Only aggregate active policies for downlines (not owner) for team performance
-        if (userId !== myProfile.id) {
-          // Filter policies created in the period with status="active"
-          const periodPolicies = policies.filter((p) => {
-            const createdDate = new Date(p.created_at || "");
-            return (
-              createdDate >= rangeStart &&
-              createdDate <= rangeEnd &&
-              p.status === "active"
-            );
-          });
-
-          // Sum AP for this agent
-          const agentAP = periodPolicies.reduce(
-            (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-            0,
+        // Aggregate active policies for entire team including owner
+        const periodPolicies = policies.filter((p) => {
+          const createdDate = new Date(p.created_at || "");
+          return (
+            createdDate >= rangeStart &&
+            createdDate <= rangeEnd &&
+            p.status === "active"
           );
+        });
 
-          teamAPTotal += agentAP;
-          teamPoliciesCount += periodPolicies.length;
+        // Sum AP for this agent
+        const agentAP = periodPolicies.reduce(
+          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
+          0,
+        );
 
-          // Track agent performance for top performer
-          const downline = downlines.find((d) => d.id === userId);
-          if (downline && agentAP > 0) {
+        teamAPTotal += agentAP;
+        teamPoliciesCount += periodPolicies.length;
+
+        // Track agent performance for top performer (include owner)
+        if (agentAP > 0) {
+          const isOwner = userId === myProfile.id;
+          const agent = isOwner
+            ? myProfile
+            : downlines.find((d) => d.id === userId);
+          if (agent) {
             agentPerformance.push({
               id: userId,
               name:
-                `${downline.first_name || ""} ${downline.last_name || ""}`.trim() ||
-                downline.email,
+                `${agent.first_name || ""} ${agent.last_name || ""}`.trim() ||
+                agent.email,
               ap: agentAP,
             });
           }
@@ -587,8 +589,8 @@ class HierarchyService {
       const topPerformer =
         agentPerformance.sort((a, b) => b.ap - a.ap)[0] || null;
 
-      // Calculate avg premium per agent (only agents with production)
-      const activeAgents = downlines.length;
+      // Calculate avg premium per agent (include owner in count)
+      const activeAgents = downlines.length + 1;
       const avgPremiumPerAgent =
         activeAgents > 0 ? teamAPTotal / activeAgents : 0;
 
