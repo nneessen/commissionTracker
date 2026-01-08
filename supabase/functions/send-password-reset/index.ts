@@ -100,12 +100,23 @@ serve(async (req) => {
         linkError,
       );
 
-      // Check if user doesn't exist
-      if (linkError.message?.includes("User not found")) {
+      // Check if user doesn't exist - check both code and message
+      // The AuthApiError has a 'code' property that's more reliable
+      const errorCode = (linkError as { code?: string }).code;
+      const isUserNotFound =
+        errorCode === "user_not_found" ||
+        linkError.message?.includes("User not found") ||
+        linkError.message?.includes("not found");
+
+      if (isUserNotFound) {
+        console.log(
+          "[send-password-reset] User not found in auth.users for email:",
+          email,
+        );
         return new Response(
           JSON.stringify({
             success: false,
-            error: "No account found with this email address",
+            error: `No auth account found for ${email}. This user exists in user_profiles but NOT in auth.users. They need to be created properly via the Add User flow.`,
           }),
           {
             status: 404,

@@ -78,11 +78,56 @@ export const recruitingService = {
       pipelineTemplateId = template?.id || null;
     }
 
-    // Create profile-only record (NO auth user at this stage)
-    // Auth user will be created when recruit is advanced to phase 2+
+    // Create auth user via Edge Function (this also creates user_profiles via trigger)
+    // This ensures recruit can receive password reset emails and eventually log in
+    const fullName =
+      `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim();
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          email: recruit.email.toLowerCase().trim(),
+          fullName,
+          roles,
+          isAdmin: recruit.is_admin || false,
+          skipPipeline: skip_pipeline || false,
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("[recruitingService.createRecruit] Edge function failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: result.error,
+        details: result.details,
+      });
+      throw new Error(
+        result.error || `Failed to create auth user: ${response.statusText}`,
+      );
+    }
+
+    const authUserId = result.user?.id;
+    if (!authUserId) {
+      // Handle case where user already exists
+      if (result.alreadyExists) {
+        throw new Error(`A user with email ${recruit.email} already exists`);
+      }
+      throw new Error("Auth user was created but no ID was returned");
+    }
+
+    // Update the profile created by trigger with recruit-specific data
     const { data, error } = await supabase
       .from("user_profiles")
-      .insert({
+      .update({
         ...dbFields,
         roles,
         agent_status: recruit.agent_status || "unlicensed",
@@ -98,10 +143,18 @@ export const recruitingService = {
         approval_status: "pending",
         is_admin: recruit.is_admin || false,
       })
+      .eq("id", authUserId)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "[recruitingService.createRecruit] Profile update failed:",
+        error,
+      );
+      throw error;
+    }
+
     const newRecruit = data as UserProfile;
 
     // Emit recruit created event

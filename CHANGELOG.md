@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-08 10:51:12
+
+### Changed Files
+- `plans/active/recruit-auth-user-creation-bug.md`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/hooks/integrations/useSchedulingIntegrations.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `supabase/functions/send-password-reset/index.ts`
+
+### Statistics
+```
+ 7 files changed, 158 insertions(+), 18 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-07 18:01:10
 
 ### Changed Files

@@ -14,11 +14,11 @@ export function useCreateRecruit() {
     onSuccess: (data) => {
       const name = `${data.first_name} ${data.last_name}`.trim() || data.email;
 
-      // Simple success message - no email sent at recruit creation
-      // Login instructions will be sent when recruit is advanced to phase 2+
-      toast.success(`Successfully added ${name} as a prospect.`, {
-        duration: 5000,
-      });
+      // Auth user is created and welcome email with password setup link is sent
+      toast.success(
+        `Successfully added ${name}. Welcome email sent to ${data.email}`,
+        { duration: 5000 },
+      );
 
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
       queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });

@@ -285,10 +285,10 @@ export function useRecruiterSchedulingIntegrations(userId: string | null) {
         return [];
       }
 
-      // Get the user's upline_id (canonical field for hierarchy relationships)
+      // Get the user's upline_id (canonical) with recruiter_id fallback for pre-migration data
       const { data: userProfile, error: profileError } = await supabase
         .from("user_profiles")
-        .select("upline_id")
+        .select("upline_id, recruiter_id")
         .eq("id", userId)
         .maybeSingle();
 
@@ -300,16 +300,17 @@ export function useRecruiterSchedulingIntegrations(userId: string | null) {
         return [];
       }
 
-      if (!userProfile?.upline_id) {
+      // Use upline_id as canonical, fall back to recruiter_id for pre-migration data
+      const uplineId = userProfile?.upline_id || userProfile?.recruiter_id;
+      if (!uplineId) {
         // User has no upline - return empty (they might be the admin/top-level)
         return [];
       }
 
       // Fetch the upline's active integrations
       // RLS policy "scheduling_integrations_select_for_recruit" allows this
-      const integrations = await schedulingIntegrationService.getActiveByUserId(
-        userProfile.upline_id,
-      );
+      const integrations =
+        await schedulingIntegrationService.getActiveByUserId(uplineId);
       return integrations;
     },
     enabled: !!userId,

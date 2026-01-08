@@ -470,6 +470,13 @@ export default function EditUserDialog({
     if (!user) return;
     setIsSendingInvite(true);
 
+    console.log("[handleResendInvite] Sending password reset for:", {
+      email: user.email,
+      userId: user.id,
+      hasAuthUser:
+        "unknown - check Supabase Dashboard > Authentication > Users",
+    });
+
     try {
       // Use custom Mailgun edge function instead of Supabase's built-in email
       // Route to /auth/callback which is whitelisted and handles recovery type
@@ -483,7 +490,13 @@ export default function EditUserDialog({
         },
       );
 
+      console.log("[handleResendInvite] Response:", { data, fnError });
+
       if (fnError) {
+        console.error(
+          "[handleResendInvite] Function error - user may not exist in auth.users:",
+          fnError,
+        );
         toast.error(`Failed to send confirmation email: ${fnError.message}`);
       } else if (data?.success === false) {
         toast.error(`Failed to send confirmation email: ${data.error}`);

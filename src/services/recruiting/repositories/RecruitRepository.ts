@@ -434,13 +434,15 @@ export class RecruitRepository extends BaseRepository<
     }
 
     const createData = data as CreateRecruitData;
+    // Consolidate: use upline_id as canonical, keep recruiter_id in sync
+    const uplineValue = createData.uplineId ?? createData.recruiterId ?? null;
     return {
       email: createData.email,
       first_name: createData.firstName,
       last_name: createData.lastName,
       phone: createData.phone ?? null,
-      recruiter_id: createData.recruiterId ?? null,
-      upline_id: createData.uplineId ?? null,
+      recruiter_id: uplineValue,
+      upline_id: uplineValue,
       roles: createData.roles ?? ["recruit"],
       agent_status: createData.agentStatus ?? "unlicensed",
       pipeline_template_id: createData.pipelineTemplateId ?? null,
