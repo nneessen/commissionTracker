@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Edit, Upload, Percent } from "lucide-react";
+import { toast } from "sonner";
 import {
   useCommissionRates,
   ProductWithRates,
@@ -190,10 +191,17 @@ export function CommissionRatesManagement() {
 
       await Promise.all([...promises, ...deletePromises]);
 
+      // Show single success toast after all operations complete
+      const totalChanges = promises.length + deletePromises.length;
+      toast.success(
+        `Successfully saved ${totalChanges} commission rate${totalChanges !== 1 ? "s" : ""}`,
+      );
+
       setIsEditDialogOpen(false);
       setSelectedProduct(null);
     } catch (error) {
       console.error("Failed to save rates:", error);
+      toast.error("Failed to save some commission rates");
     }
   };
 
@@ -276,10 +284,16 @@ export function CommissionRatesManagement() {
         await createRate.mutateAsync(rate);
       }
 
+      // Show single success toast after all operations complete
+      const totalImported = lines.length - 1; // Subtract header row
+      toast.success(
+        `Successfully imported ${totalImported} commission rate${totalImported !== 1 ? "s" : ""}`,
+      );
+
       setIsBulkImportOpen(false);
     } catch (error) {
       console.error("Bulk import failed:", error);
-      alert(
+      toast.error(
         `Import failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }

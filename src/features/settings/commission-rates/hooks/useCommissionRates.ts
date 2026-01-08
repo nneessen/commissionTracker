@@ -102,6 +102,7 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
   };
 
   // Create rate mutation
+  // Note: No success toast here - component handles batch success notifications
   const createRate = useMutation({
     mutationFn: async (data: CreateRateData) => {
       const result = await compGuideService.createEntry({
@@ -118,7 +119,6 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
-      toast.success("Commission rate created successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create rate: ${error.message}`);
@@ -126,6 +126,7 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
   });
 
   // Update rate mutation
+  // Note: No success toast here - component handles batch success notifications
   const updateRate = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRateData }) => {
       // Only include fields that are actually provided (not undefined)
@@ -145,7 +146,6 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
-      toast.success("Commission rate updated successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to update rate: ${error.message}`);
@@ -153,6 +153,7 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
   });
 
   // Delete rate mutation
+  // Note: No success toast here - component handles batch success notifications
   const deleteRate = useMutation({
     mutationFn: async (id: string) => {
       const result = await compGuideService.deleteEntry(id);
@@ -163,7 +164,6 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
-      toast.success("Commission rate deleted successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete rate: ${error.message}`);
