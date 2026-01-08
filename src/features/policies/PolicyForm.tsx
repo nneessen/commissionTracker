@@ -79,22 +79,55 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   // Use DB contract_level if available, fall back to auth metadata, then default to 100
   const userContractLevel = dbContractLevel || user?.contract_level || 100;
 
-  const [formData, setFormData] = useState<NewPolicyForm>({
-    clientName: "",
-    clientState: "",
-    clientAge: 0,
-    carrierId: "",
-    productId: "", // Use productId to link to products table
-    product: "term_life" as ProductType,
-    policyNumber: "",
-    submitDate: formatDateForDB(new Date()),
-    effectiveDate: formatDateForDB(new Date()),
-    premium: 0,
-    paymentFrequency: "monthly" as PaymentFrequency,
-    commissionPercentage: 0,
-    status: "pending" as PolicyStatus,
-    notes: "",
-  });
+  // Helper function to create initial form data from policy
+  const createInitialFormData = (): NewPolicyForm => {
+    // If editing and policy data is available, use it for initial state
+    if (policyId && policy) {
+      return {
+        clientName: policy.client?.name || "",
+        clientState: policy.client?.state || "",
+        clientAge: policy.client?.age || 0,
+        clientEmail: policy.client?.email || "",
+        clientPhone: policy.client?.phone || "",
+        carrierId: policy.carrierId || "",
+        productId: policy.productId || "",
+        product: policy.product,
+        policyNumber: policy.policyNumber || "",
+        submitDate: policy.submitDate || formatDateForDB(new Date()),
+        effectiveDate: policy.effectiveDate || formatDateForDB(new Date()),
+        premium: calculatePaymentAmount(
+          policy.annualPremium || 0,
+          policy.paymentFrequency,
+        ),
+        paymentFrequency: policy.paymentFrequency || "monthly",
+        commissionPercentage: (policy.commissionPercentage || 0) * 100,
+        status: policy.status || "pending",
+        notes: policy.notes || "",
+      };
+    }
+    // Default empty form for new policies
+    return {
+      clientName: "",
+      clientState: "",
+      clientAge: 0,
+      carrierId: "",
+      productId: "",
+      product: "term_life" as ProductType,
+      policyNumber: "",
+      submitDate: formatDateForDB(new Date()),
+      effectiveDate: formatDateForDB(new Date()),
+      premium: 0,
+      paymentFrequency: "monthly" as PaymentFrequency,
+      commissionPercentage: 0,
+      status: "pending" as PolicyStatus,
+      notes: "",
+    };
+  };
+
+  // Initialize form with policy data if available at mount time
+  const [formData, setFormData] = useState<NewPolicyForm>(
+    createInitialFormData,
+  );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [productCommissionRates, setProductCommissionRates] = useState<
@@ -103,7 +136,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   // Track initial productId to detect user-initiated changes in edit mode
   // This allows commission updates when user explicitly changes product
-  const [initialProductId, setInitialProductId] = useState<string | null>(null);
+  // Initialize with policy's productId if editing
+  const [initialProductId, setInitialProductId] = useState<string | null>(
+    policyId && policy ? policy.productId || null : null,
+  );
 
   // Fetch products for selected carrier
   const {

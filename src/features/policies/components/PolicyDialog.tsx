@@ -55,6 +55,9 @@ export function PolicyDialog({
             </div>
           ) : (
             <PolicyForm
+              // CRITICAL: key prop forces remount when policyId changes
+              // This ensures fresh useState initialization for each policy
+              key={policyId || "new"}
               policyId={policyId}
               policy={policy}
               onClose={handleClose}
