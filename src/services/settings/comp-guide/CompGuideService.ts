@@ -165,6 +165,45 @@ class CompGuideServiceClass extends BaseService<
   }
 
   /**
+   * Update an entry with partial data
+   * Overrides base update to only validate fields being updated
+   */
+  async update(
+    id: string,
+    updates: Partial<CompGuideFormData>,
+  ): Promise<ServiceResponse<CompGuideEntry>> {
+    try {
+      // Only validate rules for fields that are actually being updated
+      const fieldsToUpdate = Object.keys(updates);
+      const rulesToValidate = this.validationRules.filter((rule) =>
+        fieldsToUpdate.includes(rule.field),
+      );
+
+      const errors = this.validate(
+        updates as Record<string, unknown>,
+        rulesToValidate,
+      );
+      if (errors.length > 0) {
+        return {
+          success: false,
+          error: new Error(errors.map((e) => e.message).join(", ")),
+        };
+      }
+
+      const entity = await this.repository.update(id, updates);
+      return {
+        success: true,
+        data: entity as CompGuideEntry,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
    * Get entry by ID with carrier details
    * Overrides base getById to use custom repository method
    */

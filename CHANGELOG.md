@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-08 16:53:24
+
+### Changed Files
+- `src/features/settings/commission-rates/hooks/useCommissionRates.ts`
+- `src/services/settings/comp-guide/CompGuideService.ts`
+
+### Statistics
+```
+ 2 files changed, 50 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-08 16:35:01
 
 ### Changed Files

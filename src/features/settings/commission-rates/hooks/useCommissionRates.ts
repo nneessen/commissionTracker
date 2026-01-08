@@ -128,11 +128,17 @@ export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
   // Update rate mutation
   const updateRate = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRateData }) => {
-      const updateData: Partial<CompGuideFormData> = {
-        commission_percentage: data.commission_percentage,
-        effective_date: data.effective_date,
-        expiration_date: data.expiration_date || undefined,
-      };
+      // Only include fields that are actually provided (not undefined)
+      const updateData: Partial<CompGuideFormData> = {};
+      if (data.commission_percentage !== undefined) {
+        updateData.commission_percentage = data.commission_percentage;
+      }
+      if (data.effective_date !== undefined) {
+        updateData.effective_date = data.effective_date;
+      }
+      if (data.expiration_date !== undefined) {
+        updateData.expiration_date = data.expiration_date ?? undefined;
+      }
       const result = await compGuideService.updateEntry(id, updateData);
       if (result.error) throw new Error(result.error.message);
       return result.data;
