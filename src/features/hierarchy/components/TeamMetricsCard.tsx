@@ -204,7 +204,7 @@ export function TeamMetricsCard({
             <div className="space-y-1">
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  Team AP Total
+                  Team IP Total
                 </span>
                 <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
                   {formatCurrency(teamAPTotal)}
