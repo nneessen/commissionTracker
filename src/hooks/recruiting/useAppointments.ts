@@ -70,9 +70,9 @@ export function useMyAppointments() {
   const { user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
 
-  // Determine if user is a recruit (has recruiter_id or has recruit role)
-  const isRecruit =
-    !!profile?.recruiter_id || profile?.roles?.includes("recruit");
+  // A recruit is identified by having the 'recruit' role
+  // Note: recruiter_id indicates who recruited them, not whether they are a recruit
+  const isRecruit = profile?.roles?.includes("recruit") ?? false;
 
   return useQuery({
     queryKey: ["my-appointments", user?.id, isRecruit],
@@ -99,8 +99,8 @@ export function useMyAppointments() {
 export function useTodaysAppointments() {
   const { user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
-  const isRecruit =
-    !!profile?.recruiter_id || profile?.roles?.includes("recruit");
+  // A recruit is identified by having the 'recruit' role
+  const isRecruit = profile?.roles?.includes("recruit") ?? false;
 
   return useQuery({
     queryKey: ["todays-appointments", user?.id, isRecruit],

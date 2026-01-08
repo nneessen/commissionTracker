@@ -439,26 +439,29 @@ async function resolvePipelineRecruiter(
   const userId = context.recipientId || context.triggeredBy;
   if (!userId) return emptyResult();
 
+  // Query both upline_id (canonical) and recruiter_id (fallback for migration)
   const { data } = await supabase
     .from("user_profiles")
-    .select("recruiter_id")
+    .select("upline_id, recruiter_id")
     .eq("id", userId)
     .single();
 
-  if (!data?.recruiter_id) return emptyResult();
+  // Use upline_id as canonical, fall back to recruiter_id during migration
+  const uplineId = data?.upline_id || data?.recruiter_id;
+  if (!uplineId) return emptyResult();
 
-  const { data: recruiter } = await supabase
+  const { data: upline } = await supabase
     .from("user_profiles")
     .select("id, email")
-    .eq("id", data.recruiter_id)
+    .eq("id", uplineId)
     .eq("is_deleted", false)
     .single();
 
-  if (!recruiter?.email) return emptyResult();
+  if (!upline?.email) return emptyResult();
 
   return {
-    emails: [recruiter.email],
-    userIds: [recruiter.id],
+    emails: [upline.email],
+    userIds: [upline.id],
     count: 1,
     truncated: false,
   };

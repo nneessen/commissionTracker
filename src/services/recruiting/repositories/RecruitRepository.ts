@@ -405,10 +405,12 @@ export class RecruitRepository extends BaseRepository<
         dbData.last_name = updateData.lastName;
       if (updateData.phone !== undefined) dbData.phone = updateData.phone;
       if (updateData.email !== undefined) dbData.email = updateData.email;
-      if (updateData.recruiterId !== undefined)
-        dbData.recruiter_id = updateData.recruiterId;
-      if (updateData.uplineId !== undefined)
-        dbData.upline_id = updateData.uplineId;
+      // Consolidate: use upline_id as canonical, keep recruiter_id in sync
+      const uplineValue = updateData.uplineId ?? updateData.recruiterId;
+      if (uplineValue !== undefined) {
+        dbData.upline_id = uplineValue;
+        dbData.recruiter_id = uplineValue; // Keep in sync during migration
+      }
       if (updateData.roles !== undefined) dbData.roles = updateData.roles;
       if (updateData.agentStatus !== undefined)
         dbData.agent_status = updateData.agentStatus;

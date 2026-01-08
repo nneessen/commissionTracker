@@ -94,7 +94,16 @@ export interface CreateUserProfileData {
   first_name?: string | null;
   last_name?: string | null;
   phone?: string | null;
+  /**
+   * Direct manager in the hierarchy tree (canonical field).
+   * This person supervises and manages the user.
+   */
   upline_id?: string | null;
+  /**
+   * @deprecated Use upline_id instead. In practice, the recruiter is
+   * always the same as the upline. This field is retained for backward
+   * compatibility and will be kept in sync with upline_id.
+   */
   recruiter_id?: string | null;
   referral_source?: string | null;
   agent_status?: AgentStatus;

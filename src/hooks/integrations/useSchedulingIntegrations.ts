@@ -268,12 +268,14 @@ export function useToggleSchedulingIntegration() {
 }
 
 /**
- * Get the recruiter's active scheduling integrations for a given user (recruit)
+ * Get the upline's active scheduling integrations for a given user (recruit)
  *
- * This hook looks up the user's recruiter_id and fetches their active integrations.
- * Used when a recruit views their pipeline to see their recruiter's scheduling links.
+ * This hook looks up the user's upline_id and fetches their active integrations.
+ * Used when a recruit views their pipeline to see their upline's scheduling links.
  *
- * @param userId - The ID of the user (recruit) whose recruiter's integrations to fetch
+ * Note: upline_id is the canonical field (recruiter_id is deprecated and kept in sync).
+ *
+ * @param userId - The ID of the user (recruit) whose upline's integrations to fetch
  */
 export function useRecruiterSchedulingIntegrations(userId: string | null) {
   return useQuery({
@@ -283,10 +285,10 @@ export function useRecruiterSchedulingIntegrations(userId: string | null) {
         return [];
       }
 
-      // First, get the user's recruiter_id
+      // Get the user's upline_id (canonical field for hierarchy relationships)
       const { data: userProfile, error: profileError } = await supabase
         .from("user_profiles")
-        .select("recruiter_id")
+        .select("upline_id")
         .eq("id", userId)
         .maybeSingle();
 
@@ -298,15 +300,15 @@ export function useRecruiterSchedulingIntegrations(userId: string | null) {
         return [];
       }
 
-      if (!userProfile?.recruiter_id) {
-        // User has no recruiter - return empty (they might be the admin)
+      if (!userProfile?.upline_id) {
+        // User has no upline - return empty (they might be the admin/top-level)
         return [];
       }
 
-      // Fetch the recruiter's active integrations
+      // Fetch the upline's active integrations
       // RLS policy "scheduling_integrations_select_for_recruit" allows this
       const integrations = await schedulingIntegrationService.getActiveByUserId(
-        userProfile.recruiter_id,
+        userProfile.upline_id,
       );
       return integrations;
     },

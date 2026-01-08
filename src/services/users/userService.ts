@@ -315,8 +315,9 @@ class UserService {
         first_name: firstName,
         last_name: lastName,
         phone: userData.phone || null,
-        upline_id: userData.upline_id || null,
-        recruiter_id: userData.recruiter_id || null,
+        // Consolidate: use upline_id as canonical, keep recruiter_id in sync
+        upline_id: userData.upline_id || userData.recruiter_id || null,
+        recruiter_id: userData.upline_id || userData.recruiter_id || null,
         roles: assignedRoles,
         agent_status: agentStatus,
         approval_status: approvalStatus,

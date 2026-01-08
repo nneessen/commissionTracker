@@ -47,7 +47,13 @@ export interface CreateRecruitInput {
   last_name: string;
   email: string;
   phone?: string;
+  /**
+   * Direct upline/manager for this recruit (canonical field).
+   */
   upline_id?: string;
+  /**
+   * @deprecated Use upline_id instead. Kept for backward compatibility.
+   */
   recruiter_id?: string;
   referral_source?: string;
   street_address?: string;
@@ -335,7 +341,13 @@ export interface UserActivityLog {
 export interface RecruitFilters {
   onboarding_status?: string[]; // Dynamic - phase names from pipeline_phases
   current_phase?: string[]; // Dynamic - phase names from pipeline_phases
+  /**
+   * @deprecated Use assigned_upline_id instead.
+   */
   recruiter_id?: string;
+  /**
+   * Filter by assigned upline/manager (canonical field).
+   */
   assigned_upline_id?: string;
   search?: string;
   date_range?: {
