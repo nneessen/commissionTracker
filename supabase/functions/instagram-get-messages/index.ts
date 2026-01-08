@@ -135,6 +135,7 @@ serve(async (req) => {
         integration:instagram_integrations!inner(
           id,
           instagram_user_id,
+          instagram_username,
           access_token_encrypted,
           connection_status,
           is_active,
@@ -149,6 +150,7 @@ serve(async (req) => {
     const integration = conversation?.integration as {
       id: string;
       instagram_user_id: string;
+      instagram_username: string;
       access_token_encrypted: string;
       connection_status: string;
       is_active: boolean;
@@ -187,6 +189,7 @@ serve(async (req) => {
     // Decrypt the access token
     const accessToken = await decrypt(integration.access_token_encrypted);
     const igUserId = integration.instagram_user_id;
+    const igUsername = integration.instagram_username;
     const igConversationId = conversation.instagram_conversation_id;
 
     // Fetch messages from Instagram Graph API
@@ -295,17 +298,26 @@ serve(async (req) => {
     // Sync messages to database using batch upsert for performance
     // Previously: 50 messages = 50 DB calls. Now: 50 messages = 1 DB call
     if (syncToDb && messages.length > 0) {
+      // Helper: determine if message is inbound (from someone other than us)
+      // Compare by username first (more reliable), fallback to ID
+      const isMessageInbound = (msg: MetaMessage): boolean => {
+        if (msg.from.username && igUsername) {
+          return msg.from.username !== igUsername;
+        }
+        return msg.from.id !== igUserId;
+      };
+
       // Find the latest inbound message for window calculation
       const latestInboundAt =
         messages
-          .filter((msg) => msg.from.id !== igUserId) // inbound only
+          .filter((msg) => isMessageInbound(msg)) // inbound only
           .map((msg) => msg.created_time)
           .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ||
         null;
 
       // Transform all messages into DB rows
       const messageRows = messages.map((msg) => {
-        const isInbound = msg.from.id !== igUserId;
+        const isInbound = isMessageInbound(msg);
         const messageType = msg.story
           ? msg.story.mention
             ? "story_mention"
