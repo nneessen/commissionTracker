@@ -13,11 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Building2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Building2, Ruler } from "lucide-react";
 import { useCarriers, Carrier } from "./hooks/useCarriers";
 import { useProducts } from "../products/hooks/useProducts";
 import { CarrierForm } from "./components/CarrierForm";
 import { CarrierDeleteDialog } from "./components/CarrierDeleteDialog";
+import { BuildTableEditor } from "./components/BuildTableEditor";
 import { NewCarrierForm } from "../../../types/carrier.types";
 
 export function CarriersManagement() {
@@ -28,6 +29,7 @@ export function CarriersManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBuildTableOpen, setIsBuildTableOpen] = useState(false);
   const [selectedCarrier, setSelectedCarrier] = useState<Carrier | null>(null);
 
   // Filter carriers based on search
@@ -69,6 +71,11 @@ export function CarriersManagement() {
   const handleDeleteClick = (carrier: Carrier) => {
     setSelectedCarrier(carrier);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleBuildTableClick = (carrier: Carrier) => {
+    setSelectedCarrier(carrier);
+    setIsBuildTableOpen(true);
   };
 
   const handleFormSubmit = async (data: NewCarrierForm) => {
@@ -207,6 +214,16 @@ export function CarriersManagement() {
                             variant="ghost"
                             size="sm"
                             className="h-5 px-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                            onClick={() => handleBuildTableClick(carrier)}
+                            title="Edit build table for rating class determination"
+                          >
+                            <Ruler className="h-2.5 w-2.5 mr-0.5" />
+                            <span className="text-[10px]">Build</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 px-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             onClick={() => handleEditCarrier(carrier)}
                           >
                             <Edit className="h-2.5 w-2.5 mr-0.5" />
@@ -248,6 +265,13 @@ export function CarriersManagement() {
         productCount={selectedCarrier ? getProductCount(selectedCarrier.id) : 0}
         onConfirm={handleDeleteConfirm}
         isDeleting={deleteCarrier.isPending}
+      />
+
+      {/* Build Table Editor */}
+      <BuildTableEditor
+        open={isBuildTableOpen}
+        onOpenChange={setIsBuildTableOpen}
+        carrier={selectedCarrier}
       />
     </>
   );

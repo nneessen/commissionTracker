@@ -40,12 +40,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import type { Product } from "@/types/product.types";
 import { useCarriers } from "../../carriers/hooks/useCarriers";
 import type { Database } from "@/types/database.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useImo } from "@/contexts/ImoContext";
 import { useAllActiveImos } from "@/hooks/imo";
+import { UnderwritingConstraintsEditor } from "./UnderwritingConstraintsEditor";
+import { ProductBuildChartSelector } from "./ProductBuildTableEditor";
+import type { ProductUnderwritingConstraints } from "@/features/underwriting/types/product-constraints.types";
 
 type ProductType = Database["public"]["Enums"]["product_type"];
 
@@ -80,6 +84,8 @@ const productFormSchema = z.object({
   ]),
   is_active: z.boolean(),
   imo_id: z.string().optional(),
+  build_chart_id: z.string().nullable().optional(),
+  metadata: z.record(z.unknown()).optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -103,6 +109,8 @@ export function ProductForm({
   const { isSuperAdmin, imo } = useImo();
   const { data: allImos = [] } = useAllActiveImos({ enabled: isSuperAdmin });
   const [carrierSearchOpen, setCarrierSearchOpen] = useState(false);
+  const [underwritingConstraints, setUnderwritingConstraints] =
+    useState<ProductUnderwritingConstraints | null>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -112,20 +120,28 @@ export function ProductForm({
       product_type: "term_life",
       is_active: true,
       imo_id: undefined,
+      build_chart_id: null,
+      metadata: null,
     },
   });
 
   // Reset form when product changes or dialog opens/closes
   useEffect(() => {
     if (product) {
+      const existingConstraints =
+        product.metadata as ProductUnderwritingConstraints | null;
+      setUnderwritingConstraints(existingConstraints);
       form.reset({
         carrier_id: product.carrier_id || "",
         name: product.name || "",
         product_type: product.product_type || "term_life",
         is_active: product.is_active ?? true,
         imo_id: product.imo_id || undefined,
+        build_chart_id: product.build_chart_id || null,
+        metadata: product.metadata || null,
       });
     } else {
+      setUnderwritingConstraints(null);
       form.reset({
         carrier_id: "",
         name: "",
@@ -133,12 +149,18 @@ export function ProductForm({
         is_active: true,
         // Default to user's IMO for new products
         imo_id: imo?.id || undefined,
+        build_chart_id: null,
+        metadata: null,
       });
     }
   }, [product, open, form, imo?.id]);
 
   const handleSubmit = (data: ProductFormValues) => {
-    onSubmit(data);
+    // Merge underwriting constraints into metadata
+    const metadata = underwritingConstraints
+      ? { ...underwritingConstraints }
+      : null;
+    onSubmit({ ...data, metadata });
   };
 
   const selectedCarrier = carriers.find(
@@ -346,6 +368,24 @@ export function ProductForm({
                   </FormControl>
                 </FormItem>
               )}
+            />
+
+            {/* Underwriting Constraints Section */}
+            <Separator className="my-2" />
+            <UnderwritingConstraintsEditor
+              value={underwritingConstraints}
+              onChange={setUnderwritingConstraints}
+              disabled={isSubmitting}
+            />
+
+            {/* Build Chart Section */}
+            <Separator className="my-2" />
+            <ProductBuildChartSelector
+              carrierId={form.watch("carrier_id") || null}
+              carrierName={selectedCarrier?.name || "No Carrier"}
+              value={form.watch("build_chart_id") || null}
+              onChange={(chartId) => form.setValue("build_chart_id", chartId)}
+              disabled={isSubmitting}
             />
 
             <DialogFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800">

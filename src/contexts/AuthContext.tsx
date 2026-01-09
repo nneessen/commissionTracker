@@ -85,8 +85,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSupabaseUser(newSession?.user ?? null);
 
           if (newSession?.user) {
-            const fullUser = userService.mapAuthUserToProfile(newSession.user);
-            setUser(fullUser);
+            // Start with basic profile from auth metadata
+            const basicProfile = userService.mapAuthUserToProfile(
+              newSession.user,
+            );
+            setUser(basicProfile);
+
+            // Fetch full profile from database in background (non-blocking)
+            (async () => {
+              try {
+                const { data: dbProfile } = await supabase
+                  .from("user_profiles")
+                  .select("*")
+                  .eq("id", newSession.user.id)
+                  .single();
+                if (dbProfile) {
+                  setUser((prev) => ({ ...prev, ...dbProfile }));
+                }
+              } catch (err: unknown) {
+                logger.warn(
+                  "Could not fetch full user profile",
+                  err instanceof Error ? err : String(err),
+                  "Auth",
+                );
+              }
+            })();
           } else {
             setUser(null);
           }
@@ -150,20 +173,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(session?.user ?? null);
 
       if (session?.user) {
-        const fullUser = userService.mapAuthUserToProfile(session.user);
-        setUser(fullUser);
+        // Set basic profile immediately from auth metadata
+        const basicProfile = userService.mapAuthUserToProfile(session.user);
+        setUser(basicProfile);
+
         // Initialize the ref with current user ID
         previousUserIdRef.current = session.user.id;
+
+        // Fetch full profile from database in background (non-blocking)
+        (async () => {
+          try {
+            const { data: dbProfile } = await supabase
+              .from("user_profiles")
+              .select("*")
+              .eq("id", session.user.id)
+              .single();
+            if (dbProfile) {
+              setUser((prev) => ({ ...prev, ...dbProfile }));
+            }
+          } catch (err: unknown) {
+            logger.warn(
+              "Could not fetch full user profile",
+              err instanceof Error ? err : String(err),
+              "Auth",
+            );
+          }
+        })();
+
+        logger.auth("Existing session found", { email: session.user.email });
+        await refreshSession();
       } else {
         setUser(null);
         previousUserIdRef.current = null;
       }
-
-      if (session) {
-        logger.auth("Existing session found", { email: session.user.email });
-        await refreshSession();
-      }
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Error checking session",
         err instanceof Error ? err : String(err),
@@ -195,7 +238,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       logger.auth("Session refreshed");
-    } catch (err) {
+    } catch (err: unknown) {
       // Don't sign out on refresh errors - the existing session may still be valid
       // This prevents logout during OAuth redirects or transient network issues
       logger.warn(
@@ -223,12 +266,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(data.user);
 
       if (data.user) {
-        const fullUser = userService.mapAuthUserToProfile(data.user);
-        setUser(fullUser);
+        // Set basic profile immediately
+        const basicProfile = userService.mapAuthUserToProfile(data.user);
+        setUser(basicProfile);
+
+        // Fetch full profile in background (non-blocking)
+        (async () => {
+          try {
+            const { data: dbProfile } = await supabase
+              .from("user_profiles")
+              .select("*")
+              .eq("id", data.user.id)
+              .single();
+            if (dbProfile) {
+              setUser((prev) => ({ ...prev, ...dbProfile }));
+            }
+          } catch (err: unknown) {
+            logger.warn(
+              "Could not fetch full user profile",
+              err instanceof Error ? err : String(err),
+              "Auth",
+            );
+          }
+        })();
       }
 
       logger.auth("Sign in successful", { email: data.user?.email });
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Sign in error",
         err instanceof Error ? err : String(err),
@@ -282,7 +346,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       return { requiresVerification: false, email };
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Sign up error",
         err instanceof Error ? err : String(err),
@@ -312,7 +376,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
 
       logger.auth("Sign out successful");
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Sign out error",
         err instanceof Error ? err : String(err),
@@ -346,7 +410,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (data?.success === false) throw new Error(data.error);
 
       logger.auth("Password reset email sent");
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Password reset error",
         err instanceof Error ? err : String(err),
@@ -373,7 +437,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
 
       logger.auth("Password updated successfully");
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Password update error",
         err instanceof Error ? err : String(err),
@@ -406,7 +470,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       logger.auth("User metadata updated successfully");
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Error updating user metadata",
         err instanceof Error ? err : String(err),
@@ -438,7 +502,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
 
       logger.auth("Verification email resent", { email });
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error(
         "Resend verification email error",
         err instanceof Error ? err : String(err),

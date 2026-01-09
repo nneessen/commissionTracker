@@ -72,6 +72,7 @@ export class ProductRepository extends BaseRepository<
     }
     if (data.is_active !== undefined) result.is_active = data.is_active;
     if (data.imo_id !== undefined) result.imo_id = data.imo_id || null;
+    if (data.metadata !== undefined) result.metadata = data.metadata;
 
     return result;
   }

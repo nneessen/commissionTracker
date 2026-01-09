@@ -302,14 +302,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             Policies
           </h1>
         </div>
-        <Button
-          onClick={onNewPolicy}
-          size="sm"
-          className="h-6 text-[10px] px-2"
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          New Policy
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            onClick={onNewPolicy}
+            size="sm"
+            className="h-6 text-[10px] px-2"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            New Policy
+          </Button>
+        </div>
       </div>
 
       {/* Smart Contextual Metrics Bar */}

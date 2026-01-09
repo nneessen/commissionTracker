@@ -15,6 +15,7 @@ import {
   Bell,
   History,
   Link2,
+  Stethoscope,
 } from "lucide-react";
 import { UserProfile } from "./components/UserProfile";
 import { CarriersManagement } from "./carriers/CarriersManagement";
@@ -29,6 +30,7 @@ import { JoinRequestPage } from "./join-request";
 import { NotificationsSettingsPage } from "./notifications";
 import { IntegrationsTab } from "./integrations";
 import { AuditTrailPage } from "@/features/audit";
+import { UnderwritingSettingsTab } from "@/features/underwriting/components/UnderwritingSettingsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
@@ -95,6 +97,7 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
     "products",
     "rates",
     "constants",
+    "underwriting",
     "agents",
     "integrations",
     "agency-request",
@@ -192,6 +195,13 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
                 >
                   <Settings className="h-3 w-3 shrink-0" />
                   <span className="truncate">Constants</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="underwriting"
+                  className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  <Stethoscope className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Underwriting</span>
                 </TabsTrigger>
               </>
             )}
@@ -298,6 +308,10 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
 
                 <TabsContent value="constants" className="mt-0">
                   <ConstantsManagement />
+                </TabsContent>
+
+                <TabsContent value="underwriting" className="mt-0">
+                  <UnderwritingSettingsTab />
                 </TabsContent>
               </>
             )}

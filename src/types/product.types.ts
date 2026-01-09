@@ -31,6 +31,7 @@ export interface Product {
   commission_percentage?: number; // Default commission rate if not in comp_guide
   is_active: boolean;
   imo_id?: string | null; // IMO this product belongs to
+  build_chart_id?: string | null; // Reference to carrier_build_charts
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSONB field for extra data
   metadata?: Record<string, any>;
   created_at: Date;
@@ -60,6 +61,8 @@ export interface ProductFormData {
   commission_percentage?: number;
   is_active: boolean;
   imo_id?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSONB field for underwriting constraints
+  metadata?: Record<string, any> | null;
 }
 
 // Commission override for specific products

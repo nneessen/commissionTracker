@@ -6,6 +6,173 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-09 17:37:02
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/build-tables-refactor-and-wizard-ui.md`
+- `plans/active/decision-tree-enhancement-plan.md`
+- `plans/active/dynamic-rating-classes-continuation.md`
+- `plans/active/phase5-recommendations-step-integration.md`
+- `plans/active/phase6-build-guide-implementation.md`
+- `plans/active/phase6-build-guide-rating-classes.md`
+- `plans/active/phase6b-build-guide-enhancements.md`
+- `plans/active/underwriting-wizard-code-review-fixes.md`
+- `plans/active/underwriting-wizard-continuation.md`
+- `plans/active/underwriting-wizard-edge-function-fix.md`
+- `plans/active/underwriting-wizard-phase3.md`
+- `plans/active/underwriting-wizard-phase4.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/shared/ChunkErrorBoundary.tsx`
+- `src/contexts/AuthContext.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/carriers/CarriersManagement.tsx`
+- `src/features/settings/carriers/components/BuildTableEditor.tsx`
+- `src/features/settings/carriers/hooks/useBuildChartOptions.ts`
+- `src/features/settings/carriers/hooks/useCarrierBuildCharts.ts`
+- `src/features/settings/carriers/hooks/useCreateBuildChart.ts`
+- `src/features/settings/carriers/hooks/useDefaultBuildCharts.ts`
+- `src/features/settings/carriers/hooks/useDeleteBuildChart.ts`
+- `src/features/settings/carriers/hooks/useSetDefaultBuildChart.ts`
+- `src/features/settings/carriers/hooks/useUpdateBuildChart.ts`
+- `src/features/settings/products/components/ProductBuildTableEditor.tsx`
+- `src/features/settings/products/components/ProductForm.tsx`
+- `src/features/settings/products/components/UnderwritingConstraintsEditor.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/DecisionTreeEditor.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleActionConfig.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleBuilder.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleConditionRow.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/index.ts`
+- `src/features/underwriting/components/DecisionTreeList.tsx`
+- `src/features/underwriting/components/GuideManager/GuideList.tsx`
+- `src/features/underwriting/components/GuideManager/GuideUploader.tsx`
+- `src/features/underwriting/components/GuideManager/index.ts`
+- `src/features/underwriting/components/SessionHistory/SessionDetailDialog.tsx`
+- `src/features/underwriting/components/SessionHistory/SessionHistoryList.tsx`
+- `src/features/underwriting/components/SessionHistory/index.ts`
+- `src/features/underwriting/components/UnderwritingSettingsTab.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardSteps/ClientInfoStep.tsx`
+- `src/features/underwriting/components/WizardSteps/CoverageRequestStep.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/components/WizardSteps/index.ts`
+- `src/features/underwriting/hooks/index.ts`
+- `src/features/underwriting/hooks/useCarriersWithProducts.ts`
+- `src/features/underwriting/hooks/useDecisionTrees.ts`
+- `src/features/underwriting/hooks/useHealthConditions.ts`
+- `src/features/underwriting/hooks/useParseGuide.ts`
+- `src/features/underwriting/hooks/useProductConstraints.ts`
+- `src/features/underwriting/hooks/useUnderwritingAnalysis.ts`
+- `src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts`
+- `src/features/underwriting/hooks/useUnderwritingGuides.ts`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/features/underwriting/hooks/useUnderwritingToggle.ts`
+- `src/features/underwriting/index.ts`
+- `src/features/underwriting/types/build-table.types.ts`
+- `src/features/underwriting/types/product-constraints.types.ts`
+- `src/features/underwriting/types/underwriting.types.ts`
+- `src/features/underwriting/utils/bmiCalculator.ts`
+- `src/features/underwriting/utils/buildTableCsvParser.ts`
+- `src/features/underwriting/utils/buildTableLookup.ts`
+- `src/features/underwriting/utils/eligibilityChecker.ts`
+- `src/features/underwriting/utils/formatters.ts`
+- `src/features/underwriting/utils/ruleUtils.ts`
+- `src/index.tsx`
+- `src/services/settings/carriers/BuildChartService.ts`
+- `src/services/settings/products/ProductRepository.ts`
+- `src/services/underwriting/DecisionTreeRepository.ts`
+- `src/services/underwriting/ProductEligibilityService.ts`
+- `src/services/underwriting/guideStorageService.ts`
+- `src/types/database.types.ts`
+- `src/types/product.types.ts`
+- `supabase/functions/parse-underwriting-guide/index.ts`
+- `supabase/functions/underwriting-ai-analyze/index.ts`
+- `supabase/migrations/20260109_001_underwriting_wizard_tables.sql`
+- `supabase/migrations/20260109_002_underwriting_health_conditions_seed.sql`
+- `supabase/migrations/20260109_003_drop_legacy_users_table.sql`
+- `supabase/migrations/20260109_004_drop_users_view.sql`
+- `supabase/migrations/20260109_004_set_default_decision_tree_rpc.sql`
+- `supabase/migrations/20260109_005_guide_parsing_indexes.sql`
+- `supabase/migrations/20260109_006_create_underwriting_guides_bucket.sql`
+- `supabase/migrations/20260109_007_underwriting_sessions_rls.sql`
+- `supabase/migrations/20260109_008_products_face_amount_limits.sql`
+- `supabase/migrations/20260110_001_product_underwriting_constraints.sql`
+- `supabase/migrations/20260110_002_carrier_build_tables.sql`
+- `supabase/migrations/20260110_003_carrier_build_tables_rls.sql`
+- `supabase/migrations/20260110_004_product_build_tables.sql`
+- `supabase/migrations/20260110_005_fix_product_build_tables_rls.sql`
+- `supabase/migrations/20260110_006_carrier_build_charts_refactor.sql`
+- `supabase/migrations/revert_20260110_004_005_product_build_tables.sql`
+- `vercel.json`
+
+### Statistics
+```
+ 99 files changed, 28807 insertions(+), 9962 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-09 11:26:51
+
+### Changed Files
+- `plans/active/underwriting-wizard-code-review-fixes.md`
+- `plans/active/underwriting-wizard-continuation.md`
+- `plans/active/underwriting-wizard-phase3.md`
+- `src/features/expenses/leads/LeadPurchaseDashboard.tsx`
+- `src/features/expenses/leads/LeadPurchaseDialog.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/DecisionTreeEditor.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleActionConfig.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleBuilder.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleConditionRow.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/index.ts`
+- `src/features/underwriting/components/DecisionTreeList.tsx`
+- `src/features/underwriting/components/GuideManager/GuideList.tsx`
+- `src/features/underwriting/components/GuideManager/GuideUploader.tsx`
+- `src/features/underwriting/components/GuideManager/index.ts`
+- `src/features/underwriting/components/SessionHistory/SessionDetailDialog.tsx`
+- `src/features/underwriting/components/SessionHistory/SessionHistoryList.tsx`
+- `src/features/underwriting/components/SessionHistory/index.ts`
+- `src/features/underwriting/components/UnderwritingSettingsTab.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardSteps/ClientInfoStep.tsx`
+- `src/features/underwriting/components/WizardSteps/CoverageRequestStep.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/components/WizardSteps/index.ts`
+- `src/features/underwriting/hooks/index.ts`
+- `src/features/underwriting/hooks/useCarriersWithProducts.ts`
+- `src/features/underwriting/hooks/useDecisionTrees.ts`
+- `src/features/underwriting/hooks/useHealthConditions.ts`
+- `src/features/underwriting/hooks/useUnderwritingAnalysis.ts`
+- `src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts`
+- `src/features/underwriting/hooks/useUnderwritingGuides.ts`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/features/underwriting/hooks/useUnderwritingToggle.ts`
+- `src/features/underwriting/index.ts`
+- `src/features/underwriting/types/underwriting.types.ts`
+- `src/features/underwriting/utils/bmiCalculator.ts`
+- `src/features/underwriting/utils/formatters.ts`
+- `src/features/underwriting/utils/ruleUtils.ts`
+- `src/services/underwriting/DecisionTreeRepository.ts`
+- `src/services/underwriting/guideStorageService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/underwriting-ai-analyze/index.ts`
+- `supabase/migrations/20260109_001_underwriting_wizard_tables.sql`
+- `supabase/migrations/20260109_002_underwriting_health_conditions_seed.sql`
+- `supabase/migrations/20260109_003_drop_legacy_users_table.sql`
+- `supabase/migrations/20260109_004_drop_users_view.sql`
+- `supabase/migrations/20260109_004_set_default_decision_tree_rpc.sql`
+
+### Statistics
+```
+ 50 files changed, 20694 insertions(+), 9897 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-09 09:38:02
 
 ### Changed Files

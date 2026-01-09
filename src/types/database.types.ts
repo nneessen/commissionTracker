@@ -701,13 +701,6 @@ export type Database = {
             referencedRelation: "imos";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "alert_rules_owner_id_fkey";
-            columns: ["owner_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
         ];
       };
       app_config: {
@@ -911,13 +904,6 @@ export type Database = {
             referencedRelation: "email_templates";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "bulk_email_campaigns_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
         ];
       };
       bulk_email_recipients: {
@@ -979,6 +965,63 @@ export type Database = {
             columns: ["email_id"];
             isOneToOne: false;
             referencedRelation: "user_emails";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      carrier_build_charts: {
+        Row: {
+          bmi_data: Json | null;
+          build_data: Json;
+          carrier_id: string;
+          created_at: string;
+          id: string;
+          imo_id: string;
+          is_default: boolean;
+          name: string;
+          notes: string | null;
+          table_type: string;
+          updated_at: string;
+        };
+        Insert: {
+          bmi_data?: Json | null;
+          build_data?: Json;
+          carrier_id: string;
+          created_at?: string;
+          id?: string;
+          imo_id: string;
+          is_default?: boolean;
+          name: string;
+          notes?: string | null;
+          table_type?: string;
+          updated_at?: string;
+        };
+        Update: {
+          bmi_data?: Json | null;
+          build_data?: Json;
+          carrier_id?: string;
+          created_at?: string;
+          id?: string;
+          imo_id?: string;
+          is_default?: boolean;
+          name?: string;
+          notes?: string | null;
+          table_type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carrier_build_charts_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_build_charts_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
             referencedColumns: ["id"];
           },
         ];
@@ -1391,15 +1434,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "communication_preferences_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       comp_guide: {
         Row: {
@@ -1553,13 +1588,6 @@ export type Database = {
             columns: ["contact_user_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "contact_favorites_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -1823,15 +1851,7 @@ export type Database = {
           sort_order?: number;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "email_labels_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       email_queue: {
         Row: {
@@ -2004,13 +2024,6 @@ export type Database = {
             referencedRelation: "user_emails";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "email_scheduled_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
         ];
       };
       email_signatures: {
@@ -2050,15 +2063,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "email_signatures_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       email_snippets: {
         Row: {
@@ -2100,15 +2105,7 @@ export type Database = {
           usage_count?: number | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "email_snippets_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       email_templates: {
         Row: {
@@ -2235,15 +2232,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "email_threads_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       email_tracking_events: {
         Row: {
@@ -2552,15 +2541,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "fk_expense_templates_user";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       expenses: {
         Row: {
@@ -2723,22 +2704,7 @@ export type Database = {
           status?: string;
           updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "hierarchy_invitations_invitee_id_fkey";
-            columns: ["invitee_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "hierarchy_invitations_inviter_id_fkey";
-            columns: ["inviter_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       imos: {
         Row: {
@@ -2915,13 +2881,6 @@ export type Database = {
             referencedRelation: "instagram_integrations";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "instagram_conversations_priority_set_by_fkey";
-            columns: ["priority_set_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
         ];
       };
       instagram_integrations: {
@@ -3005,13 +2964,6 @@ export type Database = {
             referencedRelation: "imos";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "instagram_integrations_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
         ];
       };
       instagram_job_queue: {
@@ -3085,6 +3037,7 @@ export type Database = {
           last_used_at: string | null;
           message_stage: string | null;
           name: string;
+          platform: string;
           updated_at: string | null;
           use_count: number | null;
           user_id: string | null;
@@ -3100,6 +3053,7 @@ export type Database = {
           last_used_at?: string | null;
           message_stage?: string | null;
           name: string;
+          platform?: string;
           updated_at?: string | null;
           use_count?: number | null;
           user_id?: string | null;
@@ -3115,30 +3069,17 @@ export type Database = {
           last_used_at?: string | null;
           message_stage?: string | null;
           name?: string;
+          platform?: string;
           updated_at?: string | null;
           use_count?: number | null;
           user_id?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "instagram_message_templates_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "instagram_message_templates_imo_id_fkey";
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "instagram_message_templates_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -3284,13 +3225,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "instagram_scheduled_messages_scheduled_by_fkey";
-            columns: ["scheduled_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "instagram_scheduled_messages_sent_message_id_fkey";
             columns: ["sent_message_id"];
             isOneToOne: false;
@@ -3302,6 +3236,13 @@ export type Database = {
             columns: ["template_id"];
             isOneToOne: false;
             referencedRelation: "instagram_message_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "instagram_scheduled_messages_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "message_templates";
             referencedColumns: ["id"];
           },
         ];
@@ -3334,15 +3275,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "instagram_template_categories_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       instagram_usage_tracking: {
         Row: {
@@ -3393,13 +3326,6 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "instagram_usage_tracking_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -3614,13 +3540,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "lead_purchases_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "lead_purchases_vendor_id_fkey";
             columns: ["vendor_id"];
             isOneToOne: false;
@@ -3674,14 +3593,413 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "lead_vendors_created_by_fkey";
-            columns: ["created_by"];
+            foreignKeyName: "lead_vendors_imo_id_fkey";
+            columns: ["imo_id"];
             isOneToOne: false;
-            referencedRelation: "users";
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      linkedin_conversations: {
+        Row: {
+          auto_reminder_enabled: boolean | null;
+          auto_reminder_hours: number | null;
+          auto_reminder_template_id: string | null;
+          connection_degree: number | null;
+          connection_request_message: string | null;
+          connection_request_sent_at: string | null;
+          contact_notes: string | null;
+          created_at: string | null;
+          id: string;
+          integration_id: string;
+          is_connection: boolean | null;
+          is_priority: boolean | null;
+          last_message_at: string | null;
+          last_message_direction:
+            | Database["public"]["Enums"]["message_direction"]
+            | null;
+          last_message_preview: string | null;
+          participant_email: string | null;
+          participant_headline: string | null;
+          participant_linkedin_id: string;
+          participant_name: string | null;
+          participant_phone: string | null;
+          participant_profile_picture_url: string | null;
+          participant_profile_url: string | null;
+          participant_username: string | null;
+          priority_notes: string | null;
+          priority_set_at: string | null;
+          priority_set_by: string | null;
+          recruiting_lead_id: string | null;
+          unipile_chat_id: string;
+          unread_count: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          auto_reminder_enabled?: boolean | null;
+          auto_reminder_hours?: number | null;
+          auto_reminder_template_id?: string | null;
+          connection_degree?: number | null;
+          connection_request_message?: string | null;
+          connection_request_sent_at?: string | null;
+          contact_notes?: string | null;
+          created_at?: string | null;
+          id?: string;
+          integration_id: string;
+          is_connection?: boolean | null;
+          is_priority?: boolean | null;
+          last_message_at?: string | null;
+          last_message_direction?:
+            | Database["public"]["Enums"]["message_direction"]
+            | null;
+          last_message_preview?: string | null;
+          participant_email?: string | null;
+          participant_headline?: string | null;
+          participant_linkedin_id: string;
+          participant_name?: string | null;
+          participant_phone?: string | null;
+          participant_profile_picture_url?: string | null;
+          participant_profile_url?: string | null;
+          participant_username?: string | null;
+          priority_notes?: string | null;
+          priority_set_at?: string | null;
+          priority_set_by?: string | null;
+          recruiting_lead_id?: string | null;
+          unipile_chat_id: string;
+          unread_count?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          auto_reminder_enabled?: boolean | null;
+          auto_reminder_hours?: number | null;
+          auto_reminder_template_id?: string | null;
+          connection_degree?: number | null;
+          connection_request_message?: string | null;
+          connection_request_sent_at?: string | null;
+          contact_notes?: string | null;
+          created_at?: string | null;
+          id?: string;
+          integration_id?: string;
+          is_connection?: boolean | null;
+          is_priority?: boolean | null;
+          last_message_at?: string | null;
+          last_message_direction?:
+            | Database["public"]["Enums"]["message_direction"]
+            | null;
+          last_message_preview?: string | null;
+          participant_email?: string | null;
+          participant_headline?: string | null;
+          participant_linkedin_id?: string;
+          participant_name?: string | null;
+          participant_phone?: string | null;
+          participant_profile_picture_url?: string | null;
+          participant_profile_url?: string | null;
+          participant_username?: string | null;
+          priority_notes?: string | null;
+          priority_set_at?: string | null;
+          priority_set_by?: string | null;
+          recruiting_lead_id?: string | null;
+          unipile_chat_id?: string;
+          unread_count?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_conversations_integration_id_fkey";
+            columns: ["integration_id"];
+            isOneToOne: false;
+            referencedRelation: "linkedin_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      linkedin_integrations: {
+        Row: {
+          account_type: string;
+          api_calls_reset_at: string | null;
+          api_calls_this_hour: number | null;
+          billing_started_at: string | null;
+          connection_status: Database["public"]["Enums"]["linkedin_connection_status"];
+          created_at: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean;
+          last_connected_at: string | null;
+          last_error: string | null;
+          last_error_at: string | null;
+          last_sync_at: string | null;
+          linkedin_display_name: string | null;
+          linkedin_headline: string | null;
+          linkedin_profile_id: string | null;
+          linkedin_profile_picture_url: string | null;
+          linkedin_profile_url: string | null;
+          linkedin_username: string | null;
+          unipile_account_id: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          account_type?: string;
+          api_calls_reset_at?: string | null;
+          api_calls_this_hour?: number | null;
+          billing_started_at?: string | null;
+          connection_status?: Database["public"]["Enums"]["linkedin_connection_status"];
+          created_at?: string | null;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_sync_at?: string | null;
+          linkedin_display_name?: string | null;
+          linkedin_headline?: string | null;
+          linkedin_profile_id?: string | null;
+          linkedin_profile_picture_url?: string | null;
+          linkedin_profile_url?: string | null;
+          linkedin_username?: string | null;
+          unipile_account_id: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          account_type?: string;
+          api_calls_reset_at?: string | null;
+          api_calls_this_hour?: number | null;
+          billing_started_at?: string | null;
+          connection_status?: Database["public"]["Enums"]["linkedin_connection_status"];
+          created_at?: string | null;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_sync_at?: string | null;
+          linkedin_display_name?: string | null;
+          linkedin_headline?: string | null;
+          linkedin_profile_id?: string | null;
+          linkedin_profile_picture_url?: string | null;
+          linkedin_profile_url?: string | null;
+          linkedin_username?: string | null;
+          unipile_account_id?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_integrations_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      linkedin_messages: {
+        Row: {
+          conversation_id: string;
+          created_at: string | null;
+          delivered_at: string | null;
+          direction: Database["public"]["Enums"]["message_direction"];
+          id: string;
+          media_type: string | null;
+          media_url: string | null;
+          message_text: string | null;
+          message_type: Database["public"]["Enums"]["linkedin_message_type"];
+          read_at: string | null;
+          scheduled_message_id: string | null;
+          sender_linkedin_id: string;
+          sender_name: string | null;
+          sent_at: string;
+          status: Database["public"]["Enums"]["instagram_message_status"];
+          template_id: string | null;
+          unipile_message_id: string;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          direction: Database["public"]["Enums"]["message_direction"];
+          id?: string;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_text?: string | null;
+          message_type?: Database["public"]["Enums"]["linkedin_message_type"];
+          read_at?: string | null;
+          scheduled_message_id?: string | null;
+          sender_linkedin_id: string;
+          sender_name?: string | null;
+          sent_at: string;
+          status?: Database["public"]["Enums"]["instagram_message_status"];
+          template_id?: string | null;
+          unipile_message_id: string;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          direction?: Database["public"]["Enums"]["message_direction"];
+          id?: string;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_text?: string | null;
+          message_type?: Database["public"]["Enums"]["linkedin_message_type"];
+          read_at?: string | null;
+          scheduled_message_id?: string | null;
+          sender_linkedin_id?: string;
+          sender_name?: string | null;
+          sent_at?: string;
+          status?: Database["public"]["Enums"]["instagram_message_status"];
+          template_id?: string | null;
+          unipile_message_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "linkedin_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      linkedin_scheduled_messages: {
+        Row: {
+          conversation_id: string;
+          created_at: string | null;
+          error_message: string | null;
+          id: string;
+          is_auto_reminder: boolean | null;
+          message_text: string;
+          retry_count: number | null;
+          scheduled_by: string;
+          scheduled_for: string;
+          sent_at: string | null;
+          sent_message_id: string | null;
+          status: Database["public"]["Enums"]["scheduled_message_status"];
+          template_id: string | null;
+          updated_at: string | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          is_auto_reminder?: boolean | null;
+          message_text: string;
+          retry_count?: number | null;
+          scheduled_by: string;
+          scheduled_for: string;
+          sent_at?: string | null;
+          sent_message_id?: string | null;
+          status?: Database["public"]["Enums"]["scheduled_message_status"];
+          template_id?: string | null;
+          updated_at?: string | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          is_auto_reminder?: boolean | null;
+          message_text?: string;
+          retry_count?: number | null;
+          scheduled_by?: string;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          sent_message_id?: string | null;
+          status?: Database["public"]["Enums"]["scheduled_message_status"];
+          template_id?: string | null;
+          updated_at?: string | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_scheduled_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "linkedin_conversations";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "lead_vendors_imo_id_fkey";
+            foreignKeyName: "linkedin_scheduled_messages_sent_message_id_fkey";
+            columns: ["sent_message_id"];
+            isOneToOne: false;
+            referencedRelation: "linkedin_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "linkedin_scheduled_template_fk";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "instagram_message_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "linkedin_scheduled_template_fk";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "message_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      linkedin_usage_tracking: {
+        Row: {
+          api_calls_made: number | null;
+          connection_requests_sent: number | null;
+          created_at: string | null;
+          id: string;
+          imo_id: string;
+          inmails_sent: number | null;
+          messages_received: number | null;
+          messages_sent: number | null;
+          period_end: string;
+          period_start: string;
+          scheduled_messages_sent: number | null;
+          templates_used: number | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          api_calls_made?: number | null;
+          connection_requests_sent?: number | null;
+          created_at?: string | null;
+          id?: string;
+          imo_id: string;
+          inmails_sent?: number | null;
+          messages_received?: number | null;
+          messages_sent?: number | null;
+          period_end: string;
+          period_start: string;
+          scheduled_messages_sent?: number | null;
+          templates_used?: number | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          api_calls_made?: number | null;
+          connection_requests_sent?: number | null;
+          created_at?: string | null;
+          id?: string;
+          imo_id?: string;
+          inmails_sent?: number | null;
+          messages_received?: number | null;
+          messages_sent?: number | null;
+          period_end?: string;
+          period_start?: string;
+          scheduled_messages_sent?: number | null;
+          templates_used?: number | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_usage_tracking_imo_id_fkey";
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
@@ -3919,15 +4237,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "notification_preferences_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       notifications: {
         Row: {
@@ -4757,6 +5067,7 @@ export type Database = {
       };
       products: {
         Row: {
+          build_chart_id: string | null;
           carrier_id: string;
           code: string | null;
           commission_percentage: number | null;
@@ -4766,15 +5077,18 @@ export type Database = {
           imo_id: string | null;
           is_active: boolean | null;
           max_age: number | null;
+          max_face_amount: number | null;
           max_premium: number | null;
           metadata: Json | null;
           min_age: number | null;
+          min_face_amount: number | null;
           min_premium: number | null;
           name: string;
           product_type: Database["public"]["Enums"]["product_type"];
           updated_at: string | null;
         };
         Insert: {
+          build_chart_id?: string | null;
           carrier_id: string;
           code?: string | null;
           commission_percentage?: number | null;
@@ -4784,15 +5098,18 @@ export type Database = {
           imo_id?: string | null;
           is_active?: boolean | null;
           max_age?: number | null;
+          max_face_amount?: number | null;
           max_premium?: number | null;
           metadata?: Json | null;
           min_age?: number | null;
+          min_face_amount?: number | null;
           min_premium?: number | null;
           name: string;
           product_type: Database["public"]["Enums"]["product_type"];
           updated_at?: string | null;
         };
         Update: {
+          build_chart_id?: string | null;
           carrier_id?: string;
           code?: string | null;
           commission_percentage?: number | null;
@@ -4802,15 +5119,24 @@ export type Database = {
           imo_id?: string | null;
           is_active?: boolean | null;
           max_age?: number | null;
+          max_face_amount?: number | null;
           max_premium?: number | null;
           metadata?: Json | null;
           min_age?: number | null;
+          min_face_amount?: number | null;
           min_premium?: number | null;
           name?: string;
           product_type?: Database["public"]["Enums"]["product_type"];
           updated_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "products_build_chart_id_fkey";
+            columns: ["build_chart_id"];
+            isOneToOne: false;
+            referencedRelation: "carrier_build_charts";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "products_carrier_id_fkey";
             columns: ["carrier_id"];
@@ -5612,13 +5938,6 @@ export type Database = {
             referencedRelation: "imos";
             referencedColumns: ["id"];
           },
-          {
-            foreignKeyName: "scheduled_reports_owner_id_fkey";
-            columns: ["owner_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
         ];
       };
       scheduling_integrations: {
@@ -5670,13 +5989,6 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "scheduling_integrations_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -6130,13 +6442,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "slack_channel_configs_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "slack_channel_configs_imo_id_fkey";
             columns: ["imo_id"];
             isOneToOne: false;
@@ -6255,13 +6560,6 @@ export type Database = {
             columns: ["agency_id"];
             isOneToOne: false;
             referencedRelation: "agencies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "slack_integrations_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
@@ -6402,13 +6700,6 @@ export type Database = {
           workspace_name?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "slack_webhooks_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "slack_webhooks_imo_id_fkey";
             columns: ["imo_id"];
@@ -6734,6 +7025,395 @@ export type Database = {
           is_active?: boolean | null;
         };
         Relationships: [];
+      };
+      underwriting_decision_trees: {
+        Row: {
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean | null;
+          is_default: boolean | null;
+          name: string;
+          rules: Json;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean | null;
+          is_default?: boolean | null;
+          name: string;
+          rules?: Json;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean | null;
+          is_default?: boolean | null;
+          name?: string;
+          rules?: Json;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_decision_trees_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_decision_trees_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_decision_trees_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_decision_trees_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      underwriting_guides: {
+        Row: {
+          carrier_id: string;
+          content_hash: string | null;
+          created_at: string | null;
+          effective_date: string | null;
+          expiration_date: string | null;
+          file_name: string;
+          file_size_bytes: number | null;
+          id: string;
+          imo_id: string;
+          name: string;
+          parsed_content: string | null;
+          parsing_error: string | null;
+          parsing_status: string | null;
+          storage_path: string;
+          updated_at: string | null;
+          uploaded_by: string | null;
+          version: string | null;
+        };
+        Insert: {
+          carrier_id: string;
+          content_hash?: string | null;
+          created_at?: string | null;
+          effective_date?: string | null;
+          expiration_date?: string | null;
+          file_name: string;
+          file_size_bytes?: number | null;
+          id?: string;
+          imo_id: string;
+          name: string;
+          parsed_content?: string | null;
+          parsing_error?: string | null;
+          parsing_status?: string | null;
+          storage_path: string;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+          version?: string | null;
+        };
+        Update: {
+          carrier_id?: string;
+          content_hash?: string | null;
+          created_at?: string | null;
+          effective_date?: string | null;
+          expiration_date?: string | null;
+          file_name?: string;
+          file_size_bytes?: number | null;
+          id?: string;
+          imo_id?: string;
+          name?: string;
+          parsed_content?: string | null;
+          parsing_error?: string | null;
+          parsing_status?: string | null;
+          storage_path?: string;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+          version?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_guides_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_guides_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_guides_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_guides_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_guides_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      underwriting_health_conditions: {
+        Row: {
+          category: string;
+          code: string;
+          created_at: string | null;
+          follow_up_schema: Json;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          risk_weight: number | null;
+          sort_order: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          category: string;
+          code: string;
+          created_at?: string | null;
+          follow_up_schema?: Json;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          risk_weight?: number | null;
+          sort_order?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          category?: string;
+          code?: string;
+          created_at?: string | null;
+          follow_up_schema?: Json;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          risk_weight?: number | null;
+          sort_order?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      underwriting_sessions: {
+        Row: {
+          agency_id: string | null;
+          ai_analysis: Json | null;
+          client_age: number;
+          client_bmi: number | null;
+          client_dob: string | null;
+          client_gender: string | null;
+          client_height_inches: number | null;
+          client_name: string | null;
+          client_state: string | null;
+          client_weight_lbs: number | null;
+          conditions_reported: string[] | null;
+          created_at: string | null;
+          created_by: string;
+          decision_tree_id: string | null;
+          health_responses: Json;
+          health_tier: string | null;
+          id: string;
+          imo_id: string;
+          notes: string | null;
+          recommendations: Json;
+          requested_face_amount: number | null;
+          requested_product_types: string[] | null;
+          risk_factors: string[] | null;
+          session_duration_seconds: number | null;
+          status: string | null;
+          tobacco_details: Json | null;
+          tobacco_use: boolean | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          agency_id?: string | null;
+          ai_analysis?: Json | null;
+          client_age: number;
+          client_bmi?: number | null;
+          client_dob?: string | null;
+          client_gender?: string | null;
+          client_height_inches?: number | null;
+          client_name?: string | null;
+          client_state?: string | null;
+          client_weight_lbs?: number | null;
+          conditions_reported?: string[] | null;
+          created_at?: string | null;
+          created_by: string;
+          decision_tree_id?: string | null;
+          health_responses?: Json;
+          health_tier?: string | null;
+          id?: string;
+          imo_id: string;
+          notes?: string | null;
+          recommendations?: Json;
+          requested_face_amount?: number | null;
+          requested_product_types?: string[] | null;
+          risk_factors?: string[] | null;
+          session_duration_seconds?: number | null;
+          status?: string | null;
+          tobacco_details?: Json | null;
+          tobacco_use?: boolean | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          agency_id?: string | null;
+          ai_analysis?: Json | null;
+          client_age?: number;
+          client_bmi?: number | null;
+          client_dob?: string | null;
+          client_gender?: string | null;
+          client_height_inches?: number | null;
+          client_name?: string | null;
+          client_state?: string | null;
+          client_weight_lbs?: number | null;
+          conditions_reported?: string[] | null;
+          created_at?: string | null;
+          created_by?: string;
+          decision_tree_id?: string | null;
+          health_responses?: Json;
+          health_tier?: string | null;
+          id?: string;
+          imo_id?: string;
+          notes?: string | null;
+          recommendations?: Json;
+          requested_face_amount?: number | null;
+          requested_product_types?: string[] | null;
+          risk_factors?: string[] | null;
+          session_duration_seconds?: number | null;
+          status?: string | null;
+          tobacco_details?: Json | null;
+          tobacco_use?: boolean | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_sessions_agency_id_fkey";
+            columns: ["agency_id"];
+            isOneToOne: false;
+            referencedRelation: "agencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_sessions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_sessions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_sessions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_sessions_decision_tree_id_fkey";
+            columns: ["decision_tree_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_decision_trees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_sessions_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      unipile_config: {
+        Row: {
+          api_key_encrypted: string;
+          created_at: string | null;
+          current_account_count: number | null;
+          dsn: string;
+          id: string;
+          imo_id: string;
+          linkedin_enabled: boolean | null;
+          monthly_account_limit: number | null;
+          updated_at: string | null;
+          webhook_secret: string | null;
+          whatsapp_enabled: boolean | null;
+        };
+        Insert: {
+          api_key_encrypted: string;
+          created_at?: string | null;
+          current_account_count?: number | null;
+          dsn: string;
+          id?: string;
+          imo_id: string;
+          linkedin_enabled?: boolean | null;
+          monthly_account_limit?: number | null;
+          updated_at?: string | null;
+          webhook_secret?: string | null;
+          whatsapp_enabled?: boolean | null;
+        };
+        Update: {
+          api_key_encrypted?: string;
+          created_at?: string | null;
+          current_account_count?: number | null;
+          dsn?: string;
+          id?: string;
+          imo_id?: string;
+          linkedin_enabled?: boolean | null;
+          monthly_account_limit?: number | null;
+          updated_at?: string | null;
+          webhook_secret?: string | null;
+          whatsapp_enabled?: boolean | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "unipile_config_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: true;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       usage_tracking: {
         Row: {
@@ -7285,15 +7965,7 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "user_expense_categories_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       user_mailbox_settings: {
         Row: {
@@ -7525,13 +8197,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_approved_by_fkey";
-            columns: ["approved_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "user_profiles_archived_by_fkey";
             columns: ["archived_by"];
             isOneToOne: false;
@@ -7663,13 +8328,6 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "user_slack_preferences_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -7815,15 +8473,7 @@ export type Database = {
           updated_at?: string | null;
           user_id?: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: "user_targets_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       workflow_actions: {
         Row: {
@@ -8583,13 +9233,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "user_profiles_approved_by_fkey";
-            columns: ["approved_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "user_profiles_archived_by_fkey";
             columns: ["archived_by"];
             isOneToOne: false;
@@ -8799,6 +9442,65 @@ export type Database = {
           user_id: string | null;
         };
         Relationships: [];
+      };
+      message_templates: {
+        Row: {
+          category: string | null;
+          content: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          id: string | null;
+          imo_id: string | null;
+          is_active: boolean | null;
+          last_used_at: string | null;
+          message_stage: string | null;
+          name: string | null;
+          platform: string | null;
+          updated_at: string | null;
+          use_count: number | null;
+          user_id: string | null;
+        };
+        Insert: {
+          category?: string | null;
+          content?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string | null;
+          imo_id?: string | null;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          message_stage?: string | null;
+          name?: string | null;
+          platform?: string | null;
+          updated_at?: string | null;
+          use_count?: number | null;
+          user_id?: string | null;
+        };
+        Update: {
+          category?: string | null;
+          content?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string | null;
+          imo_id?: string | null;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          message_stage?: string | null;
+          name?: string | null;
+          platform?: string | null;
+          updated_at?: string | null;
+          use_count?: number | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instagram_message_templates_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       mv_carrier_performance: {
         Row: {
@@ -9172,13 +9874,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "user_profiles_approved_by_fkey";
-            columns: ["approved_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "user_profiles_archived_by_fkey";
             columns: ["archived_by"];
             isOneToOne: false;
@@ -9249,51 +9944,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-      users: {
-        Row: {
-          agent_code: string | null;
-          contract_comp_level: number | null;
-          created_at: string | null;
-          email: string | null;
-          id: string | null;
-          is_active: boolean | null;
-          license_number: string | null;
-          license_state: string | null;
-          name: string | null;
-          notes: string | null;
-          phone: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          agent_code?: never;
-          contract_comp_level?: never;
-          created_at?: string | null;
-          email?: string | null;
-          id?: string | null;
-          is_active?: never;
-          license_number?: never;
-          license_state?: never;
-          name?: never;
-          notes?: never;
-          phone?: never;
-          updated_at?: string | null;
-        };
-        Update: {
-          agent_code?: never;
-          contract_comp_level?: never;
-          created_at?: string | null;
-          email?: string | null;
-          id?: string | null;
-          is_active?: never;
-          license_number?: never;
-          license_state?: never;
-          name?: never;
-          notes?: never;
-          phone?: never;
-          updated_at?: string | null;
-        };
-        Relationships: [];
       };
     };
     Functions: {
@@ -9517,6 +10167,10 @@ export type Database = {
           p_months_paid: number;
         };
         Returns: number;
+      };
+      can_add_linkedin_account: {
+        Args: { p_imo_id: string };
+        Returns: boolean;
       };
       can_manage_workflows: {
         Args: { user_id_param: string };
@@ -9830,6 +10484,7 @@ export type Database = {
       };
       ensure_system_labels: { Args: { p_user_id: string }; Returns: undefined };
       expire_instagram_scheduled_messages: { Args: never; Returns: number };
+      expire_linkedin_scheduled_messages: { Args: never; Returns: number };
       expire_old_invitations: {
         Args: never;
         Returns: {
@@ -9840,6 +10495,7 @@ export type Database = {
         Args: { p_error: string; p_job_id: string };
         Returns: undefined;
       };
+      get_active_decision_tree: { Args: { p_imo_id: string }; Returns: Json };
       get_agencies_for_join: {
         Args: { p_imo_id: string };
         Returns: {
@@ -9850,7 +10506,11 @@ export type Database = {
         }[];
       };
       get_agency_dashboard_metrics: {
-        Args: { p_agency_id?: string };
+        Args: {
+          p_agency_id?: string;
+          p_end_date?: string;
+          p_start_date?: string;
+        };
         Returns: {
           active_policies: number;
           agency_id: string;
@@ -9887,7 +10547,11 @@ export type Database = {
       };
       get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json };
       get_agency_override_summary: {
-        Args: { p_agency_id?: string };
+        Args: {
+          p_agency_id?: string;
+          p_end_date?: string;
+          p_start_date?: string;
+        };
         Returns: {
           agency_id: string;
           agency_name: string;
@@ -10333,7 +10997,7 @@ export type Database = {
         }[];
       };
       get_imo_dashboard_metrics: {
-        Args: never;
+        Args: { p_end_date?: string; p_start_date?: string };
         Returns: {
           agency_count: number;
           agent_count: number;
@@ -10371,7 +11035,7 @@ export type Database = {
       };
       get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json };
       get_imo_override_summary: {
-        Args: never;
+        Args: { p_end_date?: string; p_start_date?: string };
         Returns: {
           avg_override_per_policy: number;
           chargeback_amount: number;
@@ -10403,7 +11067,7 @@ export type Database = {
         }[];
       };
       get_imo_production_by_agency: {
-        Args: never;
+        Args: { p_end_date?: string; p_start_date?: string };
         Returns: {
           active_policies: number;
           agency_code: string;
@@ -10493,6 +11157,22 @@ export type Database = {
           total_policies: number;
           total_purchases: number;
           total_spent: number;
+          vendor_id: string;
+          vendor_name: string;
+        }[];
+      };
+      get_lead_stats_by_vendor_imo_aggregate: {
+        Args: { p_end_date?: string; p_imo_id?: string; p_start_date?: string };
+        Returns: {
+          avg_cost_per_lead: number;
+          avg_roi: number;
+          conversion_rate: number;
+          total_commission: number;
+          total_leads: number;
+          total_policies: number;
+          total_purchases: number;
+          total_spent: number;
+          unique_users: number;
           vendor_id: string;
           vendor_name: string;
         }[];
@@ -10879,6 +11559,31 @@ export type Database = {
           retention_rate: number;
         }[];
       };
+      get_templates_for_platform: {
+        Args: { p_imo_id: string; p_platform: string; p_user_id: string };
+        Returns: {
+          category: string | null;
+          content: string;
+          created_at: string | null;
+          created_by: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean | null;
+          last_used_at: string | null;
+          message_stage: string | null;
+          name: string;
+          platform: string;
+          updated_at: string | null;
+          use_count: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "instagram_message_templates";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       get_top_performers_report: {
         Args: { p_end_date?: string; p_limit?: number; p_start_date?: string };
         Returns: {
@@ -10894,6 +11599,14 @@ export type Database = {
           new_premium: number;
           rank_in_agency: number;
           rank_in_imo: number;
+        }[];
+      };
+      get_unipile_config: {
+        Args: { p_imo_id: string };
+        Returns: {
+          api_key_encrypted: string;
+          dsn: string;
+          webhook_secret: string;
         }[];
       };
       get_upline_chain: {
@@ -10952,6 +11665,23 @@ export type Database = {
       get_valid_users_for_rule: {
         Args: { p_rule_id: string; p_user_ids: string[] };
         Returns: string[];
+      };
+      get_vendors_with_stats: {
+        Args: { p_imo_id?: string; p_include_inactive?: boolean };
+        Returns: {
+          contact_email: string;
+          contact_name: string;
+          contact_phone: string;
+          created_at: string;
+          created_by: string;
+          is_active: boolean;
+          total_purchases: number;
+          total_spent: number;
+          unique_users: number;
+          vendor_id: string;
+          vendor_name: string;
+          website: string;
+        }[];
       };
       get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json };
       getuser_commission_profile: {
@@ -11033,6 +11763,10 @@ export type Database = {
       is_same_imo: { Args: { target_user_id: string }; Returns: boolean };
       is_staff_role: { Args: never; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };
+      is_underwriting_wizard_enabled: {
+        Args: { p_agency_id: string };
+        Returns: boolean;
+      };
       is_upline_of: { Args: { target_user_id: string }; Returns: boolean };
       is_user_approved: { Args: never; Returns: boolean };
       log_audit_event: {
@@ -11079,6 +11813,13 @@ export type Database = {
         Returns: Json;
       };
       mark_thread_read: { Args: { p_thread_id: string }; Returns: undefined };
+      merge_vendors: {
+        Args: { p_keep_vendor_id: string; p_merge_vendor_ids: string[] };
+        Returns: {
+          merged_vendor_count: number;
+          reassigned_count: number;
+        }[];
+      };
       normalize_email_subject: { Args: { subject: string }; Returns: string };
       process_lemon_subscription_event: {
         Args: {
@@ -11248,6 +11989,10 @@ export type Database = {
           last_name: string;
           roles: string[];
         }[];
+      };
+      set_default_decision_tree: {
+        Args: { p_imo_id: string; p_tree_id: string };
+        Returns: undefined;
       };
       set_leaderboard_title: {
         Args: { p_log_id: string; p_title: string };
@@ -11490,6 +12235,10 @@ export type Database = {
         Args: { p_user_id: string };
         Returns: boolean;
       };
+      user_has_linkedin_access: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
       validate_invitation_acceptance: {
         Args: { p_invitation_id: string; p_invitee_id: string };
         Returns: {
@@ -11515,6 +12264,10 @@ export type Database = {
       };
       validate_schedule_recipients: {
         Args: { p_agency_id: string; p_imo_id: string; p_recipients: Json };
+        Returns: boolean;
+      };
+      validate_template_content_for_platform: {
+        Args: { p_content: string; p_platform: string };
         Returns: boolean;
       };
     };
@@ -11591,6 +12344,12 @@ export type Database = {
         | "story_reply"
         | "story_mention";
       lead_freshness: "fresh" | "aged";
+      linkedin_connection_status:
+        | "connected"
+        | "disconnected"
+        | "credentials"
+        | "error";
+      linkedin_message_type: "text" | "media" | "inmail" | "invitation_message";
       message_direction: "inbound" | "outbound";
       payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual";
       pipeline_automation_trigger:
@@ -11860,6 +12619,13 @@ export const Constants = {
       ],
       instagram_message_type: ["text", "media", "story_reply", "story_mention"],
       lead_freshness: ["fresh", "aged"],
+      linkedin_connection_status: [
+        "connected",
+        "disconnected",
+        "credentials",
+        "error",
+      ],
+      linkedin_message_type: ["text", "media", "inmail", "invitation_message"],
       message_direction: ["inbound", "outbound"],
       payment_frequency: ["monthly", "quarterly", "semi_annual", "annual"],
       pipeline_automation_trigger: [

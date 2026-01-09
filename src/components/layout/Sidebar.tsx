@@ -23,6 +23,7 @@ import {
   Crown,
   FileCheck,
   Workflow,
+  ShieldCheck,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,10 @@ import { NotificationDropdown } from "@/components/notifications";
 import { toast } from "sonner";
 import { useImo } from "@/contexts/ImoContext";
 import { shouldGrantTemporaryAccess } from "@/lib/temporaryAccess";
+import {
+  UnderwritingWizard,
+  useUnderwritingFeatureFlag,
+} from "@/features/underwriting";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -211,6 +216,12 @@ export default function Sidebar({
   // IMO/Agency context for branding display
   // LOW-4 fix: Also get loading/error states for graceful handling
   const { imo, agency, loading: imoLoading, error: imoError } = useImo();
+
+  // Underwriting wizard state
+  const [isUnderwritingWizardOpen, setIsUnderwritingWizardOpen] =
+    useState(false);
+  const { isEnabled: isUnderwritingEnabled, isLoading: isUnderwritingLoading } =
+    useUnderwritingFeatureFlag();
 
   const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
   const isAdmin =
@@ -738,6 +749,18 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="p-2 border-t border-border bg-card/80">
+          {/* Underwriting Wizard Button */}
+          {!isUnderwritingLoading && isUnderwritingEnabled && (
+            <Button
+              variant="outline"
+              className={`mb-2 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
+              onClick={() => setIsUnderwritingWizardOpen(true)}
+              title={isCollapsed ? "Underwriting Wizard" : ""}
+            >
+              <ShieldCheck size={16} className={isCollapsed ? "" : "mr-2.5"} />
+              {!isCollapsed && <span className="text-sm">UW Wizard</span>}
+            </Button>
+          )}
           <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
             {!isCollapsed && (
@@ -754,6 +777,14 @@ export default function Sidebar({
             {!isCollapsed && <span className="text-sm">Logout</span>}
           </Button>
         </div>
+
+        {/* Underwriting Wizard Dialog */}
+        {isUnderwritingEnabled && (
+          <UnderwritingWizard
+            open={isUnderwritingWizardOpen}
+            onOpenChange={setIsUnderwritingWizardOpen}
+          />
+        )}
       </div>
 
       {/* Main content margin helper - this pushes content when sidebar is visible */}
