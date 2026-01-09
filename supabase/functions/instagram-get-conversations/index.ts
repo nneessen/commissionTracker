@@ -185,8 +185,38 @@ serve(async (req) => {
       `[instagram-get-conversations] API URL (without token): ${apiUrl.toString().replace(accessToken, "REDACTED")}`,
     );
 
-    const apiResponse = await fetch(apiUrl.toString());
-    const rawResponse = await apiResponse.text();
+    // Add timeout to prevent hanging requests (25s to stay within edge function limits)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+    let apiResponse: Response;
+    let rawResponse: string;
+    try {
+      apiResponse = await fetch(apiUrl.toString(), {
+        signal: controller.signal,
+      });
+      rawResponse = await apiResponse.text();
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        console.error(
+          "[instagram-get-conversations] Request timed out after 25s",
+        );
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "Request to Instagram API timed out. Please try again.",
+            code: "TIMEOUT",
+          }),
+          {
+            status: 504,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      throw fetchError;
+    }
+    clearTimeout(timeoutId);
 
     console.log(
       `[instagram-get-conversations] API response status: ${apiResponse.status}`,

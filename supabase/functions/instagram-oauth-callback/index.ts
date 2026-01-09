@@ -175,11 +175,17 @@ serve(async (req) => {
     // The token from api.instagram.com/oauth/access_token works directly.
     // Token expiry is handled via refresh_access_token endpoint later if needed.
     // Default to 60 days expiry (Instagram's standard for these tokens).
+
+    // IMPORTANT: Log the actual expires_in from Meta for debugging token lifetime issues
+    console.log(
+      `[instagram-oauth-callback] Token expires_in from Instagram API: ${tokenData.expires_in || "NOT PROVIDED (using 60 day default)"}`,
+    );
+
     const expiresInSeconds = tokenData.expires_in || 5184000; // 60 days default
     const tokenExpiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
     console.log(
-      `[instagram-oauth-callback] Using access token directly, setting expiry to ${Math.round(expiresInSeconds / 86400)} days`,
+      `[instagram-oauth-callback] Using access token directly, setting expiry to ${Math.round(expiresInSeconds / 86400)} days (expires: ${tokenExpiresAt.toISOString()})`,
     );
 
     // =========================================================================

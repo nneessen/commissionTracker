@@ -91,8 +91,8 @@ export function LinkedInSidebar({
           onError: (error) => {
             console.warn("[LinkedInSidebar] Sync failed:", error);
             toast.error("Failed to sync conversations");
-            // Allow retry on next mount/integration change
-            hasSyncedRef.current = null;
+            // Do NOT reset hasSyncedRef here - it causes infinite retry loop
+            // User can manually refresh to retry
           },
         },
       );

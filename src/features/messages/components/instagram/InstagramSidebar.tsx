@@ -84,8 +84,8 @@ export function InstagramSidebar({
           onError: (error) => {
             console.warn("[InstagramSidebar] Sync failed:", error);
             toast.error("Failed to sync conversations");
-            // Allow retry on next mount/integration change
-            hasSyncedRef.current = null;
+            // Do NOT reset hasSyncedRef here - it causes infinite retry loop
+            // User can manually refresh to retry
           },
         },
       );

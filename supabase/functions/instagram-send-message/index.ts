@@ -237,19 +237,45 @@ serve(async (req) => {
       `[instagram-send-message] Sending message to ${conversation.participant_username || recipientId}`,
     );
 
-    const apiResponse = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        message: { text: messageText },
-        access_token: accessToken,
-      }),
-    });
+    // Add timeout to prevent hanging requests (25s to stay within edge function limits)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    const apiData: MetaSendMessageResponse = await apiResponse.json();
+    let apiResponse: Response;
+    let apiData: MetaSendMessageResponse;
+    try {
+      apiResponse = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipient: { id: recipientId },
+          message: { text: messageText },
+          access_token: accessToken,
+        }),
+        signal: controller.signal,
+      });
+      apiData = await apiResponse.json();
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        console.error("[instagram-send-message] Request timed out after 25s");
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "Request to Instagram API timed out. Please try again.",
+            code: "TIMEOUT",
+          }),
+          {
+            status: 504,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      throw fetchError;
+    }
+    clearTimeout(timeoutId);
 
     // Update API call counter
     const resetAt =
