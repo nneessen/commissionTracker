@@ -11,15 +11,11 @@ interface ChunkErrorBoundaryProps {
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
   /** Context name for error messages (e.g., "analytics", "recruiting") */
   context?: string;
-  /** Max auto-retry attempts before showing error UI */
-  maxRetries?: number;
 }
 
 interface ChunkErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  retryCount: number;
-  isRetrying: boolean;
 }
 
 /**
@@ -53,7 +49,6 @@ export class ChunkErrorBoundary extends Component<
 > {
   static defaultProps = {
     context: "application",
-    maxRetries: 1,
   };
 
   constructor(props: ChunkErrorBoundaryProps) {
@@ -61,8 +56,6 @@ export class ChunkErrorBoundary extends Component<
     this.state = {
       hasError: false,
       error: null,
-      retryCount: 0,
-      isRetrying: false,
     };
   }
 
@@ -73,8 +66,7 @@ export class ChunkErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    const { onError, maxRetries = 1 } = this.props;
-    const { retryCount } = this.state;
+    const { onError } = this.props;
 
     console.error(
       `[ChunkErrorBoundary] Error in ${this.props.context}:`,
@@ -84,14 +76,20 @@ export class ChunkErrorBoundary extends Component<
     // Notify parent if callback provided
     onError?.(error, errorInfo);
 
-    // Auto-retry once for chunk errors (handles transient network issues)
-    if (isChunkLoadError(error) && retryCount < maxRetries) {
-      this.setState({ retryCount: retryCount + 1, isRetrying: true });
+    // For chunk errors, auto-reload the page to get fresh assets
+    // This handles cases where vite:preloadError didn't catch it
+    if (isChunkLoadError(error)) {
+      const reloadKey = "chunk-reload-timestamp";
+      const lastAttempt = sessionStorage.getItem(reloadKey);
+      const now = Date.now();
 
-      // Small delay before retry to allow network recovery
-      setTimeout(() => {
-        this.setState({ hasError: false, error: null, isRetrying: false });
-      }, 1000);
+      // Allow reload if no previous attempt OR last attempt was > 10 seconds ago
+      if (!lastAttempt || now - parseInt(lastAttempt, 10) > 10000) {
+        sessionStorage.setItem(reloadKey, now.toString());
+        window.location.reload();
+        return;
+      }
+      // If we recently tried reloading, fall through to show error UI
     }
   }
 
@@ -99,8 +97,6 @@ export class ChunkErrorBoundary extends Component<
     this.setState({
       hasError: false,
       error: null,
-      retryCount: 0,
-      isRetrying: false,
     });
   };
 
@@ -110,18 +106,8 @@ export class ChunkErrorBoundary extends Component<
   };
 
   render() {
-    const { hasError, error, isRetrying } = this.state;
+    const { hasError, error } = this.state;
     const { children, fallback, context } = this.props;
-
-    // Show loading state during auto-retry
-    if (isRetrying) {
-      return (
-        <div className="flex items-center justify-center p-4 text-[11px] text-zinc-500">
-          <RefreshCw className="h-3 w-3 mr-1.5 animate-spin" />
-          Retrying...
-        </div>
-      );
-    }
 
     if (hasError && error) {
       // Use custom fallback if provided

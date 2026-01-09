@@ -1,5 +1,20 @@
 // src/index.tsx
 
+// Auto-reload on stale chunk errors (new deployment while user has old HTML cached)
+// This MUST run before any imports to catch dynamic import failures early
+window.addEventListener("vite:preloadError", () => {
+  // Prevent infinite reload loop - only reload if last attempt was > 10 seconds ago
+  const reloadKey = "chunk-reload-timestamp";
+  const lastAttempt = sessionStorage.getItem(reloadKey);
+  const now = Date.now();
+
+  // Allow reload if no previous attempt OR last attempt was > 10 seconds ago
+  if (!lastAttempt || now - parseInt(lastAttempt, 10) > 10000) {
+    sessionStorage.setItem(reloadKey, now.toString());
+    window.location.reload();
+  }
+});
+
 // CRITICAL: Capture recovery tokens BEFORE Supabase client can process them
 // This must run before any other imports to prevent race conditions
 (function handleRecoveryRedirect() {
