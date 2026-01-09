@@ -6,6 +6,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
+import {
+  isTokenRecentlyExpired,
+  attemptTokenRefresh,
+  updateIntegrationToken,
+  markIntegrationExpired,
+} from "../_shared/instagram-token-refresh.ts";
 
 interface MetaConversation {
   id: string;
@@ -115,7 +121,7 @@ serve(async (req) => {
     const { data: integration, error: fetchError } = await supabase
       .from("instagram_integrations")
       .select(
-        "id, instagram_user_id, instagram_username, access_token_encrypted, connection_status, is_active",
+        "id, instagram_user_id, instagram_username, access_token_encrypted, connection_status, is_active, token_expires_at",
       )
       .eq("id", integrationId)
       .eq("user_id", user.id) // Verify ownership
@@ -262,15 +268,59 @@ serve(async (req) => {
       const isServerError = [1, 2].includes(apiData.error.code);
 
       if (isTokenInvalid) {
-        // Only mark as expired for actual token invalidity
-        await supabase
-          .from("instagram_integrations")
-          .update({
-            connection_status: "expired",
-            last_error: apiData.error.message,
-            last_error_at: new Date().toISOString(),
-          })
-          .eq("id", integrationId);
+        // Check if token was recently expired - worth attempting refresh
+        if (isTokenRecentlyExpired(integration.token_expires_at)) {
+          console.log(
+            "[instagram-get-conversations] Token recently expired, attempting refresh",
+          );
+
+          const refreshResult = await attemptTokenRefresh(
+            integration.access_token_encrypted,
+          );
+
+          if (
+            refreshResult.success &&
+            refreshResult.newToken &&
+            refreshResult.newExpiresAt
+          ) {
+            // Update the token in the database
+            const updated = await updateIntegrationToken(
+              supabase,
+              integrationId,
+              refreshResult.newToken,
+              refreshResult.newExpiresAt,
+            );
+
+            if (updated) {
+              console.log(
+                "[instagram-get-conversations] Token refreshed, client should retry",
+              );
+              // Tell client to retry - token was refreshed
+              return new Response(
+                JSON.stringify({
+                  ok: false,
+                  error: "Token was refreshed. Please retry your request.",
+                  code: "TOKEN_REFRESHED",
+                  retry: true,
+                }),
+                {
+                  status: 409, // Conflict - indicating state changed, retry
+                  headers: {
+                    ...corsHeaders,
+                    "Content-Type": "application/json",
+                  },
+                },
+              );
+            }
+          }
+        }
+
+        // Token refresh failed or not attempted - mark as expired
+        await markIntegrationExpired(
+          supabase,
+          integrationId,
+          apiData.error.message,
+        );
 
         return new Response(
           JSON.stringify({

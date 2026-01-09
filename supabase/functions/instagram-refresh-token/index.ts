@@ -1,6 +1,6 @@
 // supabase/functions/instagram-refresh-token/index.ts
 // CRON function to refresh Instagram access tokens before they expire
-// Runs daily, refreshes tokens expiring within 7 days
+// Runs daily, refreshes tokens expiring within 14 days
 // Meta long-lived tokens last ~60 days and can be refreshed before expiry
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -59,9 +59,9 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Find integrations with tokens expiring within 7 days
-    const sevenDaysFromNow = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    // Find integrations with tokens expiring within 14 days
+    const fourteenDaysFromNow = new Date(
+      Date.now() + 14 * 24 * 60 * 60 * 1000,
     ).toISOString();
 
     const { data: integrations, error: fetchError } = await supabase
@@ -72,7 +72,7 @@ serve(async (req) => {
       .eq("is_active", true)
       .eq("connection_status", "connected")
       .not("token_expires_at", "is", null)
-      .lt("token_expires_at", sevenDaysFromNow)
+      .lt("token_expires_at", fourteenDaysFromNow)
       .order("token_expires_at", { ascending: true });
 
     if (fetchError) {

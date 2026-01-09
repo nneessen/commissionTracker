@@ -7,6 +7,7 @@ import {
   useActiveInstagramIntegration,
   useConnectInstagram,
   useInstagramRealtime,
+  useInstagramTokenExpiryCheck,
 } from "@/hooks/instagram";
 import { InstagramConnectCard } from "./InstagramConnectCard";
 import { InstagramConversationView } from "./InstagramConversationView";
@@ -23,6 +24,70 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { InstagramConversation } from "@/types/instagram.types";
+
+/**
+ * Calculate days until token expires
+ */
+function getDaysUntilExpiry(
+  tokenExpiresAt: string | null | undefined,
+): number | null {
+  if (!tokenExpiresAt) return null;
+  const expiresAt = new Date(tokenExpiresAt);
+  const now = new Date();
+  const diffMs = expiresAt.getTime() - now.getTime();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Banner shown when Instagram token is expiring soon (within 7 days)
+ */
+function TokenExpiringSoonBanner({
+  daysRemaining,
+  onReconnect,
+  isReconnecting,
+}: {
+  daysRemaining: number;
+  onReconnect: () => void;
+  isReconnecting: boolean;
+}): ReactNode {
+  return (
+    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 mb-0.5">
+            Instagram token expiring soon
+          </h4>
+          <p className="text-[10px] text-amber-700 dark:text-amber-400 mb-2">
+            Your Instagram access token will expire in {daysRemaining} day
+            {daysRemaining !== 1 ? "s" : ""}. Reconnect now to avoid
+            interruption.
+          </p>
+          <Button
+            onClick={onReconnect}
+            disabled={isReconnecting}
+            size="sm"
+            className="h-7 text-[10px] bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            {isReconnecting ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                Reconnecting...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3 w-3 mr-1.5" />
+                Reconnect Now
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Banner shown when Instagram token has expired
@@ -127,6 +192,9 @@ function InstagramTabContentInner({
     selectedConversation?.id ?? null,
   );
 
+  // Proactive check for token expiry - shows toast if expiring within 3 days
+  useInstagramTokenExpiryCheck(integration);
+
   const handleConnect = async () => {
     setConnectionError(null);
     try {
@@ -146,6 +214,14 @@ function InstagramTabContentInner({
   const isTokenExpired =
     integration?.connection_status === "expired" ||
     integration?.connection_status === "error";
+
+  // Check if token is expiring soon (within 7 days)
+  const daysUntilExpiry = getDaysUntilExpiry(integration?.token_expires_at);
+  const isTokenExpiringSoon =
+    !isTokenExpired &&
+    daysUntilExpiry !== null &&
+    daysUntilExpiry > 0 &&
+    daysUntilExpiry <= 7;
 
   // Loading state - use skeleton for better UX
   // Also show skeleton when query is pending (e.g., waiting for auth to load)
@@ -220,7 +296,23 @@ function InstagramTabContentInner({
             />
           </div>
         )}
-        <div className={isTokenExpired || onBack ? "flex-1" : "h-full"}>
+        {/* Token expiring soon warning banner */}
+        {isTokenExpiringSoon && daysUntilExpiry !== null && (
+          <div className="p-3 bg-white dark:bg-zinc-900 border-x border-zinc-200 dark:border-zinc-800">
+            <TokenExpiringSoonBanner
+              daysRemaining={daysUntilExpiry}
+              onReconnect={handleConnect}
+              isReconnecting={connectInstagram.isPending}
+            />
+          </div>
+        )}
+        <div
+          className={
+            isTokenExpired || isTokenExpiringSoon || onBack
+              ? "flex-1"
+              : "h-full"
+          }
+        >
           <InstagramConversationView
             conversation={selectedConversation}
             integrationId={integration.id}
@@ -238,6 +330,16 @@ function InstagramTabContentInner({
       {isTokenExpired && (
         <div className="p-3 border-b border-zinc-200 dark:border-zinc-800">
           <TokenExpiredBanner
+            onReconnect={handleConnect}
+            isReconnecting={connectInstagram.isPending}
+          />
+        </div>
+      )}
+      {/* Token expiring soon warning banner */}
+      {isTokenExpiringSoon && daysUntilExpiry !== null && (
+        <div className="p-3 border-b border-zinc-200 dark:border-zinc-800">
+          <TokenExpiringSoonBanner
+            daysRemaining={daysUntilExpiry}
             onReconnect={handleConnect}
             isReconnecting={connectInstagram.isPending}
           />

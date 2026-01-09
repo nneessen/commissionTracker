@@ -75,6 +75,42 @@ export class PolicyRepository extends BaseRepository<
     }
   }
 
+  // Override update to include client join so cached data is complete
+  async update(
+    id: string,
+    updates: Partial<import("../../types/policy.types").UpdatePolicyData>,
+  ): Promise<Policy> {
+    try {
+      const dbData = this.transformToDB(updates, true);
+
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .update(dbData)
+        .eq("id", id)
+        .select(
+          `
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `,
+        )
+        .single();
+
+      if (error) {
+        throw this.handleError(error, "update");
+      }
+
+      return this.transformFromDB(data);
+    } catch (error) {
+      throw this.wrapError(error, "update");
+    }
+  }
+
   // Override findAll to include client join and support pagination + date filtering
   async findAll(
     options?: {

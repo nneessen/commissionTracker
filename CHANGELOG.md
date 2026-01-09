@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-09 08:20:05
+
+### Changed Files
+- `plans/active/ig-get-messages-bug.md`
+- `plans/todo/update-policy-twice.md`
+- `src/features/messages/components/instagram/InstagramTabContent.tsx`
+- `src/hooks/instagram/index.ts`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/index.css`
+- `src/services/policies/PolicyRepository.ts`
+- `supabase/functions/_shared/instagram-token-refresh.ts`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-refresh-token/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+
+### Statistics
+```
+ 12 files changed, 639 insertions(+), 35 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-08 18:02:01
 
 ### Changed Files

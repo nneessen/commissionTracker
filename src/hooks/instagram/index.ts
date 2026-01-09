@@ -7,6 +7,7 @@ export {
   useInstagramIntegrationById,
   useActiveInstagramIntegration,
   useHasInstagramIntegration,
+  useInstagramTokenExpiryCheck,
   useConnectInstagram,
   useDisconnectInstagram,
   useDeleteInstagramIntegration,

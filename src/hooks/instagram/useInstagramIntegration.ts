@@ -2,10 +2,12 @@
 // TanStack Query hooks for Instagram DM integration
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 import { instagramService } from "@/services/instagram";
 import { instagramKeys } from "@/types/instagram.types";
+import { toast } from "sonner";
 import type {
   InstagramIntegration,
   InstagramConversation,
@@ -80,6 +82,51 @@ export function useHasInstagramIntegration() {
     hasIntegration: !!integration,
     isLoading,
   };
+}
+
+/**
+ * Proactively check if Instagram token is expiring soon and show toast notification
+ * Runs once when integration data loads - does not trigger on every render
+ */
+export function useInstagramTokenExpiryCheck(
+  integration: InstagramIntegration | null | undefined,
+) {
+  // Track if we've already shown the toast for this session
+  const hasShownToast = useRef(false);
+
+  useEffect(() => {
+    // Only run once per integration load
+    if (
+      !integration ||
+      hasShownToast.current ||
+      integration.connection_status !== "connected"
+    ) {
+      return;
+    }
+
+    const tokenExpiresAt = integration.token_expires_at;
+    if (!tokenExpiresAt) return;
+
+    const expiresAt = new Date(tokenExpiresAt);
+    const now = new Date();
+    const diffMs = expiresAt.getTime() - now.getTime();
+    const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    // Show toast if expiring within 3 days (more urgent than the 7-day banner)
+    if (daysUntilExpiry > 0 && daysUntilExpiry <= 3) {
+      hasShownToast.current = true;
+      toast.warning("Instagram Token Expiring Soon", {
+        description: `Your Instagram connection will expire in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? "s" : ""}. Go to Settings → Integrations to reconnect.`,
+        duration: 10000, // 10 seconds
+        action: {
+          label: "Go to Settings",
+          onClick: () => {
+            window.location.href = "/settings?tab=integrations";
+          },
+        },
+      });
+    }
+  }, [integration]);
 }
 
 /**
