@@ -70,6 +70,7 @@ export function transformFormToCreateData(
     clientId,
     userId,
     carrierId: form.carrierId,
+    productId: form.productId || undefined,
     product: form.product,
     effectiveDate: parseLocalDate(form.effectiveDate),
     termLength: form.termLength,
@@ -102,6 +103,7 @@ export function transformFormToUpdateData(
   if (updates.status !== undefined) result.status = updates.status;
   if (clientId) result.clientId = clientId;
   if (updates.carrierId !== undefined) result.carrierId = updates.carrierId;
+  if (updates.productId !== undefined) result.productId = updates.productId;
   if (updates.product !== undefined) result.product = updates.product;
   if (updates.termLength !== undefined) result.termLength = updates.termLength;
   if (updates.notes !== undefined) result.notes = updates.notes;

@@ -478,27 +478,37 @@ export class CommissionRepository extends BaseRepository<
     data: Partial<CreateCommissionData>,
     _isUpdate = false,
   ): Record<string, unknown> {
+    // IMPORTANT: Only include fields that actually exist in the commissions table!
+    // The commissions table has: id, policy_id, user_id, type, status, amount,
+    // advance_months, earned_amount, unearned_amount, months_paid, last_payment_date,
+    // original_advance, overage_amount, overage_start_month, notes, created_at, updated_at,
+    // chargeback_amount, chargeback_date, chargeback_reason, imo_id, month_number,
+    // payment_date, related_advance_id
+    //
+    // The following are NOT in the table (only in TypeScript types):
+    // client, carrier_id, product, calculation_basis, annual_premium, monthly_premium,
+    // rate, month_earned, year_earned, quarter_earned, expected_date, actual_date, paid_date
     const dbData: Record<string, unknown> = {};
 
+    // Core fields that exist in the table
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
     if (data.userId !== undefined) dbData.user_id = data.userId;
-    if (data.client !== undefined) dbData.client = data.client;
-    if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
-    if (data.product !== undefined) dbData.product = data.product;
     if (data.type !== undefined) dbData.type = data.type;
     if (data.status !== undefined) dbData.status = data.status;
-    if (data.calculationBasis !== undefined)
-      dbData.calculation_basis = data.calculationBasis;
-    if (data.annualPremium !== undefined)
-      dbData.annual_premium = data.annualPremium;
-    if (data.monthlyPremium !== undefined)
-      dbData.monthly_premium = data.monthlyPremium;
 
     // ADVANCE - Remote DB uses 'amount', not 'advance_amount' or 'commission_amount'
     if (data.amount !== undefined) dbData.amount = data.amount;
     if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount; // Backward compat
     if (data.advanceMonths !== undefined)
       dbData.advance_months = data.advanceMonths;
+
+    // CAPPED ADVANCE (when carrier has advance_cap)
+    if (data.originalAdvance !== undefined)
+      dbData.original_advance = data.originalAdvance;
+    if (data.overageAmount !== undefined)
+      dbData.overage_amount = data.overageAmount;
+    if (data.overageStartMonth !== undefined)
+      dbData.overage_start_month = data.overageStartMonth;
 
     // EARNING TRACKING
     if (data.monthsPaid !== undefined) dbData.months_paid = data.monthsPaid;
@@ -509,30 +519,6 @@ export class CommissionRepository extends BaseRepository<
     if (data.lastPaymentDate !== undefined)
       dbData.last_payment_date = data.lastPaymentDate;
 
-    // COMMISSION RATE
-    if (data.commissionRate !== undefined) dbData.rate = data.commissionRate;
-    if (data.monthEarned !== undefined) dbData.month_earned = data.monthEarned;
-    if (data.yearEarned !== undefined) dbData.year_earned = data.yearEarned;
-    if (data.quarterEarned !== undefined)
-      dbData.quarter_earned = data.quarterEarned;
-    if (data.expectedDate !== undefined) {
-      dbData.expected_date =
-        data.expectedDate instanceof Date
-          ? formatDateForDB(data.expectedDate)
-          : data.expectedDate;
-    }
-    if (data.actualDate !== undefined) {
-      dbData.actual_date =
-        data.actualDate instanceof Date
-          ? formatDateForDB(data.actualDate)
-          : data.actualDate;
-    }
-    if (data.paidDate !== undefined) {
-      dbData.paid_date =
-        data.paidDate instanceof Date
-          ? formatDateForDB(data.paidDate)
-          : data.paidDate;
-    }
     if (data.notes !== undefined) dbData.notes = data.notes;
 
     return dbData;

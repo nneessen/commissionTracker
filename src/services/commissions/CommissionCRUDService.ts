@@ -215,8 +215,12 @@ class CommissionCRUDService {
     }
 
     try {
-      const dbData = this.transformToDB(data);
-      const created = await this.repository.create(dbData);
+      // NOTE: Do NOT call transformToDB here! The repository.create() calls its own
+      // transformToDB internally. Calling it here would double-transform the data.
+      // Cast is needed because service's CreateCommissionData differs from types file
+      // but repository's transformToDB handles both formats
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
+      const created = await this.repository.create(data as any);
       const commission = this.transformFromDB(created);
 
       // Emit commission earned event if this is an earned commission
@@ -257,8 +261,11 @@ class CommissionCRUDService {
       // Verify commission exists first
       await this.getById(id);
 
-      const dbData = this.transformToDB(data, true);
-      const updated = await this.repository.update(id, dbData);
+      // NOTE: Do NOT call transformToDB here! The repository.update() calls its own
+      // transformToDB internally. Calling it here would double-transform the data.
+      // Cast is needed because service's CreateCommissionData differs from types file
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
+      const updated = await this.repository.update(id, data as any);
       const commission = this.transformFromDB(updated);
 
       return commission;
@@ -533,57 +540,6 @@ class CommissionCRUDService {
         ? new Date(dbRecord.updated_at)
         : undefined,
     };
-  }
-
-  private transformToDB(
-    data: Partial<CreateCommissionData>,
-    isUpdate = false,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB transformation requires flexible return type
-  ): any {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB transformation requires flexible object
-    const dbData: any = {};
-
-    if (data.policyId !== undefined) dbData.policy_id = data.policyId;
-    if (data.userId !== undefined) dbData.user_id = data.userId;
-    if (data.type !== undefined) dbData.type = data.type;
-    if (data.status !== undefined) dbData.status = data.status;
-
-    // ADVANCE - Note: DB column is 'amount', not 'advance_amount'
-    if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount;
-    if (data.advanceMonths !== undefined)
-      dbData.advance_months = data.advanceMonths;
-
-    // CAPPED ADVANCE (when carrier has advance cap)
-    if (data.originalAdvance !== undefined)
-      dbData.original_advance = data.originalAdvance;
-    if (data.overageAmount !== undefined)
-      dbData.overage_amount = data.overageAmount;
-    if (data.overageStartMonth !== undefined)
-      dbData.overage_start_month = data.overageStartMonth;
-
-    // EARNING TRACKING
-    if (data.monthsPaid !== undefined) dbData.months_paid = data.monthsPaid;
-    if (data.earnedAmount !== undefined)
-      dbData.earned_amount = data.earnedAmount;
-    if (data.unearnedAmount !== undefined)
-      dbData.unearned_amount = data.unearnedAmount;
-    if (data.lastPaymentDate !== undefined)
-      dbData.last_payment_date = data.lastPaymentDate;
-
-    if (data.notes !== undefined) dbData.notes = data.notes;
-
-    // NOTE: The following fields are in CreateCommissionData but NOT in the
-    // commissions table. They're used for calculation but not stored:
-    // - client, carrierId, product, calculationBasis, annualPremium,
-    //   monthlyPremium, commissionRate, contractCompLevel, isAutoCalculated,
-    //   expectedDate, actualDate, monthEarned, yearEarned
-
-    if (!isUpdate) {
-      dbData.created_at = new Date().toISOString();
-    }
-    dbData.updated_at = new Date().toISOString();
-
-    return dbData;
   }
 }
 

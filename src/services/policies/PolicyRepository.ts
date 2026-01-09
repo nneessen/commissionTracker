@@ -55,7 +55,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -95,7 +96,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -141,7 +143,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `);
 
@@ -238,7 +241,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -270,7 +274,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -299,7 +304,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -337,7 +343,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -446,7 +453,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           )
         `,
         )
@@ -526,7 +534,8 @@ export class PolicyRepository extends BaseRepository<
             name,
             email,
             phone,
-            address
+            address,
+            date_of_birth
           ),
           products!policies_product_id_fkey(*)
         `); // Include client and product details
@@ -839,7 +848,7 @@ export class PolicyRepository extends BaseRepository<
     // Handle joined client data from foreign key relationship
     let clientData;
     if (dbRecord.clients) {
-      // Client was joined - parse address JSONB field
+      // Client was joined - parse address JSONB field for state
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
       let address: any = {};
       if (dbRecord.clients.address) {
@@ -854,10 +863,26 @@ export class PolicyRepository extends BaseRepository<
         }
       }
 
+      // Calculate age from date_of_birth
+      let age = 0;
+      if (dbRecord.clients.date_of_birth) {
+        const dob = new Date(dbRecord.clients.date_of_birth);
+        const today = new Date();
+        age = today.getFullYear() - dob.getFullYear();
+        // Adjust if birthday hasn't occurred this year
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < dob.getDate())
+        ) {
+          age--;
+        }
+      }
+
       clientData = {
         name: dbRecord.clients.name || "Unknown",
         state: address.state || "Unknown",
-        age: address.age || 0,
+        age: age,
         email: dbRecord.clients.email,
         phone: dbRecord.clients.phone,
       };

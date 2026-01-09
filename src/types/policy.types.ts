@@ -178,6 +178,7 @@ export interface CreatePolicyData {
   policyNumber?: string | null;
   clientId: string;
   carrierId: string;
+  productId?: string;
   userId: string;
   product: ProductType;
   effectiveDate: Date;
