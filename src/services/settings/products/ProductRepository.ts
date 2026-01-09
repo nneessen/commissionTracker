@@ -43,6 +43,7 @@ export class ProductRepository extends BaseRepository<
       is_active: row.is_active ?? true,
       imo_id: row.imo_id ?? undefined,
       metadata: row.metadata as Record<string, unknown> | undefined,
+      build_chart_id: row.build_chart_id ?? undefined,
       created_at: row.created_at ? new Date(row.created_at) : new Date(),
       updated_at: row.updated_at ? new Date(row.updated_at) : new Date(),
     } as ProductBaseEntity;
@@ -73,6 +74,8 @@ export class ProductRepository extends BaseRepository<
     if (data.is_active !== undefined) result.is_active = data.is_active;
     if (data.imo_id !== undefined) result.imo_id = data.imo_id || null;
     if (data.metadata !== undefined) result.metadata = data.metadata;
+    if (data.build_chart_id !== undefined)
+      result.build_chart_id = data.build_chart_id || null;
 
     return result;
   }

@@ -63,6 +63,7 @@ export interface ProductFormData {
   imo_id?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSONB field for underwriting constraints
   metadata?: Record<string, any> | null;
+  build_chart_id?: string | null;
 }
 
 // Commission override for specific products

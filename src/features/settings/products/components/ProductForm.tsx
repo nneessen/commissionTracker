@@ -169,7 +169,7 @@ export function ProductForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+      <DialogContent className="sm:max-w-3xl p-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
         <DialogHeader className="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800">
           <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             {product ? "Edit Product" : "Add New Product"}
@@ -182,213 +182,229 @@ export function ProductForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-3 py-3"
-          >
-            <FormField
-              control={form.control}
-              name="carrier_id"
-              render={({ field }) => (
-                <FormItem className="flex flex-col space-y-1">
-                  <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                    Carrier *
-                  </FormLabel>
-                  <div className="relative">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={carrierSearchOpen}
-                      className="w-full justify-between h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                      onClick={() => setCarrierSearchOpen(!carrierSearchOpen)}
-                    >
-                      {selectedCarrier
-                        ? selectedCarrier.name
-                        : "Select carrier..."}
-                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                    </Button>
-                    {carrierSearchOpen && (
-                      <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0 shadow-md">
-                        <Command>
-                          <CommandInput
-                            placeholder="Search carriers..."
-                            className="h-7 text-[11px]"
-                          />
-                          <CommandEmpty className="text-[11px] py-2 text-center">
-                            No carrier found.
-                          </CommandEmpty>
-                          <CommandGroup className="max-h-48 overflow-auto">
-                            {carriers
-                              .filter((c) => c.is_active)
-                              .map((carrier) => (
-                                <CommandItem
-                                  key={carrier.id}
-                                  value={carrier.name}
-                                  className="text-[11px]"
-                                  onSelect={() => {
-                                    form.setValue("carrier_id", carrier.id);
-                                    setCarrierSearchOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={`mr-2 h-3 w-3 ${
-                                      carrier.id === field.value
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    }`}
-                                  />
-                                  {carrier.name}
-                                </CommandItem>
-                              ))}
-                          </CommandGroup>
-                        </Command>
-                      </div>
-                    )}
-                  </div>
-                  <FormDescription className="text-[10px] text-zinc-400">
-                    The insurance carrier for this product
-                  </FormDescription>
-                  <FormMessage className="text-[10px]" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="space-y-1">
-                  <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                    Product Name *
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., Whole Life 0-75"
-                      {...field}
-                      value={field.value || ""}
-                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                    />
-                  </FormControl>
-                  <FormDescription className="text-[10px] text-zinc-400">
-                    The specific product name
-                  </FormDescription>
-                  <FormMessage className="text-[10px]" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="product_type"
-              render={({ field }) => (
-                <FormItem className="space-y-1">
-                  <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                    Product Type *
-                  </FormLabel>
-                  <div className="flex flex-wrap gap-1">
-                    {PRODUCT_TYPES.map((type) => (
-                      <Badge
-                        key={type}
-                        variant={field.value === type ? "default" : "outline"}
-                        className="cursor-pointer text-[10px] h-5 px-1.5"
-                        onClick={() => field.onChange(type)}
-                      >
-                        {type.replace(/_/g, " ")}
-                      </Badge>
-                    ))}
-                  </div>
-                  <FormDescription className="text-[10px] text-zinc-400">
-                    Select the insurance product type
-                  </FormDescription>
-                  <FormMessage className="text-[10px]" />
-                </FormItem>
-              )}
-            />
-
-            {/* IMO Selector - Only shown for super admins */}
-            {isSuperAdmin && allImos.length > 0 && (
-              <FormField
-                control={form.control}
-                name="imo_id"
-                render={({ field }) => (
-                  <FormItem className="space-y-1">
-                    <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                      IMO *
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || ""}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                          <SelectValue placeholder="Select IMO" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {allImos.map((imoOption) => (
-                          <SelectItem
-                            key={imoOption.id}
-                            value={imoOption.id}
-                            className="text-[11px]"
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <div className="max-h-[60vh] overflow-y-auto py-3 pr-2">
+              {/* Two-column grid for basic fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left column */}
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="carrier_id"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col space-y-1">
+                        <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                          Carrier *
+                        </FormLabel>
+                        <div className="relative">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={carrierSearchOpen}
+                            className="w-full justify-between h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                            onClick={() =>
+                              setCarrierSearchOpen(!carrierSearchOpen)
+                            }
                           >
-                            {imoOption.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription className="text-[10px] text-zinc-400">
-                      Which IMO this product belongs to
-                    </FormDescription>
-                    <FormMessage className="text-[10px]" />
-                  </FormItem>
-                )}
-              />
-            )}
+                            {selectedCarrier
+                              ? selectedCarrier.name
+                              : "Select carrier..."}
+                            <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                          {carrierSearchOpen && (
+                            <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0 shadow-md">
+                              <Command>
+                                <CommandInput
+                                  placeholder="Search carriers..."
+                                  className="h-7 text-[11px]"
+                                />
+                                <CommandEmpty className="text-[11px] py-2 text-center">
+                                  No carrier found.
+                                </CommandEmpty>
+                                <CommandGroup className="max-h-48 overflow-auto">
+                                  {carriers
+                                    .filter((c) => c.is_active)
+                                    .map((carrier) => (
+                                      <CommandItem
+                                        key={carrier.id}
+                                        value={carrier.name}
+                                        className="text-[11px]"
+                                        onSelect={() => {
+                                          form.setValue(
+                                            "carrier_id",
+                                            carrier.id,
+                                          );
+                                          setCarrierSearchOpen(false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={`mr-2 h-3 w-3 ${
+                                            carrier.id === field.value
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          }`}
+                                        />
+                                        {carrier.name}
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </Command>
+                            </div>
+                          )}
+                        </div>
+                        <FormDescription className="text-[10px] text-zinc-400">
+                          The insurance carrier for this product
+                        </FormDescription>
+                        <FormMessage className="text-[10px]" />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="is_active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 p-2">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                      Active Status
-                    </FormLabel>
-                    <FormDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Inactive products won't appear in dropdowns
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      className="h-4 w-4"
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                          Product Name *
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Whole Life 0-75"
+                            {...field}
+                            value={field.value || ""}
+                            className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[10px] text-zinc-400">
+                          The specific product name
+                        </FormDescription>
+                        <FormMessage className="text-[10px]" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="product_type"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                          Product Type *
+                        </FormLabel>
+                        <div className="flex flex-wrap gap-1">
+                          {PRODUCT_TYPES.map((type) => (
+                            <Badge
+                              key={type}
+                              variant={
+                                field.value === type ? "default" : "outline"
+                              }
+                              className="cursor-pointer text-[10px] h-5 px-1.5"
+                              onClick={() => field.onChange(type)}
+                            >
+                              {type.replace(/_/g, " ")}
+                            </Badge>
+                          ))}
+                        </div>
+                        <FormDescription className="text-[10px] text-zinc-400">
+                          Select the insurance product type
+                        </FormDescription>
+                        <FormMessage className="text-[10px]" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Right column */}
+                <div className="space-y-3">
+                  {/* IMO Selector - Only shown for super admins */}
+                  {isSuperAdmin && allImos.length > 0 && (
+                    <FormField
+                      control={form.control}
+                      name="imo_id"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                            IMO *
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                                <SelectValue placeholder="Select IMO" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {allImos.map((imoOption) => (
+                                <SelectItem
+                                  key={imoOption.id}
+                                  value={imoOption.id}
+                                  className="text-[11px]"
+                                >
+                                  {imoOption.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription className="text-[10px] text-zinc-400">
+                            Which IMO this product belongs to
+                          </FormDescription>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                  )}
 
-            {/* Underwriting Constraints Section */}
-            <Separator className="my-2" />
-            <UnderwritingConstraintsEditor
-              value={underwritingConstraints}
-              onChange={setUnderwritingConstraints}
-              disabled={isSubmitting}
-            />
+                  <FormField
+                    control={form.control}
+                    name="is_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 p-2">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                            Active Status
+                          </FormLabel>
+                          <FormDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                            Inactive products won't appear in dropdowns
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="h-4 w-4"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-            {/* Build Chart Section */}
-            <Separator className="my-2" />
-            <ProductBuildChartSelector
-              carrierId={form.watch("carrier_id") || null}
-              carrierName={selectedCarrier?.name || "No Carrier"}
-              value={form.watch("build_chart_id") || null}
-              onChange={(chartId) => form.setValue("build_chart_id", chartId)}
-              disabled={isSubmitting}
-            />
+                  {/* Build Chart Section */}
+                  <ProductBuildChartSelector
+                    carrierId={form.watch("carrier_id") || null}
+                    carrierName={selectedCarrier?.name || "No Carrier"}
+                    value={form.watch("build_chart_id") || null}
+                    onChange={(chartId) =>
+                      form.setValue("build_chart_id", chartId)
+                    }
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
 
-            <DialogFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+              {/* Underwriting Constraints - Full width below grid */}
+              <Separator className="my-4" />
+              <UnderwritingConstraintsEditor
+                value={underwritingConstraints}
+                onChange={setUnderwritingConstraints}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <DialogFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-3">
               <Button
                 type="button"
                 variant="outline"
