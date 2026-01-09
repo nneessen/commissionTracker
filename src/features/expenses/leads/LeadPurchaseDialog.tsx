@@ -30,6 +30,7 @@ import type {
 import { LeadVendorDialog } from "./LeadVendorDialog";
 import { useCreateLeadVendor } from "@/hooks/lead-purchases";
 import { toast } from "sonner";
+import { getTodayString } from "@/lib/date";
 
 interface LeadPurchaseDialogProps {
   open: boolean;
@@ -56,7 +57,7 @@ export function LeadPurchaseDialog({
     leadFreshness: "fresh" as LeadFreshness,
     leadCount: "",
     totalCost: "",
-    purchaseDate: new Date().toISOString().split("T")[0],
+    purchaseDate: getTodayString(),
     policiesSold: "0",
     commissionEarned: "0",
     notes: "",
@@ -82,7 +83,7 @@ export function LeadPurchaseDialog({
         leadFreshness: "fresh",
         leadCount: "",
         totalCost: "",
-        purchaseDate: new Date().toISOString().split("T")[0],
+        purchaseDate: getTodayString(),
         policiesSold: "0",
         commissionEarned: "0",
         notes: "",

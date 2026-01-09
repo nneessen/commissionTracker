@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatDateForDisplay } from "@/lib/date";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
 import {
   useLeadPurchases,
@@ -693,14 +694,11 @@ export function LeadPurchaseDashboard() {
                     className="h-9 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5 px-2 font-mono">
-                      {new Date(purchase.purchaseDate).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          year: "2-digit",
-                        },
-                      )}
+                      {formatDateForDisplay(purchase.purchaseDate, {
+                        month: "short",
+                        day: "numeric",
+                        year: "2-digit",
+                      })}
                     </TableCell>
                     <TableCell className="text-[11px] py-1.5 px-2">
                       <span className="font-medium text-zinc-900 dark:text-zinc-100">
