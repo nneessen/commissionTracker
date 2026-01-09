@@ -4,6 +4,13 @@ import { supabase } from "@/services/base/supabase";
 import type { SchedulingIntegrationType } from "@/types/integration.types";
 
 /**
+ * Shape of the joined query result for appointments
+ * Uses Record<string, unknown> because Supabase join results have dynamic structure
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase join results have complex nested arrays
+type AppointmentQueryRow = Record<string, any>;
+
+/**
  * Appointment represents a scheduled meeting/call from a checklist item
  * Aggregated from recruit_checklist_progress + phase_checklist_items
  */
@@ -180,9 +187,10 @@ export const appointmentAggregationService = {
    * @param data - Raw database results
    * @returns Array of mapped appointments
    */
-  mapToAppointments(data: any[]): Appointment[] {
+  mapToAppointments(data: AppointmentQueryRow[]): Appointment[] {
     return data.map((row) => {
-      const itemMetadata = row.phase_checklist_items.metadata;
+      const itemMetadata = row.phase_checklist_items
+        .metadata as unknown as Record<string, string | undefined>;
       const progressMetadata = row.metadata;
 
       // Determine appointment status based on scheduled date
@@ -215,10 +223,11 @@ export const appointmentAggregationService = {
         recruit_id: row.user_id,
         recruit_name: `${row.user_profiles.first_name} ${row.user_profiles.last_name}`,
         item_name: row.phase_checklist_items.item_name,
-        platform: itemMetadata.scheduling_type,
+        platform: (itemMetadata.scheduling_type ||
+          "zoom") as SchedulingIntegrationType,
         scheduled_at:
           progressMetadata?.appointment_details?.scheduled_at || null,
-        join_url: itemMetadata.booking_url,
+        join_url: itemMetadata.booking_url || "",
         meeting_id: itemMetadata.meeting_id,
         passcode: itemMetadata.passcode,
         status,

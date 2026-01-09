@@ -3,6 +3,12 @@
 import { ActionableInsight } from "../../types/reports.types";
 import { supabase } from "../base/supabase";
 import { parseLocalDate } from "../../lib/date";
+import type { Database } from "../../types/database.types";
+
+/** DB row types for insights queries */
+type CommissionRow = Database["public"]["Tables"]["commissions"]["Row"];
+type PolicyRow = Database["public"]["Tables"]["policies"]["Row"];
+type ExpenseRow = Database["public"]["Tables"]["expenses"]["Row"];
 
 interface InsightContext {
   startDate: Date;
@@ -76,8 +82,8 @@ export class InsightsService {
     if (!chargebacks || chargebacks.length === 0) return [];
 
     const totalChargedBack = chargebacks.reduce(
-      (sum: number, c: any) =>
-        sum + Math.abs(c.chargeback_amount || c.amount || 0),
+      (sum: number, c: CommissionRow) =>
+        sum + Math.abs(Number(c.chargeback_amount || c.amount || 0)),
       0,
     );
 
@@ -131,15 +137,15 @@ export class InsightsService {
           string,
           { count: number; products: Set<string>; totalPremium: number }
         >,
-        p: any,
+        p: PolicyRow,
       ) => {
-        const carrierName = p.carrier?.name || "Unknown";
+        const carrierName = String(p.carrier_id || "Unknown");
         if (!acc[carrierName]) {
           acc[carrierName] = { count: 0, products: new Set(), totalPremium: 0 };
         }
         acc[carrierName].count++;
-        acc[carrierName].products.add(p.product?.name || "Unknown Product");
-        acc[carrierName].totalPremium += p.annual_premium || 0;
+        acc[carrierName].products.add(p.product || "Unknown Product");
+        acc[carrierName].totalPremium += Number(p.annual_premium || 0);
         return acc;
       },
       {},
@@ -148,24 +154,31 @@ export class InsightsService {
     const insights: ActionableInsight[] = [];
 
     // Find carriers with unusually high lapse rates
-    Object.entries(lapseByCarrier).forEach(([carrier, data]) => {
-      if (data.count >= 3) {
-        const productList = Array.from(data.products).slice(0, 3);
-        insights.push({
-          id: `lapse-pattern-${carrier}`,
-          severity: "high",
-          category: "retention",
-          title: `Lapse Pattern Detected`,
-          description: `${data.count} ${carrier} policies lapsed (${data.totalPremium.toFixed(2)} premium lost)`,
-          impact: `Lost premium: $${data.totalPremium.toFixed(2)}`,
-          recommendedActions: [
-            `Carrier: ${carrier} (${data.count} lapses)`,
-            ...productList.map((product) => `Product involved: ${product}`),
-          ],
-          priority: 7,
-        });
-      }
-    });
+    type CarrierLapseData = {
+      count: number;
+      products: Set<string>;
+      totalPremium: number;
+    };
+    (Object.entries(lapseByCarrier) as [string, CarrierLapseData][]).forEach(
+      ([carrier, data]) => {
+        if (data.count >= 3) {
+          const productList = Array.from(data.products).slice(0, 3);
+          insights.push({
+            id: `lapse-pattern-${carrier}`,
+            severity: "high",
+            category: "retention",
+            title: `Lapse Pattern Detected`,
+            description: `${data.count} ${carrier} policies lapsed (${data.totalPremium.toFixed(2)} premium lost)`,
+            impact: `Lost premium: $${data.totalPremium.toFixed(2)}`,
+            recommendedActions: [
+              `Carrier: ${carrier} (${data.count} lapses)`,
+              ...productList.map((product) => `Product involved: ${product}`),
+            ],
+            priority: 7,
+          });
+        }
+      },
+    );
 
     return insights;
   }
@@ -216,30 +229,29 @@ export class InsightsService {
       if (policies && policies.length > 10) {
         const avgPremium =
           policies.reduce(
-            (sum: number, p: any) => sum + (p.annual_premium || 0),
+            (sum: number, p) => sum + Number(p.annual_premium || 0),
             0,
           ) / policies.length;
         const topQuartilePolicies = policies
-
           .sort(
-            (a: any, b: any) =>
-              (b.annual_premium || 0) - (a.annual_premium || 0),
+            (a, b) =>
+              Number(b.annual_premium || 0) - Number(a.annual_premium || 0),
           )
           .slice(0, Math.floor(policies.length * 0.25));
 
         const topQuartilePremium =
-          topQuartilePolicies
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
-            .reduce((sum: number, p: any) => sum + (p.annual_premium || 0), 0) /
-          topQuartilePolicies.length;
+          topQuartilePolicies.reduce(
+            (sum: number, p) => sum + Number(p.annual_premium || 0),
+            0,
+          ) / topQuartilePolicies.length;
 
         if (topQuartilePremium > avgPremium * 1.5) {
           // Get the actual top performing products/carriers
-          const topProducts = new Map();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
-          topQuartilePolicies.forEach((p: any) => {
-            // carriers is a joined object with name property
-            const carrierName = p.carriers?.name || "Unknown Carrier";
+          const topProducts = new Map<string, number>();
+          topQuartilePolicies.forEach((p) => {
+            // carriers is a joined object with name property (Supabase returns single object for 1-to-1)
+            const carriers = p.carriers as { name?: string } | null;
+            const carrierName = carriers?.name || "Unknown Carrier";
             const key = `${carrierName} - ${p.product}`;
             topProducts.set(key, (topProducts.get(key) || 0) + 1);
           });
@@ -290,7 +302,7 @@ export class InsightsService {
     if (!currentExpenses || currentExpenses.length === 0) return insights;
 
     const totalExpenses = currentExpenses.reduce(
-      (sum: number, e: any) => sum + (e.amount || 0),
+      (sum: number, e: ExpenseRow) => sum + Number(e.amount || 0),
       0,
     );
 
@@ -304,8 +316,11 @@ export class InsightsService {
       .lte("payment_date", context.endDate.toISOString());
 
     const totalCommission =
-      commissions?.reduce((sum: number, c: any) => sum + (c.amount || 0), 0) ||
-      0;
+      commissions?.reduce(
+        (sum: number, c: { amount: number | string | null }) =>
+          sum + Number(c.amount || 0),
+        0,
+      ) || 0;
     const expenseRatio =
       totalCommission > 0 ? (totalExpenses / totalCommission) * 100 : 0;
 
@@ -314,9 +329,9 @@ export class InsightsService {
       // Analyze actual expense categories to provide specific recommendations
 
       const categoryTotals = currentExpenses.reduce(
-        (acc: Record<string, number>, e: any) => {
+        (acc: Record<string, number>, e: ExpenseRow) => {
           const category = e.category || "Uncategorized";
-          acc[category] = (acc[category] || 0) + e.amount;
+          acc[category] = (acc[category] || 0) + Number(e.amount || 0);
           return acc;
         },
         {},
@@ -392,7 +407,11 @@ export class InsightsService {
           string,
           { count: number; products: Set<string>; totalPremium: number }
         >,
-        p: any,
+        p: {
+          client_id: string | null;
+          product: string | null;
+          annual_premium: number | string | null;
+        },
       ) => {
         const clientId = p.client_id;
         if (!clientId) return acc;
@@ -402,8 +421,8 @@ export class InsightsService {
         }
 
         acc[clientId].count++;
-        acc[clientId].products.add(p.product);
-        acc[clientId].totalPremium += p.annual_premium || 0;
+        acc[clientId].products.add(p.product || "");
+        acc[clientId].totalPremium += Number(p.annual_premium || 0);
 
         return acc;
       },

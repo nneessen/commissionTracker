@@ -26,6 +26,28 @@ export interface PieBreakdownChartProps {
   title?: string;
 }
 
+/** Recharts pie tooltip props shape */
+interface PieTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: PieBreakdownChartData & { color: string } }>;
+}
+
+/** Recharts pie label props shape */
+interface PieLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}
+
+/** Recharts legend entry shape */
+interface LegendEntry {
+  value: string;
+  color?: string;
+}
+
 const DEFAULT_COLORS = [
   "#10b981", // green
   "#3b82f6", // blue
@@ -92,8 +114,7 @@ export function PieBreakdownChart({
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: PieTooltipProps) => {
     if (!active || !payload || !payload.length) return null;
 
     const data = payload[0].payload;
@@ -127,7 +148,7 @@ export function PieBreakdownChart({
     innerRadius,
     outerRadius,
     percent,
-  }: any) => {
+  }: PieLabelProps) => {
     if (percent < 0.05) return null; // Don't show labels for tiny slices
 
     const RADIAN = Math.PI / 180;
@@ -180,8 +201,7 @@ export function PieBreakdownChart({
             <Legend
               wrapperStyle={{ fontSize: "12px" }}
               iconType="circle"
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
-              formatter={(value, _entry: any) => {
+              formatter={(value: string, _entry: LegendEntry) => {
                 const item = chartData.find((d) => d.name === value);
                 const percentage = item
                   ? ((item.value / total) * 100).toFixed(1)

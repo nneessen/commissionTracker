@@ -99,6 +99,7 @@ export function FeatureGate({
 /**
  * HOC version of FeatureGate for wrapping entire components/pages
  */
+// eslint-disable-next-line react-refresh/only-export-components -- HOC factory pattern requires non-component export
 export function withFeatureGate<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   feature: FeatureKey,
@@ -107,7 +108,7 @@ export function withFeatureGate<P extends object>(
     fallback?: ReactNode;
   },
 ) {
-  return function FeatureGatedComponent(props: P) {
+  const FeatureGatedComponent = (props: P) => {
     return (
       <FeatureGate
         feature={feature}
@@ -118,6 +119,10 @@ export function withFeatureGate<P extends object>(
       </FeatureGate>
     );
   };
+
+  FeatureGatedComponent.displayName = `withFeatureGate(${WrappedComponent.displayName || WrappedComponent.name || "Component"})`;
+
+  return FeatureGatedComponent;
 }
 
 /**

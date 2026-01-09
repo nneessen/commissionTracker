@@ -12,10 +12,43 @@ interface YouTubeEmbedProps {
   className?: string;
 }
 
+/** YouTube Player API type */
+interface YouTubePlayer {
+  getDuration(): number;
+  getCurrentTime(): number;
+  destroy?(): void;
+}
+
+/** YouTube event shape */
+interface YouTubeEvent {
+  data: number;
+}
+
+/** YouTube player config shape */
+interface YouTubePlayerConfig {
+  videoId: string;
+  width: string | number;
+  height: string | number;
+  playerVars?: {
+    autoplay?: 0 | 1;
+    rel?: 0 | 1;
+    modestbranding?: 0 | 1;
+    enablejsapi?: 0 | 1;
+  };
+  events?: {
+    onReady?: (event: YouTubeEvent) => void;
+    onStateChange?: (event: YouTubeEvent) => void;
+    onError?: (event: YouTubeEvent) => void;
+  };
+}
+
 declare global {
   interface Window {
     YT?: {
-      Player: new (elementId: string, config: any) => any;
+      Player: new (
+        elementId: string,
+        config: YouTubePlayerConfig,
+      ) => YouTubePlayer;
       PlayerState: {
         ENDED: number;
         PLAYING: number;
@@ -101,7 +134,7 @@ export function YouTubeEmbed({
   className = "",
 }: YouTubeEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [watchProgress, setWatchProgress] = useState(0);
@@ -135,11 +168,11 @@ export function YouTubeEmbed({
           enablejsapi: 1, // Enable JavaScript API
         },
         events: {
-          onReady: (_event: any) => {
+          onReady: (_event: YouTubeEvent) => {
             setIsLoading(false);
             setError(null);
           },
-          onStateChange: (event: any) => {
+          onStateChange: (event: YouTubeEvent) => {
             if (event.data === window.YT?.PlayerState.ENDED) {
               // Video ended
               setHasWatchedFull(true);
@@ -173,7 +206,7 @@ export function YouTubeEmbed({
               }
             }
           },
-          onError: (event: any) => {
+          onError: (event: YouTubeEvent) => {
             console.error("YouTube player error:", event.data);
             let errorMessage = "Failed to load video.";
             switch (event.data) {

@@ -2,14 +2,17 @@
 
 import { format } from "date-fns";
 
+/** Exportable data value types */
+type ExportableValue = string | number | boolean | Date | null | undefined;
+
+/** Input record type - accepts unknown values that are handled during conversion */
+type InputRecord = Record<string, unknown>;
+
 /**
  * Convert data to CSV format
  */
 
-export function convertToCSV(
-  data: Record<string, any>[],
-  headers?: string[],
-): string {
+export function convertToCSV(data: InputRecord[], headers?: string[]): string {
   if (data.length === 0) return "";
 
   // Use provided headers or extract from first object
@@ -22,7 +25,7 @@ export function convertToCSV(
   const dataRows = data.map((row) => {
     return keys
       .map((key) => {
-        const value = row[key];
+        const value = row[key] as ExportableValue;
 
         // Handle different value types
         if (value === null || value === undefined) return "";
@@ -46,7 +49,7 @@ export function convertToCSV(
  */
 
 export function downloadCSV(
-  data: Record<string, any>[],
+  data: InputRecord[],
   filename: string,
   headers?: string[],
 ): void {
@@ -73,7 +76,7 @@ export function downloadCSV(
  */
 
 export async function copyToClipboardAsCSV(
-  data: Record<string, any>[],
+  data: InputRecord[],
   headers?: string[],
 ): Promise<boolean> {
   try {
@@ -91,8 +94,7 @@ export async function copyToClipboardAsCSV(
  */
 export interface AnalyticsSectionExport {
   sectionName: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
-  data: Record<string, any>[];
+  data: InputRecord[];
   headers?: string[];
 }
 
@@ -562,10 +564,9 @@ export function printAnalyticsToPDF(
  */
 
 export function formatMetricsForExport(
-  metrics: Record<string, any>,
-): Record<string, any> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
-  const formatted: Record<string, any> = {};
+  metrics: Record<string, unknown>,
+): Record<string, ExportableValue | string> {
+  const formatted: Record<string, ExportableValue | string> = {};
 
   for (const [key, value] of Object.entries(metrics)) {
     if (value instanceof Date) {
@@ -577,7 +578,8 @@ export function formatMetricsForExport(
       // Skip nested objects for flat CSV export
       formatted[key] = JSON.stringify(value);
     } else {
-      formatted[key] = value;
+      // Remaining types: string, boolean, null, undefined
+      formatted[key] = value as ExportableValue;
     }
   }
 

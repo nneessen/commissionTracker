@@ -9,6 +9,13 @@ import {
 import { queryPerformance } from "../../utils/performance";
 import { formatDateForDB } from "../../lib/date";
 
+/**
+ * DB row type - uses Record<string, unknown> to handle joined/computed fields
+ * The actual runtime data includes fields from JOINs and views beyond base schema
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB rows have dynamic fields from joins/views
+type CommissionRow = Record<string, any>;
+
 // ---------------------------------------------------------------------------
 // Type definitions for lightweight metric queries
 // ---------------------------------------------------------------------------
@@ -48,8 +55,7 @@ export class CommissionRepository extends BaseRepository<
    * Transform database record to Commission object
    * Maps database column names to TypeScript interface property names
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema from various sources
-  protected transformFromDB(dbRecord: any): Commission {
+  protected transformFromDB(dbRecord: CommissionRow): Commission {
     return {
       id: dbRecord.id,
       policyId: dbRecord.policy_id,
@@ -471,9 +477,8 @@ export class CommissionRepository extends BaseRepository<
   protected transformToDB(
     data: Partial<CreateCommissionData>,
     _isUpdate = false,
-  ): any {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dbData: any = {};
+  ): Record<string, unknown> {
+    const dbData: Record<string, unknown> = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
     if (data.userId !== undefined) dbData.user_id = data.userId;

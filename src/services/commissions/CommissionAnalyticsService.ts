@@ -2,6 +2,7 @@
 // Handles commission metrics, reporting, and chargeback analysis
 
 import { Commission } from "../../types/commission.types";
+import { Chargeback } from "../../types/user.types";
 import { supabase, TABLES } from "../base/supabase";
 import {
   RISK_SCORE_WEIGHTS,
@@ -23,8 +24,7 @@ export interface ChargebackRisk {
 export interface CommissionWithChargebackRisk {
   commission: Commission;
   chargeback_risk: ChargebackRisk;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback records have dynamic shape
-  existing_chargebacks: any[];
+  existing_chargebacks: Chargeback[];
 }
 
 export interface CommissionMetrics {
@@ -260,7 +260,7 @@ class CommissionAnalyticsService {
 
   calculateChargebackRiskForCommission(
     commission: Commission,
-    existingChargebacks: any[],
+    existingChargebacks: Chargeback[],
   ): ChargebackRisk {
     // Use standard chargeback grace period
     const chargebackGracePeriod = CHARGEBACK_THRESHOLDS.GRACE_PERIOD_MONTHS;
@@ -435,7 +435,7 @@ class CommissionAnalyticsService {
           (acc[cb.commissionId] = acc[cb.commissionId] || []).push(cb);
           return acc;
         },
-        {} as Record<string, any[]>,
+        {} as Record<string, Chargeback[]>,
       );
 
       // Calculate risk for each commission using the grouped data

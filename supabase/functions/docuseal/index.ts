@@ -26,6 +26,21 @@ interface CreateSubmissionRequest {
   expire_at?: string;
 }
 
+/** DocuSeal API submitter response shape */
+interface DocuSealSubmitterResponse {
+  id: string | number;
+  submission_id: string | number;
+  email: string;
+  name?: string;
+  status: string;
+  role?: string;
+  embed_src?: string;
+  sent_at?: string;
+  opened_at?: string | null;
+  completed_at?: string | null;
+  declined_at?: string | null;
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -130,7 +145,7 @@ serve(async (req: Request) => {
 
         const transformedResponse = {
           id: submissionId,
-          submitters: submitters.map((s: any) => ({
+          submitters: submitters.map((s: DocuSealSubmitterResponse) => ({
             id: s.id,
             submission_id: s.submission_id,
             email: s.email,

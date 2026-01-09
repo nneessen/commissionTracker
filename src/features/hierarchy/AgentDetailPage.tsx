@@ -33,6 +33,34 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { EditAgentModal } from "./components/EditAgentModal";
 
+/** Type for policy objects returned from hierarchyService.getAgentPolicies */
+interface AgentPolicy {
+  id: string;
+  policyNumber: string;
+  clientName: string;
+  product: string;
+  carrier: string;
+  annualPremium: number;
+  status: string;
+  createdAt: string;
+  effectiveDate: string;
+  issueDate: string;
+}
+
+/** Type for commission objects returned from hierarchyService.getAgentCommissions */
+interface AgentCommission {
+  id: string;
+  date: string;
+  type: string;
+  policyNumber: string;
+  amount: number;
+  earnedAmount?: number;
+  unearnedAmount?: number;
+  monthsPaid?: number;
+  advanceMonths?: number;
+  status: string;
+}
+
 export function AgentDetailPage() {
   const { agentId } = useParams({ from: "/hierarchy/agent/$agentId" });
   const navigate = useNavigate();
@@ -131,34 +159,30 @@ export function AgentDetailPage() {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mtdPolicies = policyList.filter((p: any) => {
+  const mtdPolicies = policyList.filter((p: AgentPolicy) => {
     const pDate = new Date(p.createdAt);
     return (
       pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear
     );
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ytdPolicies = policyList.filter((p: any) => {
+  const ytdPolicies = policyList.filter((p: AgentPolicy) => {
     const pDate = new Date(p.createdAt);
     return pDate.getFullYear() === currentYear;
   });
 
   const mtdMetrics = {
     policies: mtdPolicies.length,
-
     premium: mtdPolicies.reduce(
-      (sum: number, p: any) => sum + (p.annualPremium || 0),
+      (sum: number, p: AgentPolicy) => sum + (p.annualPremium || 0),
       0,
     ),
   };
 
   const ytdMetrics = {
     policies: ytdPolicies.length,
-
     premium: ytdPolicies.reduce(
-      (sum: number, p: any) => sum + (p.annualPremium || 0),
+      (sum: number, p: AgentPolicy) => sum + (p.annualPremium || 0),
       0,
     ),
   };
@@ -411,8 +435,7 @@ export function AgentDetailPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  policyList.map((policy: any) => (
+                  policyList.map((policy: AgentPolicy) => (
                     <TableRow
                       key={policy.id}
                       className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
@@ -555,8 +578,7 @@ export function AgentDetailPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    commissions.recent.map((commission: any) => (
+                    commissions.recent.map((commission: AgentCommission) => (
                       <TableRow
                         key={commission.id}
                         className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"

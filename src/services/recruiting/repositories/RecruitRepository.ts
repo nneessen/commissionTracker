@@ -56,10 +56,8 @@ export interface PaginatedRecruits {
   totalPages: number;
 }
 
-// Using 'any' for the base entity since UserProfile has string dates, not Date objects
-
 export class RecruitRepository extends BaseRepository<
-  any,
+  UserProfile,
   CreateRecruitData,
   UpdateRecruitData
 > {

@@ -12,9 +12,34 @@ interface VimeoEmbedProps {
   className?: string;
 }
 
+/** Vimeo Player API type */
+interface VimeoPlayer {
+  on(event: string, callback: (...args: unknown[]) => void): void;
+  off(event: string, callback: (...args: unknown[]) => void): void;
+  destroy?(): void;
+}
+
+/** Vimeo error event shape */
+interface VimeoErrorEvent {
+  message: string;
+  name: string;
+}
+
+/** Vimeo timeupdate data shape */
+interface VimeoTimeUpdateData {
+  percent: number;
+  seconds: number;
+  duration: number;
+}
+
+/** Vimeo namespace on window */
+interface VimeoNamespace {
+  Player: new (element: HTMLIFrameElement) => VimeoPlayer;
+}
+
 declare global {
   interface Window {
-    Vimeo?: any;
+    Vimeo?: VimeoNamespace;
   }
 }
 
@@ -91,7 +116,7 @@ export function VimeoEmbed({
   className = "",
 }: VimeoEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<VimeoPlayer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [watchProgress, setWatchProgress] = useState(0);
@@ -103,8 +128,8 @@ export function VimeoEmbed({
   const handlersRef = useRef<{
     loaded?: () => void;
     ended?: () => void;
-    error?: (e: any) => void;
-    timeupdate?: (data: any) => void;
+    error?: (e: VimeoErrorEvent) => void;
+    timeupdate?: (data: VimeoTimeUpdateData) => void;
   }>({});
 
   useEffect(() => {
@@ -150,17 +175,20 @@ export function VimeoEmbed({
           handlersRef.current.ended = handleEnded;
           playerRef.current.on("ended", handleEnded);
 
-          const handleError = (e: any) => {
+          const handleError = (e: VimeoErrorEvent) => {
             console.error("Vimeo player error:", e);
             setError("Failed to load video. It may be private or unavailable.");
             setIsLoading(false);
           };
           handlersRef.current.error = handleError;
-          playerRef.current.on("error", handleError);
+          playerRef.current.on(
+            "error",
+            handleError as (...args: unknown[]) => void,
+          );
 
           // Track progress for "require full watch" mode
           if (requireFullWatch) {
-            const handleTimeUpdate = async (data: any) => {
+            const handleTimeUpdate = (data: VimeoTimeUpdateData) => {
               const progress = (data.percent || 0) * 100;
               setWatchProgress(progress);
               if (progress >= 95) {
@@ -168,7 +196,10 @@ export function VimeoEmbed({
               }
             };
             handlersRef.current.timeupdate = handleTimeUpdate;
-            playerRef.current.on("timeupdate", handleTimeUpdate);
+            playerRef.current.on(
+              "timeupdate",
+              handleTimeUpdate as (...args: unknown[]) => void,
+            );
           }
         }
       } catch (err) {
@@ -181,16 +212,21 @@ export function VimeoEmbed({
     loadPlayer();
 
     return () => {
+      // Capture ref values inside the effect cleanup to avoid stale closure
+      const player = playerRef.current;
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- correctly capturing ref to local var
+      const handlers = handlersRef.current;
+
       // Remove all event listeners before destroying player
-      if (playerRef.current) {
-        Object.entries(handlersRef.current).forEach(([event, handler]) => {
+      if (player) {
+        Object.entries(handlers).forEach(([event, handler]) => {
           if (handler) {
-            playerRef.current.off(event, handler);
+            player.off(event, handler as (...args: unknown[]) => void);
           }
         });
 
-        if (playerRef.current.destroy) {
-          playerRef.current.destroy();
+        if (player.destroy) {
+          player.destroy();
         }
       }
     };

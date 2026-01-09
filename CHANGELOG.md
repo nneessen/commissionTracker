@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-09 09:38:02
+
+### Changed Files
+- `src/components/subscription/FeatureGate.tsx`
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/SendInvitationModal.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/recruiting/components/embeds/VimeoEmbed.tsx`
+- `src/features/recruiting/components/embeds/YouTubeEmbed.tsx`
+- `src/features/reports/components/charts/AreaStackedChart.tsx`
+- `src/features/reports/components/charts/PieBreakdownChart.tsx`
+- `src/hooks/recruiting/usePipeline.ts`
+- `src/services/commissions/CommissionAnalyticsService.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/recruiting/appointmentAggregationService.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/services/reports/insightsService.ts`
+- `src/utils/exportHelpers.ts`
+- `src/utils/retry.ts`
+- `supabase/functions/docuseal/index.ts`
+
+### Statistics
+```
+ 19 files changed, 337 insertions(+), 139 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-09 08:20:05
 
 ### Changed Files

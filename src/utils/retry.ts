@@ -3,13 +3,16 @@
 
 import { logger } from "../services/base/logger";
 
+/** Error constructor type - allows any Error subclass */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Error subclass constructors have varying signatures
+type ErrorConstructor = new (...args: any[]) => Error;
+
 export interface RetryOptions {
   maxAttempts?: number;
   delayMs?: number;
   backoffMultiplier?: number;
   maxDelayMs?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error constructor signature
-  retryableErrors?: Array<new (...args: any[]) => Error>;
+  retryableErrors?: ErrorConstructor[];
   onRetry?: (attempt: number, error: Error) => void;
 }
 
@@ -28,7 +31,7 @@ const DEFAULT_OPTIONS: Required<
 
 function isRetryable(
   error: unknown,
-  retryableErrors?: Array<new (...args: any[]) => Error>,
+  retryableErrors?: ErrorConstructor[],
 ): boolean {
   if (!retryableErrors || retryableErrors.length === 0) {
     // By default, retry on network errors and 5xx server errors
@@ -143,14 +146,13 @@ export async function withRetry<T>(
  */
 export function Retry(options: RetryOptions = {}) {
   return function (
-    _target: any,
+    _target: object,
     _propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- decorator args type
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       return withRetry(() => originalMethod.apply(this, args), options);
     };
 

@@ -3,6 +3,30 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pipelineService } from "../../services/recruiting/pipelineService";
 
+/** Type for creating a new pipeline phase (matches pipelineService.createPhase input) */
+interface CreatePhaseData {
+  phase_name: string;
+  phase_description?: string | null;
+  phase_order?: number;
+  estimated_days?: number | null;
+  required_approver_role?: string | null;
+  auto_advance?: boolean;
+  is_active?: boolean;
+  visible_to_recruit?: boolean;
+}
+
+/** Type for updating an existing pipeline phase (matches pipelineService.updatePhase input) */
+interface UpdatePhaseData {
+  phase_name?: string;
+  phase_description?: string | null;
+  phase_order?: number;
+  estimated_days?: number | null;
+  required_approver_role?: string | null;
+  auto_advance?: boolean;
+  is_active?: boolean;
+  visible_to_recruit?: boolean;
+}
+
 // Query keys
 const PIPELINE_KEYS = {
   all: ["pipelines"] as const,
@@ -91,7 +115,7 @@ export function useCreatePhase() {
       phaseData,
     }: {
       templateId: string;
-      phaseData: any;
+      phaseData: CreatePhaseData;
     }) => pipelineService.createPhase(templateId, phaseData),
     onSuccess: (_, { templateId }) => {
       queryClient.invalidateQueries({
@@ -108,9 +132,13 @@ export function useUpdatePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic mutation type
-    mutationFn: ({ phaseId, updates }: { phaseId: string; updates: any }) =>
-      pipelineService.updatePhase(phaseId, updates),
+    mutationFn: ({
+      phaseId,
+      updates,
+    }: {
+      phaseId: string;
+      updates: UpdatePhaseData;
+    }) => pipelineService.updatePhase(phaseId, updates),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.phase(data.id) });
       // Also invalidate the phases list for the template

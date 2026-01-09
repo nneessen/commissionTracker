@@ -15,6 +15,14 @@ import {
   workflowEventEmitter,
   WORKFLOW_EVENTS,
 } from "../events/workflowEventEmitter";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * DB row type - uses Record<string, unknown> to handle joined/computed fields
+ * The actual runtime data includes fields from JOINs and views beyond base schema
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB rows have dynamic fields from joins/views
+type CommissionRow = Record<string, any>;
 
 export interface CreateCommissionData {
   policyId?: string;
@@ -313,7 +321,7 @@ class CommissionCRUDService {
       // Get the linked policy to validate it's active
       if (commission.policyId) {
         const { data: policy, error: policyError } = await (
-          this.repository as any
+          this.repository as unknown as { client: SupabaseClient }
         ).client
           .from("policies")
           .select("status")
@@ -346,7 +354,7 @@ class CommissionCRUDService {
       };
 
       const { data: updated, error: updateError } = await (
-        this.repository as any
+        this.repository as unknown as { client: SupabaseClient }
       ).client
         .from("commissions")
         .update(updateData)
@@ -395,15 +403,14 @@ class CommissionCRUDService {
 
       if (filters.carrierId) {
         commissions = commissions.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          (c) => (c as any).carrier_id === filters.carrierId,
+          (c) =>
+            (c as unknown as CommissionRow).carrier_id === filters.carrierId,
         );
       }
 
       if (filters.userId) {
         commissions = commissions.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          (c) => (c as any).user_id === filters.userId,
+          (c) => (c as unknown as CommissionRow).user_id === filters.userId,
         );
       }
 
@@ -415,16 +422,17 @@ class CommissionCRUDService {
 
       if (filters.calculationBasis) {
         commissions = commissions.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          (c) => (c as any).calculation_basis === filters.calculationBasis,
+          (c) =>
+            (c as unknown as CommissionRow).calculation_basis ===
+            filters.calculationBasis,
         );
       }
 
       if (filters.startDate) {
         commissions = commissions.filter((c) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          const commDate = (c as any).expected_date
-            ? new Date((c as any).expected_date)
+          const row = c as unknown as CommissionRow;
+          const commDate = row.expected_date
+            ? new Date(row.expected_date)
             : null;
           return commDate && commDate >= filters.startDate!;
         });
@@ -432,26 +440,26 @@ class CommissionCRUDService {
 
       if (filters.endDate) {
         commissions = commissions.filter((c) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          const commDate = (c as any).expected_date
-            ? new Date((c as any).expected_date)
+          const row = c as unknown as CommissionRow;
+          const commDate = row.expected_date
+            ? new Date(row.expected_date)
             : null;
           return commDate && commDate <= filters.endDate!;
         });
       }
 
       if (filters.minAmount !== undefined) {
-        commissions = commissions.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          (c) => parseFloat((c as any).commission_amount) >= filters.minAmount!,
-        );
+        commissions = commissions.filter((c) => {
+          const row = c as unknown as CommissionRow;
+          return parseFloat(String(row.amount || 0)) >= filters.minAmount!;
+        });
       }
 
       if (filters.maxAmount !== undefined) {
-        commissions = commissions.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
-          (c) => parseFloat((c as any).commission_amount) <= filters.maxAmount!,
-        );
+        commissions = commissions.filter((c) => {
+          const row = c as unknown as CommissionRow;
+          return parseFloat(String(row.amount || 0)) <= filters.maxAmount!;
+        });
       }
 
       return commissions.map(this.transformFromDB);
@@ -460,8 +468,7 @@ class CommissionCRUDService {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
-  private transformFromDB(dbRecord: any): Commission {
+  private transformFromDB(dbRecord: CommissionRow): Commission {
     return {
       id: dbRecord.id,
       policyId: dbRecord.policy_id,

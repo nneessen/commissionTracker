@@ -34,6 +34,21 @@ export interface AreaStackedChartProps {
   stackOffset?: "none" | "expand" | "wiggle" | "silhouette";
 }
 
+/** Recharts tooltip payload entry */
+interface TooltipPayloadEntry {
+  dataKey?: string;
+  value?: number;
+  name?: string;
+  color?: string;
+}
+
+/** Recharts tooltip props shape */
+interface TooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}
+
 /**
  * AreaStackedChart - Stacked area chart for showing cumulative metrics over time
  *
@@ -88,8 +103,7 @@ export function AreaStackedChart({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (!active || !payload || !payload.length) return null;
 
     // Calculate total if stacked
@@ -97,7 +111,8 @@ export function AreaStackedChart({
       stackOffset === "none"
         ? null
         : payload.reduce(
-            (sum: number, entry: any) => sum + (entry.value || 0),
+            (sum: number, entry: TooltipPayloadEntry) =>
+              sum + (entry.value || 0),
             0,
           );
 
@@ -105,32 +120,34 @@ export function AreaStackedChart({
       <div className="bg-card border border-border rounded-lg shadow-lg p-3 max-w-xs">
         <p className="text-xs font-semibold text-foreground mb-2">{label}</p>
         <div className="space-y-1">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type */}
-          {payload.reverse().map((entry: any, index: number) => {
-            const area = areas.find((a) => a.dataKey === entry.dataKey);
-            const percentage = total
-              ? ((entry.value / total) * 100).toFixed(1)
-              : null;
+          {payload
+            .reverse()
+            .map((entry: TooltipPayloadEntry, index: number) => {
+              const area = areas.find((a) => a.dataKey === entry.dataKey);
+              const entryValue = entry.value ?? 0;
+              const percentage = total
+                ? ((entryValue / total) * 100).toFixed(1)
+                : null;
 
-            return (
-              <div
-                key={index}
-                className="flex items-center justify-between gap-4 text-xs"
-              >
-                <span className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  {entry.name}:
-                </span>
-                <span className="font-medium text-foreground">
-                  {formatValue(entry.value, area?.format)}
-                  {percentage && ` (${percentage}%)`}
-                </span>
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-4 text-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    {entry.name}:
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {formatValue(entryValue, area?.format)}
+                    {percentage && ` (${percentage}%)`}
+                  </span>
+                </div>
+              );
+            })}
           {total && (
             <div className="flex items-center justify-between gap-4 text-xs pt-2 border-t border-border mt-2">
               <span className="font-semibold">Total:</span>

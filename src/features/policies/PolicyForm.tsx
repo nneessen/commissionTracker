@@ -196,7 +196,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     setFormData(newFormData);
     // Track initial productId to detect user-initiated changes
     setInitialProductId(policy.productId || null);
-  }, [policyId, policy]);
+  }, [policyId, policy, carriers.length]);
 
   // When products load and we're editing a policy without productId, auto-match by product type
   useEffect(() => {

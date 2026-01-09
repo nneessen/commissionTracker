@@ -82,7 +82,8 @@ export function SendInvitationModal({
             Invite Agent to Downline
           </DialogTitle>
           <DialogDescription className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            Send an email invitation to add someone to your team
+            Send an email invitation to add someone to your team. Must already
+            have an account.
           </DialogDescription>
         </DialogHeader>
 
