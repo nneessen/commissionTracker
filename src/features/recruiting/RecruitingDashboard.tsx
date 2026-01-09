@@ -58,8 +58,7 @@ type RecruitWithRelations = UserProfile & {
 
 function RecruitingDashboardContent() {
   const { user, supabaseUser } = useAuth();
-  // Filter to only show recruits where current user is the recruiter
-  // Disable query until user is loaded to prevent fetching all recruits
+  console.log(user);
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
     { recruiter_id: user?.id },
     1,
@@ -67,11 +66,9 @@ function RecruitingDashboardContent() {
     { enabled: !!user?.id },
   );
 
-  // Check if current user is the super admin (nickneessen@thestandardhq.com)
   const showPreviewBanner = !isSuperAdminEmail(supabaseUser?.email);
   const { data: pendingLeadsCount } = usePendingLeadsCount();
 
-  // Fetch phases from active pipeline template (dynamic, not hardcoded)
   const { data: activeTemplate } = useActiveTemplate();
   const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
 
@@ -263,18 +260,22 @@ function RecruitingDashboardContent() {
             variant="outline"
             onClick={() => setSendInviteDialogOpen(true)}
             className="h-6 text-[10px] px-2"
+            disabled={user?.is_admin ? false : true}
           >
             <Mail className="h-3 w-3 mr-1" />
             Send Invite
           </Button>
+
           <Button
             size="sm"
             onClick={() => setAddRecruitDialogOpen(true)}
             className="h-6 text-[10px] px-2"
+            disabled={user?.is_admin ? false : true}
           >
             <UserPlus className="h-3 w-3 mr-1" />
             Add Recruit
           </Button>
+
           <Button
             size="sm"
             variant="ghost"
