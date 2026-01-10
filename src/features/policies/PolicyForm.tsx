@@ -86,7 +86,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       return {
         clientName: policy.client?.name || "",
         clientState: policy.client?.state || "",
-        clientAge: policy.client?.age || 0,
+        clientDOB: policy.client?.dateOfBirth || "",
         clientEmail: policy.client?.email || "",
         clientPhone: policy.client?.phone || "",
         carrierId: policy.carrierId || "",
@@ -109,7 +109,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     return {
       clientName: "",
       clientState: "",
-      clientAge: 0,
+      clientDOB: "",
       carrierId: "",
       productId: "",
       product: "term_life" as ProductType,
@@ -174,7 +174,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     const newFormData: NewPolicyForm = {
       clientName: policy.client?.name || "",
       clientState: policy.client?.state || "",
-      clientAge: policy.client?.age || 0,
+      clientDOB: policy.client?.dateOfBirth || "",
       clientEmail: policy.client?.email || "",
       clientPhone: policy.client?.phone || "",
       carrierId: policy.carrierId || "",
@@ -355,12 +355,18 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
     if (!formData.clientName) newErrors.clientName = "Client name is required";
     if (!formData.clientState) newErrors.clientState = "State is required";
-    if (
-      !formData.clientAge ||
-      formData.clientAge < 1 ||
-      formData.clientAge > 120
-    ) {
-      newErrors.clientAge = "Valid age is required (1-120)";
+    if (!formData.clientDOB) {
+      newErrors.clientDOB = "Date of birth is required";
+    } else {
+      // Validate DOB is a valid date and person is between 1-120 years old
+      const dob = new Date(formData.clientDOB);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      if (isNaN(dob.getTime())) {
+        newErrors.clientDOB = "Invalid date format";
+      } else if (age < 1 || age > 120) {
+        newErrors.clientDOB = "Date of birth must result in age 1-120";
+      }
     }
     if (!formData.carrierId) newErrors.carrierId = "Carrier is required";
     if (!formData.productId) newErrors.productId = "Product is required";
@@ -505,25 +511,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             </div>
             <div className="flex flex-col gap-1">
               <Label
-                htmlFor="clientAge"
+                htmlFor="clientDOB"
                 className="text-[11px] text-muted-foreground"
               >
-                Age *
+                Date of Birth *
               </Label>
               <Input
-                id="clientAge"
-                type="number"
-                name="clientAge"
-                value={formData.clientAge || ""}
+                id="clientDOB"
+                type="date"
+                name="clientDOB"
+                value={formData.clientDOB || ""}
                 onChange={handleInputChange}
-                className={`h-8 text-[11px] ${errors.clientAge ? "border-destructive" : "border-input"}`}
-                placeholder="45"
-                min="1"
-                max="120"
+                className={`h-8 text-[11px] ${errors.clientDOB ? "border-destructive" : "border-input"}`}
               />
-              {errors.clientAge && (
+              {errors.clientDOB && (
                 <span className="text-[10px] text-destructive">
-                  {errors.clientAge}
+                  {errors.clientDOB}
                 </span>
               )}
             </div>

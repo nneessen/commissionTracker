@@ -218,12 +218,7 @@ export const PolicyDashboard: React.FC = () => {
           }
 
           try {
-            // Calculate approximate date of birth from age
-            // Use Jan 1 of the birth year as approximation
-            const birthYear = new Date().getFullYear() - formData.clientAge;
-            const dateOfBirth = `${birthYear}-01-01`;
-
-            // Create or find the client
+            // Create or find the client with real DOB
             const clientResult = await clientService.createOrFind(
               {
                 name: formData.clientName,
@@ -232,7 +227,7 @@ export const PolicyDashboard: React.FC = () => {
                 address: JSON.stringify({
                   state: formData.clientState,
                 }),
-                date_of_birth: dateOfBirth,
+                date_of_birth: formData.clientDOB,
               },
               user.id,
             );

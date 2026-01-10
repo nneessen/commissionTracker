@@ -43,6 +43,7 @@ export interface PolicyClientBase {
   name: string;
   state: string;
   age: number;
+  dateOfBirth?: string; // ISO date string (YYYY-MM-DD)
   email?: string;
   phone?: string;
 }
@@ -111,7 +112,7 @@ export interface NewPolicyForm {
   // Client fields
   clientName: string;
   clientState: string;
-  clientAge: number;
+  clientDOB: string; // ISO date string (YYYY-MM-DD)
   clientEmail?: string;
   clientPhone?: string;
 
