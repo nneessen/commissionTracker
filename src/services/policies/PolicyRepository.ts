@@ -918,8 +918,7 @@ export class PolicyRepository extends BaseRepository<
       clientData = {
         name: dbRecord.clients.name || "Unknown",
         state: address.state || "Unknown",
-        // Prefer calculated age from DOB, fallback to age stored in address JSON
-        age: age || address.age || 0,
+        age: age,
         email: dbRecord.clients.email,
         phone: dbRecord.clients.phone,
       };
