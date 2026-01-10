@@ -3,6 +3,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +32,12 @@ interface ParsedContent {
 }
 
 const STORAGE_BUCKET = "underwriting-guides";
+
+// Configuration constants
+const MAX_PROCESSING_TIME_MS = 50000; // 50 seconds, leave buffer for edge function timeout
+const MAX_PAGE_COUNT = 500; // Prevent DoS via huge PDFs
+const MAX_FAILURE_RATIO = 0.5; // Fail if more than 50% of pages fail extraction
+const PROGRESS_LOG_INTERVAL = 10; // Log progress every N pages
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -151,22 +158,116 @@ serve(async (req) => {
 
     console.log(`[parse-guide] Downloaded PDF, size: ${fileData.size} bytes`);
 
-    // For now, create a simple parsed content structure
-    // Full PDF text extraction would require a different library compatible with Deno
+    // Convert Blob to ArrayBuffer for pdf.js
+    const pdfBuffer = await fileData.arrayBuffer();
+    const pdfData = new Uint8Array(pdfBuffer);
+
+    console.log(`[parse-guide] Starting PDF text extraction...`);
+
+    // Load PDF document using pdf.js
+    // Disable worker to avoid issues in Deno edge function environment
+    const loadingTask = pdfjsLib.getDocument({
+      data: pdfData,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    });
+    const pdfDoc = await loadingTask.promise;
+
+    console.log(`[parse-guide] PDF loaded, ${pdfDoc.numPages} pages found`);
+
+    // Validate page count to prevent DoS
+    if (pdfDoc.numPages > MAX_PAGE_COUNT) {
+      pdfDoc.destroy();
+      throw new Error(
+        `PDF too large: ${pdfDoc.numPages} pages exceeds limit of ${MAX_PAGE_COUNT}`,
+      );
+    }
+
+    // Extract text from each page with timeout and failure tracking
+    const sections: ParsedSection[] = [];
+    const fullTextParts: string[] = []; // Use array to avoid O(n²) string concat
+    let failedPages = 0;
+    const extractionStartTime = Date.now();
+
+    try {
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        // Check timeout
+        if (Date.now() - extractionStartTime > MAX_PROCESSING_TIME_MS) {
+          throw new Error(
+            `Processing timeout after ${pageNum - 1} pages. PDF too large for single invocation.`,
+          );
+        }
+
+        try {
+          const page = await pdfDoc.getPage(pageNum);
+          const textContent = await page.getTextContent();
+
+          // Safely extract text from items with proper type handling
+          const pageText = textContent.items
+            .map((item: unknown) => {
+              if (typeof item === "object" && item !== null && "str" in item) {
+                return String((item as { str: unknown }).str);
+              }
+              return "";
+            })
+            .join(" ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+          sections.push({ pageNumber: pageNum, content: pageText });
+          fullTextParts.push(pageText);
+
+          // Log progress for large PDFs
+          if (pageNum % PROGRESS_LOG_INTERVAL === 0) {
+            console.log(
+              `[parse-guide] Processed ${pageNum}/${pdfDoc.numPages} pages`,
+            );
+          }
+        } catch (pageError) {
+          failedPages++;
+          console.warn(
+            `[parse-guide] Error extracting page ${pageNum}:`,
+            pageError,
+          );
+          sections.push({
+            pageNumber: pageNum,
+            content: `[Error extracting text from page ${pageNum}]`,
+          });
+
+          // Check failure threshold
+          const failureRatio = failedPages / pageNum;
+          if (failureRatio > MAX_FAILURE_RATIO && pageNum >= 5) {
+            throw new Error(
+              `Too many page extraction failures: ${failedPages}/${pageNum} pages failed (${Math.round(failureRatio * 100)}%)`,
+            );
+          }
+        }
+      }
+    } finally {
+      // Always cleanup PDF document to free memory
+      pdfDoc.destroy();
+    }
+
+    // Try to get PDF metadata (need to reload for metadata since we destroyed)
+    let pdfTitle: string | undefined;
+    // Note: We skip metadata extraction since document is destroyed
+    // Title will fall back to guide name
+
+    const fullText = fullTextParts.join("\n\n");
     const parsedContent: ParsedContent = {
-      fullText: `[PDF content from ${guide.name} - ${fileData.size} bytes]`,
-      sections: [
-        {
-          pageNumber: 1,
-          content: `Underwriting guide: ${guide.name}. File size: ${fileData.size} bytes. This guide was uploaded and is available for reference during underwriting analysis.`,
-        },
-      ],
-      pageCount: 1,
+      fullText,
+      sections,
+      pageCount: sections.length,
       extractedAt: new Date().toISOString(),
       metadata: {
-        title: guide.name,
+        title: pdfTitle || guide.name,
       },
     };
+
+    console.log(
+      `[parse-guide] Extraction complete: ${sections.length} pages, ${fullText.length} characters${failedPages > 0 ? `, ${failedPages} pages failed` : ""}`,
+    );
 
     // Update database with parsed content
     const { error: updateError } = await supabase
@@ -194,7 +295,7 @@ serve(async (req) => {
         sectionCount: parsedContent.sections.length,
         characterCount: parsedContent.fullText.length,
         elapsed,
-        note: "PDF text extraction pending - guide marked as processed",
+        note: "PDF text successfully extracted using pdf.js",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

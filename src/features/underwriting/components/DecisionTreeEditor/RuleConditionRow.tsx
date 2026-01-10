@@ -1,6 +1,6 @@
 // src/features/underwriting/components/DecisionTreeEditor/RuleConditionRow.tsx
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,12 @@ const FIELD_OPTIONS: Array<{ value: ConditionField; label: string }> = [
   { value: "face_amount", label: "Face Amount" },
   { value: "state", label: "State" },
   { value: "condition_present", label: "Condition Present" },
+  { value: "bp_med_count", label: "BP Medications" },
+  { value: "cholesterol_med_count", label: "Cholesterol Meds" },
+  { value: "insulin_use", label: "Insulin Use" },
+  { value: "blood_thinners", label: "Blood Thinners" },
+  { value: "antidepressants", label: "Antidepressants" },
+  { value: "pain_medications", label: "Pain Medications" },
 ];
 
 const HEALTH_TIERS: HealthTier[] = [
@@ -285,6 +291,66 @@ function RuleConditionRowInner({
           </Select>
         );
 
+      // Medication count fields
+      case "bp_med_count":
+      case "cholesterol_med_count":
+        return (
+          <Select
+            value={String(typeof value === "number" ? value : 0)}
+            onValueChange={(v) => handleValueChange(parseInt(v))}
+          >
+            <SelectTrigger className="h-7 w-20 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">0</SelectItem>
+              <SelectItem value="1">1</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="3">3+</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+
+      // Boolean medication fields
+      case "insulin_use":
+      case "blood_thinners":
+      case "antidepressants":
+        return (
+          <Select
+            value={value === true ? "true" : "false"}
+            onValueChange={(v) => handleValueChange(v === "true")}
+          >
+            <SelectTrigger className="h-7 w-20 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Yes</SelectItem>
+              <SelectItem value="false">No</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+
+      // Pain medications
+      case "pain_medications":
+        return (
+          <Select
+            value={String(value) || "none"}
+            onValueChange={(v) => handleValueChange(v)}
+          >
+            <SelectTrigger className="h-7 w-36 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="otc_only">OTC Only</SelectItem>
+              <SelectItem value="prescribed_non_opioid">
+                Rx Non-Opioid
+              </SelectItem>
+              <SelectItem value="opioid">Opioid</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+
       default:
         return (
           <Input
@@ -348,4 +414,5 @@ function RuleConditionRowInner({
   );
 }
 
-export default RuleConditionRowInner;
+const RuleConditionRow = memo(RuleConditionRowInner);
+export default RuleConditionRow;

@@ -1,6 +1,6 @@
 // src/features/underwriting/components/DecisionTreeEditor/RuleBuilder.tsx
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import {
   Plus,
   Trash2,
@@ -293,4 +293,5 @@ function RuleBuilderInner({
   );
 }
 
-export default RuleBuilderInner;
+const RuleBuilder = memo(RuleBuilderInner);
+export default RuleBuilder;

@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GitBranch, History, FileText, Settings, Loader2 } from "lucide-react";
+import {
+  GitBranch,
+  History,
+  FileText,
+  Settings,
+  Loader2,
+  ClipboardCheck,
+} from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useCanManageUnderwriting } from "../hooks/useUnderwritingFeatureFlag";
@@ -10,6 +17,7 @@ import { useUnderwritingToggle } from "../hooks/useUnderwritingToggle";
 import { DecisionTreeList } from "./DecisionTreeList";
 import { SessionHistoryList } from "./SessionHistory/SessionHistoryList";
 import { GuideList } from "./GuideManager";
+import { CriteriaReviewDashboard } from "./CriteriaReview";
 
 export function UnderwritingSettingsTab() {
   const { canManage, isLoading } = useCanManageUnderwriting();
@@ -73,6 +81,13 @@ export function UnderwritingSettingsTab() {
             <span>Guides</span>
           </TabsTrigger>
           <TabsTrigger
+            value="criteria"
+            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
+            <ClipboardCheck className="h-3 w-3 shrink-0" />
+            <span>Criteria</span>
+          </TabsTrigger>
+          <TabsTrigger
             value="settings"
             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
@@ -92,6 +107,10 @@ export function UnderwritingSettingsTab() {
 
           <TabsContent value="guides" className="mt-0">
             <GuideList />
+          </TabsContent>
+
+          <TabsContent value="criteria" className="mt-0">
+            <CriteriaReviewDashboard />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">

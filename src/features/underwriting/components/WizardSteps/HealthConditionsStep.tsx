@@ -378,6 +378,83 @@ export default function HealthConditionsStep({
             </Select>
           </div>
         </div>
+
+        {/* Additional Medication Categories */}
+        <div className="grid grid-cols-3 gap-3 mt-3">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="insulin"
+              checked={data.medications.insulinUse}
+              onCheckedChange={(checked) =>
+                updateMedications({ insulinUse: checked === true })
+              }
+            />
+            <Label
+              htmlFor="insulin"
+              className="text-[10px] text-zinc-600 dark:text-zinc-400 cursor-pointer"
+            >
+              Insulin
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="bloodThinners"
+              checked={data.medications.bloodThinners}
+              onCheckedChange={(checked) =>
+                updateMedications({ bloodThinners: checked === true })
+              }
+            />
+            <Label
+              htmlFor="bloodThinners"
+              className="text-[10px] text-zinc-600 dark:text-zinc-400 cursor-pointer"
+            >
+              Blood Thinners
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="antidepressants"
+              checked={data.medications.antidepressants}
+              onCheckedChange={(checked) =>
+                updateMedications({ antidepressants: checked === true })
+              }
+            />
+            <Label
+              htmlFor="antidepressants"
+              className="text-[10px] text-zinc-600 dark:text-zinc-400 cursor-pointer"
+            >
+              Antidepressants
+            </Label>
+          </div>
+        </div>
+
+        {/* Pain Medications */}
+        <div className="mt-3 space-y-1">
+          <Label className="text-[10px] text-zinc-500">Pain Medications</Label>
+          <Select
+            value={data.medications.painMedications}
+            onValueChange={(value) =>
+              updateMedications({
+                painMedications:
+                  value as HealthInfo["medications"]["painMedications"],
+              })
+            }
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="otc_only">
+                OTC only (Advil, Tylenol)
+              </SelectItem>
+              <SelectItem value="prescribed_non_opioid">
+                Prescribed non-opioid
+              </SelectItem>
+              <SelectItem value="opioid">Opioid pain medication</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );

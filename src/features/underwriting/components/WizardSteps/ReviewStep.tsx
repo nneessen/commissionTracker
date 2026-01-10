@@ -74,6 +74,10 @@ export default function ReviewStep({
     if (bmi >= 30) count++;
     if (healthInfo.medications.bpMedCount >= 2) count++;
     if (healthInfo.medications.cholesterolMedCount >= 2) count++;
+    if (healthInfo.medications.insulinUse) count++;
+    if (healthInfo.medications.bloodThinners) count++;
+    if (healthInfo.medications.antidepressants) count++;
+    if (healthInfo.medications.painMedications === "opioid") count++;
     return count;
   }, [healthInfo, bmi]);
 
@@ -223,9 +227,14 @@ export default function ReviewStep({
           </div>
 
           {/* Medications */}
-          <div className="flex items-center gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <Pill className="h-3.5 w-3.5 text-zinc-400" />
-            <div className="flex gap-4 text-xs">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+            <div className="flex items-center gap-2">
+              <Pill className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="text-[10px] font-medium text-zinc-500">
+                Medications
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pl-5">
               <span className="text-zinc-500">
                 BP Meds:{" "}
                 <span
@@ -239,7 +248,7 @@ export default function ReviewStep({
                 </span>
               </span>
               <span className="text-zinc-500">
-                Cholesterol Meds:{" "}
+                Cholesterol:{" "}
                 <span
                   className={cn(
                     healthInfo.medications.cholesterolMedCount >= 2
@@ -250,6 +259,35 @@ export default function ReviewStep({
                   {healthInfo.medications.cholesterolMedCount}
                 </span>
               </span>
+              {healthInfo.medications.insulinUse && (
+                <span className="text-orange-600">Insulin</span>
+              )}
+              {healthInfo.medications.bloodThinners && (
+                <span className="text-orange-600">Blood Thinners</span>
+              )}
+              {healthInfo.medications.antidepressants && (
+                <span className="text-amber-600">Antidepressants</span>
+              )}
+              {healthInfo.medications.painMedications !== "none" && (
+                <span
+                  className={cn(
+                    healthInfo.medications.painMedications === "opioid"
+                      ? "text-red-600"
+                      : healthInfo.medications.painMedications ===
+                          "prescribed_non_opioid"
+                        ? "text-amber-600"
+                        : "text-zinc-600",
+                  )}
+                >
+                  Pain:{" "}
+                  {healthInfo.medications.painMedications === "opioid"
+                    ? "Opioid"
+                    : healthInfo.medications.painMedications ===
+                        "prescribed_non_opioid"
+                      ? "Rx Non-Opioid"
+                      : "OTC"}
+                </span>
+              )}
             </div>
           </div>
         </div>

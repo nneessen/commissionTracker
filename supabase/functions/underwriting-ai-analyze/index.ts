@@ -1,9 +1,16 @@
 // supabase/functions/underwriting-ai-analyze/index.ts
-// AI-Powered Underwriting Analysis Edge Function
+// AI-Powered Underwriting Analysis Edge Function with Decision Tree Integration
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.24.0";
+import {
+  evaluateDecisionTree,
+  buildEvaluationContext,
+  calculateTreeBoost,
+  type DecisionTreeRules,
+  type TreeEvaluationResult,
+} from "./rule-evaluator.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,6 +33,10 @@ interface TobaccoInfo {
 interface MedicationInfo {
   bpMedCount: number;
   cholesterolMedCount: number;
+  insulinUse: boolean;
+  bloodThinners: boolean;
+  antidepressants: boolean;
+  painMedications: "none" | "otc_only" | "prescribed_non_opioid" | "opioid";
   otherMedications?: string[];
 }
 
@@ -316,8 +327,11 @@ serve(async (req) => {
         `face amount $${coverage.faceAmount}, conditions: ${clientConditionCodes.join(", ") || "none"}`,
     );
 
-    // Fetch decision tree rules if specified
-    let decisionTreeRules = null;
+    // Fetch decision tree rules if specified, or get the default active tree for the IMO
+    let decisionTreeRules: DecisionTreeRules | null = null;
+    let treeEvaluationResult: TreeEvaluationResult | null = null;
+
+    // Try specified tree first, then fall back to IMO's default active tree
     if (decisionTreeId) {
       const { data: treeData } = await supabase
         .from("underwriting_decision_trees")
@@ -325,9 +339,41 @@ serve(async (req) => {
         .eq("id", decisionTreeId)
         .single();
 
-      if (treeData) {
-        decisionTreeRules = treeData.rules;
+      if (treeData?.rules) {
+        decisionTreeRules = treeData.rules as DecisionTreeRules;
       }
+    } else if (imoId) {
+      // Get the default active tree for this IMO
+      const { data: defaultTree } = await supabase
+        .from("underwriting_decision_trees")
+        .select("rules")
+        .eq("imo_id", imoId)
+        .eq("is_active", true)
+        .eq("is_default", true)
+        .single();
+
+      if (defaultTree?.rules) {
+        decisionTreeRules = defaultTree.rules as DecisionTreeRules;
+      }
+    }
+
+    // Evaluate decision tree rules BEFORE AI call (deterministic routing)
+    if (decisionTreeRules?.rules && decisionTreeRules.rules.length > 0) {
+      const evaluationContext = buildEvaluationContext(
+        client,
+        health,
+        coverage,
+      );
+      treeEvaluationResult = evaluateDecisionTree(
+        decisionTreeRules.rules,
+        evaluationContext,
+      );
+
+      console.log(
+        `[underwriting-ai] Decision tree evaluation: ${treeEvaluationResult.metadata.totalMatches}/${treeEvaluationResult.metadata.totalRulesEvaluated} rules matched ` +
+          `in ${treeEvaluationResult.metadata.evaluationTimeMs}ms. ` +
+          `Primary routing: [${treeEvaluationResult.metadata.primaryRoutingMatches.join(", ")}]`,
+      );
     }
 
     // Fetch parsed guides for eligible carriers
@@ -390,13 +436,14 @@ serve(async (req) => {
       }
     }
 
-    // Build the AI prompt
+    // Build the AI prompt with tree evaluation context
     const systemPrompt = buildSystemPrompt(
       eligibleCarriers,
       decisionTreeRules,
       carrierGuides,
       health.conditions.map((c) => conditionNames[c.code] || c.code),
       client.age,
+      treeEvaluationResult,
     );
     const userPrompt = buildUserPrompt(
       client,
@@ -447,12 +494,72 @@ serve(async (req) => {
       }
     }
 
+    // Merge tree evaluation results with AI recommendations (hybrid scoring)
+    let mergedRecommendations = analysisResult.recommendations || [];
+    if (treeEvaluationResult && treeEvaluationResult.matchedRules.length > 0) {
+      mergedRecommendations = mergedRecommendations.map(
+        (rec: {
+          carrier_id: string;
+          product_id: string;
+          confidence: number;
+          notes?: string;
+        }) => {
+          const { boost, matchedRules } = calculateTreeBoost(
+            rec.carrier_id,
+            rec.product_id,
+            treeEvaluationResult!,
+          );
+
+          return {
+            ...rec,
+            confidence: Math.min(1.0, rec.confidence + boost),
+            tree_match_boost: boost,
+            tree_matched_rules: matchedRules,
+            notes:
+              matchedRules.length > 0
+                ? `${rec.notes || ""} [Tree: ${matchedRules.join(", ")}]`.trim()
+                : rec.notes,
+          };
+        },
+      );
+
+      // Re-sort by boosted confidence
+      mergedRecommendations.sort(
+        (a: { confidence: number }, b: { confidence: number }) =>
+          b.confidence - a.confidence,
+      );
+
+      // Re-assign priorities based on new order
+      mergedRecommendations.forEach(
+        (rec: { priority: number }, idx: number) => {
+          rec.priority = idx + 1;
+        },
+      );
+
+      // Update reasoning to include tree info
+      analysisResult.reasoning = `${analysisResult.reasoning || ""} [Decision tree matched ${treeEvaluationResult.metadata.totalMatches} rules: ${treeEvaluationResult.metadata.primaryRoutingMatches.join(", ") || "none primary"}]`;
+    }
+
+    // Update analysis result with merged recommendations
+    analysisResult.recommendations = mergedRecommendations;
+
     return new Response(
       JSON.stringify({
         success: true,
         analysis: analysisResult,
         filteredProducts: filteredOutProducts,
         fullUnderwritingRequired: productsRequiringFullUW,
+        treeEvaluation: treeEvaluationResult
+          ? {
+              matchedRules: treeEvaluationResult.matchedRules.map((r) => ({
+                ruleName: r.ruleName,
+                matchScore: r.matchScore,
+                matchedConditions: r.matchedConditions,
+              })),
+              totalMatches: treeEvaluationResult.metadata.totalMatches,
+              evaluationTimeMs: treeEvaluationResult.metadata.evaluationTimeMs,
+            }
+          : null,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -475,10 +582,11 @@ serve(async (req) => {
 
 function buildSystemPrompt(
   carriers: CarrierInfo[],
-  decisionTreeRules: unknown,
+  decisionTreeRules: DecisionTreeRules | null,
   carrierGuides: Map<string, GuideInfo[]>,
   clientConditions: string[],
   clientAge?: number,
+  treeEvaluation?: TreeEvaluationResult | null,
 ): string {
   const carrierList = carriers
     .map(
@@ -522,11 +630,40 @@ function buildSystemPrompt(
     )
     .join("\n");
 
+  // Build decision tree section with evaluation results
   let rulesSection = "";
-  if (decisionTreeRules) {
+  if (treeEvaluation && treeEvaluation.matchedRules.length > 0) {
+    // Include evaluated rules with their match status
+    const matchedRulesSummary = treeEvaluation.matchedRules
+      .map(
+        (r) => `- ${r.ruleName}: Matched (${r.matchedConditions.join(", ")})`,
+      )
+      .join("\n");
+
+    const recommendedCarriers = treeEvaluation.recommendedCarrierIds
+      .map((id) => {
+        const carrier = carriers.find((c) => c.id === id);
+        return carrier ? carrier.name : id;
+      })
+      .join(", ");
+
     rulesSection = `
-DECISION TREE RULES (Apply these first when matching):
-${JSON.stringify(decisionTreeRules, null, 2)}
+DECISION TREE EVALUATION RESULTS (Pre-analyzed - PRIORITIZE these recommendations):
+The following rules have been deterministically evaluated and matched this client:
+
+${matchedRulesSummary}
+
+TREE-RECOMMENDED CARRIERS: ${recommendedCarriers || "None specific"}
+
+IMPORTANT: Prioritize recommendations for tree-recommended carriers.
+They have been pre-screened as good matches based on age, face amount, and health criteria.
+`;
+  } else if (decisionTreeRules?.rules) {
+    // Fallback: Include raw rules if no evaluation happened
+    rulesSection = `
+DECISION TREE RULES (Reference for matching criteria):
+${JSON.stringify(decisionTreeRules.rules.slice(0, 5), null, 2)}
+${decisionTreeRules.rules.length > 5 ? `... and ${decisionTreeRules.rules.length - 5} more rules` : ""}
 `;
   }
 
@@ -819,6 +956,10 @@ ${tobaccoText}
 MEDICATIONS:
 - Blood Pressure Medications: ${health.medications.bpMedCount}
 - Cholesterol Medications: ${health.medications.cholesterolMedCount}
+- Insulin Use: ${health.medications.insulinUse ? "Yes" : "No"}
+- Blood Thinners: ${health.medications.bloodThinners ? "Yes" : "No"}
+- Antidepressants: ${health.medications.antidepressants ? "Yes" : "No"}
+- Pain Medications: ${health.medications.painMedications === "none" ? "None" : health.medications.painMedications === "otc_only" ? "OTC only" : health.medications.painMedications === "prescribed_non_opioid" ? "Prescribed non-opioid" : "Opioid"}
 
 COVERAGE REQUEST:
 - Face Amount: $${coverage.faceAmount.toLocaleString()}

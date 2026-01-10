@@ -1121,6 +1121,122 @@ export type Database = {
           },
         ];
       };
+      carrier_underwriting_criteria: {
+        Row: {
+          carrier_id: string;
+          created_at: string | null;
+          criteria: Json;
+          extracted_at: string | null;
+          extraction_confidence: number | null;
+          extraction_error: string | null;
+          extraction_status: string | null;
+          guide_id: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean | null;
+          product_id: string | null;
+          review_notes: string | null;
+          review_status: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          source_excerpts: Json | null;
+          updated_at: string | null;
+          version: number | null;
+        };
+        Insert: {
+          carrier_id: string;
+          created_at?: string | null;
+          criteria?: Json;
+          extracted_at?: string | null;
+          extraction_confidence?: number | null;
+          extraction_error?: string | null;
+          extraction_status?: string | null;
+          guide_id?: string | null;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean | null;
+          product_id?: string | null;
+          review_notes?: string | null;
+          review_status?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          source_excerpts?: Json | null;
+          updated_at?: string | null;
+          version?: number | null;
+        };
+        Update: {
+          carrier_id?: string;
+          created_at?: string | null;
+          criteria?: Json;
+          extracted_at?: string | null;
+          extraction_confidence?: number | null;
+          extraction_error?: string | null;
+          extraction_status?: string | null;
+          guide_id?: string | null;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean | null;
+          product_id?: string | null;
+          review_notes?: string | null;
+          review_status?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          source_excerpts?: Json | null;
+          updated_at?: string | null;
+          version?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carrier_underwriting_criteria_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_underwriting_criteria_guide_id_fkey";
+            columns: ["guide_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_guides";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_underwriting_criteria_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_underwriting_criteria_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_underwriting_criteria_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_underwriting_criteria_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_underwriting_criteria_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       carriers: {
         Row: {
           advance_cap: number | null;
@@ -10370,6 +10486,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      create_default_decision_tree_for_imo: {
+        Args: { p_imo_id: string };
+        Returns: string;
       };
       create_lead_from_instagram: {
         Args: {

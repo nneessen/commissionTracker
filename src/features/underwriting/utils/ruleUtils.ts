@@ -52,13 +52,19 @@ export function getOperatorsForField(field: ConditionField): OperatorOption[] {
     case "age":
     case "bmi":
     case "face_amount":
+    case "bp_med_count":
+    case "cholesterol_med_count":
       return NUMERIC_OPERATORS;
     case "tobacco":
+    case "insulin_use":
+    case "blood_thinners":
+    case "antidepressants":
       return BOOLEAN_OPERATORS;
     case "gender":
     case "health_tier":
     case "state":
     case "condition_present":
+    case "pain_medications":
       return STRING_OPERATORS;
     default:
       return NUMERIC_OPERATORS;
@@ -149,6 +155,9 @@ export function getDefaultValueForField(
     case "face_amount":
       return FIELD_CONSTRAINTS.face_amount.default;
     case "tobacco":
+    case "insulin_use":
+    case "blood_thinners":
+    case "antidepressants":
       return true;
     case "health_tier":
       return "standard";
@@ -158,6 +167,11 @@ export function getDefaultValueForField(
       return "";
     case "condition_present":
       return "";
+    case "bp_med_count":
+    case "cholesterol_med_count":
+      return 1;
+    case "pain_medications":
+      return "none";
     default:
       return "";
   }

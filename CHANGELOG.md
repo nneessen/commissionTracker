@@ -6,6 +6,96 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-10 10:46:01
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/CONTINUATION_phase4_code_review.md`
+- `plans/active/CONTINUATION_underwriting_ai_extraction.md`
+- `src/features/underwriting/components/CriteriaReview/ApprovalDialog.tsx`
+- `src/features/underwriting/components/CriteriaReview/CriteriaEditor.tsx`
+- `src/features/underwriting/components/CriteriaReview/CriteriaReviewDashboard.tsx`
+- `src/features/underwriting/components/CriteriaReview/CriteriaSection.tsx`
+- `src/features/underwriting/components/CriteriaReview/SourceExcerptsPanel.tsx`
+- `src/features/underwriting/components/CriteriaReview/index.ts`
+- `src/features/underwriting/components/DecisionTreeEditor/DecisionTreeEditor.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleActionConfig.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleBuilder.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleConditionRow.tsx`
+- `src/features/underwriting/components/GuideManager/GuideList.tsx`
+- `src/features/underwriting/components/UnderwritingSettingsTab.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/hooks/useCriteria.ts`
+- `src/features/underwriting/hooks/useExtractCriteria.ts`
+- `src/features/underwriting/types/underwriting.types.ts`
+- `src/features/underwriting/utils/ruleUtils.ts`
+- `src/services/underwriting/criteriaService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/extract-underwriting-criteria/index.ts`
+- `supabase/functions/parse-underwriting-guide/index.ts`
+- `supabase/functions/underwriting-ai-analyze/index.ts`
+- `supabase/functions/underwriting-ai-analyze/rule-evaluator.ts`
+- `supabase/migrations/20260110_007_seed_default_decision_tree.sql`
+- `supabase/migrations/20260110_008_fix_seed_decision_tree.sql`
+- `supabase/migrations/20260110_009_carrier_underwriting_criteria.sql`
+- `supabase/migrations/20260110_010_fix_criteria_rls_policies.sql`
+- `supabase/migrations/20260110_011_fix_commission_rate_from_policies.sql`
+- `supabase/migrations/reverts/20260110_009_carrier_underwriting_criteria.sql`
+- `supabase/migrations/reverts/20260110_011_fix_commission_rate_from_policies.sql`
+
+### Statistics
+```
+ 37 files changed, 17041 insertions(+), 10543 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-10 10:45:26
+
+### Changed Files
+- `plans/active/CONTINUATION_phase4_code_review.md`
+- `plans/active/CONTINUATION_underwriting_ai_extraction.md`
+- `src/features/underwriting/components/CriteriaReview/ApprovalDialog.tsx`
+- `src/features/underwriting/components/CriteriaReview/CriteriaEditor.tsx`
+- `src/features/underwriting/components/CriteriaReview/CriteriaReviewDashboard.tsx`
+- `src/features/underwriting/components/CriteriaReview/CriteriaSection.tsx`
+- `src/features/underwriting/components/CriteriaReview/SourceExcerptsPanel.tsx`
+- `src/features/underwriting/components/CriteriaReview/index.ts`
+- `src/features/underwriting/components/DecisionTreeEditor/DecisionTreeEditor.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleActionConfig.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleBuilder.tsx`
+- `src/features/underwriting/components/DecisionTreeEditor/RuleConditionRow.tsx`
+- `src/features/underwriting/components/GuideManager/GuideList.tsx`
+- `src/features/underwriting/components/UnderwritingSettingsTab.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/hooks/useCriteria.ts`
+- `src/features/underwriting/hooks/useExtractCriteria.ts`
+- `src/features/underwriting/types/underwriting.types.ts`
+- `src/features/underwriting/utils/ruleUtils.ts`
+- `src/services/underwriting/criteriaService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/extract-underwriting-criteria/index.ts`
+- `supabase/functions/parse-underwriting-guide/index.ts`
+- `supabase/functions/underwriting-ai-analyze/index.ts`
+- `supabase/functions/underwriting-ai-analyze/rule-evaluator.ts`
+- `supabase/migrations/20260110_007_seed_default_decision_tree.sql`
+- `supabase/migrations/20260110_008_fix_seed_decision_tree.sql`
+- `supabase/migrations/20260110_009_carrier_underwriting_criteria.sql`
+- `supabase/migrations/20260110_010_fix_criteria_rls_policies.sql`
+- `supabase/migrations/20260110_011_fix_commission_rate_from_policies.sql`
+- `supabase/migrations/reverts/20260110_009_carrier_underwriting_criteria.sql`
+- `supabase/migrations/reverts/20260110_011_fix_commission_rate_from_policies.sql`
+
+### Statistics
+```
+ 35 files changed, 16995 insertions(+), 10538 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-10 08:12:17
 
 ### Changed Files

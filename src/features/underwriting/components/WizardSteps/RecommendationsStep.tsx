@@ -13,6 +13,7 @@ import {
   Ban,
   FileCheck,
   Ruler,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -412,6 +413,13 @@ function RecommendationCard({
                 </span>
                 <div className={cn("text-[10px] font-medium", confidenceColor)}>
                   {Math.round(recommendation.confidence * 100)}% confidence
+                  {recommendation.treeMatchBoost &&
+                    recommendation.treeMatchBoost > 0 && (
+                      <span className="text-emerald-500 ml-1">
+                        (+{Math.round(recommendation.treeMatchBoost * 100)}%
+                        boost)
+                      </span>
+                    )}
                 </div>
               </div>
               {/* Build Table Rating */}
@@ -517,6 +525,27 @@ function RecommendationCard({
               </div>
             </div>
           )}
+
+          {/* Tree Match Indicator */}
+          {recommendation.treeMatchedRules &&
+            recommendation.treeMatchedRules.length > 0 && (
+              <div className="mt-2">
+                <div className="text-[9px] font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide flex items-center gap-1">
+                  <GitBranch className="h-2.5 w-2.5" />
+                  Decision Tree Match
+                </div>
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {recommendation.treeMatchedRules.map((rule, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded text-[9px] text-indigo-700 dark:text-indigo-300"
+                    >
+                      {rule}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
           {/* Notes */}
           {recommendation.notes && (

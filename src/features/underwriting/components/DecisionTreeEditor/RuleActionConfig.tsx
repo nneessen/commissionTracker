@@ -1,5 +1,6 @@
 // src/features/underwriting/components/DecisionTreeEditor/RuleActionConfig.tsx
 
+import { memo } from "react";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -198,4 +199,5 @@ function RuleActionConfigInner({
   );
 }
 
-export default RuleActionConfigInner;
+const RuleActionConfig = memo(RuleActionConfigInner);
+export default RuleActionConfig;

@@ -51,6 +51,10 @@ const initialHealthInfo: HealthInfo = {
   medications: {
     bpMedCount: 0,
     cholesterolMedCount: 0,
+    insulinUse: false,
+    bloodThinners: false,
+    antidepressants: false,
+    painMedications: "none",
   },
 };
 

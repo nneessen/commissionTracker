@@ -84,9 +84,19 @@ export interface TobaccoInfo {
   frequency?: string;
 }
 
+export type PainMedicationType =
+  | "none"
+  | "otc_only"
+  | "prescribed_non_opioid"
+  | "opioid";
+
 export interface MedicationInfo {
   bpMedCount: number;
   cholesterolMedCount: number;
+  insulinUse: boolean;
+  bloodThinners: boolean;
+  antidepressants: boolean;
+  painMedications: PainMedicationType;
   otherMedications?: string[];
 }
 
@@ -138,6 +148,9 @@ export interface CarrierRecommendation {
   priority: number;
   notes?: string;
   guideReferences?: string[]; // References to carrier guide content used in the recommendation
+  // Decision tree boost info (populated when tree matches)
+  treeMatchBoost?: number;
+  treeMatchedRules?: string[];
 }
 
 export interface AIAnalysisResult {
@@ -146,6 +159,35 @@ export interface AIAnalysisResult {
   recommendations: CarrierRecommendation[];
   reasoning: string;
   processingTimeMs?: number;
+}
+
+// ============================================================================
+// Decision Tree Evaluation Types
+// ============================================================================
+
+export interface TreeRuleMatch {
+  ruleName: string;
+  matchScore: number;
+  matchedConditions: string[];
+}
+
+export interface TreeEvaluationResult {
+  matchedRules: TreeRuleMatch[];
+  totalMatches: number;
+  evaluationTimeMs: number;
+}
+
+export interface UnderwritingAnalysisResponse {
+  success: boolean;
+  analysis: AIAnalysisResult;
+  filteredProducts: Array<{
+    productName: string;
+    carrierName: string;
+    reason: string;
+  }>;
+  fullUnderwritingRequired: string[];
+  treeEvaluation: TreeEvaluationResult | null;
+  error?: string;
 }
 
 export interface AIAnalysisRequest {
@@ -183,7 +225,13 @@ export type ConditionField =
   | "tobacco"
   | "face_amount"
   | "state"
-  | "condition_present";
+  | "condition_present"
+  | "bp_med_count"
+  | "cholesterol_med_count"
+  | "insulin_use"
+  | "blood_thinners"
+  | "antidepressants"
+  | "pain_medications";
 
 export type ConditionOperator =
   | "=="
@@ -308,6 +356,100 @@ export const CONDITION_CATEGORY_LABELS: Record<ConditionCategory, string> = {
   endocrine: "Endocrine",
   infectious: "Infectious Disease",
 };
+
+// ============================================================================
+// Carrier Underwriting Criteria Types (AI Extraction)
+// ============================================================================
+
+export type CarrierUnderwritingCriteria =
+  Database["public"]["Tables"]["carrier_underwriting_criteria"]["Row"];
+export type CarrierUnderwritingCriteriaInsert =
+  Database["public"]["Tables"]["carrier_underwriting_criteria"]["Insert"];
+export type CarrierUnderwritingCriteriaUpdate =
+  Database["public"]["Tables"]["carrier_underwriting_criteria"]["Update"];
+
+export type ExtractionStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed";
+export type ReviewStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "needs_revision";
+
+export interface ExtractedCriteria {
+  ageLimits?: {
+    minIssueAge: number;
+    maxIssueAge: number;
+  };
+  faceAmountLimits?: {
+    minimum: number;
+    maximum: number;
+    ageTiers?: Array<{
+      minAge: number;
+      maxAge: number;
+      maxFaceAmount: number;
+    }>;
+  };
+  knockoutConditions?: {
+    conditionCodes: string[];
+    descriptions: Array<{
+      code: string;
+      name: string;
+      severity: string;
+    }>;
+  };
+  buildRequirements?: {
+    type: "height_weight" | "bmi";
+    preferredPlusBmiMax?: number;
+    preferredBmiMax?: number;
+    standardBmiMax?: number;
+  };
+  tobaccoRules?: {
+    smokingClassifications: Array<{
+      classification: string;
+      requiresCleanMonths: number;
+    }>;
+    nicotineTestRequired: boolean;
+  };
+  medicationRestrictions?: {
+    insulin?: { allowed: boolean; ratingImpact?: string };
+    bloodThinners?: { allowed: boolean };
+    opioids?: { allowed: boolean; timeSinceUse?: number };
+    bpMedications?: { maxCount: number };
+    antidepressants?: { allowed: boolean };
+  };
+  stateAvailability?: {
+    availableStates: string[];
+    unavailableStates: string[];
+  };
+}
+
+export interface SourceExcerpt {
+  field: string;
+  excerpt: string;
+  pageNumber?: number;
+}
+
+export interface CriteriaWithRelations extends CarrierUnderwritingCriteria {
+  carrier?: { id: string; name: string };
+  guide?: { id: string; name: string };
+  product?: { id: string; name: string };
+  reviewer?: { id: string; full_name: string | null };
+}
+
+export interface ExtractionResponse {
+  success: boolean;
+  criteriaId?: string;
+  guideId?: string;
+  confidence?: number;
+  chunksProcessed?: number;
+  totalChunks?: number;
+  elapsed?: number;
+  error?: string;
+}
 
 // ============================================================================
 // Utility Types

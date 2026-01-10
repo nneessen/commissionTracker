@@ -11,6 +11,9 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
+  Sparkles,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +55,8 @@ import {
   useGuideSignedUrl,
 } from "../../hooks/useUnderwritingGuides";
 import { useParseGuide } from "../../hooks/useParseGuide";
+import { useCriteriaByGuide } from "../../hooks/useCriteria";
+import { useExtractCriteria } from "../../hooks/useExtractCriteria";
 import { GuideUploader } from "./GuideUploader";
 import type { UnderwritingGuide } from "../../types/underwriting.types";
 import { formatSessionDate } from "../../utils/formatters";
@@ -60,6 +65,7 @@ export function GuideList() {
   const { data: guides, isLoading, error } = useUnderwritingGuides();
   const deleteMutation = useDeleteGuide();
   const parseMutation = useParseGuide();
+  const extractMutation = useExtractCriteria();
 
   const [uploaderOpen, setUploaderOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -70,6 +76,9 @@ export function GuideList() {
     null,
   );
   const [parsingGuideId, setParsingGuideId] = useState<string | null>(null);
+  const [extractingGuideId, setExtractingGuideId] = useState<string | null>(
+    null,
+  );
 
   const handleDeleteClick = (guide: UnderwritingGuide) => {
     setGuideToDelete(guide);
@@ -96,11 +105,24 @@ export function GuideList() {
     }
   };
 
+  const handleExtractClick = async (guide: UnderwritingGuide) => {
+    setExtractingGuideId(guide.id);
+    try {
+      await extractMutation.mutateAsync({ guideId: guide.id });
+    } finally {
+      setExtractingGuideId(null);
+    }
+  };
+
   const isGuideBeingParsed = (guideId: string) => {
     return (
       parsingGuideId === guideId ||
       guides?.find((g) => g.id === guideId)?.parsing_status === "processing"
     );
+  };
+
+  const isGuideBeingExtracted = (guideId: string) => {
+    return extractingGuideId === guideId;
   };
 
   const formatFileSize = (bytes: number | null): string => {
@@ -214,7 +236,10 @@ export function GuideList() {
                 Size
               </TableHead>
               <TableHead className="h-8 px-3 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 text-center">
-                Status
+                Parse
+              </TableHead>
+              <TableHead className="h-8 px-3 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 text-center">
+                Criteria
               </TableHead>
               <TableHead className="h-8 px-3 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400">
                 Uploaded
@@ -236,6 +261,9 @@ export function GuideList() {
                   </TableCell>
                   <TableCell className="px-3 py-2 text-center">
                     <Skeleton className="h-4 w-12 mx-auto" />
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-center">
+                    <Skeleton className="h-5 w-14 mx-auto" />
                   </TableCell>
                   <TableCell className="px-3 py-2 text-center">
                     <Skeleton className="h-5 w-14 mx-auto" />
@@ -269,13 +297,21 @@ export function GuideList() {
                     </div>
                   </TableCell>
                   <TableCell className="px-3 py-2 text-[11px] text-zinc-700 dark:text-zinc-300">
-                    {(guide as any).carrier?.name || "—"}
+                    {(guide as unknown as { carrier?: { name: string } })
+                      .carrier?.name || "—"}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-[10px] text-zinc-500 dark:text-zinc-400 text-center">
                     {formatFileSize(guide.file_size_bytes)}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-center">
                     {getParsingStatusBadge(guide)}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-center">
+                    <CriteriaStatusCell
+                      guide={guide}
+                      isExtracting={isGuideBeingExtracted(guide.id)}
+                      onExtract={() => handleExtractClick(guide)}
+                    />
                   </TableCell>
                   <TableCell className="px-3 py-2 text-[10px] text-zinc-500 dark:text-zinc-400">
                     {formatSessionDate(guide.created_at)}
@@ -329,7 +365,7 @@ export function GuideList() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="px-3 py-8 text-center text-[11px] text-zinc-500 dark:text-zinc-400"
                 >
                   <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
@@ -445,5 +481,133 @@ function GuideViewerDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+// Component to show criteria extraction status and trigger extraction
+function CriteriaStatusCell({
+  guide,
+  isExtracting,
+  onExtract,
+}: {
+  guide: UnderwritingGuide;
+  isExtracting: boolean;
+  onExtract: () => void;
+}) {
+  const { data: criteria, isLoading } = useCriteriaByGuide(guide.id);
+
+  // Can only extract if guide is parsed
+  const canExtract = guide.parsing_status === "completed";
+
+  if (isLoading) {
+    return <Skeleton className="h-5 w-14 mx-auto" />;
+  }
+
+  // Show extracting state
+  if (isExtracting || criteria?.extraction_status === "processing") {
+    return (
+      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] px-1.5 py-0">
+        <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
+        Extracting
+      </Badge>
+    );
+  }
+
+  // Show completed status
+  if (criteria?.extraction_status === "completed") {
+    const confidence = criteria.extraction_confidence
+      ? `${(criteria.extraction_confidence * 100).toFixed(0)}%`
+      : "";
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0 cursor-help">
+              <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
+              {confidence || "Done"}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[10px]">
+            <p>Criteria extracted with {confidence} confidence</p>
+            <p className="text-zinc-400">
+              Review: {criteria.review_status || "pending"}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Show failed status with retry
+  if (criteria?.extraction_status === "failed") {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 px-1.5 text-[9px] text-red-600 dark:text-red-400"
+              onClick={onExtract}
+              disabled={!canExtract}
+            >
+              <AlertCircle className="h-2.5 w-2.5 mr-1" />
+              Retry
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[200px] text-[10px]">
+            {criteria.extraction_error || "Extraction failed. Click to retry."}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Show pending/extract button
+  if (criteria?.extraction_status === "pending") {
+    return (
+      <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-[9px] px-1.5 py-0">
+        <Clock className="h-2.5 w-2.5 mr-1" />
+        Pending
+      </Badge>
+    );
+  }
+
+  // No criteria yet - show extract button
+  if (!canExtract) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[9px]"
+                disabled
+              >
+                <Sparkles className="h-2.5 w-2.5 mr-1" />
+                Extract
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[10px]">
+            Parse the guide first before extracting criteria
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-5 px-1.5 text-[9px] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+      onClick={onExtract}
+    >
+      <Sparkles className="h-2.5 w-2.5 mr-1" />
+      Extract
+    </Button>
   );
 }
