@@ -159,6 +159,52 @@ export interface AIAnalysisResult {
   recommendations: CarrierRecommendation[];
   reasoning: string;
   processingTimeMs?: number;
+  criteriaFilters?: CriteriaFilterResult; // Phase 5: Criteria evaluation results
+}
+
+// ============================================================================
+// Phase 5: Criteria Evaluation Types
+// ============================================================================
+
+/**
+ * Result of evaluating extracted criteria against a client profile
+ */
+export interface CriteriaEvaluationResult {
+  eligible: boolean;
+  reasons: string[];
+  buildRating?:
+    | "preferred_plus"
+    | "preferred"
+    | "standard"
+    | "table_rated"
+    | "decline";
+  tobaccoClass?: string;
+}
+
+/**
+ * Product filtered by criteria rules
+ */
+export interface CriteriaFilteredProduct {
+  carrierId: string;
+  carrierName: string;
+  productId?: string;
+  productName?: string;
+  rule: string;
+  reason: string;
+}
+
+/**
+ * Summary of criteria filtering applied during analysis
+ */
+export interface CriteriaFilterResult {
+  /** Whether any criteria were applied */
+  applied: boolean;
+  /** Carrier IDs that had active criteria */
+  matchedCarriers: string[];
+  /** Products filtered out by criteria rules */
+  filteredByCarrier: CriteriaFilteredProduct[];
+  /** Per-carrier evaluation results */
+  evaluationResults?: Record<string, CriteriaEvaluationResult>;
 }
 
 // ============================================================================
@@ -186,6 +232,7 @@ export interface UnderwritingAnalysisResponse {
     reason: string;
   }>;
   fullUnderwritingRequired: string[];
+  criteriaFilters?: CriteriaFilterResult; // Phase 5: Criteria evaluation results
   treeEvaluation: TreeEvaluationResult | null;
   error?: string;
 }
@@ -359,6 +406,8 @@ export const CONDITION_CATEGORY_LABELS: Record<ConditionCategory, string> = {
 
 // ============================================================================
 // Carrier Underwriting Criteria Types (AI Extraction)
+// SYNC: ExtractedCriteria must match supabase/functions/underwriting-ai-analyze/criteria-evaluator.ts
+// When updating ExtractedCriteria, update both locations.
 // ============================================================================
 
 export type CarrierUnderwritingCriteria =
@@ -419,6 +468,7 @@ export interface ExtractedCriteria {
     bloodThinners?: { allowed: boolean };
     opioids?: { allowed: boolean; timeSinceUse?: number };
     bpMedications?: { maxCount: number };
+    cholesterolMedications?: { maxCount: number };
     antidepressants?: { allowed: boolean };
   };
   stateAvailability?: {

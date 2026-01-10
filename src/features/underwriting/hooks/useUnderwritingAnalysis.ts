@@ -5,6 +5,9 @@ import { supabase } from "@/services/base/supabase";
 import type {
   AIAnalysisRequest,
   AIAnalysisResult,
+  CriteriaFilterResult,
+  CriteriaFilteredProduct,
+  CriteriaEvaluationResult,
 } from "../types/underwriting.types";
 
 interface AnalysisError {
@@ -35,6 +38,34 @@ async function analyzeClient(
     throw new Error(
       data?.error || "Analysis failed. Please check your inputs and try again.",
     );
+  }
+
+  // Phase 5: Map criteria filters if present
+  let criteriaFilters: CriteriaFilterResult | undefined;
+  if (data.criteriaFilters) {
+    // Map filtered products using typed interface
+    const mappedFilteredProducts: CriteriaFilteredProduct[] = (
+      data.criteriaFilters.filteredByCarrier ?? []
+    ).map((fp: CriteriaFilteredProduct) => ({
+      carrierId: fp.carrierId,
+      carrierName: fp.carrierName,
+      productId: fp.productId,
+      productName: fp.productName,
+      rule: fp.rule,
+      reason: fp.reason,
+    }));
+
+    // Map evaluation results using typed interface
+    const mappedEvaluationResults:
+      | Record<string, CriteriaEvaluationResult>
+      | undefined = data.criteriaFilters.evaluationResults;
+
+    criteriaFilters = {
+      applied: data.criteriaFilters.applied ?? false,
+      matchedCarriers: data.criteriaFilters.matchedCarriers ?? [],
+      filteredByCarrier: mappedFilteredProducts,
+      evaluationResults: mappedEvaluationResults,
+    };
   }
 
   const result: AIAnalysisResult = {
@@ -69,6 +100,7 @@ async function analyzeClient(
     ),
     reasoning: data.analysis.reasoning || "",
     processingTimeMs: Date.now() - startTime,
+    criteriaFilters, // Phase 5: Include criteria filters
   };
 
   return result;

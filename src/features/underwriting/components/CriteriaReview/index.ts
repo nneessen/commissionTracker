@@ -5,3 +5,4 @@ export { CriteriaEditor } from "./CriteriaEditor";
 export { ApprovalDialog } from "./ApprovalDialog";
 export { CriteriaSection } from "./CriteriaSection";
 export { SourceExcerptsPanel } from "./SourceExcerptsPanel";
+export { ReviewStatusBadge } from "./ReviewStatusBadge";

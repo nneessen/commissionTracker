@@ -7,6 +7,7 @@ import type {
   ExtractionResponse,
   ReviewStatus,
 } from "@/features/underwriting/types/underwriting.types";
+import { validateCriteriaForSave } from "@/features/underwriting/utils/criteriaValidation";
 
 /**
  * Trigger AI extraction of underwriting criteria from a parsed guide
@@ -57,8 +58,7 @@ export async function getCriteriaByGuide(
       *,
       carrier:carriers(id, name),
       guide:underwriting_guides(id, name),
-      product:products(id, name),
-      reviewer:user_profiles(id, full_name)
+      product:products(id, name)
     `,
     )
     .eq("guide_id", guideId)
@@ -86,8 +86,7 @@ export async function getCriteriaList(
       *,
       carrier:carriers(id, name),
       guide:underwriting_guides(id, name),
-      product:products(id, name),
-      reviewer:user_profiles(id, full_name)
+      product:products(id, name)
     `,
     )
     .eq("imo_id", imoId)
@@ -134,8 +133,7 @@ export async function updateCriteriaReviewStatus(
       *,
       carrier:carriers(id, name),
       guide:underwriting_guides(id, name),
-      product:products(id, name),
-      reviewer:user_profiles(id, full_name)
+      product:products(id, name)
     `,
     )
     .single();
@@ -163,15 +161,19 @@ export async function deleteCriteria(criteriaId: string): Promise<void> {
 
 /**
  * Update the criteria content (for manual edits)
+ * Validates the criteria structure before saving
  */
 export async function updateCriteriaContent(
   criteriaId: string,
   criteria: Record<string, unknown>,
 ): Promise<CriteriaWithRelations> {
+  // Validate criteria structure before saving
+  const validatedCriteria = validateCriteriaForSave(criteria);
+
   const { data, error } = await supabase
     .from("carrier_underwriting_criteria")
     .update({
-      criteria,
+      criteria: validatedCriteria,
       updated_at: new Date().toISOString(),
     })
     .eq("id", criteriaId)
@@ -180,8 +182,7 @@ export async function updateCriteriaContent(
       *,
       carrier:carriers(id, name),
       guide:underwriting_guides(id, name),
-      product:products(id, name),
-      reviewer:user_profiles(id, full_name)
+      product:products(id, name)
     `,
     )
     .single();

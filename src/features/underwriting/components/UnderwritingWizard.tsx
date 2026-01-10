@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUnderwritingAnalysis, useSaveUnderwritingSession } from "../hooks";
+import {
+  useUnderwritingAnalysis,
+  useSaveUnderwritingSession,
+  useDecisionEngineRecommendations,
+  transformWizardToDecisionEngineInput,
+} from "../hooks";
 import { calculateBMI } from "../utils/bmiCalculator";
 import type {
   WizardFormData,
@@ -81,6 +86,7 @@ export default function UnderwritingWizard({
 
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
+  const decisionEngineMutation = useDecisionEngineRecommendations();
   const saveSessionMutation = useSaveUnderwritingSession();
 
   const currentStep = WIZARD_STEPS[currentStepIndex];
@@ -96,7 +102,10 @@ export default function UnderwritingWizard({
       });
       setErrors({});
       setAnalysisResult(null);
+      analysisMutation.reset();
+      decisionEngineMutation.reset();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset functions are stable
   }, [open]);
 
   // Validation functions
@@ -178,7 +187,7 @@ export default function UnderwritingWizard({
       return;
     }
 
-    // If we're on review step, run the AI analysis
+    // If we're on review step, fire both analyses in parallel
     if (currentStep.id === "review") {
       const bmi = calculateBMI(
         formData.client.heightFeet,
@@ -186,7 +195,8 @@ export default function UnderwritingWizard({
         formData.client.weight,
       );
 
-      const request: AIAnalysisRequest = {
+      // AI Analysis request
+      const aiRequest: AIAnalysisRequest = {
         client: {
           age: formData.client.age,
           gender: formData.client.gender,
@@ -205,23 +215,41 @@ export default function UnderwritingWizard({
           faceAmount: formData.coverage.faceAmount,
           productTypes: formData.coverage.productTypes,
         },
-        imoId: user?.imo_id || undefined, // Include for fetching relevant carrier guides
+        imoId: user?.imo_id || undefined,
       };
 
-      try {
-        const result = await analysisMutation.mutateAsync(request);
-        setAnalysisResult(result);
-        setCurrentStepIndex((prev) => prev + 1);
-      } catch {
-        setErrors({
-          submit: "Analysis failed. Please try again.",
-        });
-      }
+      // Decision Engine request
+      const decisionInput = transformWizardToDecisionEngineInput(
+        formData.client,
+        formData.health,
+        formData.coverage,
+        user?.imo_id || "",
+      );
+
+      // Fire both mutations in parallel (non-blocking)
+      analysisMutation.mutate(aiRequest, {
+        onSuccess: (result) => setAnalysisResult(result),
+        onError: () =>
+          setErrors({
+            submit: "AI analysis failed. Results may be incomplete.",
+          }),
+      });
+      decisionEngineMutation.mutate(decisionInput);
+
+      // Advance to results step immediately
+      setCurrentStepIndex((prev) => prev + 1);
       return;
     }
 
     setCurrentStepIndex((prev) => Math.min(prev + 1, WIZARD_STEPS.length - 1));
-  }, [currentStep, validateStep, formData, analysisMutation, user]);
+  }, [
+    currentStep,
+    validateStep,
+    formData,
+    analysisMutation,
+    decisionEngineMutation,
+    user,
+  ]);
 
   const handleBack = useCallback(() => {
     setCurrentStepIndex((prev) => Math.max(prev - 1, 0));
@@ -352,7 +380,10 @@ export default function UnderwritingWizard({
       case "results":
         return (
           <RecommendationsStep
-            result={analysisResult}
+            aiResult={analysisResult}
+            decisionEngineResult={decisionEngineMutation.data || null}
+            isDecisionEngineLoading={decisionEngineMutation.isPending}
+            isAILoading={analysisMutation.isPending}
             clientInfo={formData.client}
             healthInfo={formData.health}
             coverageRequest={formData.coverage}
@@ -364,7 +395,8 @@ export default function UnderwritingWizard({
   };
 
   const isLastStep = currentStepIndex === WIZARD_STEPS.length - 1;
-  const isAnalyzing = analysisMutation.isPending;
+  const isAnalyzing =
+    analysisMutation.isPending || decisionEngineMutation.isPending;
   const isSaving = saveSessionMutation.isPending;
 
   return (

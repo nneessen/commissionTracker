@@ -52,13 +52,19 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCriteriaList } from "../../hooks/useCriteria";
-import { useDeleteCriteria } from "../../hooks/useExtractCriteria";
+import {
+  useDeleteCriteria,
+  useUpdateCriteriaContent,
+} from "../../hooks/useExtractCriteria";
+import { useCanManageUnderwriting } from "../../hooks/useUnderwritingFeatureFlag";
 import { CriteriaEditor } from "./CriteriaEditor";
 import type {
   CriteriaWithRelations,
+  ExtractedCriteria,
   ExtractionStatus,
   ReviewStatus,
 } from "../../types/underwriting.types";
+import type { Json } from "@/types/database.types";
 import { formatSessionDate } from "../../utils/formatters";
 
 type SortField = "created_at" | "confidence" | "carrier" | "review_status";
@@ -67,6 +73,8 @@ type SortDirection = "asc" | "desc";
 export function CriteriaReviewDashboard() {
   const { data: criteriaList, isLoading, error, refetch } = useCriteriaList();
   const deleteMutation = useDeleteCriteria();
+  const updateContentMutation = useUpdateCriteriaContent();
+  const { canManage } = useCanManageUnderwriting();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -204,6 +212,19 @@ export function CriteriaReviewDashboard() {
     }
   };
 
+  // Handle save from editor
+  const handleSaveCriteria = async (criteriaContent: ExtractedCriteria) => {
+    if (!selectedCriteria) return;
+    await updateContentMutation.mutateAsync({
+      criteriaId: selectedCriteria.id,
+      criteria: criteriaContent as unknown as Record<string, unknown>,
+    });
+    // Update the selected criteria in state to reflect the change
+    setSelectedCriteria((prev) =>
+      prev ? { ...prev, criteria: criteriaContent as unknown as Json } : null,
+    );
+  };
+
   // Show editor if a criteria is selected
   if (selectedCriteria) {
     return (
@@ -213,7 +234,8 @@ export function CriteriaReviewDashboard() {
           setSelectedCriteria(null);
           refetch();
         }}
-        canEdit={true}
+        onSave={handleSaveCriteria}
+        canEdit={canManage}
       />
     );
   }

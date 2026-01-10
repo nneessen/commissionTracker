@@ -21,17 +21,6 @@ export {
 } from "./useUnderwritingSessions";
 
 export {
-  useDecisionTrees,
-  useDecisionTree,
-  useActiveDecisionTree,
-  useCreateDecisionTree,
-  useUpdateDecisionTree,
-  useDeleteDecisionTree,
-  useSetDefaultDecisionTree,
-  decisionTreeQueryKeys,
-} from "./useDecisionTrees";
-
-export {
   useCarriersWithProducts,
   carriersWithProductsQueryKeys,
 } from "./useCarriersWithProducts";
@@ -54,6 +43,11 @@ export {
 } from "./useParseGuide";
 
 export { useUnderwritingToggle } from "./useUnderwritingToggle";
+
+export {
+  useDecisionEngineRecommendations,
+  transformWizardToDecisionEngineInput,
+} from "./useDecisionEngineRecommendations";
 
 export {
   useProductConstraints,

@@ -1,6 +1,6 @@
 // src/features/underwriting/components/CriteriaReview/CriteriaEditor.tsx
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Calendar,
   ArrowLeft,
@@ -17,6 +17,7 @@ import {
   MapPin,
   FileSearch,
   ClipboardCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,13 +35,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CriteriaSection } from "./CriteriaSection";
 import { SourceExcerptsPanel } from "./SourceExcerptsPanel";
 import { ApprovalDialog } from "./ApprovalDialog";
+import { ReviewStatusBadge } from "./ReviewStatusBadge";
 import type {
   CriteriaWithRelations,
   ExtractedCriteria,
-  SourceExcerpt,
   ReviewStatus,
 } from "../../types/underwriting.types";
-import { US_STATES } from "../../types/underwriting.types";
+import {
+  parseExtractedCriteria,
+  parseSourceExcerpts,
+} from "../../utils/criteriaValidation";
 
 interface CriteriaEditorProps {
   criteria: CriteriaWithRelations;
@@ -55,18 +59,27 @@ export function CriteriaEditor({
   onSave,
   canEdit = false,
 }: CriteriaEditorProps) {
+  // Safely parse JSONB data with validation
+  const parsedCriteria = useMemo(
+    () => parseExtractedCriteria(criteria.criteria),
+    [criteria.criteria],
+  );
+  const parsedExcerpts = useMemo(
+    () => parseSourceExcerpts(criteria.source_excerpts),
+    [criteria.source_excerpts],
+  );
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedCriteria, setEditedCriteria] = useState<ExtractedCriteria>(
-    (criteria.criteria as ExtractedCriteria) || {},
+    parsedCriteria.data,
   );
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const sourceExcerpts = (criteria.source_excerpts ||
-    []) as unknown as SourceExcerpt[];
-  const extractedCriteria = isEditing
-    ? editedCriteria
-    : (criteria.criteria as ExtractedCriteria) || {};
+  const sourceExcerpts = parsedExcerpts.data;
+  const extractedCriteria = isEditing ? editedCriteria : parsedCriteria.data;
+  const hasValidationErrors =
+    !parsedCriteria.success || !parsedExcerpts.success;
 
   const handleSave = async () => {
     if (!onSave) return;
@@ -80,7 +93,7 @@ export function CriteriaEditor({
   };
 
   const handleCancel = () => {
-    setEditedCriteria((criteria.criteria as ExtractedCriteria) || {});
+    setEditedCriteria(parsedCriteria.data);
     setIsEditing(false);
   };
 
@@ -101,11 +114,6 @@ export function CriteriaEditor({
       current[keys[keys.length - 1]] = value;
       return newCriteria;
     });
-  };
-
-  const getStateName = (code: string) => {
-    const state = US_STATES.find((s) => s.value === code);
-    return state?.label || code;
   };
 
   return (
@@ -201,13 +209,27 @@ export function CriteriaEditor({
               : "N/A"}
           </span>
         </div>
-        <ReviewStatusBadge status={criteria.review_status as ReviewStatus} />
-        {criteria.is_active && (
-          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[9px] px-1.5 py-0">
-            Active
-          </Badge>
-        )}
+        <ReviewStatusBadge
+          status={criteria.review_status as ReviewStatus}
+          isActive={criteria.is_active}
+          showIcon={false}
+        />
       </div>
+
+      {/* Validation Warning */}
+      {hasValidationErrors && (
+        <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+          <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-[10px] text-amber-800 dark:text-amber-200">
+            <p className="font-medium">Data validation warning</p>
+            <p className="text-amber-700 dark:text-amber-300 mt-0.5">
+              Some criteria fields failed validation and may not be displayed
+              correctly. Consider re-extracting the criteria from the source
+              guide.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -331,7 +353,6 @@ export function CriteriaEditor({
               >
                 <StateAvailabilitySection
                   data={extractedCriteria.stateAvailability}
-                  getStateName={getStateName}
                 />
               </CriteriaSection>
             </div>
@@ -808,10 +829,7 @@ function StateAvailabilitySection({
   data,
 }: {
   data: ExtractedCriteria["stateAvailability"];
-  getStateName?: (code: string) => string;
 }) {
-  // getStateName is available for future use when full state names needed
-  void getStateName;
   if (!data) return null;
 
   return (
@@ -854,33 +872,4 @@ function StateAvailabilitySection({
       )}
     </div>
   );
-}
-
-function ReviewStatusBadge({ status }: { status: ReviewStatus | null }) {
-  switch (status) {
-    case "approved":
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0">
-          Approved
-        </Badge>
-      );
-    case "rejected":
-      return (
-        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-[9px] px-1.5 py-0">
-          Rejected
-        </Badge>
-      );
-    case "needs_revision":
-      return (
-        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-[9px] px-1.5 py-0">
-          Needs Revision
-        </Badge>
-      );
-    default:
-      return (
-        <Badge className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 text-[9px] px-1.5 py-0">
-          Pending Review
-        </Badge>
-      );
-  }
 }

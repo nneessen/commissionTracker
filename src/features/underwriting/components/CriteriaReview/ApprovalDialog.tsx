@@ -20,9 +20,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Badge as _Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateCriteriaReview } from "../../hooks/useExtractCriteria";
+import { ReviewStatusBadge } from "./ReviewStatusBadge";
 import type {
   CriteriaWithRelations,
   ReviewStatus,
@@ -278,36 +279,4 @@ export function ApprovalDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function ReviewStatusBadge({ status }: { status: ReviewStatus | null }) {
-  switch (status) {
-    case "approved":
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0">
-          <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
-          Approved
-        </Badge>
-      );
-    case "rejected":
-      return (
-        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-[9px] px-1.5 py-0">
-          <XCircle className="h-2.5 w-2.5 mr-1" />
-          Rejected
-        </Badge>
-      );
-    case "needs_revision":
-      return (
-        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-[9px] px-1.5 py-0">
-          <AlertTriangle className="h-2.5 w-2.5 mr-1" />
-          Needs Revision
-        </Badge>
-      );
-    default:
-      return (
-        <Badge className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 text-[9px] px-1.5 py-0">
-          Pending Review
-        </Badge>
-      );
-  }
 }

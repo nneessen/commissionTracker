@@ -11,6 +11,39 @@ import {
   type DecisionTreeRules,
   type TreeEvaluationResult,
 } from "./rule-evaluator.ts";
+import {
+  evaluateCriteriaForCarriers,
+  buildCriteriaContext,
+  FILTER_RULES as _FILTER_RULES, // Available for custom filtering
+  type ExtractedCriteria,
+  type CarrierCriteriaEntry,
+  type CriteriaFilteredProduct,
+  type CriteriaEvaluationResult,
+} from "./criteria-evaluator.ts";
+
+/**
+ * Runtime validation for ExtractedCriteria JSON structure.
+ * Ensures the criteria object has the expected shape before casting.
+ */
+function isValidCriteriaStructure(obj: unknown): obj is ExtractedCriteria {
+  if (obj === null || typeof obj !== "object") {
+    return false;
+  }
+  // Basic structure check - criteria is an object with optional known fields
+  const criteria = obj as Record<string, unknown>;
+  const validKeys = [
+    "ageLimits",
+    "faceAmountLimits",
+    "knockoutConditions",
+    "buildRequirements",
+    "tobaccoRules",
+    "medicationRestrictions",
+    "stateAvailability",
+  ];
+  // All keys should be from the valid set (allow empty objects)
+  const objKeys = Object.keys(criteria);
+  return objKeys.every((key) => validKeys.includes(key));
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -194,12 +227,28 @@ serve(async (req) => {
       clientAge: number,
     ): number | null => {
       const constraints = product.metadata;
+
+      // Debug logging
+      console.log(`[underwriting-ai] Checking age tiers for ${product.name}:`, {
+        hasMetadata: !!constraints,
+        hasAgeTieredFaceAmounts: !!constraints?.ageTieredFaceAmounts,
+        tiers: constraints?.ageTieredFaceAmounts?.tiers,
+        clientAge,
+      });
+
       if (constraints?.ageTieredFaceAmounts?.tiers) {
         const tier = constraints.ageTieredFaceAmounts.tiers.find(
-          (t) => clientAge >= t.minAge && clientAge <= t.maxAge,
+          (t: AgeTier) => clientAge >= t.minAge && clientAge <= t.maxAge,
         );
         if (tier) {
+          console.log(
+            `[underwriting-ai] Found matching tier for ${product.name}: age ${tier.minAge}-${tier.maxAge}, max $${tier.maxFaceAmount}`,
+          );
           return tier.maxFaceAmount;
+        } else {
+          console.log(
+            `[underwriting-ai] No matching tier for age ${clientAge} in ${product.name}`,
+          );
         }
       }
       // Fall back to product-level max
@@ -227,6 +276,18 @@ serve(async (req) => {
       clientAge: number,
     ): number | null => {
       const constraints = product.metadata;
+
+      // Debug logging
+      console.log(
+        `[underwriting-ai] Checking full UW threshold for ${product.name}:`,
+        {
+          hasMetadata: !!constraints,
+          hasFullUWThreshold: !!constraints?.fullUnderwritingThreshold,
+          threshold: constraints?.fullUnderwritingThreshold,
+          clientAge,
+        },
+      );
+
       if (!constraints?.fullUnderwritingThreshold) {
         return null;
       }
@@ -234,17 +295,27 @@ serve(async (req) => {
       // Check age bands first
       if (threshold.ageBands) {
         const band = threshold.ageBands.find(
-          (b) => clientAge >= b.minAge && clientAge <= b.maxAge,
+          (b: { minAge: number; maxAge: number; threshold: number }) =>
+            clientAge >= b.minAge && clientAge <= b.maxAge,
         );
         if (band) {
+          console.log(
+            `[underwriting-ai] Full UW age band match for ${product.name}: age ${band.minAge}-${band.maxAge}, threshold $${band.threshold}`,
+          );
           return band.threshold;
         }
       }
+      console.log(
+        `[underwriting-ai] Full UW base threshold for ${product.name}: $${threshold.faceAmountThreshold}`,
+      );
       return threshold.faceAmountThreshold;
     };
 
     // Track filtered-out products with reasons
     const filteredOutProducts: FilteredProduct[] = [];
+
+    // Track products requiring full underwriting (for informational purposes)
+    const productsRequiringFullUW: string[] = [];
 
     // Filter products by eligibility criteria
     const eligibleCarriers: CarrierInfo[] = (carriers || [])
@@ -315,6 +386,25 @@ serve(async (req) => {
               return false;
             }
 
+            // FILTER OUT products requiring full underwriting at this face amount/age
+            const fullUWThreshold = getFullUWThreshold(product, client.age);
+            if (
+              fullUWThreshold !== null &&
+              coverage.faceAmount > fullUWThreshold
+            ) {
+              // Track for informational purposes
+              productsRequiringFullUW.push(
+                `${carrier.name} - ${product.name} (threshold: $${fullUWThreshold.toLocaleString()})`,
+              );
+              // Filter out - don't recommend fully underwritten products
+              filteredOutProducts.push({
+                productName: product.name,
+                carrierName: carrier.name,
+                reason: `Requires full underwriting above $${fullUWThreshold.toLocaleString()} (requested: $${coverage.faceAmount.toLocaleString()})`,
+              });
+              return false;
+            }
+
             return true;
           },
         ),
@@ -324,8 +414,115 @@ serve(async (req) => {
     console.log(
       `[underwriting-ai] Found ${eligibleCarriers.length} carriers with eligible products. ` +
         `Filtered out ${filteredOutProducts.length} products for age ${client.age}, ` +
-        `face amount $${coverage.faceAmount}, conditions: ${clientConditionCodes.join(", ") || "none"}`,
+        `face amount $${coverage.faceAmount}, conditions: ${clientConditionCodes.join(", ") || "none"}. ` +
+        `Full UW required: ${productsRequiringFullUW.length} products`,
     );
+
+    // =========================================================================
+    // PHASE 5: Fetch and apply active criteria from carrier_underwriting_criteria
+    // =========================================================================
+    const criteriaByCarrier = new Map<string, CarrierCriteriaEntry>();
+    const criteriaFilteredProducts: CriteriaFilteredProduct[] = [];
+    let criteriaEvaluationResults = new Map<string, CriteriaEvaluationResult>();
+
+    if (imoId && eligibleCarriers.length > 0) {
+      const carrierIds = eligibleCarriers.map((c) => c.id);
+
+      // Fetch active criteria for eligible carriers
+      const { data: activeCriteria, error: criteriaError } = await supabase
+        .from("carrier_underwriting_criteria")
+        .select("carrier_id, product_id, criteria")
+        .eq("imo_id", imoId)
+        .eq("is_active", true)
+        .in("carrier_id", carrierIds);
+
+      if (criteriaError) {
+        console.warn(
+          `[underwriting-ai] Failed to fetch criteria: ${criteriaError.message}`,
+        );
+      } else if (activeCriteria && activeCriteria.length > 0) {
+        // Build criteria map by carrier with validation
+        for (const c of activeCriteria) {
+          const carrier = eligibleCarriers.find(
+            (car) => car.id === c.carrier_id,
+          );
+          if (carrier && c.criteria) {
+            // Validate criteria structure before using
+            if (!isValidCriteriaStructure(c.criteria)) {
+              console.warn(
+                `[underwriting-ai] Invalid criteria structure for carrier ${carrier.name}, skipping`,
+              );
+              continue;
+            }
+            criteriaByCarrier.set(c.carrier_id, {
+              carrierName: carrier.name,
+              criteria: c.criteria,
+              productId: c.product_id || undefined,
+            });
+          }
+        }
+
+        console.log(
+          `[underwriting-ai] Found ${criteriaByCarrier.size} active criteria sets for ${carrierIds.length} carriers`,
+        );
+
+        // Apply criteria-based filtering with error handling
+        // Wrapped in try-catch for graceful degradation - if criteria evaluation fails,
+        // we fall back to AI-only analysis rather than failing the entire request
+        if (criteriaByCarrier.size > 0) {
+          try {
+            const criteriaEvaluation = evaluateCriteriaForCarriers(
+              criteriaByCarrier,
+              { age: client.age, state: client.state, bmi: client.bmi },
+              {
+                conditions: health.conditions,
+                tobacco: health.tobacco,
+                medications: health.medications,
+              },
+              { faceAmount: coverage.faceAmount },
+            );
+
+            criteriaEvaluationResults = criteriaEvaluation.evaluationResults;
+
+            // Add criteria-filtered products to tracking
+            criteriaFilteredProducts.push(
+              ...criteriaEvaluation.filteredProducts,
+            );
+
+            // Remove ineligible carriers from eligibleCarriers
+            const ineligibleCarrierIds = new Set(
+              criteriaEvaluation.filteredProducts.map((fp) => fp.carrierId),
+            );
+
+            // Filter out carriers that failed criteria checks
+            for (let i = eligibleCarriers.length - 1; i >= 0; i--) {
+              const carrier = eligibleCarriers[i];
+              if (ineligibleCarrierIds.has(carrier.id)) {
+                // Only remove if this carrier failed criteria AND has criteria defined
+                // (don't remove carriers without criteria - they fall through to AI)
+                if (criteriaByCarrier.has(carrier.id)) {
+                  eligibleCarriers.splice(i, 1);
+                }
+              }
+            }
+
+            console.log(
+              `[underwriting-ai] Criteria filtering: ${criteriaFilteredProducts.length} products filtered. ` +
+                `${eligibleCarriers.length} carriers remain eligible.`,
+            );
+          } catch (evalError) {
+            // Graceful degradation: log error and continue without criteria filtering
+            console.error(
+              `[underwriting-ai] Criteria evaluation failed, falling back to AI-only analysis:`,
+              evalError,
+            );
+            // Clear criteria to indicate it wasn't applied
+            criteriaByCarrier.clear();
+            criteriaEvaluationResults.clear();
+          }
+        }
+      }
+    }
 
     // Fetch decision tree rules if specified, or get the default active tree for the IMO
     let decisionTreeRules: DecisionTreeRules | null = null;
@@ -436,7 +633,7 @@ serve(async (req) => {
       }
     }
 
-    // Build the AI prompt with tree evaluation context
+    // Build the AI prompt with tree evaluation context and criteria
     const systemPrompt = buildSystemPrompt(
       eligibleCarriers,
       decisionTreeRules,
@@ -444,6 +641,7 @@ serve(async (req) => {
       health.conditions.map((c) => conditionNames[c.code] || c.code),
       client.age,
       treeEvaluationResult,
+      criteriaByCarrier, // Phase 5: Include structured criteria
     );
     const userPrompt = buildUserPrompt(
       client,
@@ -480,19 +678,6 @@ serve(async (req) => {
     }
 
     const analysisResult = JSON.parse(jsonMatch[0]);
-
-    // Add full underwriting info to eligible products in recommendations
-    const productsRequiringFullUW: string[] = [];
-    for (const carrier of eligibleCarriers) {
-      for (const product of carrier.products) {
-        const threshold = getFullUWThreshold(product, client.age);
-        if (threshold !== null && coverage.faceAmount > threshold) {
-          productsRequiringFullUW.push(
-            `${carrier.name} - ${product.name} (threshold: $${threshold.toLocaleString()})`,
-          );
-        }
-      }
-    }
 
     // Merge tree evaluation results with AI recommendations (hybrid scoring)
     let mergedRecommendations = analysisResult.recommendations || [];
@@ -549,6 +734,25 @@ serve(async (req) => {
         analysis: analysisResult,
         filteredProducts: filteredOutProducts,
         fullUnderwritingRequired: productsRequiringFullUW,
+        // Phase 5: Include criteria evaluation results
+        criteriaFilters: {
+          applied: criteriaByCarrier.size > 0,
+          matchedCarriers: Array.from(criteriaByCarrier.keys()),
+          filteredByCarrier: criteriaFilteredProducts,
+          evaluationResults: Object.fromEntries(
+            Array.from(criteriaEvaluationResults.entries()).map(
+              ([id, result]) => [
+                id,
+                {
+                  eligible: result.eligible,
+                  reasons: result.reasons,
+                  buildRating: result.buildRating,
+                  tobaccoClass: result.tobaccoClass,
+                },
+              ],
+            ),
+          ),
+        },
         treeEvaluation: treeEvaluationResult
           ? {
               matchedRules: treeEvaluationResult.matchedRules.map((r) => ({
@@ -587,6 +791,7 @@ function buildSystemPrompt(
   clientConditions: string[],
   clientAge?: number,
   treeEvaluation?: TreeEvaluationResult | null,
+  criteriaByCarrier?: Map<string, CarrierCriteriaEntry>, // Phase 5: Structured criteria
 ): string {
   const carrierList = carriers
     .map(
@@ -751,11 +956,32 @@ ${guideEntries.join("\n\n---\n\n")}
     );
   }
 
+  // Phase 5: Build structured criteria context (more efficient than raw excerpts)
+  let criteriaSection = "";
+  if (criteriaByCarrier && criteriaByCarrier.size > 0) {
+    const criteriaContext = buildCriteriaContext(criteriaByCarrier);
+    if (criteriaContext) {
+      criteriaSection = `
+CARRIER-SPECIFIC UNDERWRITING CRITERIA (Pre-validated and verified):
+The following criteria have been extracted from carrier underwriting guides and verified by human review.
+These are authoritative rules - use them to inform your recommendations with high confidence.
+
+${criteriaContext}
+
+NOTE: Carriers with criteria above have already been filtered for eligibility based on these rules.
+Only recommend products from carriers that passed the criteria checks.
+`;
+      console.log(
+        `[underwriting-ai] Added criteria context for ${criteriaByCarrier.size} carriers`,
+      );
+    }
+  }
+
   return `You are an expert insurance underwriter assistant specializing in life insurance. Your role is to analyze client health profiles and provide carrier/product recommendations.
 
 AVAILABLE CARRIERS AND PRODUCTS:
 ${carrierList}
-${rulesSection}${guidesSection}
+${rulesSection}${criteriaSection}${guidesSection}
 UNDERWRITING GUIDELINES:
 1. Consider client age, health conditions, tobacco use, BMI, and medication usage
 2. Preferred/Preferred Plus ratings typically require:

@@ -2,14 +2,7 @@
 
 // Components
 export { default as UnderwritingWizard } from "./components/UnderwritingWizard";
-export {
-  DecisionTreeEditor,
-  RuleBuilder,
-  RuleConditionRow,
-  RuleActionConfig,
-} from "./components/DecisionTreeEditor";
 export { UnderwritingSettingsTab } from "./components/UnderwritingSettingsTab";
-export { DecisionTreeList } from "./components/DecisionTreeList";
 export {
   SessionHistoryList,
   SessionDetailDialog,
@@ -25,13 +18,6 @@ export {
   useUnderwritingSessions,
   useUnderwritingSession,
   useSaveUnderwritingSession,
-  useDecisionTrees,
-  useDecisionTree,
-  useActiveDecisionTree,
-  useCreateDecisionTree,
-  useUpdateDecisionTree,
-  useDeleteDecisionTree,
-  useSetDefaultDecisionTree,
   useUnderwritingGuides,
   useUnderwritingGuide,
   useUploadGuide,
@@ -41,7 +27,6 @@ export {
   useUnderwritingToggle,
   useCarriersWithProducts,
   underwritingQueryKeys,
-  decisionTreeQueryKeys,
   guideQueryKeys,
   carriersWithProductsQueryKeys,
   parseFollowUpSchema,
@@ -52,16 +37,6 @@ export {
 export type {
   HealthCondition,
   UnderwritingGuide,
-  DecisionTree,
-  DecisionTreeInsert,
-  DecisionTreeUpdate,
-  DecisionTreeRule,
-  DecisionTreeRules,
-  RuleCondition,
-  RuleConditionGroup,
-  RuleRecommendation,
-  ConditionField,
-  ConditionOperator,
   UnderwritingSession,
   WizardFormData,
   ClientInfo,

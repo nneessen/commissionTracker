@@ -232,10 +232,22 @@ export function RecruitDetailPanel({
         },
       );
 
-      // If user not found (404), create auth user first (sends welcome email with password setup)
-      if (data?.error === "No account found with this email address") {
+      // Check if password reset succeeded
+      if (data?.success === true) {
+        toast.success("Invite sent!");
+        return;
+      }
+
+      // If there's an error (404 = user not found in auth.users), create auth user first
+      // The supabase client wraps 404 errors, so we check for fnError OR data.success === false
+      const shouldCreateAuthUser =
+        fnError !== null || // Any error from send-password-reset means user likely doesn't exist
+        data?.error?.includes("No auth account found") ||
+        data?.error?.includes("not found");
+
+      if (shouldCreateAuthUser) {
         console.log(
-          "[RecruitDetailPanel] Auth user not found, creating one...",
+          "[RecruitDetailPanel] Auth user not found or error occurred, creating one...",
         );
         const { data: createData, error: createError } =
           await supabase.functions.invoke("create-auth-user", {
@@ -250,11 +262,36 @@ export function RecruitDetailPanel({
           });
 
         if (createError) {
-          toast.error(createError.message || "Failed to create login access");
+          // Check for specific error messages and provide helpful feedback
+          const errorMsg = createError.message?.toLowerCase() || "";
+          if (
+            errorMsg.includes("database error") ||
+            errorMsg.includes("invalid email")
+          ) {
+            toast.error(
+              `Cannot create account for "${recruit.email}" - email format may be invalid. Try updating the email address first.`,
+            );
+          } else {
+            toast.error(createError.message || "Failed to create login access");
+          }
         } else if (createData?.error) {
-          toast.error(createData.error);
+          // Check for database errors in the response data
+          const dataError = createData.error?.toLowerCase() || "";
+          if (dataError.includes("database error")) {
+            toast.error(
+              `Cannot create account for "${recruit.email}" - email format may be invalid. Try updating the email address first.`,
+            );
+          } else {
+            toast.error(createData.error);
+          }
         } else if (createData?.emailSent) {
           toast.success("Login instructions sent!");
+        } else if (createData?.alreadyExists) {
+          // User already exists in auth - send password reset instead
+          toast.success(
+            "User already has an account. Sending password reset...",
+          );
+          // Could optionally retry send-password-reset here
         } else {
           toast.success(
             "Account created but email may not have sent. Check edge function logs.",
@@ -263,9 +300,10 @@ export function RecruitDetailPanel({
         return;
       }
 
-      if (fnError) toast.error(fnError.message);
-      else if (data?.success === false) toast.error(data.error);
-      else toast.success("Invite sent!");
+      // Fallback error handling
+      if (data?.success === false) {
+        toast.error(data.error || "Failed to send invite");
+      }
     } finally {
       setResendingInvite(false);
     }

@@ -1,0 +1,81 @@
+face_amount,company,plan_name,tier_name,monthly,yearly,state,gender,age,term_years,tobacco
+25000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,18.51,217.75,IL,Male,55,10,None
+25000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,21.78,253.25,IL,Male,55,10,None
+25000,American Amicable (Easy Term),Easy Term 10-Year,Approved,24.49,260.50,IL,Male,55,10,None
+25000,Mutual of Omaha (Term Life Express),Term Life Express 10-Year,Approved,26.48,297.50,IL,Male,55,10,None
+50000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,31.92,375.50,IL,Male,55,10,None
+50000,Foresters (Your Term),Your Term 10-Year Non-Med,Approved,32.73,374.00,IL,Male,55,10,None
+50000,American Amicable (Term Made Simple),Term Made Simple Preferred 10-Year,Preferred,34.97,388.50,IL,Male,55,10,None
+50000,American Amicable (Term Made Simple),Term Made Simple Standard 10-Year,Standard,38.12,423.50,IL,Male,55,10,None
+50000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,38.40,446.50,IL,Male,55,10,None
+50000,American Amicable (Easy Term),Easy Term 10-Year,Approved,43.33,461.00,IL,Male,55,10,None
+50000,Foresters (Strong Foundation),Strong Foundation 10-Year,Approved,43.49,497.00,IL,Male,55,10,None
+50000,Kansas City Life,Signature Term Express 10-Year,Approved,47.60,556.50,IL,Male,55,10,None
+50000,Mutual of Omaha (Term Life Express),Term Life Express 10-Year,Approved,47.62,535.00,IL,Male,55,10,None
+75000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,45.33,533.25,IL,Male,55,10,None
+75000,Foresters (Your Term),Your Term 10-Year Non-Med,Approved,46.03,526.00,IL,Male,55,10,None
+75000,American Amicable (Term Made Simple),Term Made Simple Preferred 10-Year,Preferred,49.30,547.75,IL,Male,55,10,None
+75000,American Amicable (Easy Term),Easy Term 10-Year,Approved,52.38,557.25,IL,Male,55,10,None
+75000,American Amicable (Term Made Simple),Term Made Simple Standard 10-Year,Standard,54.02,600.25,IL,Male,55,10,None
+75000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,55.02,639.75,IL,Male,55,10,None
+75000,Foresters (Strong Foundation),Strong Foundation 10-Year,Approved,62.61,715.50,IL,Male,55,10,None
+75000,Kansas City Life,Signature Term Express 10-Year,Approved,68.70,804.75,IL,Male,55,10,None
+75000,Mutual of Omaha (Term Life Express),Term Life Express 10-Year,Approved,68.75,772.50,IL,Male,55,10,None
+100000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred Plus,Trendsetter Super 2021,21.17,249.00,IL,Male,55,10,None
+100000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred,Trendsetter Super 2021,25.16,296.00,IL,Male,55,10,None
+100000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard Plus,Trendsetter Super 2021,28.05,330.00,IL,Male,55,10,None
+100000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,34.51,406.00,IL,Male,55,10,None
+100000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred,Trendsetter LB 2017,35.09,408.00,IL,Male,55,10,None
+100000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,53.49,622.00,IL,Male,55,10,None
+100000,Foresters (Your Term),Your Term 10-Year Non-Med,Approved,59.33,678.00,IL,Male,55,10,None
+100000,American Amicable (Term Made Simple),Term Made Simple Preferred 10-Year,Preferred,63.63,707.00,IL,Male,55,10,None
+100000,American Amicable (Easy Term),Easy Term 10-Year,Approved,67.96,723.00,IL,Male,55,10,None
+100000,American Amicable (Term Made Simple),Term Made Simple Standard 10-Year,Standard,69.93,777.00,IL,Male,55,10,None
+100000,Foresters (Strong Foundation),Strong Foundation 10-Year,Approved,81.73,934.00,IL,Male,55,10,None
+100000,Kansas City Life,Signature Term Express 10-Year,Approved,89.81,"1,053.00",IL,Male,55,10,None
+100000,Mutual of Omaha (Term Life Express),Term Life Express 10-Year,Approved,89.89,"1,010.00",IL,Male,55,10,None
+150000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred Plus,Trendsetter Super 2021,30.47,358.50,IL,Male,55,10,None
+150000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred,Trendsetter Super 2021,36.47,429.00,IL,Male,55,10,None
+150000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard Plus,Trendsetter Super 2021,40.80,480.00,IL,Male,55,10,None
+150000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,50.49,594.00,IL,Male,55,10,None
+150000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred,Trendsetter LB 2017,51.34,597.00,IL,Male,55,10,None
+150000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,78.95,918.00,IL,Male,55,10,None
+150000,Foresters (Your Term),Your Term 10-Year Non-Med,Approved,85.93,982.00,IL,Male,55,10,None
+150000,American Amicable (Term Made Simple),Term Made Simple Preferred 10-Year,Preferred,92.30,"1,025.50",IL,Male,55,10,None
+150000,American Amicable (Easy Term),Easy Term 10-Year,Approved,99.12,"1,054.50",IL,Male,55,10,None
+150000,American Amicable (Term Made Simple),Term Made Simple Standard 10-Year,Standard,101.75,"1,130.50",IL,Male,55,10,None
+150000,Foresters (Strong Foundation),Strong Foundation 10-Year,Approved,119.96,"1,371.00",IL,Male,55,10,None
+150000,Kansas City Life,Signature Term Express 10-Year,Approved,132.01,"1,549.50",IL,Male,55,10,None
+150000,Mutual of Omaha (Term Life Express),Term Life Express 10-Year,Approved,132.17,"1,485.00",IL,Male,55,10,None
+200000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred Plus,Trendsetter Super 2021,39.78,468.00,IL,Male,55,10,None
+200000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred,Trendsetter Super 2021,47.77,562.00,IL,Male,55,10,None
+200000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard Plus,Trendsetter Super 2021,53.55,630.00,IL,Male,55,10,None
+200000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,66.47,782.00,IL,Male,55,10,None
+200000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred,Trendsetter LB 2017,67.60,786.00,IL,Male,55,10,None
+200000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,104.40,"1,214.00",IL,Male,55,10,None
+200000,Foresters (Your Term),Your Term 10-Year Non-Med,Approved,112.53,"1,286.00",IL,Male,55,10,None
+200000,American Amicable (Term Made Simple),Term Made Simple Preferred 10-Year,Preferred,120.96,"1,344.00",IL,Male,55,10,None
+200000,American Amicable (Easy Term),Easy Term 10-Year,Approved,130.28,"1,386.00",IL,Male,55,10,None
+200000,American Amicable (Term Made Simple),Term Made Simple Standard 10-Year,Standard,133.56,"1,484.00",IL,Male,55,10,None
+200000,Foresters (Strong Foundation),Strong Foundation 10-Year,Approved,158.20,"1,808.00",IL,Male,55,10,None
+200000,Kansas City Life,Signature Term Express 10-Year,Approved,174.21,"2,046.00",IL,Male,55,10,None
+200000,Mutual of Omaha (Term Life Express),Term Life Express 10-Year,Approved,174.44,"1,960.00",IL,Male,55,10,None
+500000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred Plus,Trendsetter Super 2021,66.30,780.00,IL,Male,55,10,None
+500000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred,Trendsetter Super 2021,79.05,930.00,IL,Male,55,10,None
+500000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred Plus,Trendsetter LB 2017,98.47,"1,145.00",IL,Male,55,10,None
+500000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard Plus,Trendsetter Super 2021,105.40,"1,240.00",IL,Male,55,10,None
+500000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred,Trendsetter LB 2017,113.52,"1,320.00",IL,Male,55,10,None
+500000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,124.10,"1,460.00",IL,Male,55,10,None
+500000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard Plus,Trendsetter LB 2017,137.60,"1,600.00",IL,Male,55,10,None
+500000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,168.56,"1,960.00",IL,Male,55,10,None
+500000,American Amicable (Term Made Simple),Term Made Simple Preferred 10-Year,Preferred,289.80,"3,220.00",IL,Male,55,10,None
+500000,American Amicable (Term Made Simple),Term Made Simple Standard 10-Year,Standard,321.75,"3,575.00",IL,Male,55,10,None
+500000,Foresters (Strong Foundation),Strong Foundation 10-Year,Approved,387.63,"4,430.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred Plus,Trendsetter Super 2021,124.95,"1,470.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Preferred,Trendsetter Super 2021,151.30,"1,780.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred Plus,Trendsetter LB 2017,194.36,"2,260.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard Plus,Trendsetter Super 2021,207.40,"2,440.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Preferred,Trendsetter LB 2017,224.46,"2,610.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter Super 2021),Trendsetter Super 2021 10-Year Standard,Trendsetter Super 2021,249.05,"2,930.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard Plus,Trendsetter LB 2017,272.62,"3,170.00",IL,Male,55,10,None
+1000000,Transamerica (Trendsetter LB 2017),Trendsetter LB 2017 10-Year Standard,Trendsetter LB 2017,334.54,"3,890.00",IL,Male,55,10,None

@@ -3,25 +3,27 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  GitBranch,
   History,
   FileText,
   Settings,
   Loader2,
   ClipboardCheck,
+  DollarSign,
+  Shield,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useCanManageUnderwriting } from "../hooks/useUnderwritingFeatureFlag";
 import { useUnderwritingToggle } from "../hooks/useUnderwritingToggle";
-import { DecisionTreeList } from "./DecisionTreeList";
 import { SessionHistoryList } from "./SessionHistory/SessionHistoryList";
 import { GuideList } from "./GuideManager";
 import { CriteriaReviewDashboard } from "./CriteriaReview";
+import { RateEntryTab } from "./RateEntry";
+import { AcceptanceRulesTab } from "./AcceptanceRules";
 
 export function UnderwritingSettingsTab() {
   const { canManage, isLoading } = useCanManageUnderwriting();
-  const [activeTab, setActiveTab] = useState("trees");
+  const [activeTab, setActiveTab] = useState("criteria");
 
   if (isLoading) {
     return (
@@ -51,8 +53,8 @@ export function UnderwritingSettingsTab() {
           AI Underwriting Wizard
         </h2>
         <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-          Configure decision trees, view session history, and manage
-          underwriting guides
+          Manage carrier criteria, premium rates, acceptance rules, and view
+          session history
         </p>
       </div>
 
@@ -60,18 +62,25 @@ export function UnderwritingSettingsTab() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex items-center gap-0 bg-zinc-100/50 dark:bg-zinc-800/50 mx-3 mt-2 rounded-md p-0.5 h-auto w-fit">
           <TabsTrigger
-            value="trees"
+            value="criteria"
             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
-            <GitBranch className="h-3 w-3 shrink-0" />
-            <span>Decision Trees</span>
+            <ClipboardCheck className="h-3 w-3 shrink-0" />
+            <span>Criteria</span>
           </TabsTrigger>
           <TabsTrigger
-            value="sessions"
+            value="rates"
             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
-            <History className="h-3 w-3 shrink-0" />
-            <span>Session History</span>
+            <DollarSign className="h-3 w-3 shrink-0" />
+            <span>Rates</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="acceptance"
+            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
+            <Shield className="h-3 w-3 shrink-0" />
+            <span>Acceptance</span>
           </TabsTrigger>
           <TabsTrigger
             value="guides"
@@ -81,11 +90,11 @@ export function UnderwritingSettingsTab() {
             <span>Guides</span>
           </TabsTrigger>
           <TabsTrigger
-            value="criteria"
+            value="sessions"
             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
-            <ClipboardCheck className="h-3 w-3 shrink-0" />
-            <span>Criteria</span>
+            <History className="h-3 w-3 shrink-0" />
+            <span>History</span>
           </TabsTrigger>
           <TabsTrigger
             value="settings"
@@ -97,20 +106,24 @@ export function UnderwritingSettingsTab() {
         </TabsList>
 
         <div className="p-3">
-          <TabsContent value="trees" className="mt-0">
-            <DecisionTreeList />
+          <TabsContent value="criteria" className="mt-0">
+            <CriteriaReviewDashboard />
           </TabsContent>
 
-          <TabsContent value="sessions" className="mt-0">
-            <SessionHistoryList />
+          <TabsContent value="rates" className="mt-0">
+            <RateEntryTab />
+          </TabsContent>
+
+          <TabsContent value="acceptance" className="mt-0">
+            <AcceptanceRulesTab />
           </TabsContent>
 
           <TabsContent value="guides" className="mt-0">
             <GuideList />
           </TabsContent>
 
-          <TabsContent value="criteria" className="mt-0">
-            <CriteriaReviewDashboard />
+          <TabsContent value="sessions" className="mt-0">
+            <SessionHistoryList />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">
@@ -169,16 +182,18 @@ function FeatureSettingsPanel() {
               <strong className="text-zinc-700 dark:text-zinc-300">
                 How it works:
               </strong>{" "}
-              The wizard collects client health information and uses AI to
-              analyze risk factors against your configured decision trees and
-              carrier underwriting guides.
+              The wizard collects client health information and uses the
+              recommendation engine to filter products by eligibility, score
+              approval likelihood using carrier acceptance rules, and calculate
+              premiums from your rate data.
             </p>
             <p>
               <strong className="text-zinc-700 dark:text-zinc-300">
                 Requirements:
               </strong>{" "}
-              For best results, upload carrier underwriting guides in the Guides
-              tab and configure decision trees for your most common scenarios.
+              For best results, enter premium rates in the Rates tab and
+              configure carrier acceptance rules in the Acceptance tab. Upload
+              carrier underwriting guides for AI-assisted criteria extraction.
             </p>
           </div>
         </div>

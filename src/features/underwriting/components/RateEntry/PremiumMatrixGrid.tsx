@@ -1,0 +1,532 @@
+// src/features/underwriting/components/RateEntry/PremiumMatrixGrid.tsx
+// Grid-based premium entry component (age × face amount) with term support
+
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Save, Check } from "lucide-react";
+import {
+  usePremiumMatrixForClassification,
+  useBulkUpsertPremiumMatrix,
+} from "../../hooks/usePremiumMatrix";
+import {
+  GRID_AGES,
+  GRID_FACE_AMOUNTS,
+  GENDER_OPTIONS,
+  TOBACCO_OPTIONS,
+  HEALTH_CLASS_OPTIONS,
+  TERM_OPTIONS,
+  formatFaceAmount,
+  type GenderType,
+  type TobaccoClass,
+  type HealthClass,
+  type TermYears,
+} from "@/services/underwriting/premiumMatrixService";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+interface PremiumMatrixGridProps {
+  productId: string;
+  productName: string;
+  productType: string;
+  carrierName: string;
+}
+
+// Key format for tracking grid cell state
+type CellKey = `${number}-${number}`; // age-faceAmount
+
+export function PremiumMatrixGrid({
+  productId,
+  productName,
+  productType,
+  carrierName,
+}: PremiumMatrixGridProps) {
+  // Is this a term product?
+  const isTermProduct = productType === "term_life";
+
+  // Filter state
+  const [selectedGender, setSelectedGender] = useState<GenderType>("male");
+  const [selectedTobacco, setSelectedTobacco] =
+    useState<TobaccoClass>("non_tobacco");
+  const [selectedHealth, setSelectedHealth] = useState<HealthClass>("standard");
+  const [selectedTerm, setSelectedTerm] = useState<TermYears | null>(
+    isTermProduct ? 20 : null,
+  );
+
+  // Cell input state - tracks user changes before saving
+  const [cellInputs, setCellInputs] = useState<Record<CellKey, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Ref for keyboard navigation
+  const inputRefs = useRef<Map<CellKey, HTMLInputElement>>(new Map());
+
+  // Fetch existing data
+  const { data: existingData, isLoading } = usePremiumMatrixForClassification(
+    productId,
+    selectedGender,
+    selectedTobacco,
+    selectedHealth,
+    isTermProduct ? selectedTerm : null,
+  );
+
+  const bulkUpsert = useBulkUpsertPremiumMatrix();
+
+  // Build lookup map from existing data
+  const existingMap = useMemo(() => {
+    const map = new Map<CellKey, number>();
+    if (existingData) {
+      for (const entry of existingData) {
+        const key: CellKey = `${entry.age}-${entry.face_amount}`;
+        map.set(key, Number(entry.monthly_premium));
+      }
+    }
+    return map;
+  }, [existingData]);
+
+  // Clear cell inputs when classification changes
+  useEffect(() => {
+    setCellInputs({});
+  }, [selectedGender, selectedTobacco, selectedHealth, selectedTerm]);
+
+  // Reset term when product changes
+  useEffect(() => {
+    setSelectedTerm(isTermProduct ? 20 : null);
+  }, [productId, isTermProduct]);
+
+  // Get display value for a cell
+  const getCellValue = useCallback(
+    (age: number, faceAmount: number): string => {
+      const key: CellKey = `${age}-${faceAmount}`;
+      // User input takes precedence
+      if (cellInputs[key] !== undefined) {
+        return cellInputs[key];
+      }
+      // Fall back to existing data
+      const existing = existingMap.get(key);
+      return existing !== undefined ? existing.toFixed(2) : "";
+    },
+    [cellInputs, existingMap],
+  );
+
+  // Check if cell has existing saved data
+  const cellHasData = useCallback(
+    (age: number, faceAmount: number): boolean => {
+      const key: CellKey = `${age}-${faceAmount}`;
+      return existingMap.has(key);
+    },
+    [existingMap],
+  );
+
+  // Check if cell has unsaved changes
+  const cellHasChanges = useCallback(
+    (age: number, faceAmount: number): boolean => {
+      const key: CellKey = `${age}-${faceAmount}`;
+      return cellInputs[key] !== undefined;
+    },
+    [cellInputs],
+  );
+
+  // Handle cell input change
+  const handleCellChange = useCallback(
+    (age: number, faceAmount: number, value: string) => {
+      const key: CellKey = `${age}-${faceAmount}`;
+      setCellInputs((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (
+      e: React.KeyboardEvent<HTMLInputElement>,
+      age: number,
+      faceAmount: number,
+      ageIndex: number,
+      faceIndex: number,
+    ) => {
+      let nextAge = age;
+      let nextFace = faceAmount;
+
+      if (e.key === "Tab" && !e.shiftKey) {
+        if (faceIndex < GRID_FACE_AMOUNTS.length - 1) {
+          nextFace = GRID_FACE_AMOUNTS[faceIndex + 1];
+        } else if (ageIndex < GRID_AGES.length - 1) {
+          nextAge = GRID_AGES[ageIndex + 1];
+          nextFace = GRID_FACE_AMOUNTS[0];
+        }
+      } else if (e.key === "Tab" && e.shiftKey) {
+        if (faceIndex > 0) {
+          nextFace = GRID_FACE_AMOUNTS[faceIndex - 1];
+        } else if (ageIndex > 0) {
+          nextAge = GRID_AGES[ageIndex - 1];
+          nextFace = GRID_FACE_AMOUNTS[GRID_FACE_AMOUNTS.length - 1];
+        }
+      } else if (e.key === "ArrowDown" && ageIndex < GRID_AGES.length - 1) {
+        e.preventDefault();
+        nextAge = GRID_AGES[ageIndex + 1];
+      } else if (e.key === "ArrowUp" && ageIndex > 0) {
+        e.preventDefault();
+        nextAge = GRID_AGES[ageIndex - 1];
+      } else if (
+        e.key === "ArrowRight" &&
+        faceIndex < GRID_FACE_AMOUNTS.length - 1
+      ) {
+        e.preventDefault();
+        nextFace = GRID_FACE_AMOUNTS[faceIndex + 1];
+      } else if (e.key === "ArrowLeft" && faceIndex > 0) {
+        e.preventDefault();
+        nextFace = GRID_FACE_AMOUNTS[faceIndex - 1];
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (ageIndex < GRID_AGES.length - 1) {
+          nextAge = GRID_AGES[ageIndex + 1];
+        }
+      } else {
+        return;
+      }
+
+      if (nextAge !== age || nextFace !== faceAmount) {
+        const nextKey: CellKey = `${nextAge}-${nextFace}`;
+        const nextInput = inputRefs.current.get(nextKey);
+        if (nextInput && e.key !== "Tab") {
+          nextInput.focus();
+          nextInput.select();
+        }
+      }
+    },
+    [],
+  );
+
+  // Save all changes
+  const handleSaveAll = async () => {
+    setIsSaving(true);
+    try {
+      const entries: {
+        age: number;
+        faceAmount: number;
+        monthlyPremium: number;
+      }[] = [];
+
+      for (const [key, value] of Object.entries(cellInputs)) {
+        const parsed = parseFloat(value);
+        if (!isNaN(parsed) && parsed > 0) {
+          const [age, faceAmount] = key.split("-").map(Number);
+          entries.push({ age, faceAmount, monthlyPremium: parsed });
+        }
+      }
+
+      if (entries.length === 0) {
+        toast.info("No changes to save");
+        return;
+      }
+
+      await bulkUpsert.mutateAsync({
+        productId,
+        gender: selectedGender,
+        tobaccoClass: selectedTobacco,
+        healthClass: selectedHealth,
+        termYears: isTermProduct ? selectedTerm : null,
+        entries,
+      });
+
+      toast.success(`Saved ${entries.length} premium entries`);
+      setCellInputs({});
+    } catch (error) {
+      console.error("Error saving premium matrix:", error);
+      toast.error("Failed to save premiums");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Count statistics
+  const stats = useMemo(() => {
+    const totalCells = GRID_AGES.length * GRID_FACE_AMOUNTS.length;
+    let filledCells = 0;
+    let pendingChanges = 0;
+
+    for (const age of GRID_AGES) {
+      for (const faceAmount of GRID_FACE_AMOUNTS) {
+        const key: CellKey = `${age}-${faceAmount}`;
+        if (existingMap.has(key) || cellInputs[key]) {
+          filledCells++;
+        }
+        if (cellInputs[key] !== undefined) {
+          pendingChanges++;
+        }
+      }
+    }
+
+    return { totalCells, filledCells, pendingChanges };
+  }, [existingMap, cellInputs]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-zinc-200 dark:border-zinc-800 rounded-md">
+      {/* Header */}
+      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+              {productName}
+            </div>
+            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              {carrierName}
+              {isTermProduct && selectedTerm && (
+                <span className="ml-1">• {selectedTerm} Year Term</span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4">
+              {stats.filledCells}/{stats.totalCells}
+            </Badge>
+            {stats.pendingChanges > 0 && (
+              <Badge className="text-[9px] px-1.5 py-0 h-4 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                {stats.pendingChanges} unsaved
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-3 space-y-3">
+        {/* Filter Controls */}
+        <div className="flex items-end gap-2 flex-wrap">
+          {/* Term Selector - Only for term products */}
+          {isTermProduct && (
+            <div>
+              <label className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 mb-0.5 block">
+                Term
+              </label>
+              <Select
+                value={selectedTerm?.toString() || ""}
+                onValueChange={(v) => setSelectedTerm(parseInt(v) as TermYears)}
+              >
+                <SelectTrigger className="h-6 w-20 text-[10px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TERM_OPTIONS.map((opt) => (
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value.toString()}
+                      className="text-[10px]"
+                    >
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div>
+            <label className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 mb-0.5 block">
+              Gender
+            </label>
+            <Select
+              value={selectedGender}
+              onValueChange={(v) => setSelectedGender(v as GenderType)}
+            >
+              <SelectTrigger className="h-6 w-20 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="text-[10px]"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 mb-0.5 block">
+              Tobacco
+            </label>
+            <Select
+              value={selectedTobacco}
+              onValueChange={(v) => setSelectedTobacco(v as TobaccoClass)}
+            >
+              <SelectTrigger className="h-6 w-28 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TOBACCO_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="text-[10px]"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 mb-0.5 block">
+              Health Class
+            </label>
+            <Select
+              value={selectedHealth}
+              onValueChange={(v) => setSelectedHealth(v as HealthClass)}
+            >
+              <SelectTrigger className="h-6 w-28 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HEALTH_CLASS_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="text-[10px]"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Save Button */}
+          <Button
+            onClick={handleSaveAll}
+            disabled={isSaving || stats.pendingChanges === 0}
+            size="sm"
+            className="h-6 px-2 text-[10px] ml-auto"
+          >
+            {isSaving ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <>
+                <Save className="h-3 w-3 mr-1" />
+                Save
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Premium Grid */}
+        <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-700 rounded">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-zinc-100 dark:bg-zinc-800">
+                <th className="px-1.5 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-left sticky left-0 bg-zinc-100 dark:bg-zinc-800 z-10 w-10">
+                  Age
+                </th>
+                {GRID_FACE_AMOUNTS.map((faceAmount) => (
+                  <th
+                    key={faceAmount}
+                    className="px-1 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-center min-w-[60px]"
+                  >
+                    {formatFaceAmount(faceAmount)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {GRID_AGES.map((age, ageIndex) => (
+                <tr
+                  key={age}
+                  className="border-t border-zinc-100 dark:border-zinc-800"
+                >
+                  <td className="px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 dark:text-zinc-300 sticky left-0 bg-white dark:bg-zinc-900 z-10">
+                    {age}
+                  </td>
+                  {GRID_FACE_AMOUNTS.map((faceAmount, faceIndex) => {
+                    const key: CellKey = `${age}-${faceAmount}`;
+                    const value = getCellValue(age, faceAmount);
+                    const hasData = cellHasData(age, faceAmount);
+                    const hasChanges = cellHasChanges(age, faceAmount);
+
+                    return (
+                      <td key={faceAmount} className="p-0.5">
+                        <div className="relative">
+                          <Input
+                            ref={(el) => {
+                              if (el) {
+                                inputRefs.current.set(key, el);
+                              } else {
+                                inputRefs.current.delete(key);
+                              }
+                            }}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="—"
+                            value={value}
+                            onChange={(e) =>
+                              handleCellChange(age, faceAmount, e.target.value)
+                            }
+                            onKeyDown={(e) =>
+                              handleKeyDown(
+                                e,
+                                age,
+                                faceAmount,
+                                ageIndex,
+                                faceIndex,
+                              )
+                            }
+                            className={cn(
+                              "h-6 w-full text-center text-[10px] px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                              hasData &&
+                                !hasChanges &&
+                                "bg-green-50 dark:bg-green-950/20",
+                              hasChanges &&
+                                "bg-yellow-50 dark:bg-yellow-950/20",
+                            )}
+                          />
+                          {hasData && !hasChanges && (
+                            <Check className="absolute right-0.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-green-500 pointer-events-none" />
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Legend & Help */}
+        <div className="flex items-center justify-between text-[9px] text-zinc-400 dark:text-zinc-500">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 bg-green-50 dark:bg-green-950/20 rounded border border-zinc-200 dark:border-zinc-700" />
+              <span>Saved</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 bg-yellow-50 dark:bg-yellow-950/20 rounded border border-zinc-200 dark:border-zinc-700" />
+              <span>Unsaved</span>
+            </div>
+          </div>
+          <span>Tab/Arrow keys to navigate • Enter to move down</span>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1026,6 +1026,72 @@ export type Database = {
           },
         ];
       };
+      carrier_condition_acceptance: {
+        Row: {
+          acceptance: string;
+          approval_likelihood: number | null;
+          carrier_id: string;
+          condition_code: string;
+          created_at: string;
+          created_by: string | null;
+          health_class_result: string | null;
+          id: string;
+          imo_id: string;
+          notes: string | null;
+          product_type: string | null;
+          requires_conditions: Json | null;
+          source: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          acceptance: string;
+          approval_likelihood?: number | null;
+          carrier_id: string;
+          condition_code: string;
+          created_at?: string;
+          created_by?: string | null;
+          health_class_result?: string | null;
+          id?: string;
+          imo_id: string;
+          notes?: string | null;
+          product_type?: string | null;
+          requires_conditions?: Json | null;
+          source?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          acceptance?: string;
+          approval_likelihood?: number | null;
+          carrier_id?: string;
+          condition_code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          health_class_result?: string | null;
+          id?: string;
+          imo_id?: string;
+          notes?: string | null;
+          product_type?: string | null;
+          requires_conditions?: Json | null;
+          source?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carrier_condition_acceptance_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_condition_acceptance_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       carrier_contracts: {
         Row: {
           agent_id: string;
@@ -5134,6 +5200,69 @@ export type Database = {
           },
         ];
       };
+      premium_matrix: {
+        Row: {
+          age: number;
+          created_at: string;
+          created_by: string | null;
+          face_amount: number;
+          gender: string;
+          health_class: string;
+          id: string;
+          imo_id: string;
+          monthly_premium: number;
+          product_id: string;
+          term_years: number | null;
+          tobacco_class: string;
+          updated_at: string;
+        };
+        Insert: {
+          age: number;
+          created_at?: string;
+          created_by?: string | null;
+          face_amount: number;
+          gender: string;
+          health_class: string;
+          id?: string;
+          imo_id: string;
+          monthly_premium: number;
+          product_id: string;
+          term_years?: number | null;
+          tobacco_class: string;
+          updated_at?: string;
+        };
+        Update: {
+          age?: number;
+          created_at?: string;
+          created_by?: string | null;
+          face_amount?: number;
+          gender?: string;
+          health_class?: string;
+          id?: string;
+          imo_id?: string;
+          monthly_premium?: number;
+          product_id?: string;
+          term_years?: number | null;
+          tobacco_class?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "premium_matrix_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "premium_matrix_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       product_commission_overrides: {
         Row: {
           bonus_percentage: number | null;
@@ -5174,6 +5303,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_commission_overrides_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      product_rate_table: {
+        Row: {
+          age_band_end: number;
+          age_band_start: number;
+          created_at: string;
+          created_by: string | null;
+          effective_date: string;
+          expiration_date: string | null;
+          gender: string;
+          health_class: string;
+          id: string;
+          imo_id: string;
+          notes: string | null;
+          product_id: string;
+          rate_per_thousand: number;
+          tobacco_class: string;
+          updated_at: string;
+        };
+        Insert: {
+          age_band_end: number;
+          age_band_start: number;
+          created_at?: string;
+          created_by?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          gender: string;
+          health_class: string;
+          id?: string;
+          imo_id: string;
+          notes?: string | null;
+          product_id: string;
+          rate_per_thousand: number;
+          tobacco_class: string;
+          updated_at?: string;
+        };
+        Update: {
+          age_band_end?: number;
+          age_band_start?: number;
+          created_at?: string;
+          created_by?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          gender?: string;
+          health_class?: string;
+          id?: string;
+          imo_id?: string;
+          notes?: string | null;
+          product_id?: string;
+          rate_per_thousand?: number;
+          tobacco_class?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_rate_table_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_rate_table_product_id_fkey";
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
@@ -5265,6 +5463,141 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      recommendation_outcomes: {
+        Row: {
+          actual_health_class: string | null;
+          actual_premium: number | null;
+          carrier_id: string;
+          client_age: number;
+          client_bmi: number | null;
+          client_gender: string;
+          client_state: string;
+          conditions_reported: string[] | null;
+          created_at: string;
+          face_amount_requested: number;
+          health_tier: string | null;
+          id: string;
+          imo_id: string;
+          outcome: string | null;
+          outcome_notes: string | null;
+          outcome_recorded_at: string | null;
+          policy_id: string | null;
+          predicted_approval_likelihood: number | null;
+          predicted_health_class: string | null;
+          predicted_premium: number | null;
+          product_id: string;
+          recommendation_rank: number | null;
+          recommendation_reason: string | null;
+          recommended_at: string;
+          selected_at: string | null;
+          session_id: string | null;
+          tobacco_class: string | null;
+          updated_at: string;
+          user_id: string | null;
+          was_selected: boolean | null;
+        };
+        Insert: {
+          actual_health_class?: string | null;
+          actual_premium?: number | null;
+          carrier_id: string;
+          client_age: number;
+          client_bmi?: number | null;
+          client_gender: string;
+          client_state: string;
+          conditions_reported?: string[] | null;
+          created_at?: string;
+          face_amount_requested: number;
+          health_tier?: string | null;
+          id?: string;
+          imo_id: string;
+          outcome?: string | null;
+          outcome_notes?: string | null;
+          outcome_recorded_at?: string | null;
+          policy_id?: string | null;
+          predicted_approval_likelihood?: number | null;
+          predicted_health_class?: string | null;
+          predicted_premium?: number | null;
+          product_id: string;
+          recommendation_rank?: number | null;
+          recommendation_reason?: string | null;
+          recommended_at?: string;
+          selected_at?: string | null;
+          session_id?: string | null;
+          tobacco_class?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+          was_selected?: boolean | null;
+        };
+        Update: {
+          actual_health_class?: string | null;
+          actual_premium?: number | null;
+          carrier_id?: string;
+          client_age?: number;
+          client_bmi?: number | null;
+          client_gender?: string;
+          client_state?: string;
+          conditions_reported?: string[] | null;
+          created_at?: string;
+          face_amount_requested?: number;
+          health_tier?: string | null;
+          id?: string;
+          imo_id?: string;
+          outcome?: string | null;
+          outcome_notes?: string | null;
+          outcome_recorded_at?: string | null;
+          policy_id?: string | null;
+          predicted_approval_likelihood?: number | null;
+          predicted_health_class?: string | null;
+          predicted_premium?: number | null;
+          product_id?: string;
+          recommendation_rank?: number | null;
+          recommendation_reason?: string | null;
+          recommended_at?: string;
+          selected_at?: string | null;
+          session_id?: string | null;
+          tobacco_class?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+          was_selected?: boolean | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_outcomes_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recommendation_outcomes_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recommendation_outcomes_policy_id_fkey";
+            columns: ["policy_id"];
+            isOneToOne: false;
+            referencedRelation: "policies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recommendation_outcomes_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recommendation_outcomes_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_sessions";
             referencedColumns: ["id"];
           },
         ];
@@ -10272,6 +10605,10 @@ export type Database = {
         };
         Returns: string;
       };
+      calculate_premium: {
+        Args: { p_face_amount: number; p_rate_per_thousand: number };
+        Returns: number;
+      };
       calculate_quiz_score: {
         Args: { p_answers: Json; p_questions: Json };
         Returns: Json;
@@ -10900,6 +11237,21 @@ export type Database = {
           description: string;
           id: string;
           name: string;
+        }[];
+      };
+      get_carrier_acceptance: {
+        Args: {
+          p_carrier_id: string;
+          p_condition_code: string;
+          p_imo_id: string;
+          p_product_type: string;
+        };
+        Returns: {
+          acceptance: string;
+          approval_likelihood: number;
+          health_class_result: string;
+          notes: string;
+          requires_conditions: Json;
         }[];
       };
       get_clients_with_stats: {
@@ -11578,6 +11930,17 @@ export type Database = {
           p_comp_level: Database["public"]["Enums"]["comp_level"];
           p_date?: string;
           p_product_id: string;
+        };
+        Returns: number;
+      };
+      get_product_rate: {
+        Args: {
+          p_age: number;
+          p_gender: string;
+          p_health_class: string;
+          p_imo_id: string;
+          p_product_id: string;
+          p_tobacco_class: string;
         };
         Returns: number;
       };

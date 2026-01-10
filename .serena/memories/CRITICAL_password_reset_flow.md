@@ -78,3 +78,28 @@ Ensure these URLs are in **Authentication → URL Configuration → Redirect URL
 - `https://www.thestandardhq.com/auth/callback`
 - `https://thestandardhq.com/auth/callback`
 - `http://localhost:5173/auth/callback` (for local dev)
+
+## Troubleshooting: Edge Function 404 Errors
+
+### Symptom
+Browser returns 404 when calling `send-password-reset` but curl works fine.
+
+### Diagnosis Steps
+1. Verify function is deployed: `npx supabase functions list`
+2. Test via curl with proper headers (apikey + Authorization)
+3. If curl works but browser fails, likely needs redeployment
+
+### Fix
+Redeploy the edge function to refresh all edge nodes:
+```bash
+npx supabase functions deploy send-password-reset --project-ref pcyaqwodnyrpkaiojnpz
+```
+
+### Prevention
+- After ANY changes to auth edge functions, always verify via curl before browser testing
+- If 404 errors occur, first try redeploying the function
+- Monitor Supabase edge function logs in dashboard for runtime errors
+- Browser 404 with curl success = likely needs function redeployment
+
+### Related Issue (2026-01-10)
+The `send-password-reset` function was returning 404 from browser calls despite being deployed and working via curl. Redeploying the function resolved the issue.
