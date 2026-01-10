@@ -42,6 +42,42 @@ export class PolicyRepository extends BaseRepository<
     super(TABLES.POLICIES);
   }
 
+  // Override create to include client join (same as findById/update)
+  // This ensures the returned policy has complete client data for:
+  // 1. Immediate edit functionality (client name/state/age populate correctly)
+  // 2. Commission creation (correct client info stored on commission record)
+  async create(data: CreatePolicyData): Promise<Policy> {
+    try {
+      const dbData = this.transformToDB(data);
+
+      const { data: result, error } = await this.client
+        .from(this.tableName)
+        .insert(dbData)
+        .select(
+          `
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address,
+            date_of_birth
+          )
+        `,
+        )
+        .single();
+
+      if (error) {
+        throw this.handleError(error, "create");
+      }
+
+      return this.transformFromDB(result);
+    } catch (error) {
+      throw this.wrapError(error, "create");
+    }
+  }
+
   // Override findById to include client join
   async findById(id: string): Promise<Policy | null> {
     try {
