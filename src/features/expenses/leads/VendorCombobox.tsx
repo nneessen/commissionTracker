@@ -1,7 +1,7 @@
 // src/features/expenses/leads/VendorCombobox.tsx
 
 import { useState } from "react";
-import { Check, ChevronsUpDown, Plus, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +42,7 @@ export function VendorCombobox({
   const selectedVendor = vendors.find((v) => v.id === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -59,15 +59,16 @@ export function VendorCombobox({
           <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent
+        className="w-[300px] p-0"
+        align="start"
+        onWheel={(e) => e.stopPropagation()}
+      >
         <Command>
-          <div className="flex items-center border-b px-3">
-            <Search className="mr-2 h-3 w-3 shrink-0 opacity-50" />
-            <CommandInput
-              placeholder="Search vendors..."
-              className="h-8 text-xs"
-            />
-          </div>
+          <CommandInput
+            placeholder="Search vendors..."
+            className="h-8 text-xs"
+          />
           <CommandList>
             <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">
               No vendors found.

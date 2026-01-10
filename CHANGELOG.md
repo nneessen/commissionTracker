@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-10 08:12:17
+
+### Changed Files
+- `src/components/ui/command.tsx`
+- `src/features/expenses/leads/VendorCombobox.tsx`
+
+### Statistics
+```
+ 2 files changed, 12 insertions(+), 11 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-09 18:36:37
 
 ### Changed Files

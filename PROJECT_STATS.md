@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-09 18:36:37
+Last Updated: 2026-01-10 08:12:17
 
 ## Metrics
 - Total Files: 29087
-- Total Lines of Code: 413362
-- Total Commits: 720
+- Total Lines of Code: 413427
+- Total Commits: 726
 
 ## Recent Activity
-1f8a698 docs: multiple changes in .,src/features/settings/products/components,src/services/settings/products
-c96e116 chore: fix ESLint errors blocking CI
-19e13a4 fix: add cache headers and auto-reload for stale deployments
-0f96ecf fix(expenses): use date utilities for lead purchase date display
-cdb7006 docs: multiple changes in .,src/components/subscription,src/features/hierarchy
+72e496d feat(policies): collect real DOB instead of age in policy form
+deed5a2 fix(clients): update existing clients with date_of_birth in createOrFind
+30d3c63 fix(policies): store date_of_birth properly instead of age in address JSON
+873ed39 fix(policies): fallback to address.age when date_of_birth missing
+78cc82e fix(policies): include client JOIN in create() for immediate edit data
