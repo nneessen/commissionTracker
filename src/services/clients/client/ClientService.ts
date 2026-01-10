@@ -367,6 +367,28 @@ class ClientServiceClass {
       );
 
       if (existing) {
+        // Update existing client with any new data (date_of_birth, address, etc.)
+        const updates: Record<string, unknown> = {};
+        if (data.date_of_birth && !existing.date_of_birth) {
+          updates.date_of_birth = data.date_of_birth;
+        }
+        if (data.address) {
+          updates.address = data.address;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { data: updated, error } = await supabase
+            .from(TABLES.CLIENTS)
+            .update(updates)
+            .eq("id", existing.id)
+            .select()
+            .single();
+
+          if (!error && updated) {
+            return { success: true, data: updated as Client };
+          }
+        }
+
         return { success: true, data: existing as Client };
       }
 
@@ -489,7 +511,7 @@ class ClientServiceClass {
    * Returns clients belonging to agents in the current user's downline
    */
   async getDownlineClientsWithStats(
-    filters?: ClientFilters
+    filters?: ClientFilters,
   ): Promise<ServiceResponse<DownlineClientWithStats[]>> {
     try {
       let results = await this.repository.findDownlineWithStats();
@@ -507,7 +529,7 @@ class ClientServiceClass {
               c.name.toLowerCase().includes(search) ||
               c.email?.toLowerCase().includes(search) ||
               c.phone?.includes(search) ||
-              c.owner_name.toLowerCase().includes(search)
+              c.owner_name.toLowerCase().includes(search),
           );
         }
 
@@ -538,7 +560,7 @@ class ClientServiceClass {
    * Only accessible by IMO admins
    */
   async getImoClientsWithStats(
-    filters?: ClientFilters
+    filters?: ClientFilters,
   ): Promise<ServiceResponse<DownlineClientWithStats[]>> {
     try {
       let results = await this.repository.findImoWithStats();
@@ -556,7 +578,7 @@ class ClientServiceClass {
               c.name.toLowerCase().includes(search) ||
               c.email?.toLowerCase().includes(search) ||
               c.phone?.includes(search) ||
-              c.owner_name.toLowerCase().includes(search)
+              c.owner_name.toLowerCase().includes(search),
           );
         }
 
