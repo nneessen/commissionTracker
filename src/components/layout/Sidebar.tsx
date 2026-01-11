@@ -232,6 +232,15 @@ export default function Sidebar({
   const isSuperAdmin =
     supabaseUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 
+  // UW Wizard access - restricted to specific users only
+  const UW_WIZARD_ALLOWED_EMAILS = [
+    "nickneessen@thestandardhq.com",
+    "kerryglass.ffl@gmail.com",
+  ];
+  const isUWWizardAllowed =
+    supabaseUser?.email &&
+    UW_WIZARD_ALLOWED_EMAILS.includes(supabaseUser.email.toLowerCase());
+
   // Check if a subscription feature is available
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
     if (!feature) return true; // No feature required
@@ -750,17 +759,22 @@ export default function Sidebar({
         {/* Footer */}
         <div className="p-2 border-t border-border bg-card/80">
           {/* Underwriting Wizard Button */}
-          {!isUnderwritingLoading && isUnderwritingEnabled && (
-            <Button
-              variant="outline"
-              className={`mb-2 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
-              onClick={() => setIsUnderwritingWizardOpen(true)}
-              title={isCollapsed ? "Underwriting Wizard" : ""}
-            >
-              <ShieldCheck size={16} className={isCollapsed ? "" : "mr-2.5"} />
-              {!isCollapsed && <span className="text-sm">UW Wizard</span>}
-            </Button>
-          )}
+          {!isUnderwritingLoading &&
+            isUnderwritingEnabled &&
+            isUWWizardAllowed && (
+              <Button
+                variant="outline"
+                className={`mb-2 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
+                onClick={() => setIsUnderwritingWizardOpen(true)}
+                title={isCollapsed ? "Underwriting Wizard" : ""}
+              >
+                <ShieldCheck
+                  size={16}
+                  className={isCollapsed ? "" : "mr-2.5"}
+                />
+                {!isCollapsed && <span className="text-sm">UW Wizard</span>}
+              </Button>
+            )}
           <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
             {!isCollapsed && (
