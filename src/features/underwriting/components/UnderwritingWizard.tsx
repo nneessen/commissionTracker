@@ -410,7 +410,10 @@ export default function UnderwritingWizard({
           <div className="flex items-center justify-between">
             <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-blue-500" />
-              AI Underwriting Wizard
+              The Standard Underwriting Wizard (BETA)
+              <span className="text-red-500">
+                DO NOT USE FOR ACTUAL PRODUCT RECOMMENDATIONS
+              </span>
             </DialogTitle>
           </div>
 

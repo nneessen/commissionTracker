@@ -107,11 +107,42 @@ function extractCarrierName(company: string): string {
   return match ? match[1].trim() : company;
 }
 
-// Parse product name from company string
-function extractProductName(company: string): string {
-  // "Transamerica (Trendsetter Super 2021)" → "Trendsetter Super 2021"
-  const match = company.match(/\(([^)]+)\)/);
-  return match ? match[1].trim() : company;
+// Extract product name for grouping, PRESERVING rating class but stripping term suffixes
+// This is critical: products with different rating classes (Preferred vs Standard) are SEPARATE products
+// Examples:
+//   "Term Made Simple Preferred 10-Year" → "Term Made Simple Preferred"
+//   "Term Made Simple Standard 10-Year" → "Term Made Simple Standard"
+//   "Trendsetter Super 2021 10-Year Standard" → "Trendsetter Super 2021 Standard"
+//   "Simple Term 20-Year" → "Simple Term"
+//   "Simple Term Deluxe 20-Year" → "Simple Term Deluxe"
+function extractProductName(company: string, planName: string): string {
+  // First, try to extract from company parentheses
+  // e.g., "Transamerica (Trendsetter Super 2021)" → "Trendsetter Super 2021"
+  // BUT we still need to check the planName for rating class info
+  const companyMatch = company.match(/\(([^)]+)\)/);
+  const baseFromCompany = companyMatch ? companyMatch[1].trim() : null;
+
+  // If no plan name, use company base
+  if (!planName || !planName.trim()) {
+    return baseFromCompany || company;
+  }
+
+  let baseName = planName.trim();
+
+  // Strip term suffixes (10-Year, 15-Year, 20-Year, 25-Year, 30-Year)
+  // Keep track of what we stripped and where
+  baseName = baseName.replace(/\s*\d{1,2}-Year\s*/gi, " ").trim();
+
+  // Strip "Non-Med" suffix (not a rating class, just a variant indicator)
+  baseName = baseName.replace(/\s*Non-Med\s*/gi, " ").trim();
+
+  // Clean up any double spaces
+  baseName = baseName.replace(/\s+/g, " ").trim();
+
+  // DO NOT strip rating classes (Preferred, Standard, etc.)
+  // These differentiate products and should be preserved for proper mapping
+
+  return baseName;
 }
 
 // Map gender
@@ -211,7 +242,7 @@ function groupByCarrierProduct(rates: ParsedRate[]): CarrierProductGroup[] {
 
   for (const rate of rates) {
     const carrierName = extractCarrierName(rate.company);
-    const productName = extractProductName(rate.company);
+    const productName = extractProductName(rate.company, rate.plan_name);
     const key = `${carrierName}|${productName}`;
 
     if (!groups.has(key)) {
@@ -256,6 +287,16 @@ export function RateImportDialog({
     errors: string[];
   }>({ success: 0, skipped: [], errors: [] });
 
+  // Normalize product name for matching (lowercase, normalize spaces, handle common variations)
+  const normalizeForMatching = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/-/g, " ")
+      .replace(/\s+plus\b/g, " plus") // normalize "plus" suffix
+      .trim();
+  };
+
   // Auto-map carriers and products
   const autoMapGroups = useCallback(
     (groupsToMap: CarrierProductGroup[]): CarrierProductGroup[] => {
@@ -272,12 +313,58 @@ export function RateImportDialog({
         let mappedProductId: string | undefined;
 
         // If carrier found, try to find matching product
+        // Priority: exact match > normalized match > starts with > contains
         if (matchedCarrier) {
-          const matchedProduct = matchedCarrier.products.find(
-            (p) =>
-              p.name.toLowerCase().includes(group.productName.toLowerCase()) ||
-              group.productName.toLowerCase().includes(p.name.toLowerCase()),
+          const productNameNorm = normalizeForMatching(group.productName);
+
+          // 1. Try exact match first
+          let matchedProduct = matchedCarrier.products.find(
+            (p) => p.name.toLowerCase() === group.productName.toLowerCase(),
           );
+
+          // 2. Try normalized match (handles "Preferred Plus" vs "Preferred-Plus" etc.)
+          if (!matchedProduct) {
+            matchedProduct = matchedCarrier.products.find(
+              (p) => normalizeForMatching(p.name) === productNameNorm,
+            );
+          }
+
+          // 3. Try normalized "starts with" match
+          if (!matchedProduct) {
+            matchedProduct = matchedCarrier.products.find((p) => {
+              const pNorm = normalizeForMatching(p.name);
+              return (
+                pNorm.startsWith(productNameNorm) ||
+                productNameNorm.startsWith(pNorm)
+              );
+            });
+          }
+
+          // 4. Try matching where one contains the other (but prefer longer matches)
+          // Be more careful here to avoid false positives with rating classes
+          if (!matchedProduct) {
+            const candidates = matchedCarrier.products.filter((p) => {
+              const pNorm = normalizeForMatching(p.name);
+              // Both must share a significant base (at least first 2 words)
+              const productWords = productNameNorm
+                .split(" ")
+                .slice(0, 2)
+                .join(" ");
+              const pWords = pNorm.split(" ").slice(0, 2).join(" ");
+              return productWords === pWords;
+            });
+
+            // If we have candidates, pick the one with the best overlap
+            if (candidates.length === 1) {
+              matchedProduct = candidates[0];
+            } else if (candidates.length > 1) {
+              // Pick exact match if available, otherwise leave unmapped for manual selection
+              matchedProduct = candidates.find(
+                (p) => normalizeForMatching(p.name) === productNameNorm,
+              );
+            }
+          }
+
           mappedProductId = matchedProduct?.id;
         }
 
@@ -536,29 +623,19 @@ export function RateImportDialog({
                         : "bg-zinc-50 dark:bg-zinc-900"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-[11px] font-medium ${group.skipped ? "line-through" : ""}`}
-                          >
-                            {group.carrierName}
-                          </span>
-                          <span
-                            className={`text-[10px] text-zinc-500 ${group.skipped ? "line-through" : ""}`}
-                          >
-                            {group.productName}
-                          </span>
-                        </div>
-                        {/* Show unique plan names for better identification */}
-                        {group.uniquePlanNames.length > 0 && (
-                          <div className="text-[9px] text-blue-600 dark:text-blue-400 mt-0.5 truncate">
-                            Plans:{" "}
-                            {group.uniquePlanNames.slice(0, 5).join(", ")}
-                            {group.uniquePlanNames.length > 5 &&
-                              ` +${group.uniquePlanNames.length - 5} more`}
-                          </div>
-                        )}
+                    {/* Row 1: Carrier, Product, Badge, Skip button - always visible */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span
+                          className={`text-[11px] font-medium shrink-0 ${group.skipped ? "line-through" : ""}`}
+                        >
+                          {group.carrierName}
+                        </span>
+                        <span
+                          className={`text-[10px] text-zinc-500 truncate ${group.skipped ? "line-through" : ""}`}
+                        >
+                          {group.productName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge
@@ -590,6 +667,18 @@ export function RateImportDialog({
                         </Button>
                       </div>
                     </div>
+
+                    {/* Row 2: Plans list - separate row, truncated */}
+                    {group.uniquePlanNames.length > 0 && (
+                      <div
+                        className="text-[9px] text-blue-600 dark:text-blue-400 truncate max-w-full"
+                        title={group.uniquePlanNames.join(", ")}
+                      >
+                        Plans: {group.uniquePlanNames.slice(0, 3).join(", ")}
+                        {group.uniquePlanNames.length > 3 &&
+                          ` +${group.uniquePlanNames.length - 3} more`}
+                      </div>
+                    )}
 
                     {!group.skipped && (
                       <div className="flex items-center gap-2">

@@ -19,7 +19,7 @@ import {
 } from "../../hooks/usePremiumMatrix";
 import {
   GRID_AGES,
-  GRID_FACE_AMOUNTS,
+  getFaceAmountsForProductType,
   GENDER_OPTIONS,
   TOBACCO_OPTIONS,
   HEALTH_CLASS_OPTIONS,
@@ -51,6 +51,12 @@ export function PremiumMatrixGrid({
 }: PremiumMatrixGridProps) {
   // Is this a term product?
   const isTermProduct = productType === "term_life";
+
+  // Get face amounts based on product type
+  const faceAmounts = useMemo(
+    () => getFaceAmountsForProductType(productType),
+    [productType],
+  );
 
   // Filter state
   const [selectedGender, setSelectedGender] = useState<GenderType>("male");
@@ -156,18 +162,18 @@ export function PremiumMatrixGrid({
       let nextFace = faceAmount;
 
       if (e.key === "Tab" && !e.shiftKey) {
-        if (faceIndex < GRID_FACE_AMOUNTS.length - 1) {
-          nextFace = GRID_FACE_AMOUNTS[faceIndex + 1];
+        if (faceIndex < faceAmounts.length - 1) {
+          nextFace = faceAmounts[faceIndex + 1];
         } else if (ageIndex < GRID_AGES.length - 1) {
           nextAge = GRID_AGES[ageIndex + 1];
-          nextFace = GRID_FACE_AMOUNTS[0];
+          nextFace = faceAmounts[0];
         }
       } else if (e.key === "Tab" && e.shiftKey) {
         if (faceIndex > 0) {
-          nextFace = GRID_FACE_AMOUNTS[faceIndex - 1];
+          nextFace = faceAmounts[faceIndex - 1];
         } else if (ageIndex > 0) {
           nextAge = GRID_AGES[ageIndex - 1];
-          nextFace = GRID_FACE_AMOUNTS[GRID_FACE_AMOUNTS.length - 1];
+          nextFace = faceAmounts[faceAmounts.length - 1];
         }
       } else if (e.key === "ArrowDown" && ageIndex < GRID_AGES.length - 1) {
         e.preventDefault();
@@ -175,15 +181,12 @@ export function PremiumMatrixGrid({
       } else if (e.key === "ArrowUp" && ageIndex > 0) {
         e.preventDefault();
         nextAge = GRID_AGES[ageIndex - 1];
-      } else if (
-        e.key === "ArrowRight" &&
-        faceIndex < GRID_FACE_AMOUNTS.length - 1
-      ) {
+      } else if (e.key === "ArrowRight" && faceIndex < faceAmounts.length - 1) {
         e.preventDefault();
-        nextFace = GRID_FACE_AMOUNTS[faceIndex + 1];
+        nextFace = faceAmounts[faceIndex + 1];
       } else if (e.key === "ArrowLeft" && faceIndex > 0) {
         e.preventDefault();
-        nextFace = GRID_FACE_AMOUNTS[faceIndex - 1];
+        nextFace = faceAmounts[faceIndex - 1];
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (ageIndex < GRID_AGES.length - 1) {
@@ -202,7 +205,7 @@ export function PremiumMatrixGrid({
         }
       }
     },
-    [],
+    [faceAmounts],
   );
 
   // Save all changes
@@ -249,12 +252,12 @@ export function PremiumMatrixGrid({
 
   // Count statistics
   const stats = useMemo(() => {
-    const totalCells = GRID_AGES.length * GRID_FACE_AMOUNTS.length;
+    const totalCells = GRID_AGES.length * faceAmounts.length;
     let filledCells = 0;
     let pendingChanges = 0;
 
     for (const age of GRID_AGES) {
-      for (const faceAmount of GRID_FACE_AMOUNTS) {
+      for (const faceAmount of faceAmounts) {
         const key: CellKey = `${age}-${faceAmount}`;
         if (existingMap.has(key) || cellInputs[key]) {
           filledCells++;
@@ -266,7 +269,7 @@ export function PremiumMatrixGrid({
     }
 
     return { totalCells, filledCells, pendingChanges };
-  }, [existingMap, cellInputs]);
+  }, [existingMap, cellInputs, faceAmounts]);
 
   if (isLoading) {
     return (
@@ -437,7 +440,7 @@ export function PremiumMatrixGrid({
                 <th className="px-1.5 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-left sticky left-0 bg-zinc-100 dark:bg-zinc-800 z-10 w-10">
                   Age
                 </th>
-                {GRID_FACE_AMOUNTS.map((faceAmount) => (
+                {faceAmounts.map((faceAmount) => (
                   <th
                     key={faceAmount}
                     className="px-1 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-center min-w-[60px]"
@@ -456,7 +459,7 @@ export function PremiumMatrixGrid({
                   <td className="px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 dark:text-zinc-300 sticky left-0 bg-white dark:bg-zinc-900 z-10">
                     {age}
                   </td>
-                  {GRID_FACE_AMOUNTS.map((faceAmount, faceIndex) => {
+                  {faceAmounts.map((faceAmount, faceIndex) => {
                     const key: CellKey = `${age}-${faceAmount}`;
                     const value = getCellValue(age, faceAmount);
                     const hasData = cellHasData(age, faceAmount);

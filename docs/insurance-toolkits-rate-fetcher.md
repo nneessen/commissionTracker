@@ -156,6 +156,189 @@ const fetchRatesWithExport = async () => {
 fetchRatesWithExport();
 ```
 
+## CPT Mode Script (Recommended)
+
+**Rate-Per-Thousand mode** - Fetches rates at a single face amount for all age/gender/tobacco/term combinations. The Quick Quote system automatically derives rates for any face amount using the formula:
+
+```
+premium = (rateAtKnownFace ÷ knownFace × 1000) × (requestedFace ÷ 1000)
+```
+
+**Benefits:**
+- ~8x fewer API requests (one face amount instead of eight)
+- ~8x less data to import
+- Same accuracy for term life (premiums scale linearly with face amount)
+
+```javascript
+const fetchTermRatesCPT = async () => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No access token found. Make sure you are logged in.');
+    return;
+  }
+
+  // CPT Mode: Single face amount, all classifications
+  const CONFIG = {
+    faceAmount: 100000,        // Single reference face amount
+    state: 'IL',               // Two-letter state code
+    ages: Array.from({ length: 63 }, (_, i) => i + 18),  // Ages 18-80
+    genders: ['Male', 'Female'],
+    tobaccos: ['None', 'Tobacco'],
+    terms: ['10', '15', '20', '25', '30'],
+  };
+
+  const allQuotes = [];
+  const total = CONFIG.ages.length * CONFIG.genders.length * CONFIG.tobaccos.length * CONFIG.terms.length;
+  let current = 0;
+
+  console.log(`CPT Mode: Fetching ${total} rate combinations at $${CONFIG.faceAmount.toLocaleString()}`);
+
+  for (const sex of CONFIG.genders) {
+    for (const tobacco of CONFIG.tobaccos) {
+      for (const term of CONFIG.terms) {
+        for (const age of CONFIG.ages) {
+          current++;
+
+          try {
+            const res = await fetch('https://api.insurancetoolkits.com/quoter/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                faceAmount: CONFIG.faceAmount,
+                sex,
+                term,
+                state: CONFIG.state,
+                age,
+                tobacco,
+                paymentType: 'Bank Draft/EFT',
+                underwritingItems: [],
+                toolkit: 'TERM'
+              })
+            });
+
+            const data = await res.json();
+
+            if (data.quotes) {
+              for (const q of data.quotes) {
+                allQuotes.push({
+                  face_amount: CONFIG.faceAmount,
+                  company: q.company,
+                  plan_name: q.plan_name,
+                  tier_name: q.tier_name,
+                  monthly: q.monthly,
+                  yearly: q.yearly,
+                  state: CONFIG.state,
+                  gender: sex,
+                  age: age,
+                  term_years: term,
+                  tobacco: tobacco
+                });
+              }
+            }
+
+            // Progress every 100 requests
+            if (current % 100 === 0) {
+              console.log(`Progress: ${current}/${total} (${Math.round(current/total*100)}%)`);
+            }
+
+            // Rate limiting: 50ms between requests
+            await new Promise(r => setTimeout(r, 50));
+
+          } catch (e) {
+            console.error(`Error at ${sex}/${tobacco}/${term}yr/age${age}:`, e.message);
+          }
+        }
+
+        // Pause between term lengths
+        console.log(`Completed: ${sex} ${tobacco} ${term}yr`);
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+  }
+
+  console.log(`\nDone! ${allQuotes.length} rates fetched`);
+  window.fetchedRates = allQuotes;
+
+  // Generate CSV
+  if (allQuotes.length > 0) {
+    const headers = Object.keys(allQuotes[0]);
+    const csvContent = [
+      headers.join(','),
+      ...allQuotes.map(row =>
+        headers.map(h => {
+          const val = String(row[h] ?? '');
+          return val.includes(',') ? `"${val}"` : val;
+        }).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `term_cpt_${CONFIG.state}_${CONFIG.faceAmount}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log('CSV downloaded: ' + a.download);
+  }
+
+  return allQuotes;
+};
+
+fetchTermRatesCPT();
+```
+
+### CPT Mode Estimates
+
+| Configuration | Requests | Time (~50ms each) |
+|--------------|----------|-------------------|
+| Single gender/tobacco/term | 63 ages | ~3 seconds |
+| All terms, single gender/tobacco | 315 | ~16 seconds |
+| All combos (2 genders × 2 tobacco × 5 terms) | 1,260 | ~63 seconds |
+
+### Quick Single-Config CPT Script
+
+For testing a single configuration quickly:
+
+```javascript
+const quickCPT = async (sex = 'Male', tobacco = 'None', term = '20') => {
+  const token = localStorage.getItem('accessToken');
+  const quotes = [];
+
+  for (let age = 18; age <= 80; age++) {
+    const res = await fetch('https://api.insurancetoolkits.com/quoter/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        faceAmount: 100000, sex, term, state: 'IL', age, tobacco,
+        paymentType: 'Bank Draft/EFT', underwritingItems: [], toolkit: 'TERM'
+      })
+    });
+    const data = await res.json();
+    if (data.quotes) {
+      data.quotes.forEach(q => quotes.push({
+        face_amount: 100000, company: q.company, plan_name: q.plan_name,
+        tier_name: q.tier_name, monthly: q.monthly, yearly: q.yearly,
+        state: 'IL', gender: sex, age, term_years: term, tobacco
+      }));
+    }
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  console.log(`${quotes.length} rates fetched`);
+  console.table(quotes.slice(0, 20));
+  window.fetchedRates = quotes;
+  return quotes;
+};
+
+// Usage: quickCPT('Male', 'None', '20');
+```
+
 ## Request Parameters Reference
 
 | Parameter | Values | Description |
@@ -297,6 +480,7 @@ const fetchFEXLevelRates = async () => {
               company: q.company,
               plan_name: q.plan_name,
               tier_name: q.tier_name,
+              coverage_type: CONFIG.coverageType,
               monthly: parseNum(q.monthly),
               yearly: parseNum(q.yearly),
               state: CONFIG.state,
@@ -371,15 +555,22 @@ fetchFEXLevelRates();
 |--------|-------------|---------|
 | face_amount | Coverage amount (numeric) | 35000 |
 | company | Carrier with product | "Mutual of Omaha (Living Promise)" |
-| plan_name | Full plan name | "Living Promise Level" |
-| tier_name | Health class tier | "Level", "Preferred", "Standard" |
+| plan_name | Full plan name (used for product matching when company lacks parentheses) | "Living Promise Level" |
+| tier_name | Product tier/variant name | "Level", "Preferred", "Premier", "Deluxe" |
+| coverage_type | Coverage type from request | "Level" or "Graded" |
 | monthly | Monthly premium (numeric) | 189.67 |
 | yearly | Annual premium (numeric) | 2131.10 |
 | state | State code | IL |
 | gender | Male/Female | Male |
 | age | Issue age | 65 |
-| term_years | Empty for whole life | (empty) |
+| term_years | Empty for whole life (stored as NULL in database) | (empty) |
 | tobacco | None/Tobacco | None |
+
+**Note on product matching:** The import uses `plan_name` as the product identifier for grouping. This ensures products like "Patriot Series Preferred" and "Patriot Series Standard" are treated as separate products, not grouped together. Examples:
+- `plan_name: "Patriot Series Preferred"` → maps to product "Patriot Series Preferred"
+- `plan_name: "aPriority (0-49) Standard"` → maps to product "aPriority (0-49) Standard"
+- `plan_name: "Premier"` (UHL) → maps to product "Premier"
+- `plan_name: "Living Legacy Preferred"` → maps to product "Living Legacy Preferred"
 
 ## FEX Request Parameters
 

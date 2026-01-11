@@ -4,6 +4,7 @@
 
 import { supabase } from "@/services/base/supabase";
 import type { Database } from "@/types/database.types";
+import type { ProductUnderwritingConstraints } from "@/features/underwriting/types/product-constraints.types";
 
 type PremiumMatrixRow = Database["public"]["Tables"]["premium_matrix"]["Row"];
 type PremiumMatrixInsert =
@@ -32,6 +33,26 @@ export interface PremiumMatrix extends PremiumMatrixRow {
   };
 }
 
+// Extended type with full product and carrier info for Quick Quote
+export interface PremiumMatrixWithCarrier extends PremiumMatrixRow {
+  product: {
+    id: string;
+    name: string;
+    product_type: string;
+    carrier_id: string;
+    min_age: number | null;
+    max_age: number | null;
+    min_face_amount: number | null;
+    max_face_amount: number | null;
+    is_active: boolean;
+    metadata: ProductUnderwritingConstraints | null;
+    carrier: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+}
+
 export interface PremiumMatrixEntry {
   age: number;
   faceAmount: number;
@@ -56,10 +77,41 @@ export const GRID_AGES = [
   20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85,
 ] as const;
 
-// Standard face amounts for the grid ($25k increments + larger tiers)
-export const GRID_FACE_AMOUNTS = [
+// Face amounts by product type
+// Term Life: larger coverage amounts
+export const TERM_FACE_AMOUNTS = [
   25000, 50000, 75000, 100000, 150000, 200000, 250000, 500000, 1000000,
 ] as const;
+
+// Whole Life / Final Expense: 5k to 50k in 5k increments
+export const WHOLE_LIFE_FACE_AMOUNTS = [
+  5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000,
+] as const;
+
+// Participating Whole Life: 5k to 50k in 5k increments, then 75k to 300k in 25k increments
+export const PARTICIPATING_WHOLE_LIFE_FACE_AMOUNTS = [
+  5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 75000,
+  100000, 125000, 150000, 175000, 200000, 225000, 250000, 275000, 300000,
+] as const;
+
+// Default face amounts (for backward compatibility)
+export const GRID_FACE_AMOUNTS = TERM_FACE_AMOUNTS;
+
+// Get face amounts based on product type
+export function getFaceAmountsForProductType(
+  productType: string,
+): readonly number[] {
+  switch (productType) {
+    case "whole_life":
+    case "final_expense":
+      return WHOLE_LIFE_FACE_AMOUNTS;
+    case "participating_whole_life":
+      return PARTICIPATING_WHOLE_LIFE_FACE_AMOUNTS;
+    case "term_life":
+    default:
+      return TERM_FACE_AMOUNTS;
+  }
+}
 
 // Standard term lengths
 export const TERM_OPTIONS: { value: TermYears; label: string }[] = [
@@ -212,6 +264,132 @@ export async function getTermYearsForProduct(
     ...new Set((data || []).map((r) => r.term_years as TermYears)),
   ];
   return termYears.sort((a, b) => a - b);
+}
+
+/**
+ * Get ALL premium matrix entries for an IMO (batch fetch for Quick Quote)
+ * Uses RPC function with parallel pagination to bypass PostgREST 1000 row limit.
+ * Enables instant recalculation without additional DB queries.
+ */
+export async function getAllPremiumMatricesForIMO(
+  imoId: string,
+): Promise<PremiumMatrixWithCarrier[]> {
+  const PAGE_SIZE = 1000;
+
+  // Step 1: Get total count
+  const { count, error: countError } = await supabase
+    .from("premium_matrix")
+    .select("*", { count: "exact", head: true })
+    .eq("imo_id", imoId);
+
+  if (countError) {
+    console.error("Error counting premium matrices:", countError);
+    throw new Error(`Failed to count premium matrices: ${countError.message}`);
+  }
+
+  const totalRows = count || 0;
+
+  // Step 2: Single fetch for small datasets (optimization)
+  if (totalRows <= PAGE_SIZE) {
+    const { data, error } = await supabase
+      .rpc("get_premium_matrices_for_imo", { p_imo_id: imoId })
+      .range(0, PAGE_SIZE - 1);
+
+    if (error) {
+      console.error("Error fetching premium matrices via RPC:", error);
+      throw new Error(`Failed to fetch premium matrices: ${error.message}`);
+    }
+
+    return transformRPCResults(data || []);
+  }
+
+  // Step 3: Parallel pagination for large datasets
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+  const pagePromises = Array.from({ length: totalPages }, (_, pageIndex) =>
+    supabase
+      .rpc("get_premium_matrices_for_imo", { p_imo_id: imoId })
+      .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1),
+  );
+
+  const results = await Promise.all(pagePromises);
+
+  // Check for errors in any page
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].error) {
+      console.error(`Error fetching page ${i}:`, results[i].error);
+      throw new Error(
+        `Failed to fetch premium matrices: ${results[i].error!.message}`,
+      );
+    }
+  }
+
+  // Combine all pages
+  const allData = results.flatMap((result) => result.data || []);
+
+  return transformRPCResults(allData);
+}
+
+// Helper function to transform flat RPC results to nested structure
+function transformRPCResults(
+  data: PremiumMatrixRPCRow[],
+): PremiumMatrixWithCarrier[] {
+  return data.map((row) => ({
+    id: row.id,
+    imo_id: row.imo_id,
+    product_id: row.product_id,
+    age: row.age,
+    face_amount: row.face_amount,
+    gender: row.gender as GenderType,
+    tobacco_class: row.tobacco_class as TobaccoClass,
+    health_class: row.health_class as HealthClass,
+    term_years: row.term_years,
+    monthly_premium: row.monthly_premium,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    created_by: row.created_by,
+    product: {
+      id: row.product_id,
+      name: row.product_name,
+      product_type: row.product_type,
+      carrier_id: row.carrier_id,
+      min_age: row.min_age,
+      max_age: row.max_age,
+      min_face_amount: row.min_face_amount,
+      max_face_amount: row.max_face_amount,
+      is_active: row.is_active,
+      metadata: row.product_metadata,
+      carrier: row.carrier_name
+        ? { id: row.carrier_id, name: row.carrier_name }
+        : null,
+    },
+  }));
+}
+
+// Type for RPC response (flat structure from get_premium_matrices_for_imo)
+interface PremiumMatrixRPCRow {
+  id: string;
+  imo_id: string;
+  product_id: string;
+  age: number;
+  face_amount: number;
+  gender: string;
+  tobacco_class: string;
+  health_class: string;
+  term_years: number | null;
+  monthly_premium: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  product_name: string;
+  product_type: string;
+  carrier_id: string;
+  min_age: number | null;
+  max_age: number | null;
+  min_face_amount: number | null;
+  max_face_amount: number | null;
+  is_active: boolean;
+  product_metadata: ProductUnderwritingConstraints | null;
+  carrier_name: string | null;
 }
 
 // =============================================================================
@@ -443,6 +621,59 @@ export function interpolatePremium(
   const exactKey = `${targetAge}-${targetFaceAmount}`;
   if (lookup.has(exactKey)) {
     return lookup.get(exactKey)!;
+  }
+
+  // ==========================================================================
+  // RATE-PER-THOUSAND (CPT) CALCULATION
+  // When we only have ONE face amount in the data, derive rate-per-thousand
+  // and calculate premium for any requested face amount.
+  // This allows importing rates at a single face amount (e.g., $100k) and
+  // calculating premiums for any other face amount.
+  // ==========================================================================
+  if (faceAmounts.length === 1) {
+    const knownFaceAmount = faceAmounts[0];
+
+    // Find rate at target age or interpolate between ages
+    const ageBounds = findBounds(targetAge, ages);
+    const ageLow = ageBounds.lower ?? ageBounds.upper;
+    const ageHigh = ageBounds.upper ?? ageBounds.lower;
+
+    if (ageLow === null || ageHigh === null) {
+      return null;
+    }
+
+    const premiumLow = lookup.get(`${ageLow}-${knownFaceAmount}`);
+    const premiumHigh = lookup.get(`${ageHigh}-${knownFaceAmount}`);
+
+    if (premiumLow === undefined && premiumHigh === undefined) {
+      return null;
+    }
+
+    // Get the premium at target age (interpolate if needed)
+    let premiumAtKnownFace: number;
+    if (
+      premiumLow !== undefined &&
+      premiumHigh !== undefined &&
+      ageLow !== ageHigh
+    ) {
+      // Interpolate between ages
+      premiumAtKnownFace = lerp(
+        targetAge,
+        ageLow,
+        ageHigh,
+        premiumLow,
+        premiumHigh,
+      );
+    } else {
+      // Use the available premium
+      premiumAtKnownFace = premiumLow ?? premiumHigh!;
+    }
+
+    // Calculate rate per thousand from the known rate
+    const ratePerThousand = premiumAtKnownFace / (knownFaceAmount / 1000);
+
+    // Calculate premium for target face amount
+    return ratePerThousand * (targetFaceAmount / 1000);
   }
 
   // Find bounds

@@ -90,6 +90,15 @@ const MAX_CHUNK_CHARS = 40000; // ~10K tokens per chunk
 const MAX_TOTAL_CHUNKS = 3; // Limit API calls for cost control
 const CHUNK_OVERLAP_CHARS = 500; // Overlap for context continuity
 
+// Content validation constants
+const MIN_VALID_CONTENT_LENGTH = 5000; // Minimum chars for meaningful extraction
+const PLACEHOLDER_PATTERNS = [
+  /\[PDF content from .+ - \d+ bytes\]/i,
+  /\[Error extracting text/i,
+];
+const MIN_UNIQUE_CHARS = 20; // Minimum character variety
+const MIN_WORD_COUNT = 500; // Minimum words for meaningful extraction
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -139,7 +148,7 @@ serve(async (req) => {
 
     const { data: userProfile, error: profileError } = await supabase
       .from("user_profiles")
-      .select("imo_id, role")
+      .select("imo_id, roles")
       .eq("id", userData.user.id)
       .single();
 
@@ -148,17 +157,18 @@ serve(async (req) => {
       throw new Error("Unauthorized: User profile not found or has no IMO");
     }
 
-    // Check for admin/owner role
-    const allowedRoles = ["imo_admin", "imo_owner"];
-    if (!allowedRoles.includes(userProfile.role)) {
-      throw new Error(
-        "Unauthorized: Only IMO admins and owners can extract criteria",
-      );
+    // Check for admin role
+    const allowedRoles = ["admin", "super-admin"];
+    const hasAllowedRole = userProfile.roles?.some((r: string) =>
+      allowedRoles.includes(r),
+    );
+    if (!hasAllowedRole) {
+      throw new Error("Unauthorized: Only admins can extract criteria");
     }
 
     const userImoId = userProfile.imo_id;
     console.log(
-      `[extract-criteria] User IMO: ${userImoId}, Role: ${userProfile.role}`,
+      `[extract-criteria] User IMO: ${userImoId}, Roles: ${userProfile.roles?.join(", ")}`,
     );
 
     // Fetch guide record with parsed content
@@ -202,6 +212,14 @@ serve(async (req) => {
     console.log(
       `[extract-criteria] Guide content: ${parsedContent.fullText.length} chars, ${parsedContent.pageCount} pages`,
     );
+
+    // CRITICAL: Validate input content quality before sending to AI
+    const contentValidation = validateInputContent(parsedContent.fullText);
+    if (!contentValidation.valid) {
+      throw new Error(
+        `Guide content invalid: ${contentValidation.reason}. Re-parse the guide to extract actual PDF text.`,
+      );
+    }
 
     // Create extraction record with "processing" status
     const { data: criteriaRecord, error: insertError } = await supabase
@@ -700,4 +718,52 @@ function mergeExtractedCriteria(
   }
 
   return merged;
+}
+
+/**
+ * Validates that guide content is real extracted text, not placeholder/stub content
+ * This prevents wasting AI tokens on garbage input
+ */
+function validateInputContent(text: string): {
+  valid: boolean;
+  reason?: string;
+} {
+  // Check minimum length
+  if (text.length < MIN_VALID_CONTENT_LENGTH) {
+    return {
+      valid: false,
+      reason: `Content too short (${text.length} chars, minimum ${MIN_VALID_CONTENT_LENGTH})`,
+    };
+  }
+
+  // Check for placeholder patterns
+  for (const pattern of PLACEHOLDER_PATTERNS) {
+    if (pattern.test(text)) {
+      return {
+        valid: false,
+        reason:
+          "Content appears to be placeholder/stub text, not actual PDF content",
+      };
+    }
+  }
+
+  // Check content quality - should have some variety in characters
+  const uniqueChars = new Set(text.toLowerCase().replace(/\s/g, "")).size;
+  if (uniqueChars < MIN_UNIQUE_CHARS) {
+    return {
+      valid: false,
+      reason: `Content has very low character variety (${uniqueChars} unique chars)`,
+    };
+  }
+
+  // Check for reasonable word density
+  const words = text.split(/\s+/).filter((w) => w.length > 1);
+  if (words.length < MIN_WORD_COUNT) {
+    return {
+      valid: false,
+      reason: `Content has too few words (${words.length}, minimum ${MIN_WORD_COUNT})`,
+    };
+  }
+
+  return { valid: true };
 }

@@ -14,6 +14,7 @@ import {
   Sparkles,
   CheckCircle2,
   Clock,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,10 +50,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   useUnderwritingGuides,
   useDeleteGuide,
   useGuideSignedUrl,
+  useUpdateGuide,
 } from "../../hooks/useUnderwritingGuides";
 import { useParseGuide } from "../../hooks/useParseGuide";
 import { useCriteriaByGuide } from "../../hooks/useCriteria";
@@ -66,6 +78,7 @@ export function GuideList() {
   const deleteMutation = useDeleteGuide();
   const parseMutation = useParseGuide();
   const extractMutation = useExtractCriteria();
+  const updateMutation = useUpdateGuide();
 
   const [uploaderOpen, setUploaderOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -75,6 +88,11 @@ export function GuideList() {
   const [viewingGuide, setViewingGuide] = useState<UnderwritingGuide | null>(
     null,
   );
+  const [editingGuide, setEditingGuide] = useState<UnderwritingGuide | null>(
+    null,
+  );
+  const [editName, setEditName] = useState("");
+  const [editVersion, setEditVersion] = useState("");
   const [parsingGuideId, setParsingGuideId] = useState<string | null>(null);
   const [extractingGuideId, setExtractingGuideId] = useState<string | null>(
     null,
@@ -111,6 +129,26 @@ export function GuideList() {
       await extractMutation.mutateAsync({ guideId: guide.id });
     } finally {
       setExtractingGuideId(null);
+    }
+  };
+
+  const handleEditClick = (guide: UnderwritingGuide) => {
+    setEditingGuide(guide);
+    setEditName(guide.name);
+    setEditVersion(guide.version || "");
+  };
+
+  const handleEditSave = async () => {
+    if (!editingGuide) return;
+    try {
+      await updateMutation.mutateAsync({
+        id: editingGuide.id,
+        name: editName,
+        version: editVersion || undefined,
+      });
+      setEditingGuide(null);
+    } catch {
+      // Error handled by mutation
     }
   };
 
@@ -336,6 +374,14 @@ export function GuideList() {
                           View
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          onClick={() => handleEditClick(guide)}
+                          className="text-[11px]"
+                        >
+                          <Pencil className="h-3 w-3 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
                           onClick={() => handleParseClick(guide)}
                           disabled={isGuideBeingParsed(guide.id)}
                           className="text-[11px]"
@@ -416,6 +462,63 @@ export function GuideList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Guide Dialog */}
+      <Dialog
+        open={!!editingGuide}
+        onOpenChange={(open) => !open && setEditingGuide(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Edit Guide</DialogTitle>
+            <DialogDescription className="text-[11px]">
+              Update the guide name and version.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="edit-name" className="text-[11px]">
+                Name
+              </Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="h-8 text-[11px]"
+                placeholder="Guide name"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="edit-version" className="text-[11px]">
+                Version (optional)
+              </Label>
+              <Input
+                id="edit-version"
+                value={editVersion}
+                onChange={(e) => setEditVersion(e.target.value)}
+                className="h-8 text-[11px]"
+                placeholder="e.g., 2024.1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditingGuide(null)}
+              className="h-7 text-[11px]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditSave}
+              disabled={!editName.trim() || updateMutation.isPending}
+              className="h-7 text-[11px]"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -513,28 +616,48 @@ function CriteriaStatusCell({
     );
   }
 
-  // Show completed status
+  // Show completed status with re-extract option
   if (criteria?.extraction_status === "completed") {
     const confidence = criteria.extraction_confidence
       ? `${(criteria.extraction_confidence * 100).toFixed(0)}%`
       : "";
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0 cursor-help">
-              <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
-              {confidence || "Done"}
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-[10px]">
-            <p>Criteria extracted with {confidence} confidence</p>
-            <p className="text-zinc-400">
-              Review: {criteria.review_status || "pending"}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className="flex items-center gap-1 justify-center">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1.5 py-0 cursor-help">
+                <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
+                {confidence || "Done"}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px]">
+              <p>Criteria extracted with {confidence} confidence</p>
+              <p className="text-zinc-400">
+                Review: {criteria.review_status || "pending"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 text-zinc-400 hover:text-violet-600"
+                onClick={onExtract}
+                disabled={!canExtract}
+              >
+                <RefreshCw className="h-2.5 w-2.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px]">
+              Re-extract criteria
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     );
   }
 

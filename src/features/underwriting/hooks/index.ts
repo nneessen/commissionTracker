@@ -64,3 +64,17 @@ export { useUpdateBuildChart } from "@/features/settings/carriers/hooks/useUpdat
 export { useDeleteBuildChart } from "@/features/settings/carriers/hooks/useDeleteBuildChart";
 export { useSetDefaultBuildChart } from "@/features/settings/carriers/hooks/useSetDefaultBuildChart";
 export { useDefaultBuildCharts } from "@/features/settings/carriers/hooks/useDefaultBuildCharts";
+
+export {
+  useQuotesForCoverage,
+  useQuotesForBudget,
+  useQuotes,
+  useQuoteMutation,
+  useTopQuotes,
+  useAllPremiumMatrices,
+  quoteKeys,
+  type QuoteInput,
+  type QuoteResult,
+  type QuoteMode,
+  type EligibilityStatus,
+} from "./useQuickQuote";

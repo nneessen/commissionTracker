@@ -51,6 +51,7 @@ import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
 import { WorkflowAdminPage } from "./features/workflows";
+import { QuickQuotePage } from "./features/underwriting/components/QuickQuote";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -538,6 +539,17 @@ const slackNameLeaderboardRoute = createRoute({
   ),
 });
 
+// Quick Quote route - instant quote comparison tool
+const quickQuoteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "underwriting/quote",
+  component: () => (
+    <RouteGuard noRecruits noStaffRoles>
+      <QuickQuotePage />
+    </RouteGuard>
+  ),
+});
+
 // Legal routes - public, no auth required
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -592,6 +604,7 @@ const routeTree = rootRoute.addChildren([
   contractingRoute,
   messagesRoute,
   slackNameLeaderboardRoute,
+  quickQuoteRoute,
   termsRoute,
   privacyRoute,
   publicJoinAltRoute, // Catch-all for /join-* pattern - must be last

@@ -1,0 +1,59 @@
+// src/features/underwriting/components/QuickQuote/BudgetModeToggle.tsx
+
+import { Button } from "@/components/ui/button";
+import { DollarSign, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { QuoteMode } from "@/services/underwriting/quotingService";
+
+interface BudgetModeToggleProps {
+  mode: QuoteMode;
+  onChange: (mode: QuoteMode) => void;
+}
+
+export default function BudgetModeToggle({
+  mode,
+  onChange,
+}: BudgetModeToggleProps) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+        Quote Mode
+      </label>
+      <div className="flex gap-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange("coverage")}
+          className={cn(
+            "text-[10px] h-7 px-2.5 gap-1",
+            mode === "coverage"
+              ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          )}
+        >
+          <Shield className="h-3 w-3" />I need specific coverage
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange("budget")}
+          className={cn(
+            "text-[10px] h-7 px-2.5 gap-1",
+            mode === "budget"
+              ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          )}
+        >
+          <DollarSign className="h-3 w-3" />I have a budget
+        </Button>
+      </div>
+      <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+        {mode === "coverage"
+          ? "Find the cheapest quotes for your desired coverage amount"
+          : "Find the maximum coverage that fits within your monthly budget"}
+      </p>
+    </div>
+  );
+}

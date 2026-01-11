@@ -24,6 +24,7 @@ import {
   FileCheck,
   Workflow,
   ShieldCheck,
+  Calculator,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -758,22 +759,39 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="p-2 border-t border-border bg-card/80">
-          {/* Underwriting Wizard Button */}
+          {/* Underwriting Tools */}
           {!isUnderwritingLoading &&
             isUnderwritingEnabled &&
             isUWWizardAllowed && (
-              <Button
-                variant="outline"
-                className={`mb-2 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
-                onClick={() => setIsUnderwritingWizardOpen(true)}
-                title={isCollapsed ? "Underwriting Wizard" : ""}
-              >
-                <ShieldCheck
-                  size={16}
-                  className={isCollapsed ? "" : "mr-2.5"}
-                />
-                {!isCollapsed && <span className="text-sm">UW Wizard</span>}
-              </Button>
+              <div className="space-y-1 mb-2">
+                <Button
+                  variant="outline"
+                  className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
+                  onClick={() => setIsUnderwritingWizardOpen(true)}
+                  title={isCollapsed ? "Underwriting Wizard" : ""}
+                >
+                  <ShieldCheck
+                    size={16}
+                    className={isCollapsed ? "" : "mr-2.5"}
+                  />
+                  {!isCollapsed && <span className="text-sm">UW Wizard</span>}
+                </Button>
+                <Link to="/underwriting/quote">
+                  <Button
+                    variant="outline"
+                    className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30`}
+                    title={isCollapsed ? "Quick Quote" : ""}
+                  >
+                    <Calculator
+                      size={16}
+                      className={isCollapsed ? "" : "mr-2.5"}
+                    />
+                    {!isCollapsed && (
+                      <span className="text-sm">Quick Quote</span>
+                    )}
+                  </Button>
+                </Link>
+              </div>
             )}
           <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
