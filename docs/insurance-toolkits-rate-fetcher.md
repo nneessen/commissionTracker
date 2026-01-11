@@ -230,31 +230,33 @@ The import automatically extracts:
 2. Navigate to the FEX quoter: https://app.insurancetoolkits.com/fex/quoter
 3. Open browser DevTools (F12) → Console tab
 
-## FEX Script with CSV Export (Multi-Age)
+## FEX Script - Level Coverage (Non-Smoker)
 
-This script fetches quotes across multiple ages with proper rate limiting to avoid API throttling.
+This script fetches Level coverage quotes for non-smokers across ages 20-85 (5-year increments).
 
 ```javascript
-const fetchFEXRates = async () => {
+const fetchFEXLevelRates = async () => {
   const token = localStorage.getItem('accessToken');
   if (!token) {
     console.error('No access token found. Make sure you are logged in.');
     return;
   }
 
-  // Configuration - modify these as needed
+  // Configuration - Level coverage, Non-smoker
   const CONFIG = {
-    faceAmounts: [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 55000, 60000, 65000, 70000, 75000],
+    faceAmounts: [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000],
     ages: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85],
     sex: 'Male',           // 'Male' or 'Female'
     state: 'IL',           // Two-letter state code
-    tobacco: 'None',       // 'None' or 'Tobacco'
-    coverageType: 'Level', // 'Level' or 'Graded'
+    tobacco: 'None',       // Non-smoker
+    coverageType: 'Level', // Level coverage only
   };
 
   const allQuotes = [];
   const total = CONFIG.faceAmounts.length * CONFIG.ages.length;
   let current = 0;
+
+  console.log(`Starting fetch: ${total} requests for ${CONFIG.coverageType} coverage`);
 
   for (const age of CONFIG.ages) {
     for (const faceAmount of CONFIG.faceAmounts) {
@@ -273,9 +275,6 @@ const fetchFEXRates = async () => {
             sex: CONFIG.sex,
             state: CONFIG.state,
             age,
-            feet: '',
-            inches: '',
-            weight: '',
             tobacco: CONFIG.tobacco,
             paymentType: 'Bank Draft/EFT',
             underwritingItems: [],
@@ -285,19 +284,25 @@ const fetchFEXRates = async () => {
 
         const data = await res.json();
 
-        if (data.quotes) {
+        if (data.quotes && data.quotes.length > 0) {
           for (const q of data.quotes) {
+            // Parse numeric strings - remove commas from values like "2,131.10"
+            const parseNum = (s) => {
+              if (!s) return 0;
+              return parseFloat(String(s).replace(/,/g, ''));
+            };
+
             allQuotes.push({
               face_amount: faceAmount,
               company: q.company,
               plan_name: q.plan_name,
               tier_name: q.tier_name,
-              monthly: parseFloat(q.monthly.replace(/,/g, '')),
-              yearly: parseFloat(q.yearly.replace(/,/g, '')),
+              monthly: parseNum(q.monthly),
+              yearly: parseNum(q.yearly),
               state: CONFIG.state,
               gender: CONFIG.sex,
               age: age,
-              term_years: '',
+              term_years: '',  // Empty for whole life - import will use null
               tobacco: CONFIG.tobacco
             });
           }
@@ -311,37 +316,70 @@ const fetchFEXRates = async () => {
         await new Promise(r => setTimeout(r, 500));
 
       } catch (e) {
-        console.error(`Error fetching age ${age}, face ${faceAmount}:`, e.message);
+        console.error(`Error at age ${age}, face ${faceAmount}:`, e.message);
       }
     }
 
-    // Extra 1s pause between age groups to avoid throttling
+    // Extra pause between age groups
+    console.log(`Completed age ${age}`);
     await new Promise(r => setTimeout(r, 1000));
   }
 
   console.log(`\nDone! ${allQuotes.length} quotes fetched`);
   window.fetchedRates = allQuotes;
 
-  // Generate tab-separated CSV
+  // Generate proper CSV with comma delimiters
   if (allQuotes.length > 0) {
     const headers = Object.keys(allQuotes[0]);
-    const csv = [
-      headers.join('\t'),
-      ...allQuotes.map(row => headers.map(h => row[h]).join('\t'))
+
+    // CSV escape function - quote fields containing comma, quote, or newline
+    const csvEscape = (val) => {
+      const str = String(val ?? '');
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    const csvContent = [
+      headers.join(','),
+      ...allQuotes.map(row => headers.map(h => csvEscape(row[h])).join(','))
     ].join('\n');
 
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `fex_rates_${CONFIG.state}_${CONFIG.sex}_${CONFIG.tobacco}.csv`;
+    a.href = url;
+    a.download = `fex_level_${CONFIG.state}_${CONFIG.sex}_${CONFIG.tobacco}.csv`;
+    document.body.appendChild(a);
     a.click();
-    console.log('CSV file downloaded!');
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log('CSV downloaded: ' + a.download);
   }
 
   return allQuotes;
 };
 
-fetchFEXRates();
+fetchFEXLevelRates();
 ```
+
+## CSV Output Columns
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| face_amount | Coverage amount (numeric) | 35000 |
+| company | Carrier with product | "Mutual of Omaha (Living Promise)" |
+| plan_name | Full plan name | "Living Promise Level" |
+| tier_name | Health class tier | "Level", "Preferred", "Standard" |
+| monthly | Monthly premium (numeric) | 189.67 |
+| yearly | Annual premium (numeric) | 2131.10 |
+| state | State code | IL |
+| gender | Male/Female | Male |
+| age | Issue age | 65 |
+| term_years | Empty for whole life | (empty) |
+| tobacco | None/Tobacco | None |
 
 ## FEX Request Parameters
 

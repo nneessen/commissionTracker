@@ -65,6 +65,8 @@ interface CarrierProductGroup {
   carrierName: string;
   productName: string;
   rates: ParsedRate[];
+  // Unique plan names for display (helps identify different products)
+  uniquePlanNames: string[];
   // Mapping
   mappedCarrierId?: string;
   mappedProductId?: string;
@@ -122,12 +124,45 @@ function mapTobacco(tobacco: string): TobaccoClass {
   return tobacco.toLowerCase() === "tobacco" ? "tobacco" : "non_tobacco";
 }
 
-// Parse CSV content
+// Parse CSV content (supports both comma and tab-separated)
 function parseCSV(csvContent: string): ParsedRate[] {
   const lines = csvContent.trim().split("\n");
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split("\t").map((h) => h.trim().toLowerCase());
+  // Detect delimiter: if first line has tabs, use tabs; otherwise use commas
+  const firstLine = lines[0];
+  const delimiter = firstLine.includes("\t") ? "\t" : ",";
+
+  // Simple CSV parser that handles quoted fields
+  const parseRow = (line: string): string[] => {
+    if (delimiter === "\t") {
+      return line.split("\t");
+    }
+    // For comma-delimited, handle quoted fields
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === "," && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    result.push(current);
+    return result;
+  };
+
+  const headers = parseRow(lines[0]).map((h) => h.trim().toLowerCase());
 
   // Find column indices
   const colMap: Record<string, number> = {};
@@ -138,7 +173,7 @@ function parseCSV(csvContent: string): ParsedRate[] {
   const rates: ParsedRate[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split("\t");
+    const values = parseRow(lines[i]);
     if (values.length < headers.length) continue;
 
     try {
@@ -184,9 +219,16 @@ function groupByCarrierProduct(rates: ParsedRate[]): CarrierProductGroup[] {
         carrierName,
         productName,
         rates: [],
+        uniquePlanNames: [],
       });
     }
-    groups.get(key)!.rates.push(rate);
+    const group = groups.get(key)!;
+    group.rates.push(rate);
+
+    // Track unique plan names for display
+    if (rate.plan_name && !group.uniquePlanNames.includes(rate.plan_name)) {
+      group.uniquePlanNames.push(rate.plan_name);
+    }
   }
 
   return Array.from(groups.values()).sort((a, b) =>
@@ -356,8 +398,18 @@ export function RateImportDialog({
 
       // Insert each classification group
       for (const [key, rates] of byClassification) {
-        const [gender, tobacco, healthClass, termYears] = key.split("|");
-        const _sample = rates[0];
+        const [gender, tobacco, healthClass, termYearsStr] = key.split("|");
+
+        // Parse term years - use null for whole life (0 or empty)
+        const parsedTermYears = parseInt(termYearsStr, 10);
+        const validTermYears: TermYears | null = [10, 15, 20, 25, 30].includes(
+          parsedTermYears,
+        )
+          ? (parsedTermYears as TermYears)
+          : null;
+        const termDisplay = validTermYears
+          ? `${validTermYears}yr`
+          : "whole life";
 
         try {
           const bulkEntry: BulkPremiumEntry = {
@@ -365,7 +417,7 @@ export function RateImportDialog({
             gender: mapGender(gender),
             tobaccoClass: mapTobacco(tobacco),
             healthClass: healthClass as HealthClass,
-            termYears: parseInt(termYears, 10) as TermYears,
+            termYears: validTermYears,
             entries: rates.map((r) => ({
               age: r.age,
               faceAmount: r.face_amount,
@@ -381,7 +433,7 @@ export function RateImportDialog({
           results.success += result.saved;
         } catch (e) {
           results.errors.push(
-            `Error importing ${group.productName} (${gender}/${tobacco}/${healthClass}/${termYears}yr): ${e instanceof Error ? e.message : "Unknown error"}`,
+            `Error importing ${group.productName} (${gender}/${tobacco}/${healthClass}/${termDisplay}): ${e instanceof Error ? e.message : "Unknown error"}`,
           );
         }
       }
@@ -485,19 +537,30 @@ export function RateImportDialog({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-[11px] font-medium ${group.skipped ? "line-through" : ""}`}
-                        >
-                          {group.carrierName}
-                        </span>
-                        <span
-                          className={`text-[10px] text-zinc-500 ${group.skipped ? "line-through" : ""}`}
-                        >
-                          {group.productName}
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[11px] font-medium ${group.skipped ? "line-through" : ""}`}
+                          >
+                            {group.carrierName}
+                          </span>
+                          <span
+                            className={`text-[10px] text-zinc-500 ${group.skipped ? "line-through" : ""}`}
+                          >
+                            {group.productName}
+                          </span>
+                        </div>
+                        {/* Show unique plan names for better identification */}
+                        {group.uniquePlanNames.length > 0 && (
+                          <div className="text-[9px] text-blue-600 dark:text-blue-400 mt-0.5 truncate">
+                            Plans:{" "}
+                            {group.uniquePlanNames.slice(0, 5).join(", ")}
+                            {group.uniquePlanNames.length > 5 &&
+                              ` +${group.uniquePlanNames.length - 5} more`}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Badge
                           variant={
                             group.skipped
