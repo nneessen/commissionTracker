@@ -31,6 +31,13 @@ export interface CarrierAcceptance extends AcceptanceRow {
   };
 }
 
+// Review status type
+export type RuleReviewStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected";
+
 export interface AcceptanceRuleInput {
   carrierId: string;
   conditionCode: string;
@@ -167,12 +174,20 @@ export async function getAllAcceptanceRules(
 
 /**
  * Lookup a specific acceptance rule
+ * By default, only returns approved rules for use in recommendations.
+ *
+ * @param carrierId - Carrier ID to look up
+ * @param conditionCode - Condition code to look up
+ * @param imoId - IMO ID for tenant isolation
+ * @param productType - Optional product type for product-specific rules
+ * @param includeUnapproved - If true, returns rules regardless of review status
  */
 export async function lookupAcceptance(
   carrierId: string,
   conditionCode: string,
   imoId: string,
   productType?: string,
+  includeUnapproved: boolean = false,
 ): Promise<CarrierAcceptance | null> {
   let query = supabase
     .from("carrier_condition_acceptance")
@@ -186,6 +201,12 @@ export async function lookupAcceptance(
     .eq("carrier_id", carrierId)
     .eq("condition_code", conditionCode)
     .eq("imo_id", imoId);
+
+  // Filter by review status - only approved rules by default
+  // This ensures draft/pending rules don't affect recommendations
+  if (!includeUnapproved) {
+    query = query.eq("review_status", "approved");
+  }
 
   // If product type specified, prefer product-specific rules
   if (productType) {
@@ -202,6 +223,68 @@ export async function lookupAcceptance(
   }
 
   return (data && data.length > 0 ? data[0] : null) as CarrierAcceptance | null;
+}
+
+/**
+ * Get draft rules for conditions (for FYI display, not used in scoring)
+ * Only returns rules that are in draft or pending_review status.
+ */
+export async function getDraftRulesForConditions(
+  carrierId: string,
+  conditionCodes: string[],
+  imoId: string,
+): Promise<CarrierAcceptance[]> {
+  if (conditionCodes.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("carrier_condition_acceptance")
+    .select(
+      `
+      *,
+      carrier:carriers(id, name),
+      condition:underwriting_health_conditions(code, name, category)
+    `,
+    )
+    .eq("carrier_id", carrierId)
+    .in("condition_code", conditionCodes)
+    .eq("imo_id", imoId)
+    .in("review_status", ["draft", "pending_review"]);
+
+  if (error) {
+    console.error("Error fetching draft rules:", error);
+    throw new Error(`Failed to fetch draft rules: ${error.message}`);
+  }
+
+  return (data || []) as CarrierAcceptance[];
+}
+
+/**
+ * Get all rules that need review (for admin review dashboard)
+ */
+export async function getRulesNeedingReview(
+  imoId: string,
+): Promise<CarrierAcceptance[]> {
+  const { data, error } = await supabase
+    .from("carrier_condition_acceptance")
+    .select(
+      `
+      *,
+      carrier:carriers(id, name),
+      condition:underwriting_health_conditions(code, name, category)
+    `,
+    )
+    .eq("imo_id", imoId)
+    .in("review_status", ["draft", "pending_review"])
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching rules needing review:", error);
+    throw new Error(`Failed to fetch rules: ${error.message}`);
+  }
+
+  return (data || []) as CarrierAcceptance[];
 }
 
 /**
@@ -363,6 +446,109 @@ export async function deleteAcceptanceForCarrier(
     console.error("Error deleting carrier acceptance rules:", error);
     throw new Error(`Failed to delete acceptance rules: ${error.message}`);
   }
+}
+
+// ============================================================================
+// AI Extraction Support (Phase 4)
+// ============================================================================
+
+/**
+ * Input for creating a draft acceptance rule from AI extraction
+ */
+export interface AIExtractedRuleInput {
+  carrierId: string;
+  conditionCode: string;
+  productType?: string | null;
+  acceptance: AcceptanceDecision;
+  healthClassResult?: string | null;
+  approvalLikelihood?: number | null;
+  notes?: string | null;
+  // Provenance
+  sourceGuideId?: string;
+  sourcePages?: number[];
+  sourceSnippet?: string;
+  extractionConfidence?: number;
+}
+
+/**
+ * Create an acceptance rule from AI extraction.
+ * ALWAYS creates as draft - never auto-approved.
+ * Requires manual review before affecting recommendations.
+ */
+export async function createDraftRuleFromExtraction(
+  input: AIExtractedRuleInput,
+  imoId: string,
+  userId: string,
+): Promise<CarrierAcceptance> {
+  // Type assertion for extended fields (will be available after migration)
+  const insertData = {
+    carrier_id: input.carrierId,
+    condition_code: input.conditionCode,
+    product_type: input.productType,
+    acceptance: input.acceptance,
+    health_class_result: input.healthClassResult,
+    approval_likelihood: input.approvalLikelihood,
+    notes: input.notes
+      ? `[AI-extracted] ${input.notes}`
+      : "[AI-extracted - requires human review]",
+    imo_id: imoId,
+    created_by: userId,
+    source: "ai_extraction",
+    // CRITICAL: Always draft - never auto-approve AI-extracted rules
+    review_status: "draft",
+    // Provenance
+    source_guide_id: input.sourceGuideId,
+    source_pages: input.sourcePages,
+    source_snippet: input.sourceSnippet,
+    extraction_confidence: input.extractionConfidence,
+    rule_schema_version: 1,
+  };
+
+  const { data, error } = await supabase
+    .from("carrier_condition_acceptance")
+    .upsert(insertData, {
+      onConflict: "carrier_id,condition_code,product_type,imo_id",
+    })
+    .select(
+      `
+      *,
+      carrier:carriers(id, name),
+      condition:underwriting_health_conditions(code, name, category)
+    `,
+    )
+    .single();
+
+  if (error) {
+    console.error("Error creating draft rule from extraction:", error);
+    throw new Error(`Failed to create draft rule: ${error.message}`);
+  }
+
+  return data as CarrierAcceptance;
+}
+
+/**
+ * Bulk create draft acceptance rules from AI extraction.
+ * All rules are created as draft regardless of confidence level.
+ */
+export async function bulkCreateDraftRulesFromExtraction(
+  rules: AIExtractedRuleInput[],
+  imoId: string,
+  userId: string,
+): Promise<{ created: number; errors: string[] }> {
+  const errors: string[] = [];
+  let created = 0;
+
+  for (const rule of rules) {
+    try {
+      await createDraftRuleFromExtraction(rule, imoId, userId);
+      created++;
+    } catch (e) {
+      const error = e instanceof Error ? e.message : String(e);
+      errors.push(`${rule.conditionCode}: ${error}`);
+    }
+  }
+
+  return { created, errors };
 }
 
 // ============================================================================
