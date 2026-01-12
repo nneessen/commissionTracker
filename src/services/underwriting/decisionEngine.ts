@@ -1,14 +1,27 @@
 // src/services/underwriting/decisionEngine.ts
 // 4-Stage Recommendation Engine for Product Recommendations
-// Stage 1: Eligibility Filter (products table + extracted_criteria)
-// Stage 2: Approval Scoring (carrier_condition_acceptance)
+// Stage 1: Eligibility Filter (products table + extracted_criteria) - Now with tri-state
+// Stage 2: Approval Scoring (carrier_condition_acceptance) - Only approved rules
 // Stage 3: Premium Calculation (premium_matrix with interpolation)
-// Stage 4: Ranking & Explanation
+// Stage 4: Ranking & Explanation - With derived confidence penalty
 
 import { supabase } from "@/services/base/supabase";
 import type { Database } from "@/types/database.types";
-import type { ExtractedCriteria } from "@/features/underwriting/types/underwriting.types";
-import { lookupAcceptance, type AcceptanceDecision } from "./acceptanceService";
+import type {
+  ExtractedCriteria,
+  EligibilityStatus,
+  EligibilityResult,
+  MissingFieldInfo,
+  ScoreComponents,
+  DraftRuleInfo,
+  AcceptanceDecision as TypesAcceptanceDecision,
+  RuleProvenance,
+} from "@/features/underwriting/types/underwriting.types";
+import {
+  lookupAcceptance,
+  getDraftRulesForConditions,
+  type AcceptanceDecision,
+} from "./acceptanceService";
 import {
   getPremiumMatrixForProduct,
   interpolatePremium,
@@ -16,6 +29,7 @@ import {
   type TobaccoClass,
   type HealthClass,
 } from "./premiumMatrixService";
+import { calculateDataCompleteness } from "./conditionMatcher";
 
 // Re-export for convenience
 export type { GenderType, AcceptanceDecision };
@@ -33,6 +47,8 @@ export interface ClientProfile {
   bmi?: number;
   tobacco: boolean;
   healthConditions: string[]; // condition codes
+  /** Per-condition follow-up responses (for data completeness assessment) */
+  conditionResponses?: Record<string, Record<string, unknown>>;
 }
 
 export interface CoverageRequest {
@@ -63,6 +79,10 @@ interface ConditionDecision {
   decision: AcceptanceDecision;
   likelihood: number;
   healthClassResult: string | null;
+  /** Whether this rule is from an approved (reviewed) source */
+  isApproved: boolean;
+  /** Source provenance for the rule */
+  provenance?: RuleProvenance;
 }
 
 export interface Recommendation {
@@ -71,23 +91,44 @@ export interface Recommendation {
   productId: string;
   productName: string;
   productType: ProductType;
-  monthlyPremium: number;
+  monthlyPremium: number | null;
   maxCoverage: number;
   approvalLikelihood: number;
   healthClassResult: string;
-  reason: "cheapest" | "highest_coverage" | "best_approval" | "best_value";
+  reason:
+    | "cheapest"
+    | "highest_coverage"
+    | "best_approval"
+    | "best_value"
+    | null;
   concerns: string[];
   conditionDecisions: ConditionDecision[];
   score: number;
+  /** Tri-state eligibility status for this product */
+  eligibilityStatus: EligibilityStatus;
+  /** Reasons for the eligibility determination */
+  eligibilityReasons: string[];
+  /** Fields that are missing and needed for full evaluation */
+  missingFields: MissingFieldInfo[];
+  /** Data completeness confidence (0-1) */
+  confidence: number;
+  /** Breakdown of how the score was calculated */
+  scoreComponents: ScoreComponents;
+  /** Draft rules shown for FYI only (not used in scoring) */
+  draftRulesFyi: DraftRuleInfo[];
 }
 
 export interface DecisionEngineResult {
   recommendations: Recommendation[];
+  /** Products with unknown eligibility (kept in results but ranked lower) */
+  unknownEligibility: Recommendation[];
   filtered: {
     totalProducts: number;
     passedEligibility: number;
+    unknownEligibility: number;
     passedAcceptance: number;
     withPremiums: number;
+    ineligible: number;
   };
   processingTime: number;
 }
@@ -97,37 +138,40 @@ export interface DecisionEngineResult {
 // ============================================================================
 
 /**
- * Check if a product is eligible for the client
+ * Check if a product is eligible for the client.
+ * Returns tri-state: eligible, ineligible, or unknown (when missing data).
  */
 function checkEligibility(
   product: ProductCandidate,
   client: ClientProfile,
   coverage: CoverageRequest,
   extractedCriteria?: ExtractedCriteria,
-): { eligible: boolean; reasons: string[] } {
-  const reasons: string[] = [];
+  _requiredFieldsByCondition?: Record<string, string[]>,
+): EligibilityResult {
+  const ineligibleReasons: string[] = [];
+  const missingFields: MissingFieldInfo[] = [];
 
   // Check basic product constraints (from products table)
   const minAge = product.minAge ?? 0;
   const maxAge = product.maxAge ?? 100;
 
   if (client.age < minAge) {
-    reasons.push(`Client age ${client.age} below minimum ${minAge}`);
+    ineligibleReasons.push(`Client age ${client.age} below minimum ${minAge}`);
   }
   if (client.age > maxAge) {
-    reasons.push(`Client age ${client.age} above maximum ${maxAge}`);
+    ineligibleReasons.push(`Client age ${client.age} above maximum ${maxAge}`);
   }
 
   const minFace = product.minFaceAmount ?? 0;
   const maxFace = product.maxFaceAmount ?? Number.MAX_SAFE_INTEGER;
 
   if (coverage.faceAmount < minFace) {
-    reasons.push(
+    ineligibleReasons.push(
       `Requested $${coverage.faceAmount.toLocaleString()} below minimum`,
     );
   }
   if (coverage.faceAmount > maxFace) {
-    reasons.push(
+    ineligibleReasons.push(
       `Requested $${coverage.faceAmount.toLocaleString()} above maximum`,
     );
   }
@@ -138,13 +182,17 @@ function checkEligibility(
     if (extractedCriteria.ageLimits) {
       const { minIssueAge, maxIssueAge } = extractedCriteria.ageLimits;
       if (minIssueAge !== undefined && client.age < minIssueAge) {
-        if (!reasons.some((r) => r.includes("below minimum"))) {
-          reasons.push(`Age ${client.age} below issue age ${minIssueAge}`);
+        if (!ineligibleReasons.some((r) => r.includes("below minimum"))) {
+          ineligibleReasons.push(
+            `Age ${client.age} below issue age ${minIssueAge}`,
+          );
         }
       }
       if (maxIssueAge !== undefined && client.age > maxIssueAge) {
-        if (!reasons.some((r) => r.includes("above maximum"))) {
-          reasons.push(`Age ${client.age} above issue age ${maxIssueAge}`);
+        if (!ineligibleReasons.some((r) => r.includes("above maximum"))) {
+          ineligibleReasons.push(
+            `Age ${client.age} above issue age ${maxIssueAge}`,
+          );
         }
       }
     }
@@ -154,8 +202,10 @@ function checkEligibility(
       const { minimum, maximum, ageTiers } = extractedCriteria.faceAmountLimits;
 
       if (minimum !== undefined && coverage.faceAmount < minimum) {
-        if (!reasons.some((r) => r.includes("below minimum"))) {
-          reasons.push(`Amount below minimum $${minimum.toLocaleString()}`);
+        if (!ineligibleReasons.some((r) => r.includes("below minimum"))) {
+          ineligibleReasons.push(
+            `Amount below minimum $${minimum.toLocaleString()}`,
+          );
         }
       }
 
@@ -173,7 +223,7 @@ function checkEligibility(
         coverage.faceAmount > ageSpecificMax &&
         ageSpecificMax < Number.MAX_SAFE_INTEGER
       ) {
-        reasons.push(
+        ineligibleReasons.push(
           `$${coverage.faceAmount.toLocaleString()} exceeds age-based max $${ageSpecificMax.toLocaleString()}`,
         );
       }
@@ -185,7 +235,7 @@ function checkEligibility(
         extractedCriteria.knockoutConditions!.conditionCodes!.includes(c),
       );
       if (knockouts.length > 0) {
-        reasons.push(`Knockout condition: ${knockouts.join(", ")}`);
+        ineligibleReasons.push(`Knockout condition: ${knockouts.join(", ")}`);
       }
     }
 
@@ -199,12 +249,67 @@ function checkEligibility(
           client.state,
         )
       ) {
-        reasons.push(`Not available in ${client.state}`);
+        ineligibleReasons.push(`Not available in ${client.state}`);
       }
     }
   }
 
-  return { eligible: reasons.length === 0, reasons };
+  // Check data completeness for conditions
+  // Collect required fields across all conditions
+  const allRequiredFields: string[] = [];
+  const allResponses: Record<string, unknown> = {};
+
+  for (const conditionCode of client.healthConditions) {
+    const responses = client.conditionResponses?.[conditionCode] || {};
+    Object.entries(responses).forEach(([key, value]) => {
+      allResponses[`${conditionCode}.${key}`] = value;
+    });
+    // Note: In a full implementation, we'd look up required fields from
+    // carrier_condition_acceptance.required_fields for this carrier/condition
+    // For now, we mark as unknown if there are conditions but no responses
+    if (
+      client.conditionResponses &&
+      Object.keys(client.conditionResponses[conditionCode] || {}).length === 0
+    ) {
+      missingFields.push({
+        field: `${conditionCode}.follow_up`,
+        reason: `Missing follow-up details for ${conditionCode}`,
+        conditionCode,
+      });
+    }
+  }
+
+  // Calculate data completeness
+  const completeness = calculateDataCompleteness(
+    allResponses,
+    allRequiredFields,
+  );
+
+  // Determine final eligibility status
+  if (ineligibleReasons.length > 0) {
+    return {
+      status: "ineligible",
+      reasons: ineligibleReasons,
+      missingFields: [],
+      confidence: 1, // We're confident about ineligibility
+    };
+  }
+
+  if (missingFields.length > 0) {
+    return {
+      status: "unknown",
+      reasons: ["Missing required follow-up information"],
+      missingFields,
+      confidence: completeness.confidence,
+    };
+  }
+
+  return {
+    status: "eligible",
+    reasons: [],
+    missingFields: [],
+    confidence: 1,
+  };
 }
 
 // ============================================================================
@@ -212,7 +317,8 @@ function checkEligibility(
 // ============================================================================
 
 /**
- * Calculate approval likelihood based on carrier acceptance rules
+ * Calculate approval likelihood based on carrier acceptance rules.
+ * Only uses approved rules for scoring; collects draft rules for FYI display.
  */
 async function calculateApproval(
   carrierId: string,
@@ -224,9 +330,11 @@ async function calculateApproval(
   healthClass: HealthClass;
   conditionDecisions: ConditionDecision[];
   concerns: string[];
+  draftRules: DraftRuleInfo[];
 }> {
   const conditionDecisions: ConditionDecision[] = [];
   const concerns: string[] = [];
+  const draftRules: DraftRuleInfo[] = [];
 
   // No conditions = healthy client
   if (healthConditions.length === 0) {
@@ -235,11 +343,34 @@ async function calculateApproval(
       healthClass: "preferred",
       conditionDecisions: [],
       concerns: [],
+      draftRules: [],
     };
   }
 
-  // Evaluate each condition
+  // Fetch draft rules for FYI display (does not affect scoring)
+  try {
+    const drafts = await getDraftRulesForConditions(
+      carrierId,
+      healthConditions,
+      imoId,
+    );
+    for (const draft of drafts) {
+      draftRules.push({
+        conditionCode: draft.condition_code,
+        decision: draft.acceptance as TypesAcceptanceDecision,
+        reviewStatus:
+          (draft.review_status as DraftRuleInfo["reviewStatus"]) || "draft",
+        source: draft.source_snippet || undefined,
+      });
+    }
+  } catch (e) {
+    // Non-critical: log but continue
+    console.warn("Failed to fetch draft rules for FYI:", e);
+  }
+
+  // Evaluate each condition using only approved rules
   for (const conditionCode of healthConditions) {
+    // lookupAcceptance defaults to approved rules only
     const acceptance = await lookupAcceptance(
       carrierId,
       conditionCode,
@@ -248,11 +379,29 @@ async function calculateApproval(
     );
 
     if (acceptance) {
+      // Build provenance if available
+      const provenance: RuleProvenance | undefined =
+        acceptance.source_guide_id ||
+        acceptance.source_pages ||
+        acceptance.source_snippet
+          ? {
+              guideId: acceptance.source_guide_id ?? undefined,
+              pages: acceptance.source_pages ?? undefined,
+              snippet: acceptance.source_snippet ?? undefined,
+              confidence: acceptance.extraction_confidence ?? undefined,
+              reviewStatus:
+                (acceptance.review_status as RuleProvenance["reviewStatus"]) ||
+                "approved",
+            }
+          : undefined;
+
       conditionDecisions.push({
         conditionCode,
         decision: acceptance.acceptance as AcceptanceDecision,
         likelihood: acceptance.approval_likelihood ?? 0.5,
         healthClassResult: acceptance.health_class_result,
+        isApproved: true, // We only get approved rules here
+        provenance,
       });
 
       if (acceptance.acceptance === "declined") {
@@ -263,13 +412,15 @@ async function calculateApproval(
         concerns.push(`${conditionCode}: table rated`);
       }
     } else {
+      // No approved rule found
       conditionDecisions.push({
         conditionCode,
         decision: "case_by_case",
         likelihood: 0.5,
         healthClassResult: null,
+        isApproved: false, // No rule = not approved
       });
-      concerns.push(`${conditionCode}: no rule found`);
+      concerns.push(`${conditionCode}: no approved rule found`);
     }
   }
 
@@ -280,6 +431,7 @@ async function calculateApproval(
       healthClass: "standard",
       conditionDecisions,
       concerns,
+      draftRules,
     };
   }
 
@@ -289,7 +441,7 @@ async function calculateApproval(
   // Determine health class
   const healthClass = determineHealthClass(conditionDecisions);
 
-  return { likelihood, healthClass, conditionDecisions, concerns };
+  return { likelihood, healthClass, conditionDecisions, concerns, draftRules };
 }
 
 /**
@@ -441,20 +593,53 @@ async function getExtractedCriteria(
 }
 
 /**
- * Calculate composite score for ranking
+ * Calculate composite score for ranking.
+ * Applies derived confidence penalty for unknown eligibility products.
+ *
+ * @param approvalLikelihood - Likelihood of approval (0-1)
+ * @param monthlyPremium - Monthly premium amount
+ * @param maxPremium - Maximum premium in the result set (for normalization)
+ * @param eligibilityStatus - Tri-state eligibility: eligible, unknown, ineligible
+ * @param dataConfidence - Data completeness confidence (0-1)
+ * @returns Score components including final score with penalty applied
  */
 function calculateScore(
   approvalLikelihood: number,
-  monthlyPremium: number,
+  monthlyPremium: number | null,
   maxPremium: number,
-): number {
-  const normalizedPremium =
-    maxPremium > 0 ? 1 - monthlyPremium / maxPremium : 0.5;
-  return approvalLikelihood * 0.4 + normalizedPremium * 0.6;
+  eligibilityStatus: EligibilityStatus,
+  dataConfidence: number,
+): ScoreComponents {
+  // Price score: 1 = cheapest, 0 = most expensive
+  const priceScore =
+    maxPremium > 0 && monthlyPremium !== null
+      ? 1 - monthlyPremium / maxPremium
+      : 0.5;
+
+  // Derived confidence multiplier for unknown eligibility
+  // Range: 0.5 to 1.0 based on data completeness
+  // If eligible, no penalty (multiplier = 1)
+  // If unknown, penalty based on how much data is missing
+  const confidenceMultiplier =
+    eligibilityStatus === "unknown"
+      ? 0.5 + dataConfidence * 0.5 // Range: 0.5 to 1.0
+      : 1.0;
+
+  // Returns components; caller computes:
+  // rawScore = likelihood * 0.4 + priceScore * 0.6
+  // finalScore = rawScore * confidenceMultiplier
+
+  return {
+    likelihood: approvalLikelihood,
+    priceScore,
+    dataConfidence,
+    confidenceMultiplier,
+  };
 }
 
 /**
- * Main entry point: Get product recommendations
+ * Main entry point: Get product recommendations.
+ * Now supports tri-state eligibility and keeps unknown products in results.
  */
 export async function getRecommendations(
   input: DecisionEngineInput,
@@ -487,36 +672,60 @@ export async function getRecommendations(
   const stats = {
     totalProducts: 0,
     passedEligibility: 0,
+    unknownEligibility: 0,
     passedAcceptance: 0,
     withPremiums: 0,
+    ineligible: 0,
   };
 
   const products = await getProducts(input);
   stats.totalProducts = products.length;
 
-  // Evaluate products through all stages
-  const evaluated: Array<{
+  // Internal type for evaluated products
+  interface EvaluatedProduct {
     product: ProductCandidate;
+    eligibility: EligibilityResult;
     approval: Awaited<ReturnType<typeof calculateApproval>>;
-    premium: number;
+    premium: number | null;
     maxCoverage: number;
-  }> = [];
+    scoreComponents: ScoreComponents;
+    finalScore: number;
+  }
+
+  const eligibleProducts: EvaluatedProduct[] = [];
+  const unknownProducts: EvaluatedProduct[] = [];
 
   for (const product of products) {
-    // Stage 1: Eligibility
+    // Stage 1: Eligibility (tri-state)
     const criteria = await getExtractedCriteria(product.productId);
     const eligibility = checkEligibility(product, client, coverage, criteria);
-    if (!eligibility.eligible) continue;
-    stats.passedEligibility++;
 
-    // Stage 2: Approval
+    // Handle tri-state eligibility
+    if (eligibility.status === "ineligible") {
+      stats.ineligible++;
+      continue; // Skip ineligible products entirely
+    }
+
+    if (eligibility.status === "unknown") {
+      stats.unknownEligibility++;
+    } else {
+      stats.passedEligibility++;
+    }
+
+    // Stage 2: Approval (uses only approved rules)
     const approval = await calculateApproval(
       product.carrierId,
       product.productType,
       client.healthConditions,
       imoId,
     );
-    if (approval.likelihood === 0) continue;
+
+    // For unknown eligibility, we don't skip on low likelihood
+    // For eligible products, skip if likelihood is 0 (declined)
+    if (eligibility.status === "eligible" && approval.likelihood === 0) {
+      stats.ineligible++;
+      continue;
+    }
     stats.passedAcceptance++;
 
     // Stage 3: Premium
@@ -529,128 +738,157 @@ export async function getRecommendations(
       coverage.faceAmount,
       imoId,
     );
-    if (premium === null) continue;
-    stats.withPremiums++;
+
+    // For unknown eligibility, premium can be null (we still keep the product)
+    if (eligibility.status === "eligible" && premium === null) {
+      continue;
+    }
+    if (premium !== null) {
+      stats.withPremiums++;
+    }
 
     const maxCoverage = product.maxFaceAmount
       ? Math.min(product.maxFaceAmount, coverage.faceAmount)
       : coverage.faceAmount;
 
-    evaluated.push({ product, approval, premium, maxCoverage });
-  }
+    // Calculate score with confidence penalty for unknown eligibility
+    const scoreComponents = calculateScore(
+      approval.likelihood,
+      premium,
+      0, // Will recalculate maxPremium later
+      eligibility.status,
+      eligibility.confidence,
+    );
 
-  // Stage 4: Rank and select recommendations
-  if (evaluated.length === 0) {
-    return {
-      recommendations: [],
-      filtered: stats,
-      processingTime: Date.now() - startTime,
+    // Calculate raw score for now (will be adjusted with maxPremium)
+    const rawScore =
+      approval.likelihood * 0.4 + scoreComponents.priceScore * 0.6;
+    const finalScore = rawScore * scoreComponents.confidenceMultiplier;
+
+    const evaluated: EvaluatedProduct = {
+      product,
+      eligibility,
+      approval,
+      premium,
+      maxCoverage,
+      scoreComponents,
+      finalScore,
     };
+
+    if (eligibility.status === "eligible") {
+      eligibleProducts.push(evaluated);
+    } else {
+      unknownProducts.push(evaluated);
+    }
   }
 
-  const maxPremium = Math.max(...evaluated.map((e) => e.premium));
-  const scored = evaluated.map((e) => ({
-    ...e,
-    score: calculateScore(e.approval.likelihood, e.premium, maxPremium),
-  }));
+  // Recalculate scores with proper maxPremium
+  const allWithPremiums = [...eligibleProducts, ...unknownProducts].filter(
+    (e) => e.premium !== null,
+  );
+  const maxPremium =
+    allWithPremiums.length > 0
+      ? Math.max(...allWithPremiums.map((e) => e.premium!))
+      : 0;
 
-  scored.sort((a, b) => b.score - a.score);
+  // Recalculate with actual maxPremium
+  const recalculate = (e: EvaluatedProduct): EvaluatedProduct => {
+    const scoreComponents = calculateScore(
+      e.approval.likelihood,
+      e.premium,
+      maxPremium,
+      e.eligibility.status,
+      e.eligibility.confidence,
+    );
+    const rawScore =
+      e.approval.likelihood * 0.4 + scoreComponents.priceScore * 0.6;
+    const finalScore = rawScore * scoreComponents.confidenceMultiplier;
+    return { ...e, scoreComponents, finalScore };
+  };
 
+  const scoredEligible = eligibleProducts.map(recalculate);
+  const scoredUnknown = unknownProducts.map(recalculate);
+
+  // Sort by final score
+  scoredEligible.sort((a, b) => b.finalScore - a.finalScore);
+  scoredUnknown.sort((a, b) => b.finalScore - a.finalScore);
+
+  // Helper to convert EvaluatedProduct to Recommendation
+  const toRecommendation = (
+    e: EvaluatedProduct,
+    reason: Recommendation["reason"],
+  ): Recommendation => ({
+    carrierId: e.product.carrierId,
+    carrierName: e.product.carrierName,
+    productId: e.product.productId,
+    productName: e.product.productName,
+    productType: e.product.productType,
+    monthlyPremium: e.premium,
+    maxCoverage: e.maxCoverage,
+    approvalLikelihood: e.approval.likelihood,
+    healthClassResult: e.approval.healthClass,
+    reason,
+    concerns: e.approval.concerns,
+    conditionDecisions: e.approval.conditionDecisions,
+    score: e.finalScore,
+    eligibilityStatus: e.eligibility.status,
+    eligibilityReasons: e.eligibility.reasons,
+    missingFields: e.eligibility.missingFields,
+    confidence: e.eligibility.confidence,
+    scoreComponents: e.scoreComponents,
+    draftRulesFyi: e.approval.draftRules,
+  });
+
+  // Build recommendations from eligible products
   const recommendations: Recommendation[] = [];
   const seen = new Set<string>();
 
-  // Best value (highest score)
-  if (scored.length > 0) {
-    const best = scored[0];
+  // Best value (highest score among eligible)
+  if (scoredEligible.length > 0) {
+    const best = scoredEligible[0];
     seen.add(best.product.productId);
-    recommendations.push({
-      carrierId: best.product.carrierId,
-      carrierName: best.product.carrierName,
-      productId: best.product.productId,
-      productName: best.product.productName,
-      productType: best.product.productType,
-      monthlyPremium: best.premium,
-      maxCoverage: best.maxCoverage,
-      approvalLikelihood: best.approval.likelihood,
-      healthClassResult: best.approval.healthClass,
-      reason: "best_value",
-      concerns: best.approval.concerns,
-      conditionDecisions: best.approval.conditionDecisions,
-      score: best.score,
-    });
+    recommendations.push(toRecommendation(best, "best_value"));
   }
 
-  // Cheapest
-  const byPrice = [...scored].sort((a, b) => a.premium - b.premium);
+  // Cheapest (lowest premium among eligible)
+  const byPrice = [...scoredEligible]
+    .filter((e) => e.premium !== null)
+    .sort((a, b) => a.premium! - b.premium!);
   const cheapest = byPrice.find((p) => !seen.has(p.product.productId));
   if (cheapest) {
     seen.add(cheapest.product.productId);
-    recommendations.push({
-      carrierId: cheapest.product.carrierId,
-      carrierName: cheapest.product.carrierName,
-      productId: cheapest.product.productId,
-      productName: cheapest.product.productName,
-      productType: cheapest.product.productType,
-      monthlyPremium: cheapest.premium,
-      maxCoverage: cheapest.maxCoverage,
-      approvalLikelihood: cheapest.approval.likelihood,
-      healthClassResult: cheapest.approval.healthClass,
-      reason: "cheapest",
-      concerns: cheapest.approval.concerns,
-      conditionDecisions: cheapest.approval.conditionDecisions,
-      score: cheapest.score,
-    });
+    recommendations.push(toRecommendation(cheapest, "cheapest"));
   }
 
-  // Best approval
-  const byApproval = [...scored].sort(
+  // Best approval (highest likelihood among eligible)
+  const byApproval = [...scoredEligible].sort(
     (a, b) => b.approval.likelihood - a.approval.likelihood,
   );
   const bestApproval = byApproval.find((p) => !seen.has(p.product.productId));
   if (bestApproval) {
     seen.add(bestApproval.product.productId);
-    recommendations.push({
-      carrierId: bestApproval.product.carrierId,
-      carrierName: bestApproval.product.carrierName,
-      productId: bestApproval.product.productId,
-      productName: bestApproval.product.productName,
-      productType: bestApproval.product.productType,
-      monthlyPremium: bestApproval.premium,
-      maxCoverage: bestApproval.maxCoverage,
-      approvalLikelihood: bestApproval.approval.likelihood,
-      healthClassResult: bestApproval.approval.healthClass,
-      reason: "best_approval",
-      concerns: bestApproval.approval.concerns,
-      conditionDecisions: bestApproval.approval.conditionDecisions,
-      score: bestApproval.score,
-    });
+    recommendations.push(toRecommendation(bestApproval, "best_approval"));
   }
 
-  // Highest coverage
-  const byCoverage = [...scored].sort((a, b) => b.maxCoverage - a.maxCoverage);
+  // Highest coverage (max coverage among eligible)
+  const byCoverage = [...scoredEligible].sort(
+    (a, b) => b.maxCoverage - a.maxCoverage,
+  );
   const highestCoverage = byCoverage.find(
     (p) => !seen.has(p.product.productId),
   );
   if (highestCoverage) {
-    recommendations.push({
-      carrierId: highestCoverage.product.carrierId,
-      carrierName: highestCoverage.product.carrierName,
-      productId: highestCoverage.product.productId,
-      productName: highestCoverage.product.productName,
-      productType: highestCoverage.product.productType,
-      monthlyPremium: highestCoverage.premium,
-      maxCoverage: highestCoverage.maxCoverage,
-      approvalLikelihood: highestCoverage.approval.likelihood,
-      healthClassResult: highestCoverage.approval.healthClass,
-      reason: "highest_coverage",
-      concerns: highestCoverage.approval.concerns,
-      conditionDecisions: highestCoverage.approval.conditionDecisions,
-      score: highestCoverage.score,
-    });
+    recommendations.push(toRecommendation(highestCoverage, "highest_coverage"));
   }
+
+  // Build unknown eligibility list (no specific reason, sorted by score)
+  const unknownEligibility: Recommendation[] = scoredUnknown.map((e) =>
+    toRecommendation(e, null),
+  );
 
   return {
     recommendations,
+    unknownEligibility,
     filtered: stats,
     processingTime: Date.now() - startTime,
   };
@@ -676,6 +914,8 @@ export function formatRecommendationReason(
       return "Best Approval Odds";
     case "best_value":
       return "Best Overall Value";
+    case null:
+      return "Verification Needed";
     default:
       return reason;
   }
@@ -691,6 +931,8 @@ export function getReasonBadgeColor(reason: Recommendation["reason"]): string {
       return "text-purple-700 bg-purple-50 border-purple-200";
     case "best_value":
       return "text-amber-700 bg-amber-50 border-amber-200";
+    case null:
+      return "text-yellow-700 bg-yellow-50 border-yellow-200"; // Unknown eligibility
     default:
       return "text-gray-700 bg-gray-50 border-gray-200";
   }
@@ -707,4 +949,213 @@ export function formatCurrency(amount: number): string {
 
 export function formatPercentage(value: number): string {
   return `${Math.round(value * 100)}%`;
+}
+
+// ============================================================================
+// V2 Rule Engine Integration
+// ============================================================================
+// The v2 rule engine provides compound predicates, cross-condition evaluation,
+// proper unknown propagation, and table rating aggregation (max, not multiply).
+// It can be enabled via feature flag for gradual rollout.
+
+import {
+  evaluateRuleSet,
+  aggregateOutcomes,
+  buildFactMap,
+  generateInputHash,
+} from "./ruleEvaluator";
+import { loadApprovedRuleSets, logEvaluation } from "./ruleService";
+import type { AggregatedOutcome, ConditionOutcome } from "./ruleEngineDSL";
+
+// Adapter to convert service types to DSL types
+// This will be unnecessary once database.types.ts is regenerated
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toRuleSetForEvaluation(
+  rs: any,
+): Parameters<typeof evaluateRuleSet>[0] {
+  return rs;
+}
+
+export interface V2EvaluationInput {
+  imoId: string;
+  carrierId: string;
+  productId: string | null;
+  client: {
+    age: number;
+    gender: "male" | "female";
+    bmi: number;
+    state: string;
+    tobacco: boolean;
+  };
+  healthConditions: string[];
+  conditionResponses: Record<string, Record<string, unknown>>;
+  sessionId?: string;
+}
+
+export interface V2EvaluationResult extends AggregatedOutcome {
+  inputHash: string;
+  evaluatedAt: string;
+}
+
+/**
+ * Evaluate underwriting using the v2 rule engine.
+ *
+ * This function:
+ * 1. Builds a canonical fact map from client data
+ * 2. Loads and evaluates global (cross-condition) rules first
+ * 3. Evaluates condition-specific rules for each health condition
+ * 4. Aggregates outcomes using max table units (not multiply)
+ * 5. Logs evaluation for audit trail
+ *
+ * Key differences from v1:
+ * - Compound predicates (AND/OR/NOT groups)
+ * - Proper unknown propagation with specific missing fields
+ * - Table ratings aggregated by max, not multiplication
+ * - Default fallback is unknown/refer, not decline
+ * - Cross-condition rules for multi-morbidity interactions
+ */
+export async function evaluateUnderwritingV2(
+  input: V2EvaluationInput,
+): Promise<V2EvaluationResult> {
+  const {
+    imoId,
+    carrierId,
+    productId,
+    client,
+    healthConditions,
+    conditionResponses,
+    sessionId,
+  } = input;
+
+  // 1. Build canonical fact map
+  const facts = buildFactMap(client, healthConditions, conditionResponses);
+  const inputHash = generateInputHash(facts);
+
+  // 2. Load and evaluate GLOBAL rules first (can decline early for multi-morbidity)
+  let globalOutcome: ConditionOutcome | null = null;
+
+  const globalRuleSets = await loadApprovedRuleSets(
+    imoId,
+    carrierId,
+    productId,
+    {
+      scope: "global",
+    },
+  );
+
+  for (const ruleSet of globalRuleSets) {
+    const result = evaluateRuleSet(toRuleSetForEvaluation(ruleSet), facts);
+
+    // Log evaluation
+    await logEvaluation(
+      imoId,
+      sessionId ?? null,
+      ruleSet.id,
+      result.matchedRules[0]?.ruleId ?? null,
+      null,
+      result.matchedRules.length > 0
+        ? "matched"
+        : result.missingFields.length > 0
+          ? "unknown"
+          : "failed",
+      {
+        matchedConditions: result.matchedRules.map((r) => r.matchedConditions),
+        missingFields: result.missingFields,
+        outcomeApplied: result.matchedRules[0]?.outcome ?? null,
+        inputHash,
+      },
+    );
+
+    if (result.eligibility === "ineligible") {
+      // Early decline from global rule
+      return {
+        ...aggregateOutcomes([], result, { flatExtraComposition: "max" }),
+        inputHash,
+        evaluatedAt: new Date().toISOString(),
+      };
+    }
+
+    globalOutcome = result;
+  }
+
+  // 3. Evaluate CONDITION rules for each reported condition
+  const conditionOutcomes: ConditionOutcome[] = [];
+
+  for (const conditionCode of healthConditions) {
+    const conditionRuleSets = await loadApprovedRuleSets(
+      imoId,
+      carrierId,
+      productId,
+      {
+        scope: "condition",
+        conditionCode,
+      },
+    );
+
+    if (conditionRuleSets.length === 0) {
+      // No rules for this condition = unknown
+      conditionOutcomes.push({
+        conditionCode,
+        eligibility: "unknown",
+        healthClass: "unknown",
+        tableUnits: 0,
+        flatExtra: null,
+        concerns: [`No approved rules defined for ${conditionCode}`],
+        matchedRules: [],
+        missingFields: [],
+      });
+      continue;
+    }
+
+    // Evaluate the first (should be only) approved rule set for this condition
+    const ruleSet = conditionRuleSets[0];
+    const result = evaluateRuleSet(toRuleSetForEvaluation(ruleSet), facts);
+
+    // Log evaluation
+    await logEvaluation(
+      imoId,
+      sessionId ?? null,
+      ruleSet.id,
+      result.matchedRules[0]?.ruleId ?? null,
+      conditionCode,
+      result.matchedRules.length > 0
+        ? "matched"
+        : result.missingFields.length > 0
+          ? "unknown"
+          : "failed",
+      {
+        matchedConditions: result.matchedRules.map((r) => r.matchedConditions),
+        missingFields: result.missingFields,
+        outcomeApplied: result.matchedRules[0]?.outcome ?? null,
+        inputHash,
+      },
+    );
+
+    conditionOutcomes.push(result);
+  }
+
+  // 4. Aggregate all outcomes
+  const aggregated = aggregateOutcomes(
+    conditionOutcomes,
+    globalOutcome,
+    { flatExtraComposition: "max" }, // Use max for flat extras by default
+  );
+
+  return {
+    ...aggregated,
+    inputHash,
+    evaluatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Check if v2 rule engine should be used for a given carrier.
+ * Returns true if the carrier has any approved v2 rule sets.
+ */
+export async function hasV2RulesForCarrier(
+  imoId: string,
+  carrierId: string,
+): Promise<boolean> {
+  const ruleSets = await loadApprovedRuleSets(imoId, carrierId, null, {});
+  return ruleSets.length > 0;
 }

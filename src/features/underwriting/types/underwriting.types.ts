@@ -163,6 +163,161 @@ export interface AIAnalysisResult {
 }
 
 // ============================================================================
+// Tri-State Eligibility Types (Phase 1)
+// ============================================================================
+
+/**
+ * Product-specific eligibility status.
+ * - eligible: Passes all known checks
+ * - ineligible: Fails hard checks (knockout conditions, age limits, etc.)
+ * - unknown: Missing data needed to determine eligibility
+ */
+export type EligibilityStatus = "eligible" | "ineligible" | "unknown";
+
+/**
+ * Detailed information about a missing field needed for eligibility evaluation
+ */
+export interface MissingFieldInfo {
+  /** Field identifier, e.g., "condition.diabetes.a1c" */
+  field: string;
+  /** Human-readable reason why this field is needed */
+  reason: string;
+  /** Condition code if field is condition-specific */
+  conditionCode?: string;
+}
+
+/**
+ * Result of eligibility evaluation for a single product
+ */
+export interface EligibilityResult {
+  /** Tri-state eligibility status */
+  status: EligibilityStatus;
+  /** Human-readable reasons for the eligibility determination */
+  reasons: string[];
+  /** Fields that are missing and needed for full evaluation */
+  missingFields: MissingFieldInfo[];
+  /** Data completeness score 0-1 (ratio of answered vs required fields) */
+  confidence: number;
+}
+
+/**
+ * Breakdown of how the final recommendation score was calculated
+ */
+export interface ScoreComponents {
+  /** Approval likelihood component (0-1) */
+  likelihood: number;
+  /** Price score component (0-1, higher = cheaper relative to max) */
+  priceScore: number;
+  /** Data confidence (0-1, based on completeness) */
+  dataConfidence: number;
+  /** Multiplier applied based on eligibility status and confidence */
+  confidenceMultiplier: number;
+}
+
+/**
+ * Provenance information for a rule or decision
+ */
+export interface RuleProvenance {
+  /** ID of the source underwriting guide */
+  guideId?: string;
+  /** Page numbers where the rule was found */
+  pages?: number[];
+  /** Relevant snippet from the guide */
+  snippet?: string;
+  /** AI extraction confidence (0-1) */
+  confidence?: number;
+  /** Review status of the rule */
+  reviewStatus?: RuleReviewStatus;
+}
+
+/**
+ * Review status for acceptance rules
+ */
+export type RuleReviewStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected";
+
+/**
+ * Decision for a specific health condition with provenance
+ */
+export interface ConditionDecision {
+  /** Condition code */
+  conditionCode: string;
+  /** The acceptance decision */
+  decision: AcceptanceDecision;
+  /** Approval likelihood (0-1) */
+  likelihood: number;
+  /** Resulting health class if approved */
+  healthClassResult: string | null;
+  /** Whether this rule is from an approved source */
+  isApproved: boolean;
+  /** Source provenance for the decision */
+  provenance?: RuleProvenance;
+}
+
+/**
+ * Acceptance decision types
+ */
+export type AcceptanceDecision =
+  | "approved"
+  | "table_rated"
+  | "case_by_case"
+  | "declined";
+
+/**
+ * Draft rule shown for reference but not used in scoring
+ */
+export interface DraftRuleInfo {
+  /** Condition code the rule applies to */
+  conditionCode: string;
+  /** The draft decision */
+  decision: AcceptanceDecision;
+  /** Current review status */
+  reviewStatus: RuleReviewStatus;
+  /** Source snippet if available */
+  source?: string;
+}
+
+/**
+ * Per-product recommendation stored in underwriting_session_recommendations
+ */
+export interface SessionRecommendation {
+  id: string;
+  sessionId: string;
+  productId: string;
+  carrierId: string;
+  imoId: string;
+  /** Tri-state eligibility */
+  eligibilityStatus: EligibilityStatus;
+  eligibilityReasons: string[];
+  missingFields: MissingFieldInfo[];
+  confidence: number;
+  /** Approval details */
+  approvalLikelihood: number | null;
+  healthClassResult: string | null;
+  conditionDecisions: ConditionDecision[];
+  /** Pricing */
+  monthlyPremium: number | null;
+  annualPremium: number | null;
+  costPerThousand: number | null;
+  /** Ranking */
+  score: number | null;
+  scoreComponents: ScoreComponents | null;
+  recommendationReason:
+    | "best_value"
+    | "cheapest"
+    | "best_approval"
+    | "highest_coverage"
+    | null;
+  recommendationRank: number | null;
+  /** Draft rules for FYI display */
+  draftRulesFyi: DraftRuleInfo[];
+  createdAt: string;
+}
+
+// ============================================================================
 // Phase 5: Criteria Evaluation Types
 // ============================================================================
 

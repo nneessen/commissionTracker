@@ -19,6 +19,9 @@ import {
   DollarSign,
   TrendingUp as Coverage,
   ThumbsUp,
+  HelpCircle,
+  FileQuestion,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -280,19 +283,67 @@ export default function RecommendationsStep({
               </span>
             </div>
           ) : decisionEngineResult &&
-            decisionEngineResult.recommendations.length > 0 ? (
-            <div className="space-y-2">
-              {decisionEngineResult.recommendations.map((rec) => (
-                <DecisionEngineCard
-                  key={`de-${rec.carrierId}-${rec.productId}`}
-                  recommendation={rec}
-                />
-              ))}
-              <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 flex items-center gap-2">
+            (decisionEngineResult.recommendations.length > 0 ||
+              decisionEngineResult.unknownEligibility.length > 0) ? (
+            <div className="space-y-3">
+              {/* Eligible Recommendations */}
+              {decisionEngineResult.recommendations.length > 0 && (
+                <div className="space-y-2">
+                  {decisionEngineResult.recommendations.map((rec) => (
+                    <DecisionEngineCard
+                      key={`de-${rec.carrierId}-${rec.productId}`}
+                      recommendation={rec}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Unknown Eligibility Products */}
+              {decisionEngineResult.unknownEligibility.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HelpCircle className="h-3.5 w-3.5 text-yellow-500" />
+                    <span className="text-[11px] font-medium text-yellow-700 dark:text-yellow-400">
+                      Verification Needed (
+                      {decisionEngineResult.unknownEligibility.length})
+                    </span>
+                    <span className="text-[10px] text-yellow-600 dark:text-yellow-500 ml-auto">
+                      Missing follow-up data
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {decisionEngineResult.unknownEligibility.map((rec) => (
+                      <UnknownEligibilityCard
+                        key={`de-unknown-${rec.carrierId}-${rec.productId}`}
+                        recommendation={rec}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Stats Footer */}
+              <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 flex flex-wrap items-center gap-2">
                 <span>
                   Searched {decisionEngineResult.filtered.totalProducts}{" "}
-                  products • {decisionEngineResult.filtered.withPremiums} with
-                  matching rates
+                  products
+                </span>
+                <span>•</span>
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  {decisionEngineResult.filtered.passedEligibility} eligible
+                </span>
+                {decisionEngineResult.filtered.unknownEligibility > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-yellow-600 dark:text-yellow-400">
+                      {decisionEngineResult.filtered.unknownEligibility} need
+                      verification
+                    </span>
+                  </>
+                )}
+                <span>•</span>
+                <span>
+                  {decisionEngineResult.filtered.withPremiums} with rates
                 </span>
                 <span className="ml-auto">
                   {decisionEngineResult.processingTime}ms
@@ -307,6 +358,9 @@ export default function RecommendationsStep({
               </p>
               <p className="text-[10px] text-zinc-400 mt-1">
                 Checked {decisionEngineResult.filtered.totalProducts} products
+                {decisionEngineResult.filtered.ineligible > 0 && (
+                  <> • {decisionEngineResult.filtered.ineligible} ineligible</>
+                )}
               </p>
             </div>
           ) : (
@@ -843,13 +897,16 @@ function DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
             {/* Premium (prominent) */}
             <div className="text-right">
               <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                {formatDECurrency(recommendation.monthlyPremium)}
+                {recommendation.monthlyPremium !== null
+                  ? formatDECurrency(recommendation.monthlyPremium)
+                  : "TBD"}
                 <span className="text-[10px] font-normal text-zinc-400">
                   /mo
                 </span>
               </div>
               <div className="text-[10px] text-zinc-500">
-                {recommendation.maxCoverage > 0
+                {recommendation.maxCoverage > 0 &&
+                recommendation.monthlyPremium !== null
                   ? `${formatDECurrency((recommendation.monthlyPremium * 12) / (recommendation.maxCoverage / 1000))} per $1K/yr`
                   : "N/A"}
               </div>
@@ -934,6 +991,191 @@ function DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
               </div>
             </div>
           )}
+
+          {/* Draft Rules FYI (if any) */}
+          {recommendation.draftRulesFyi &&
+            recommendation.draftRulesFyi.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="text-[9px] font-medium text-zinc-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                  <Eye className="h-2.5 w-2.5" />
+                  Draft Rules (FYI Only)
+                </div>
+                <div className="space-y-1">
+                  {recommendation.draftRulesFyi.map((rule, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-[10px] px-1.5 py-0.5 bg-zinc-50 dark:bg-zinc-800/50 rounded"
+                    >
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {rule.conditionCode}
+                      </span>
+                      <span className="text-zinc-400 dark:text-zinc-500 italic">
+                        {rule.decision} ({rule.reviewStatus})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[9px] text-zinc-400 mt-1 italic">
+                  These rules are pending review and do not affect scoring
+                </p>
+              </div>
+            )}
+
+          {/* Score Components (data confidence) */}
+          {recommendation.scoreComponents && recommendation.confidence < 1 && (
+            <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2 text-[9px] text-zinc-500">
+                <span>
+                  Data confidence: {Math.round(recommendation.confidence * 100)}
+                  %
+                </span>
+                <span>•</span>
+                <span>
+                  Score adjusted by{" "}
+                  {Math.round(
+                    recommendation.scoreComponents.confidenceMultiplier * 100,
+                  )}
+                  %
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Unknown Eligibility Card Component
+// ============================================================================
+
+interface UnknownEligibilityCardProps {
+  recommendation: DecisionEngineRecommendation;
+}
+
+function UnknownEligibilityCard({
+  recommendation,
+}: UnknownEligibilityCardProps) {
+  return (
+    <div className="border border-yellow-200 dark:border-yellow-800/50 rounded-lg p-3 bg-yellow-50/50 dark:bg-yellow-900/10">
+      <div className="flex items-start gap-3">
+        {/* Icon */}
+        <div className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 bg-yellow-100 dark:bg-yellow-900/30">
+          <HelpCircle className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          {/* Header: Carrier & Product */}
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                {recommendation.carrierName}
+              </div>
+              <div className="text-[11px] text-zinc-500">
+                {recommendation.productName}
+              </div>
+            </div>
+
+            {/* Premium (if available) */}
+            <div className="text-right">
+              <div className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                {recommendation.monthlyPremium !== null
+                  ? formatDECurrency(recommendation.monthlyPremium)
+                  : "TBD"}
+                <span className="text-[10px] font-normal text-zinc-400">
+                  /mo
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Verification Needed Badge */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+              <FileQuestion className="h-2.5 w-2.5" />
+              Verification Needed
+            </span>
+            {recommendation.healthClassResult && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                Est. {recommendation.healthClassResult}
+              </span>
+            )}
+          </div>
+
+          {/* Missing Fields */}
+          {recommendation.missingFields &&
+            recommendation.missingFields.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-yellow-200 dark:border-yellow-800/30">
+                <div className="text-[9px] font-medium text-yellow-700 dark:text-yellow-400 uppercase tracking-wide mb-1">
+                  Information Needed
+                </div>
+                <div className="space-y-1">
+                  {recommendation.missingFields.map((field, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-1.5 text-[10px] text-yellow-700 dark:text-yellow-300"
+                    >
+                      <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                      <span>{field.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* Eligibility Reasons */}
+          {recommendation.eligibilityReasons &&
+            recommendation.eligibilityReasons.length > 0 && (
+              <div className="mt-2">
+                <div className="flex flex-wrap gap-1">
+                  {recommendation.eligibilityReasons.map((reason, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/20 rounded text-[9px] text-yellow-700 dark:text-yellow-300"
+                    >
+                      {reason}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* Confidence indicator */}
+          <div className="mt-2 flex items-center gap-2 text-[9px] text-yellow-600 dark:text-yellow-400">
+            <div className="flex-1 h-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-yellow-500 dark:bg-yellow-400 rounded-full"
+                style={{ width: `${recommendation.confidence * 100}%` }}
+              />
+            </div>
+            <span>
+              {Math.round(recommendation.confidence * 100)}% data complete
+            </span>
+          </div>
+
+          {/* Draft Rules FYI */}
+          {recommendation.draftRulesFyi &&
+            recommendation.draftRulesFyi.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-yellow-200 dark:border-yellow-800/30">
+                <div className="text-[9px] font-medium text-zinc-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                  <Eye className="h-2.5 w-2.5" />
+                  Pending Rules (FYI)
+                </div>
+                <div className="space-y-0.5">
+                  {recommendation.draftRulesFyi.slice(0, 3).map((rule, i) => (
+                    <div key={i} className="text-[9px] text-zinc-500 italic">
+                      {rule.conditionCode}: {rule.decision}
+                    </div>
+                  ))}
+                  {recommendation.draftRulesFyi.length > 3 && (
+                    <div className="text-[9px] text-zinc-400">
+                      +{recommendation.draftRulesFyi.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
         </div>
       </div>
     </div>

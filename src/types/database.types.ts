@@ -1034,13 +1034,24 @@ export type Database = {
           condition_code: string;
           created_at: string;
           created_by: string | null;
+          extraction_confidence: number | null;
+          field_requirements: Json | null;
           health_class_result: string | null;
           id: string;
           imo_id: string;
           notes: string | null;
           product_type: string | null;
+          required_fields: Json | null;
           requires_conditions: Json | null;
+          review_notes: string | null;
+          review_status: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          rule_schema_version: number | null;
           source: string | null;
+          source_guide_id: string | null;
+          source_pages: number[] | null;
+          source_snippet: string | null;
           updated_at: string;
         };
         Insert: {
@@ -1050,13 +1061,24 @@ export type Database = {
           condition_code: string;
           created_at?: string;
           created_by?: string | null;
+          extraction_confidence?: number | null;
+          field_requirements?: Json | null;
           health_class_result?: string | null;
           id?: string;
           imo_id: string;
           notes?: string | null;
           product_type?: string | null;
+          required_fields?: Json | null;
           requires_conditions?: Json | null;
+          review_notes?: string | null;
+          review_status?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          rule_schema_version?: number | null;
           source?: string | null;
+          source_guide_id?: string | null;
+          source_pages?: number[] | null;
+          source_snippet?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -1066,13 +1088,24 @@ export type Database = {
           condition_code?: string;
           created_at?: string;
           created_by?: string | null;
+          extraction_confidence?: number | null;
+          field_requirements?: Json | null;
           health_class_result?: string | null;
           id?: string;
           imo_id?: string;
           notes?: string | null;
           product_type?: string | null;
+          required_fields?: Json | null;
           requires_conditions?: Json | null;
+          review_notes?: string | null;
+          review_status?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          rule_schema_version?: number | null;
           source?: string | null;
+          source_guide_id?: string | null;
+          source_pages?: number[] | null;
+          source_snippet?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -1084,10 +1117,45 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "carrier_condition_acceptance_condition_code_fkey";
+            columns: ["condition_code"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_health_conditions";
+            referencedColumns: ["code"];
+          },
+          {
             foreignKeyName: "carrier_condition_acceptance_imo_id_fkey";
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_condition_acceptance_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_condition_acceptance_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_condition_acceptance_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_condition_acceptance_source_guide_id_fkey";
+            columns: ["source_guide_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_guides";
             referencedColumns: ["id"];
           },
         ];
@@ -7641,10 +7709,12 @@ export type Database = {
       };
       underwriting_health_conditions: {
         Row: {
+          acceptance_key_fields: string[] | null;
           category: string;
           code: string;
           created_at: string | null;
           follow_up_schema: Json;
+          follow_up_schema_version: number | null;
           id: string;
           is_active: boolean | null;
           name: string;
@@ -7653,10 +7723,12 @@ export type Database = {
           updated_at: string | null;
         };
         Insert: {
+          acceptance_key_fields?: string[] | null;
           category: string;
           code: string;
           created_at?: string | null;
           follow_up_schema?: Json;
+          follow_up_schema_version?: number | null;
           id?: string;
           is_active?: boolean | null;
           name: string;
@@ -7665,10 +7737,12 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          acceptance_key_fields?: string[] | null;
           category?: string;
           code?: string;
           created_at?: string | null;
           follow_up_schema?: Json;
+          follow_up_schema_version?: number | null;
           id?: string;
           is_active?: boolean | null;
           name?: string;
@@ -7677,6 +7751,432 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [];
+      };
+      underwriting_rule_evaluation_log: {
+        Row: {
+          condition_code: string | null;
+          evaluated_at: string | null;
+          expires_at: string | null;
+          failed_conditions: Json | null;
+          id: string;
+          imo_id: string;
+          input_hash: string | null;
+          matched_conditions: Json | null;
+          missing_fields: Json | null;
+          outcome_applied: Json | null;
+          predicate_result: string | null;
+          rule_id: string | null;
+          rule_set_id: string | null;
+          session_id: string | null;
+        };
+        Insert: {
+          condition_code?: string | null;
+          evaluated_at?: string | null;
+          expires_at?: string | null;
+          failed_conditions?: Json | null;
+          id?: string;
+          imo_id: string;
+          input_hash?: string | null;
+          matched_conditions?: Json | null;
+          missing_fields?: Json | null;
+          outcome_applied?: Json | null;
+          predicate_result?: string | null;
+          rule_id?: string | null;
+          rule_set_id?: string | null;
+          session_id?: string | null;
+        };
+        Update: {
+          condition_code?: string | null;
+          evaluated_at?: string | null;
+          expires_at?: string | null;
+          failed_conditions?: Json | null;
+          id?: string;
+          imo_id?: string;
+          input_hash?: string | null;
+          matched_conditions?: Json | null;
+          missing_fields?: Json | null;
+          outcome_applied?: Json | null;
+          predicate_result?: string | null;
+          rule_id?: string | null;
+          rule_set_id?: string | null;
+          session_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_rule_evaluation_log_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_evaluation_log_rule_id_fkey";
+            columns: ["rule_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_rules";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_evaluation_log_rule_set_id_fkey";
+            columns: ["rule_set_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_rule_sets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_evaluation_log_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      underwriting_rule_sets: {
+        Row: {
+          carrier_id: string;
+          condition_code: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          default_outcome: Json;
+          description: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean | null;
+          name: string;
+          product_id: string | null;
+          review_notes: string | null;
+          review_status:
+            | Database["public"]["Enums"]["rule_review_status"]
+            | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          scope: Database["public"]["Enums"]["rule_set_scope"];
+          source: string | null;
+          source_guide_id: string | null;
+          updated_at: string | null;
+          variant: string;
+          version: number | null;
+        };
+        Insert: {
+          carrier_id: string;
+          condition_code?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          default_outcome?: Json;
+          description?: string | null;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean | null;
+          name: string;
+          product_id?: string | null;
+          review_notes?: string | null;
+          review_status?:
+            | Database["public"]["Enums"]["rule_review_status"]
+            | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          scope?: Database["public"]["Enums"]["rule_set_scope"];
+          source?: string | null;
+          source_guide_id?: string | null;
+          updated_at?: string | null;
+          variant?: string;
+          version?: number | null;
+        };
+        Update: {
+          carrier_id?: string;
+          condition_code?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          default_outcome?: Json;
+          description?: string | null;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          product_id?: string | null;
+          review_notes?: string | null;
+          review_status?:
+            | Database["public"]["Enums"]["rule_review_status"]
+            | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          scope?: Database["public"]["Enums"]["rule_set_scope"];
+          source?: string | null;
+          source_guide_id?: string | null;
+          updated_at?: string | null;
+          variant?: string;
+          version?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_rule_sets_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_condition_code_fkey";
+            columns: ["condition_code"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_health_conditions";
+            referencedColumns: ["code"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_rule_sets_source_guide_id_fkey";
+            columns: ["source_guide_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_guides";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      underwriting_rules: {
+        Row: {
+          age_band_max: number | null;
+          age_band_min: number | null;
+          created_at: string | null;
+          description: string | null;
+          extraction_confidence: number | null;
+          gender: string | null;
+          id: string;
+          name: string;
+          outcome_concerns: string[] | null;
+          outcome_eligibility: string;
+          outcome_flat_extra_per_thousand: number | null;
+          outcome_flat_extra_years: number | null;
+          outcome_health_class: Database["public"]["Enums"]["health_class"];
+          outcome_reason: string;
+          outcome_table_rating:
+            | Database["public"]["Enums"]["table_rating"]
+            | null;
+          predicate: Json;
+          predicate_version: number | null;
+          priority: number;
+          rule_set_id: string;
+          source_pages: number[] | null;
+          source_snippet: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          age_band_max?: number | null;
+          age_band_min?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          extraction_confidence?: number | null;
+          gender?: string | null;
+          id?: string;
+          name: string;
+          outcome_concerns?: string[] | null;
+          outcome_eligibility: string;
+          outcome_flat_extra_per_thousand?: number | null;
+          outcome_flat_extra_years?: number | null;
+          outcome_health_class: Database["public"]["Enums"]["health_class"];
+          outcome_reason: string;
+          outcome_table_rating?:
+            | Database["public"]["Enums"]["table_rating"]
+            | null;
+          predicate?: Json;
+          predicate_version?: number | null;
+          priority?: number;
+          rule_set_id: string;
+          source_pages?: number[] | null;
+          source_snippet?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          age_band_max?: number | null;
+          age_band_min?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          extraction_confidence?: number | null;
+          gender?: string | null;
+          id?: string;
+          name?: string;
+          outcome_concerns?: string[] | null;
+          outcome_eligibility?: string;
+          outcome_flat_extra_per_thousand?: number | null;
+          outcome_flat_extra_years?: number | null;
+          outcome_health_class?: Database["public"]["Enums"]["health_class"];
+          outcome_reason?: string;
+          outcome_table_rating?:
+            | Database["public"]["Enums"]["table_rating"]
+            | null;
+          predicate?: Json;
+          predicate_version?: number | null;
+          priority?: number;
+          rule_set_id?: string;
+          source_pages?: number[] | null;
+          source_snippet?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_rules_rule_set_id_fkey";
+            columns: ["rule_set_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_rule_sets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      underwriting_session_recommendations: {
+        Row: {
+          annual_premium: number | null;
+          approval_likelihood: number | null;
+          carrier_id: string;
+          condition_decisions: Json | null;
+          confidence: number | null;
+          cost_per_thousand: number | null;
+          created_at: string | null;
+          draft_rules_fyi: Json | null;
+          eligibility_reasons: string[] | null;
+          eligibility_status: string;
+          health_class_result: string | null;
+          id: string;
+          imo_id: string;
+          missing_fields: Json | null;
+          monthly_premium: number | null;
+          product_id: string;
+          recommendation_rank: number | null;
+          recommendation_reason: string | null;
+          score: number | null;
+          score_components: Json | null;
+          session_id: string;
+        };
+        Insert: {
+          annual_premium?: number | null;
+          approval_likelihood?: number | null;
+          carrier_id: string;
+          condition_decisions?: Json | null;
+          confidence?: number | null;
+          cost_per_thousand?: number | null;
+          created_at?: string | null;
+          draft_rules_fyi?: Json | null;
+          eligibility_reasons?: string[] | null;
+          eligibility_status: string;
+          health_class_result?: string | null;
+          id?: string;
+          imo_id: string;
+          missing_fields?: Json | null;
+          monthly_premium?: number | null;
+          product_id: string;
+          recommendation_rank?: number | null;
+          recommendation_reason?: string | null;
+          score?: number | null;
+          score_components?: Json | null;
+          session_id: string;
+        };
+        Update: {
+          annual_premium?: number | null;
+          approval_likelihood?: number | null;
+          carrier_id?: string;
+          condition_decisions?: Json | null;
+          confidence?: number | null;
+          cost_per_thousand?: number | null;
+          created_at?: string | null;
+          draft_rules_fyi?: Json | null;
+          eligibility_reasons?: string[] | null;
+          eligibility_status?: string;
+          health_class_result?: string | null;
+          id?: string;
+          imo_id?: string;
+          missing_fields?: Json | null;
+          monthly_premium?: number | null;
+          product_id?: string;
+          recommendation_rank?: number | null;
+          recommendation_reason?: string | null;
+          score?: number | null;
+          score_components?: Json | null;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_session_recommendations_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_session_recommendations_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_session_recommendations_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "underwriting_session_recommendations_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "underwriting_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       underwriting_sessions: {
         Row: {
@@ -7694,6 +8194,7 @@ export type Database = {
           created_at: string | null;
           created_by: string;
           decision_tree_id: string | null;
+          eligibility_summary: Json | null;
           health_responses: Json;
           health_tier: string | null;
           id: string;
@@ -7724,6 +8225,7 @@ export type Database = {
           created_at?: string | null;
           created_by: string;
           decision_tree_id?: string | null;
+          eligibility_summary?: Json | null;
           health_responses?: Json;
           health_tier?: string | null;
           id?: string;
@@ -7754,6 +8256,7 @@ export type Database = {
           created_at?: string | null;
           created_by?: string;
           decision_tree_id?: string | null;
+          eligibility_summary?: Json | null;
           health_responses?: Json;
           health_tier?: string | null;
           id?: string;
@@ -10505,6 +11008,10 @@ export type Database = {
         Args: { p_updates: Json; p_user_id: string };
         Returns: Json;
       };
+      approve_acceptance_rule: {
+        Args: { p_notes?: string; p_rule_id: string };
+        Returns: undefined;
+      };
       approve_agency_request: {
         Args: { p_request_id: string };
         Returns: string;
@@ -10516,6 +11023,10 @@ export type Database = {
           p_upline_id?: string;
         };
         Returns: undefined;
+      };
+      approve_underwriting_rule_set: {
+        Args: { p_notes?: string; p_rule_set_id: string };
+        Returns: Json;
       };
       assign_user_role: {
         Args: {
@@ -10723,6 +11234,7 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      cleanup_expired_evaluation_logs: { Args: never; Returns: number };
       cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_instagram_jobs: {
         Args: { p_older_than?: unknown };
@@ -11925,6 +12437,34 @@ export type Database = {
           policy_count: number;
         }[];
       };
+      get_premium_matrices_for_imo: {
+        Args: { p_imo_id: string };
+        Returns: {
+          age: number;
+          carrier_id: string;
+          carrier_name: string;
+          created_at: string;
+          created_by: string;
+          face_amount: number;
+          gender: string;
+          health_class: string;
+          id: string;
+          imo_id: string;
+          is_active: boolean;
+          max_age: number;
+          max_face_amount: number;
+          min_age: number;
+          min_face_amount: number;
+          monthly_premium: number;
+          product_id: string;
+          product_metadata: Json;
+          product_name: string;
+          product_type: string;
+          term_years: number;
+          tobacco_class: string;
+          updated_at: string;
+        }[];
+      };
       get_product_commission_rate: {
         Args: {
           p_comp_level: Database["public"]["Enums"]["comp_level"];
@@ -12198,6 +12738,10 @@ export type Database = {
             Returns: boolean;
           };
       has_subscription_bypass: { Args: never; Returns: boolean };
+      health_class_rank: {
+        Args: { hc: Database["public"]["Enums"]["health_class"] };
+        Returns: number;
+      };
       hierarchy_path_array: { Args: { path: string }; Returns: string[] };
       increment_email_quota: {
         Args: { p_provider: string; p_user_id: string };
@@ -12337,6 +12881,10 @@ export type Database = {
         Args: { p_context: Json; p_event_name: string };
         Returns: undefined;
       };
+      rank_to_health_class: {
+        Args: { rank: number };
+        Returns: Database["public"]["Enums"]["health_class"];
+      };
       record_alert_evaluation: {
         Args: {
           p_affected_entity_id?: string;
@@ -12430,6 +12978,10 @@ export type Database = {
         Args: { p_policy_id: string };
         Returns: number;
       };
+      reject_acceptance_rule: {
+        Args: { p_notes: string; p_rule_id: string };
+        Returns: undefined;
+      };
       reject_agency_request: {
         Args: { p_reason?: string; p_request_id: string };
         Returns: undefined;
@@ -12442,6 +12994,10 @@ export type Database = {
         Args: { p_lead_id: string; p_reason?: string };
         Returns: Json;
       };
+      reject_underwriting_rule_set: {
+        Args: { p_notes: string; p_rule_set_id: string };
+        Returns: Json;
+      };
       release_alert_rules: { Args: { p_rule_ids: string[] }; Returns: number };
       resend_recruit_invitation: {
         Args: { p_invitation_id: string };
@@ -12450,6 +13006,10 @@ export type Database = {
       resolve_join_request_approver: {
         Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string };
         Returns: string;
+      };
+      revert_rule_set_to_draft: {
+        Args: { p_rule_set_id: string };
+        Returns: Json;
       };
       safe_uuid_from_text: { Args: { input: string }; Returns: string };
       save_workflow_as_org_template: {
@@ -12534,6 +13094,14 @@ export type Database = {
             };
             Returns: Json;
           };
+      submit_rule_set_for_review: {
+        Args: { p_rule_set_id: string };
+        Returns: Json;
+      };
+      table_rating_units: {
+        Args: { rating: Database["public"]["Enums"]["table_rating"] };
+        Returns: number;
+      };
       test_rls_for_user: {
         Args: { test_user_id: string };
         Returns: {
@@ -12582,6 +13150,10 @@ export type Database = {
       unenroll_from_pipeline: {
         Args: { target_user_id: string };
         Returns: Json;
+      };
+      units_to_table_rating: {
+        Args: { units: number };
+        Returns: Database["public"]["Enums"]["table_rating"];
       };
       update_alert_rule: {
         Args: {
@@ -12722,6 +13294,10 @@ export type Database = {
         Args: { p_user_id: string };
         Returns: boolean;
       };
+      validate_field_requirements: {
+        Args: { p_requirements: Json };
+        Returns: boolean;
+      };
       validate_invitation_acceptance: {
         Args: { p_invitation_id: string; p_invitee_id: string };
         Returns: {
@@ -12799,6 +13375,15 @@ export type Database = {
         | "uncategorized";
       expense_type: "personal" | "business";
       file_type: "csv" | "pdf" | "xlsx";
+      health_class:
+        | "preferred_plus"
+        | "preferred"
+        | "standard_plus"
+        | "standard"
+        | "substandard"
+        | "refer"
+        | "decline"
+        | "unknown";
       instagram_connection_status:
         | "connected"
         | "disconnected"
@@ -12854,6 +13439,8 @@ export type Database = {
         | "indexed_universal_life"
         | "participating_whole_life";
       report_frequency: "weekly" | "monthly" | "quarterly";
+      rule_review_status: "draft" | "pending_review" | "approved" | "rejected";
+      rule_set_scope: "condition" | "global";
       scheduled_message_status:
         | "pending"
         | "sent"
@@ -12879,6 +13466,24 @@ export type Database = {
         | "weekly_summary"
         | "commission_milestone"
         | "agent_achievement";
+      table_rating:
+        | "none"
+        | "A"
+        | "B"
+        | "C"
+        | "D"
+        | "E"
+        | "F"
+        | "G"
+        | "H"
+        | "I"
+        | "J"
+        | "K"
+        | "L"
+        | "M"
+        | "N"
+        | "O"
+        | "P";
     };
     CompositeTypes: {
       org_chart_node: {
@@ -13074,6 +13679,16 @@ export const Constants = {
       ],
       expense_type: ["personal", "business"],
       file_type: ["csv", "pdf", "xlsx"],
+      health_class: [
+        "preferred_plus",
+        "preferred",
+        "standard_plus",
+        "standard",
+        "substandard",
+        "refer",
+        "decline",
+        "unknown",
+      ],
       instagram_connection_status: [
         "connected",
         "disconnected",
@@ -13132,6 +13747,8 @@ export const Constants = {
         "participating_whole_life",
       ],
       report_frequency: ["weekly", "monthly", "quarterly"],
+      rule_review_status: ["draft", "pending_review", "approved", "rejected"],
+      rule_set_scope: ["condition", "global"],
       scheduled_message_status: [
         "pending",
         "sent",
@@ -13160,6 +13777,25 @@ export const Constants = {
         "weekly_summary",
         "commission_milestone",
         "agent_achievement",
+      ],
+      table_rating: [
+        "none",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
       ],
     },
   },
