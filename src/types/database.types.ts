@@ -7717,6 +7717,7 @@ export type Database = {
           follow_up_schema_version: number | null;
           id: string;
           is_active: boolean | null;
+          knockout_category: string | null;
           name: string;
           risk_weight: number | null;
           sort_order: number | null;
@@ -7731,6 +7732,7 @@ export type Database = {
           follow_up_schema_version?: number | null;
           id?: string;
           is_active?: boolean | null;
+          knockout_category?: string | null;
           name: string;
           risk_weight?: number | null;
           sort_order?: number | null;
@@ -7745,6 +7747,7 @@ export type Database = {
           follow_up_schema_version?: number | null;
           id?: string;
           is_active?: boolean | null;
+          knockout_category?: string | null;
           name?: string;
           risk_weight?: number | null;
           sort_order?: number | null;
@@ -7844,7 +7847,11 @@ export type Database = {
           imo_id: string;
           is_active: boolean | null;
           name: string;
+          needs_review: boolean | null;
           product_id: string | null;
+          product_type:
+            | Database["public"]["Enums"]["insurance_product_type"]
+            | null;
           review_notes: string | null;
           review_status:
             | Database["public"]["Enums"]["rule_review_status"]
@@ -7854,6 +7861,8 @@ export type Database = {
           scope: Database["public"]["Enums"]["rule_set_scope"];
           source: string | null;
           source_guide_id: string | null;
+          source_type: Database["public"]["Enums"]["rule_source_type"] | null;
+          template_version: number | null;
           updated_at: string | null;
           variant: string;
           version: number | null;
@@ -7869,7 +7878,11 @@ export type Database = {
           imo_id: string;
           is_active?: boolean | null;
           name: string;
+          needs_review?: boolean | null;
           product_id?: string | null;
+          product_type?:
+            | Database["public"]["Enums"]["insurance_product_type"]
+            | null;
           review_notes?: string | null;
           review_status?:
             | Database["public"]["Enums"]["rule_review_status"]
@@ -7879,6 +7892,8 @@ export type Database = {
           scope?: Database["public"]["Enums"]["rule_set_scope"];
           source?: string | null;
           source_guide_id?: string | null;
+          source_type?: Database["public"]["Enums"]["rule_source_type"] | null;
+          template_version?: number | null;
           updated_at?: string | null;
           variant?: string;
           version?: number | null;
@@ -7894,7 +7909,11 @@ export type Database = {
           imo_id?: string;
           is_active?: boolean | null;
           name?: string;
+          needs_review?: boolean | null;
           product_id?: string | null;
+          product_type?:
+            | Database["public"]["Enums"]["insurance_product_type"]
+            | null;
           review_notes?: string | null;
           review_status?:
             | Database["public"]["Enums"]["rule_review_status"]
@@ -7904,6 +7923,8 @@ export type Database = {
           scope?: Database["public"]["Enums"]["rule_set_scope"];
           source?: string | null;
           source_guide_id?: string | null;
+          source_type?: Database["public"]["Enums"]["rule_source_type"] | null;
+          template_version?: number | null;
           updated_at?: string | null;
           variant?: string;
           version?: number | null;
@@ -11464,6 +11485,26 @@ export type Database = {
         Args: { p_error: string; p_job_id: string };
         Returns: undefined;
       };
+      generate_age_rules_from_products: {
+        Args: {
+          p_carrier_id: string;
+          p_imo_id: string;
+          p_product_ids?: string[];
+          p_strategy?: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      generate_global_knockout_rules: {
+        Args: {
+          p_carrier_id: string;
+          p_imo_id: string;
+          p_knockout_codes?: string[];
+          p_strategy?: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       get_active_decision_tree: { Args: { p_imo_id: string }; Returns: Json };
       get_agencies_for_join: {
         Args: { p_imo_id: string };
@@ -11749,6 +11790,14 @@ export type Database = {
           description: string;
           id: string;
           name: string;
+        }[];
+      };
+      get_available_knockout_codes: {
+        Args: never;
+        Returns: {
+          code: string;
+          name: string;
+          severity: string;
         }[];
       };
       get_carrier_acceptance: {
@@ -12108,6 +12157,10 @@ export type Database = {
           trigger_type: string;
           updated_at: string;
         }[];
+      };
+      get_knockout_conditions: {
+        Args: never;
+        Returns: Database["public"]["CompositeTypes"]["knockout_condition_def"][];
       };
       get_lead_purchase_stats: {
         Args: {
@@ -13411,6 +13464,13 @@ export type Database = {
         | "media"
         | "story_reply"
         | "story_mention";
+      insurance_product_type:
+        | "term_life"
+        | "whole_life"
+        | "universal_life"
+        | "final_expense"
+        | "indexed_universal_life"
+        | "variable_life";
       lead_freshness: "fresh" | "aged";
       linkedin_connection_status:
         | "connected"
@@ -13441,6 +13501,7 @@ export type Database = {
       report_frequency: "weekly" | "monthly" | "quarterly";
       rule_review_status: "draft" | "pending_review" | "approved" | "rejected";
       rule_set_scope: "condition" | "global";
+      rule_source_type: "generic_template" | "carrier_document" | "manual";
       scheduled_message_status:
         | "pending"
         | "sent"
@@ -13486,6 +13547,12 @@ export type Database = {
         | "P";
     };
     CompositeTypes: {
+      knockout_condition_def: {
+        code: string | null;
+        name: string | null;
+        severity: string | null;
+        default_reason: string | null;
+      };
       org_chart_node: {
         id: string | null;
         node_type: string | null;
@@ -13716,6 +13783,14 @@ export const Constants = {
         "failed",
       ],
       instagram_message_type: ["text", "media", "story_reply", "story_mention"],
+      insurance_product_type: [
+        "term_life",
+        "whole_life",
+        "universal_life",
+        "final_expense",
+        "indexed_universal_life",
+        "variable_life",
+      ],
       lead_freshness: ["fresh", "aged"],
       linkedin_connection_status: [
         "connected",
@@ -13749,6 +13824,7 @@ export const Constants = {
       report_frequency: ["weekly", "monthly", "quarterly"],
       rule_review_status: ["draft", "pending_review", "approved", "rejected"],
       rule_set_scope: ["condition", "global"],
+      rule_source_type: ["generic_template", "carrier_document", "manual"],
       scheduled_message_status: [
         "pending",
         "sent",

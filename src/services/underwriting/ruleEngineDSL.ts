@@ -462,12 +462,14 @@ export interface AggregatedOutcome {
 // =============================================================================
 
 // Canonical fact map structure for evaluation
+// NOTE: bmi and state are optional - wizard may not collect them
+// Missing fields will produce "unknown" evaluations (safe default)
 export interface FactMap {
   // Client basics
   "client.age": number;
   "client.gender": "male" | "female";
-  "client.bmi": number;
-  "client.state": string;
+  "client.bmi"?: number;
+  "client.state"?: string;
   "client.tobacco": boolean;
 
   // List of condition codes present

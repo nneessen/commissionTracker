@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-11 11:06:10
+Last Updated: 2026-01-12 19:32:54
 
 ## Metrics
-- Total Files: 29109
-- Total Lines of Code: 423532
-- Total Commits: 731
+- Total Files: 29151
+- Total Lines of Code: 440268
+- Total Commits: 739
 
 ## Recent Activity
-878bcca fix(underwriting): handle null term_years for whole life rate imports
-e23353d refactor(underwriting): replace decision trees with premium matrix and rate entry system
-4884ea5 docs: add Insurance Toolkits rate fetcher documentation
-e4193de docs: multiple changes in .,plans/active,src/features/underwriting/components
-6f2ab15 docs: multiple changes in .,src/components/ui,src/features/expenses/leads
+59cd10b Merge branch 'uw-wizard' of https://github.com/nneessen/commissionTracker into uw-wizard
+c9c6d81 chore: cleanup old plans and update docs
+df141af Merge branch 'uw-wizard' of https://github.com/nneessen/commissionTracker into uw-wizard
+fe8a4d8 docs: add UI v2 implementation plan for rule engine
+7a1881b feat(underwriting): implement rule engine v2 with compound predicates

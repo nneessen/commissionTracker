@@ -1,7 +1,7 @@
 // src/services/underwriting/decisionEngine.ts
 // 4-Stage Recommendation Engine for Product Recommendations
 // Stage 1: Eligibility Filter (products table + extracted_criteria) - Now with tri-state
-// Stage 2: Approval Scoring (carrier_condition_acceptance) - Only approved rules
+// Stage 2: Approval Scoring (rule engine v2 with compound predicates)
 // Stage 3: Premium Calculation (premium_matrix with interpolation)
 // Stage 4: Ranking & Explanation - With derived confidence penalty
 
@@ -30,6 +30,7 @@ import {
   type HealthClass,
 } from "./premiumMatrixService";
 import { calculateDataCompleteness } from "./conditionMatcher";
+import { calculateApprovalV2 } from "./ruleEngineV2Adapter";
 
 // Re-export for convenience
 export type { GenderType, AcceptanceDecision };
@@ -319,8 +320,9 @@ function checkEligibility(
 /**
  * Calculate approval likelihood based on carrier acceptance rules.
  * Only uses approved rules for scoring; collects draft rules for FYI display.
+ * @deprecated Use calculateApprovalV2 instead. Kept for type reference.
  */
-async function calculateApproval(
+async function _calculateApproval(
   carrierId: string,
   productType: ProductType,
   healthConditions: string[],
@@ -685,7 +687,7 @@ export async function getRecommendations(
   interface EvaluatedProduct {
     product: ProductCandidate;
     eligibility: EligibilityResult;
-    approval: Awaited<ReturnType<typeof calculateApproval>>;
+    approval: Awaited<ReturnType<typeof _calculateApproval>>;
     premium: number | null;
     maxCoverage: number;
     scoreComponents: ScoreComponents;
@@ -712,13 +714,22 @@ export async function getRecommendations(
       stats.passedEligibility++;
     }
 
-    // Stage 2: Approval (uses only approved rules)
-    const approval = await calculateApproval(
-      product.carrierId,
-      product.productType,
-      client.healthConditions,
+    // Stage 2: Approval (uses rule engine v2 with compound predicates)
+    const approval = await calculateApprovalV2({
+      carrierId: product.carrierId,
+      productId: product.productId,
       imoId,
-    );
+      healthConditions: client.healthConditions,
+      client: {
+        age: client.age,
+        gender: client.gender as "male" | "female",
+        state: client.state,
+        bmi: client.bmi,
+        tobacco: client.tobacco,
+        healthConditions: client.healthConditions,
+        conditionResponses: client.conditionResponses,
+      },
+    });
 
     // For unknown eligibility, we don't skip on low likelihood
     // For eligible products, skip if likelihood is 0 (declined)
@@ -969,8 +980,8 @@ import type { AggregatedOutcome, ConditionOutcome } from "./ruleEngineDSL";
 
 // Adapter to convert service types to DSL types
 // This will be unnecessary once database.types.ts is regenerated
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toRuleSetForEvaluation(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rs: any,
 ): Parameters<typeof evaluateRuleSet>[0] {
   return rs;

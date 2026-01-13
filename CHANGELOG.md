@@ -6,6 +6,142 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-12 19:32:54
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/features/carrier-acceptance-rules-v2-redesign.md`
+- `docs/features/carrier-acceptance-rules-v2.md`
+- `docs/features/rule-generation-design.md`
+- `docs/features/uw-wizard-current-state.md`
+- `docs/features/uw-wizard-technical-assessment.md`
+- `docs/insurance-toolkits-rate-fetcher.md`
+- `docs/scripts/fexFetcher.md`
+- `docs/scripts/rate-fetching-cpt.md`
+- `docs/scripts/termFetcher.md`
+- `docs/term_rates/rates_IL_Female_age60_10yr.csv`
+- `docs/term_rates/rates_IL_Female_age60_10yr.csv:Zone.Identifier`
+- `docs/term_rates/rates_IL_Male_age55_10yr.csv`
+- `docs/term_rates/rates_IL_Male_age55_10yr.csv:Zone.Identifier`
+- `docs/term_rates/rates_IL_Male_age60_10yr.csv`
+- `docs/term_rates/rates_IL_Male_age60_10yr.csv:Zone.Identifier`
+- `plans/active/CONTINUATION_rule_engine_redesign.md`
+- `scripts/fix-insulin-rules-product-specific.js`
+- `scripts/list-products.js`
+- `scripts/seed-fe-express-wl-rules.js`
+- `scripts/seed-insulin-decline-rules.js`
+- `scripts/seed-transamerica-diabetes-rule.js`
+- `scripts/seed-transamerica-impairment-rules.js`
+- `src/features/underwriting/components/AcceptanceRules/AcceptanceRulesTab.tsx`
+- `src/features/underwriting/components/RuleEngine/ApprovalActions.tsx`
+- `src/features/underwriting/components/RuleEngine/ConditionInfoPanel.tsx`
+- `src/features/underwriting/components/RuleEngine/ConditionRuleSetView.tsx`
+- `src/features/underwriting/components/RuleEngine/OutcomeEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateGroupBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateJsonEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateLeafBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/ProvenanceTooltip.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleCard.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleConditionBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleSetEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleSetList.tsx`
+- `src/features/underwriting/components/RuleEngine/fieldRegistry.ts`
+- `src/features/underwriting/components/RuleEngine/index.ts`
+- `src/features/underwriting/hooks/useGenerateRules.ts`
+- `src/features/underwriting/hooks/useRuleSets.ts`
+- `src/features/underwriting/hooks/useRuleWorkflow.ts`
+- `src/features/underwriting/hooks/useRules.ts`
+- `src/services/underwriting/decisionEngine.ts`
+- `src/services/underwriting/generateRulesService.ts`
+- `src/services/underwriting/ruleEngineDSL.ts`
+- `src/services/underwriting/ruleEngineV2Adapter.ts`
+- `src/services/underwriting/ruleEvaluator.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260112_001_generate_rules_rpc.sql`
+- `supabase/migrations/20260112_002_fix_generate_rules_user_table.sql`
+- `supabase/migrations/20260112_003_fix_knockout_scope.sql`
+- `supabase/migrations/20260112_004_seed_knockout_conditions.sql`
+- `supabase/migrations/20260112_005_fix_enum_casting.sql`
+- `supabase/migrations/20260112_006_fix_age_band_edge_cases.sql`
+- `supabase/migrations/20260112_007_fix_age_band_max_constraint.sql`
+- `supabase/migrations/20260112_010_rule_source_tracking.sql`
+- `supabase/migrations/20260112_011_fix_age_rule_skip_logic.sql`
+
+### Statistics
+```
+ 60 files changed, 26322 insertions(+), 12891 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-12 19:29:37
+
+### Changed Files
+- `docs/features/carrier-acceptance-rules-v2-redesign.md`
+- `docs/features/carrier-acceptance-rules-v2.md`
+- `docs/features/rule-generation-design.md`
+- `docs/features/uw-wizard-current-state.md`
+- `docs/features/uw-wizard-technical-assessment.md`
+- `docs/insurance-toolkits-rate-fetcher.md`
+- `docs/scripts/fexFetcher.md`
+- `docs/scripts/rate-fetching-cpt.md`
+- `docs/scripts/termFetcher.md`
+- `docs/term_rates/rates_IL_Female_age60_10yr.csv`
+- `docs/term_rates/rates_IL_Female_age60_10yr.csv:Zone.Identifier`
+- `docs/term_rates/rates_IL_Male_age55_10yr.csv`
+- `docs/term_rates/rates_IL_Male_age55_10yr.csv:Zone.Identifier`
+- `docs/term_rates/rates_IL_Male_age60_10yr.csv`
+- `docs/term_rates/rates_IL_Male_age60_10yr.csv:Zone.Identifier`
+- `plans/active/CONTINUATION_rule_engine_redesign.md`
+- `scripts/fix-insulin-rules-product-specific.js`
+- `scripts/list-products.js`
+- `scripts/seed-fe-express-wl-rules.js`
+- `scripts/seed-insulin-decline-rules.js`
+- `scripts/seed-transamerica-diabetes-rule.js`
+- `scripts/seed-transamerica-impairment-rules.js`
+- `src/features/underwriting/components/AcceptanceRules/AcceptanceRulesTab.tsx`
+- `src/features/underwriting/components/RuleEngine/ApprovalActions.tsx`
+- `src/features/underwriting/components/RuleEngine/ConditionInfoPanel.tsx`
+- `src/features/underwriting/components/RuleEngine/ConditionRuleSetView.tsx`
+- `src/features/underwriting/components/RuleEngine/OutcomeEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateGroupBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateJsonEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/PredicateLeafBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/ProvenanceTooltip.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleCard.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleConditionBuilder.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleSetEditor.tsx`
+- `src/features/underwriting/components/RuleEngine/RuleSetList.tsx`
+- `src/features/underwriting/components/RuleEngine/fieldRegistry.ts`
+- `src/features/underwriting/components/RuleEngine/index.ts`
+- `src/features/underwriting/hooks/useGenerateRules.ts`
+- `src/features/underwriting/hooks/useRuleSets.ts`
+- `src/features/underwriting/hooks/useRuleWorkflow.ts`
+- `src/features/underwriting/hooks/useRules.ts`
+- `src/services/underwriting/decisionEngine.ts`
+- `src/services/underwriting/generateRulesService.ts`
+- `src/services/underwriting/ruleEngineDSL.ts`
+- `src/services/underwriting/ruleEngineV2Adapter.ts`
+- `src/services/underwriting/ruleEvaluator.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260112_001_generate_rules_rpc.sql`
+- `supabase/migrations/20260112_002_fix_generate_rules_user_table.sql`
+- `supabase/migrations/20260112_003_fix_knockout_scope.sql`
+- `supabase/migrations/20260112_004_seed_knockout_conditions.sql`
+- `supabase/migrations/20260112_005_fix_enum_casting.sql`
+- `supabase/migrations/20260112_006_fix_age_band_edge_cases.sql`
+- `supabase/migrations/20260112_007_fix_age_band_max_constraint.sql`
+- `supabase/migrations/20260112_010_rule_source_tracking.sql`
+- `supabase/migrations/20260112_011_fix_age_rule_skip_logic.sql`
+
+### Statistics
+```
+ 58 files changed, 26249 insertions(+), 12879 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-11 11:06:10
 
 ### Changed Files

@@ -914,13 +914,17 @@ export function aggregateOutcomes(
 
 /**
  * Build canonical fact map from client data and condition responses
+ *
+ * IMPORTANT: bmi and state are optional. When not provided, the corresponding
+ * FactMap fields will be undefined, which causes rules checking those fields
+ * to evaluate as "unknown" (safe default - requires manual review).
  */
 export function buildFactMap(
   client: {
     age: number;
     gender: "male" | "female";
-    bmi: number;
-    state: string;
+    bmi?: number;
+    state?: string;
     tobacco: boolean;
   },
   healthConditions: string[],
@@ -929,11 +933,17 @@ export function buildFactMap(
   const facts: FactMap = {
     "client.age": client.age,
     "client.gender": client.gender,
-    "client.bmi": client.bmi,
-    "client.state": client.state,
     "client.tobacco": client.tobacco,
     conditions: healthConditions,
   };
+
+  // Only set optional fields if provided - undefined causes "unknown" evaluation
+  if (client.bmi !== undefined && client.bmi > 0) {
+    facts["client.bmi"] = client.bmi;
+  }
+  if (client.state !== undefined && client.state !== "") {
+    facts["client.state"] = client.state;
+  }
 
   // Add condition-specific responses
   // Use type assertion through unknown to allow dynamic keys
