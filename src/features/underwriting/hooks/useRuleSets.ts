@@ -48,14 +48,17 @@ export function useRuleSets(
     reviewStatus?: RuleReviewStatus | RuleReviewStatus[];
   },
 ) {
+  const { user } = useAuth();
+  const imoId = user?.imo_id;
+
   return useQuery({
     queryKey: ruleEngineKeys.ruleSets(carrierId || "", options?.productId),
     queryFn: () =>
-      getRuleSetsForCarrier(carrierId!, {
+      getRuleSetsForCarrier(carrierId!, imoId!, {
         includeInactive: options?.includeInactive,
         reviewStatus: options?.reviewStatus,
       }),
-    enabled: !!carrierId,
+    enabled: !!carrierId && !!imoId,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -76,9 +79,13 @@ export function useRuleSet(ruleSetId: string | undefined) {
  * Fetch rule sets needing review (draft or pending_review)
  */
 export function useRulesNeedingReview() {
+  const { user } = useAuth();
+  const imoId = user?.imo_id;
+
   return useQuery({
     queryKey: ruleEngineKeys.needingReview(),
-    queryFn: getRulesNeedingReview,
+    queryFn: () => getRulesNeedingReview(imoId!),
+    enabled: !!imoId,
     staleTime: 2 * 60 * 1000, // 2 minutes - check more frequently
   });
 }

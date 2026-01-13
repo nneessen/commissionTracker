@@ -5,6 +5,10 @@
 // Stage 3: Premium Calculation (premium_matrix with interpolation)
 // Stage 4: Ranking & Explanation - With derived confidence penalty
 
+// Debug flag - set to false in production to suppress verbose logging
+const DEBUG_DECISION_ENGINE =
+  import.meta.env.DEV && import.meta.env.VITE_DEBUG_DECISION_ENGINE === "true";
+
 import { supabase } from "@/services/base/supabase";
 import type { Database } from "@/types/database.types";
 import type {
@@ -906,10 +910,12 @@ export async function getRecommendations(
       faceAmount: coverage.faceAmount,
       imoId,
     };
-    console.log(
-      `[DecisionEngine Stage 3] Attempting premium lookup:`,
-      premiumLookupParams,
-    );
+    if (DEBUG_DECISION_ENGINE) {
+      console.log(
+        `[DecisionEngine Stage 3] Attempting premium lookup:`,
+        premiumLookupParams,
+      );
+    }
 
     // Get the premium matrix for this product
     const matrix = await getPremiumMatrixForProduct(product.productId, imoId);
@@ -918,22 +924,26 @@ export async function getRecommendations(
     const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
 
     // Debug: Log product metadata to verify age-tiered constraints
-    console.log(
-      `[DecisionEngine Stage 3] Product metadata for ${product.productName}:`,
-      {
-        maxFaceAmount: product.maxFaceAmount,
-        ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
-        hasMetadata: !!product.metadata,
-        availableTermsForAge: availableTerms,
-      },
-    );
+    if (DEBUG_DECISION_ENGINE) {
+      console.log(
+        `[DecisionEngine Stage 3] Product metadata for ${product.productName}:`,
+        {
+          maxFaceAmount: product.maxFaceAmount,
+          ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
+          hasMetadata: !!product.metadata,
+          availableTermsForAge: availableTerms,
+        },
+      );
+    }
 
     // Skip product if no terms are available for this age
     if (availableTerms.length === 0 && matrix.length > 0) {
       // Matrix has data but no terms for this age - skip the product
-      console.log(
-        `[DecisionEngine Stage 3] Skipping ${product.productName}: No terms available for age ${client.age}`,
-      );
+      if (DEBUG_DECISION_ENGINE) {
+        console.log(
+          `[DecisionEngine Stage 3] Skipping ${product.productName}: No terms available for age ${client.age}`,
+        );
+      }
       stats.ineligible++;
       continue;
     }
@@ -947,9 +957,11 @@ export async function getRecommendations(
         termForQuotes = input.termYears as TermYears;
       } else {
         // Requested term not available for this age - skip this product
-        console.log(
-          `[DecisionEngine Stage 3] Skipping ${product.productName}: Requested term ${input.termYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
-        );
+        if (DEBUG_DECISION_ENGINE) {
+          console.log(
+            `[DecisionEngine Stage 3] Skipping ${product.productName}: Requested term ${input.termYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
+          );
+        }
         stats.ineligible++;
         continue;
       }
@@ -978,26 +990,30 @@ export async function getRecommendations(
       premiumResult.premium !== null ? premiumResult.termYears : undefined;
 
     // Debug: Log premium lookup result
-    const matrixHealthClasses = [...new Set(matrix.map((m) => m.health_class))];
-    console.log(
-      `[DecisionEngine Stage 3] Premium result for ${product.productName}:`,
-      {
-        requestedTerm: input.termYears,
-        termUsed: termForQuotes,
-        availableTerms,
-        requestedHealthClass: approval.healthClass,
-        healthClassUsed,
-        wasFallback,
-        premium,
-        matrixRowCount: matrix.length,
-        matrixFaceAmounts: [...new Set(matrix.map((m) => m.face_amount))].sort(
-          (a, b) => a - b,
-        ),
-        // Show actual health class values in the matrix
-        matrixHealthClasses,
-        matrixHealthClassesRaw: matrixHealthClasses.join(", "),
-      },
-    );
+    if (DEBUG_DECISION_ENGINE) {
+      const matrixHealthClasses = [
+        ...new Set(matrix.map((m) => m.health_class)),
+      ];
+      console.log(
+        `[DecisionEngine Stage 3] Premium result for ${product.productName}:`,
+        {
+          requestedTerm: input.termYears,
+          termUsed: termForQuotes,
+          availableTerms,
+          requestedHealthClass: approval.healthClass,
+          healthClassUsed,
+          wasFallback,
+          premium,
+          matrixRowCount: matrix.length,
+          matrixFaceAmounts: [
+            ...new Set(matrix.map((m) => m.face_amount)),
+          ].sort((a, b) => a - b),
+          // Show actual health class values in the matrix
+          matrixHealthClasses,
+          matrixHealthClassesRaw: matrixHealthClasses.join(", "),
+        },
+      );
+    }
 
     // Calculate alternative quotes at different face amounts
     let alternativeQuotes: AlternativeQuote[] = [];
@@ -1034,18 +1050,20 @@ export async function getRecommendations(
       }
 
       // Diagnostic logging for alternative quotes calculation
-      console.log(
-        `[AlternativeQuotes] ${product.productName} - Age ${client.age}, Term ${termForQuotes ?? "N/A"}yr`,
-      );
-      console.log(
-        `  Global max: $${product.maxFaceAmount?.toLocaleString() ?? "unlimited"}`,
-      );
-      console.log(
-        `  Age+Term adjusted max: $${ageTermAdjustedMaxFace === Number.MAX_SAFE_INTEGER ? "unlimited" : ageTermAdjustedMaxFace.toLocaleString()}`,
-      );
-      console.log(
-        `  Face amounts (${coverage.faceAmounts ? "user-provided" : "auto"}): ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
-      );
+      if (DEBUG_DECISION_ENGINE) {
+        console.log(
+          `[AlternativeQuotes] ${product.productName} - Age ${client.age}, Term ${termForQuotes ?? "N/A"}yr`,
+        );
+        console.log(
+          `  Global max: $${product.maxFaceAmount?.toLocaleString() ?? "unlimited"}`,
+        );
+        console.log(
+          `  Age+Term adjusted max: $${ageTermAdjustedMaxFace === Number.MAX_SAFE_INTEGER ? "unlimited" : ageTermAdjustedMaxFace.toLocaleString()}`,
+        );
+        console.log(
+          `  Face amounts (${coverage.faceAmounts ? "user-provided" : "auto"}): ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
+        );
+      }
 
       const tobaccoClass: TobaccoClass = client.tobacco
         ? "tobacco"
@@ -1061,28 +1079,30 @@ export async function getRecommendations(
       );
     }
 
-    if (premium === null) {
-      const reason =
-        premiumResult.reason === "NON_RATEABLE_CLASS"
-          ? "Health class is non-rateable (decline/refer)"
-          : premiumResult.reason === "NO_MATRIX"
-            ? "No premium matrix data"
-            : "No matching rates after fallback";
-      console.warn(
-        `[DecisionEngine Stage 3] NO PREMIUM FOUND for ${product.productName}: ${reason}`,
-        {
-          ...premiumLookupParams,
-          reason: premiumResult.reason,
-        },
-      );
-    } else {
-      const fallbackInfo = wasFallback
-        ? ` (fallback: ${healthClassRequested} → ${healthClassUsed})`
-        : "";
-      console.log(
-        `[DecisionEngine Stage 3] Premium found for ${product.productName}: $${premium}/month${fallbackInfo}`,
-        { alternativeQuotes: alternativeQuotes.length },
-      );
+    if (DEBUG_DECISION_ENGINE) {
+      if (premium === null) {
+        const reason =
+          premiumResult.reason === "NON_RATEABLE_CLASS"
+            ? "Health class is non-rateable (decline/refer)"
+            : premiumResult.reason === "NO_MATRIX"
+              ? "No premium matrix data"
+              : "No matching rates after fallback";
+        console.warn(
+          `[DecisionEngine Stage 3] NO PREMIUM FOUND for ${product.productName}: ${reason}`,
+          {
+            ...premiumLookupParams,
+            reason: premiumResult.reason,
+          },
+        );
+      } else {
+        const fallbackInfo = wasFallback
+          ? ` (fallback: ${healthClassRequested} → ${healthClassUsed})`
+          : "";
+        console.log(
+          `[DecisionEngine Stage 3] Premium found for ${product.productName}: $${premium}/month${fallbackInfo}`,
+          { alternativeQuotes: alternativeQuotes.length },
+        );
+      }
     }
 
     // For unknown eligibility, premium can be null (we still keep the product)

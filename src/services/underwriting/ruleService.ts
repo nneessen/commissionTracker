@@ -144,9 +144,14 @@ export async function loadApprovedRuleSets(
 
 /**
  * Get all rule sets for a carrier (admin view)
+ *
+ * @param carrierId - Carrier ID to filter by
+ * @param imoId - IMO ID for explicit tenant isolation (defense in depth)
+ * @param options - Additional filters
  */
 export async function getRuleSetsForCarrier(
   carrierId: string,
+  imoId: string,
   options: {
     includeInactive?: boolean;
     reviewStatus?: ReviewStatus | ReviewStatus[];
@@ -160,7 +165,8 @@ export async function getRuleSetsForCarrier(
       rules:underwriting_rules(*)
     `,
     )
-    .eq("carrier_id", carrierId);
+    .eq("carrier_id", carrierId)
+    .eq("imo_id", imoId);
 
   if (!options.includeInactive) {
     query = query.eq("is_active", true);
@@ -191,8 +197,12 @@ export async function getRuleSetsForCarrier(
 
 /**
  * Get rule sets pending review
+ *
+ * @param imoId - IMO ID for explicit tenant isolation (defense in depth)
  */
-export async function getRulesNeedingReview(): Promise<RuleSetWithRules[]> {
+export async function getRulesNeedingReview(
+  imoId: string,
+): Promise<RuleSetWithRules[]> {
   const { data, error } = await supabase
     .from("underwriting_rule_sets")
     .select(
@@ -201,6 +211,7 @@ export async function getRulesNeedingReview(): Promise<RuleSetWithRules[]> {
       rules:underwriting_rules(*)
     `,
     )
+    .eq("imo_id", imoId)
     .in("review_status", ["draft", "pending_review"])
     .eq("is_active", true)
     .order("created_at", { ascending: false });
