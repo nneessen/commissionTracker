@@ -25,8 +25,8 @@ import {
 import {
   getPremiumMatrixForProduct,
   interpolatePremium,
-  getAvailableTerms,
-  getLongestAvailableTerm,
+  getAvailableTermsForAge,
+  getLongestAvailableTermForAge,
   calculateAlternativeQuotes,
   getComparisonFaceAmounts,
   type GenderType,
@@ -79,6 +79,11 @@ export interface ProductMetadata {
       minAge: number;
       maxAge: number;
       maxFaceAmount: number;
+      // Term-specific restrictions within this age tier
+      termRestrictions?: Array<{
+        termYears: number;
+        maxFaceAmount: number;
+      }>;
     }>;
   };
   knockoutConditions?: string[];
@@ -179,6 +184,52 @@ export interface DecisionEngineResult {
 // ============================================================================
 
 /**
+ * Calculate the maximum face amount for a given age and term, considering:
+ * 1. Product-level maxFaceAmount
+ * 2. Age-tiered constraints from metadata
+ * 3. Term-specific restrictions within age tiers
+ *
+ * @param metadata - Product metadata with age-tiered constraints
+ * @param productMaxFace - Product-level max face amount (fallback)
+ * @param clientAge - Client's age
+ * @param termYears - Selected term (null for permanent products)
+ * @returns Maximum allowed face amount
+ */
+function getMaxFaceAmountForAgeTerm(
+  metadata: ProductMetadata | null | undefined,
+  productMaxFace: number | null | undefined,
+  clientAge: number,
+  termYears: number | null | undefined,
+): number {
+  let maxFace = productMaxFace ?? Number.MAX_SAFE_INTEGER;
+
+  if (!metadata?.ageTieredFaceAmounts?.tiers) {
+    return maxFace;
+  }
+
+  for (const tier of metadata.ageTieredFaceAmounts.tiers) {
+    if (clientAge >= tier.minAge && clientAge <= tier.maxAge) {
+      // Start with the tier's base max face amount
+      let tierMax = tier.maxFaceAmount;
+
+      // Check for term-specific restrictions within this tier
+      if (termYears && tier.termRestrictions) {
+        for (const termRestriction of tier.termRestrictions) {
+          if (termRestriction.termYears === termYears) {
+            // Use the more restrictive term-specific limit
+            tierMax = Math.min(tierMax, termRestriction.maxFaceAmount);
+          }
+        }
+      }
+
+      maxFace = Math.min(maxFace, tierMax);
+    }
+  }
+
+  return maxFace;
+}
+
+/**
  * Check if a product is eligible for the client.
  * Returns tri-state: eligible, ineligible, or unknown (when missing data).
  */
@@ -188,6 +239,7 @@ function checkEligibility(
   coverage: CoverageRequest,
   extractedCriteria?: ExtractedCriteria,
   _requiredFieldsByCondition?: Record<string, string[]>,
+  termYears?: number | null,
 ): EligibilityResult {
   const ineligibleReasons: string[] = [];
   const missingFields: MissingFieldInfo[] = [];
@@ -204,16 +256,13 @@ function checkEligibility(
   }
 
   const minFace = product.minFaceAmount ?? 0;
-  let maxFace = product.maxFaceAmount ?? Number.MAX_SAFE_INTEGER;
-
-  // Check age-tiered face amounts from product metadata FIRST
-  if (product.metadata?.ageTieredFaceAmounts?.tiers) {
-    for (const tier of product.metadata.ageTieredFaceAmounts.tiers) {
-      if (client.age >= tier.minAge && client.age <= tier.maxAge) {
-        maxFace = Math.min(maxFace, tier.maxFaceAmount);
-      }
-    }
-  }
+  // Use helper function that considers age tier AND term restrictions
+  const maxFace = getMaxFaceAmountForAgeTerm(
+    product.metadata,
+    product.maxFaceAmount,
+    client.age,
+    termYears,
+  );
 
   if (coverage.faceAmount < minFace) {
     ineligibleReasons.push(
@@ -221,8 +270,9 @@ function checkEligibility(
     );
   }
   if (coverage.faceAmount > maxFace && maxFace < Number.MAX_SAFE_INTEGER) {
+    const termInfo = termYears ? ` for ${termYears}yr term` : "";
     ineligibleReasons.push(
-      `Requested $${coverage.faceAmount.toLocaleString()} exceeds max $${maxFace.toLocaleString()} for age ${client.age}`,
+      `Requested $${coverage.faceAmount.toLocaleString()} exceeds max $${maxFace.toLocaleString()} for age ${client.age}${termInfo}`,
     );
   }
 
@@ -796,7 +846,15 @@ export async function getRecommendations(
   for (const product of products) {
     // Stage 1: Eligibility (tri-state)
     const criteria = await getExtractedCriteria(product.productId);
-    const eligibility = checkEligibility(product, client, coverage, criteria);
+    // Pass termYears to enable term-specific face amount restrictions
+    const eligibility = checkEligibility(
+      product,
+      client,
+      coverage,
+      criteria,
+      undefined, // requiredFieldsByCondition
+      input.termYears,
+    );
 
     // Handle tri-state eligibility
     if (eligibility.status === "ineligible") {
@@ -853,18 +911,46 @@ export async function getRecommendations(
 
     // Get the premium matrix for this product
     const matrix = await getPremiumMatrixForProduct(product.productId, imoId);
-    const availableTerms = getAvailableTerms(matrix);
-    const longestTerm = getLongestAvailableTerm(matrix);
+    // Use age-filtered terms to only show terms with actual rate data for this age
+    const availableTerms = getAvailableTermsForAge(matrix, client.age);
+    const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
+
+    // Debug: Log product metadata to verify age-tiered constraints
+    console.log(
+      `[DecisionEngine Stage 3] Product metadata for ${product.productName}:`,
+      {
+        maxFaceAmount: product.maxFaceAmount,
+        ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
+        hasMetadata: !!product.metadata,
+        availableTermsForAge: availableTerms,
+      },
+    );
+
+    // Skip product if no terms are available for this age
+    if (availableTerms.length === 0 && matrix.length > 0) {
+      // Matrix has data but no terms for this age - skip the product
+      console.log(
+        `[DecisionEngine Stage 3] Skipping ${product.productName}: No terms available for age ${client.age}`,
+      );
+      stats.ineligible++;
+      continue;
+    }
 
     // Determine term to use for quotes:
-    // 1. If input.termYears is specified and available for this product, use it
-    // 2. Otherwise fall back to longest available term
+    // 1. If input.termYears is specified and available for this age, use it
+    // 2. Otherwise fall back to longest available term for this age
     let termForQuotes: TermYears | null = longestTerm;
     if (input.termYears !== undefined && input.termYears !== null) {
       if (availableTerms.includes(input.termYears)) {
         termForQuotes = input.termYears as TermYears;
+      } else {
+        // Requested term not available for this age - skip this product
+        console.log(
+          `[DecisionEngine Stage 3] Skipping ${product.productName}: Requested term ${input.termYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
+        );
+        stats.ineligible++;
+        continue;
       }
-      // If requested term not available, keep using longestTerm
     }
 
     const premiumResult = await getPremium(
@@ -889,14 +975,59 @@ export async function getRecommendations(
     const termYearsUsed =
       premiumResult.premium !== null ? premiumResult.termYears : undefined;
 
+    // Debug: Log premium lookup result
+    const matrixHealthClasses = [...new Set(matrix.map((m) => m.health_class))];
+    console.log(
+      `[DecisionEngine Stage 3] Premium result for ${product.productName}:`,
+      {
+        requestedTerm: input.termYears,
+        termUsed: termForQuotes,
+        availableTerms,
+        requestedHealthClass: approval.healthClass,
+        healthClassUsed,
+        wasFallback,
+        premium,
+        matrixRowCount: matrix.length,
+        matrixFaceAmounts: [...new Set(matrix.map((m) => m.face_amount))].sort(
+          (a, b) => a - b,
+        ),
+        // Show actual health class values in the matrix
+        matrixHealthClasses,
+        matrixHealthClassesRaw: matrixHealthClasses.join(", "),
+      },
+    );
+
     // Calculate alternative quotes at different face amounts
     let alternativeQuotes: AlternativeQuote[] = [];
     if (premium !== null && healthClassUsed) {
+      // Calculate age AND term adjusted max face amount using helper
+      const ageTermAdjustedMaxFace = getMaxFaceAmountForAgeTerm(
+        product.metadata,
+        product.maxFaceAmount,
+        client.age,
+        termForQuotes,
+      );
+
       const comparisonFaceAmounts = getComparisonFaceAmounts(
         coverage.faceAmount,
         product.minFaceAmount,
-        product.maxFaceAmount,
+        ageTermAdjustedMaxFace, // Use age+term adjusted max
       );
+
+      // Diagnostic logging for alternative quotes calculation
+      console.log(
+        `[AlternativeQuotes] ${product.productName} - Age ${client.age}, Term ${termForQuotes ?? "N/A"}yr`,
+      );
+      console.log(
+        `  Global max: $${product.maxFaceAmount?.toLocaleString() ?? "unlimited"}`,
+      );
+      console.log(
+        `  Age+Term adjusted max: $${ageTermAdjustedMaxFace === Number.MAX_SAFE_INTEGER ? "unlimited" : ageTermAdjustedMaxFace.toLocaleString()}`,
+      );
+      console.log(
+        `  Face amounts: ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
+      );
+
       const tobaccoClass: TobaccoClass = client.tobacco
         ? "tobacco"
         : "non_tobacco";

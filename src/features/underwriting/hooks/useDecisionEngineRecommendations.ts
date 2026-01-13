@@ -15,6 +15,7 @@ import type {
   ProductType,
 } from "../types/underwriting.types";
 import { calculateBMI } from "../utils/bmiCalculator";
+import { transformConditionResponses } from "@/services/underwriting/conditionResponseTransformer";
 
 // ============================================================================
 // Data Transformation
@@ -29,7 +30,14 @@ function mapProductTypes(types: ProductType[]): ProductType[] {
 }
 
 /**
- * Transform wizard form data to decision engine input format
+ * Transform wizard form data to decision engine input format.
+ *
+ * IMPORTANT: This function now transforms condition follow-up responses
+ * to rule-engine-compatible field names using the transformer layer.
+ *
+ * Semantics:
+ * - Missing wizard fields → undefined in transformed data (not false/[])
+ * - Transformed data is keyed by condition code (e.g., diabetes.insulin_use)
  */
 export function transformWizardToDecisionEngineInput(
   clientInfo: ClientInfo,
@@ -48,6 +56,13 @@ export function transformWizardToDecisionEngineInput(
   // Extract condition codes from health conditions
   const healthConditions = healthInfo.conditions.map((c) => c.conditionCode);
 
+  // Transform wizard follow-up responses to rule-compatible fact keys
+  // This maps field names like "treatment" → "insulin_use" for diabetes
+  const conditionResponses = transformConditionResponses(
+    healthInfo.conditions,
+    clientInfo.age,
+  );
+
   // Map gender - handle empty string (default to male for rate lookup)
   // This is a fallback; the wizard should validate gender is selected
   let gender: GenderType = "male";
@@ -63,6 +78,7 @@ export function transformWizardToDecisionEngineInput(
       bmi: bmi > 0 ? bmi : undefined,
       tobacco: healthInfo.tobacco.currentUse,
       healthConditions,
+      conditionResponses,
     },
     coverage: {
       faceAmount: coverageRequest.faceAmount,

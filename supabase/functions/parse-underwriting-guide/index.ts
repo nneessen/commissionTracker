@@ -46,7 +46,7 @@ const STORAGE_BUCKET = "underwriting-guides";
 // Configuration constants
 const MAX_PROCESSING_TIME_MS = 50000; // 50 seconds, leave buffer for edge function timeout
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB max PDF size
-const MIN_VALID_CONTENT_LENGTH = 5000; // Minimum chars to consider extraction successful
+const MIN_VALID_CONTENT_LENGTH = 500; // Minimum chars to consider extraction successful (lowered for short documents like medication lists)
 const PLACEHOLDER_PATTERNS = [
   /\[PDF content from .+ - \d+ bytes\]/i,
   /\[Error extracting text/i,
@@ -377,9 +377,9 @@ function validateExtractedContent(
     };
   }
 
-  // Check for reasonable word density
+  // Check for reasonable word density (lowered for short documents like medication lists)
   const words = text.split(/\s+/).filter((w) => w.length > 1);
-  if (words.length < 500) {
+  if (words.length < 50) {
     return {
       valid: false,
       reason: `Content has too few words (${words.length}). PDF may be image-based without OCR.`,

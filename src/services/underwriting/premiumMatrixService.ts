@@ -229,33 +229,101 @@ export const HEALTH_CLASS_OPTIONS: { value: HealthClass; label: string }[] = [
 // =============================================================================
 
 /**
- * Get all premium matrix entries for a product
+ * Get all premium matrix entries for a product.
+ * Uses pagination to bypass PostgREST's 1000 row default limit.
  */
 export async function getPremiumMatrixForProduct(
   productId: string,
   imoId: string,
 ): Promise<PremiumMatrix[]> {
-  const { data, error } = await supabase
-    .from("premium_matrix")
-    .select(
-      `
-      *,
-      product:products(id, name, product_type, carrier_id)
-    `,
-    )
-    .eq("product_id", productId)
-    .eq("imo_id", imoId)
-    .order("age", { ascending: true })
-    .order("face_amount", { ascending: true });
+  const PAGE_SIZE = 1000;
 
-  if (error) {
-    console.error("Error fetching premium matrix:", error);
-    throw new Error(`Failed to fetch premium matrix: ${error.message}`);
+  // Step 1: Get total count to determine if pagination is needed
+  const { count, error: countError } = await supabase
+    .from("premium_matrix")
+    .select("*", { count: "exact", head: true })
+    .eq("product_id", productId)
+    .eq("imo_id", imoId);
+
+  if (countError) {
+    console.error("Error counting premium matrix:", countError);
+    throw new Error(`Failed to count premium matrix: ${countError.message}`);
   }
 
-  const result = (data || []) as PremiumMatrix[];
+  const totalRows = count || 0;
 
-  // Debug logging
+  // Step 2: Single fetch for small datasets (optimization)
+  if (totalRows <= PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("premium_matrix")
+      .select(
+        `
+        *,
+        product:products(id, name, product_type, carrier_id)
+      `,
+      )
+      .eq("product_id", productId)
+      .eq("imo_id", imoId)
+      .order("age", { ascending: true })
+      .order("face_amount", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching premium matrix:", error);
+      throw new Error(`Failed to fetch premium matrix: ${error.message}`);
+    }
+
+    const result = (data || []) as PremiumMatrix[];
+    logPremiumMatrixDebug(result, productId, imoId);
+    return result;
+  }
+
+  // Step 3: Parallel pagination for large datasets
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+  const pagePromises = Array.from({ length: totalPages }, (_, pageIndex) =>
+    supabase
+      .from("premium_matrix")
+      .select(
+        `
+        *,
+        product:products(id, name, product_type, carrier_id)
+      `,
+      )
+      .eq("product_id", productId)
+      .eq("imo_id", imoId)
+      .order("age", { ascending: true })
+      .order("face_amount", { ascending: true })
+      .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1),
+  );
+
+  const results = await Promise.all(pagePromises);
+
+  // Check for errors in any page
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].error) {
+      console.error(
+        `Error fetching premium matrix page ${i}:`,
+        results[i].error,
+      );
+      throw new Error(
+        `Failed to fetch premium matrix: ${results[i].error!.message}`,
+      );
+    }
+  }
+
+  // Combine all pages
+  const allData = results.flatMap((result) => result.data || []);
+  const result = allData as PremiumMatrix[];
+
+  logPremiumMatrixDebug(result, productId, imoId);
+  return result;
+}
+
+// Helper function for debug logging
+function logPremiumMatrixDebug(
+  result: PremiumMatrix[],
+  productId: string,
+  imoId: string,
+): void {
   if (result.length === 0) {
     console.warn(
       `[PremiumMatrix] NO DATA for product ${productId} + imo ${imoId}`,
@@ -282,8 +350,6 @@ export async function getPremiumMatrixForProduct(
       faceAmounts: uniqueFaceAmounts,
     });
   }
-
-  return result;
 }
 
 /**
@@ -704,7 +770,28 @@ function tryInterpolatePremiumForClass(
       (termYears ? m.term_years === termYears : m.term_years === null),
   );
 
+  // Debug: Log filter results for first few classes tried
   if (filtered.length === 0) {
+    // Check what we DO have for this classification
+    const matchingGenderTobacco = matrix.filter(
+      (m) => m.gender === gender && m.tobacco_class === tobaccoClass,
+    );
+    const healthClassesInMatrix = [
+      ...new Set(matchingGenderTobacco.map((m) => m.health_class)),
+    ];
+    const termYearsInMatrix = [
+      ...new Set(matchingGenderTobacco.map((m) => m.term_years)),
+    ];
+
+    console.log(
+      `[InterpolatePremium] No match for health_class="${healthClass}":`,
+      {
+        lookingFor: { gender, tobaccoClass, healthClass, termYears },
+        availableHealthClasses: healthClassesInMatrix,
+        availableTermYears: termYearsInMatrix,
+        totalMatchingGenderTobacco: matchingGenderTobacco.length,
+      },
+    );
     return null; // Will try next health class in fallback
   }
 
@@ -774,9 +861,21 @@ function tryInterpolatePremiumForClass(
 
     // Calculate rate per thousand from the known rate
     const ratePerThousand = premiumAtKnownFace / (knownFaceAmount / 1000);
+    const calculatedPremium = ratePerThousand * (targetFaceAmount / 1000);
+
+    // Debug: Log rate-per-thousand calculation
+    console.log(`[InterpolatePremium] Using RATE-PER-THOUSAND scaling:`, {
+      knownFaceAmount,
+      premiumAtKnownFace,
+      ratePerThousand,
+      targetFaceAmount,
+      calculatedPremium,
+      healthClass,
+      termYears,
+    });
 
     // Calculate premium for target face amount
-    return ratePerThousand * (targetFaceAmount / 1000);
+    return calculatedPremium;
   }
 
   // Find bounds
@@ -989,6 +1088,87 @@ export function getAvailableTerms(matrix: PremiumMatrix[]): number[] {
 }
 
 /**
+ * Get available term years from a premium matrix for a specific age.
+ * Handles sparse age data by finding terms available at bracketing ages.
+ *
+ * A term is considered available if it exists at BOTH the lower and upper
+ * bounding ages in the matrix. This prevents showing terms that would
+ * require extrapolation beyond available data.
+ *
+ * For example, if matrix has ages 50 and 55:
+ * - Age 50 has terms: 10, 15, 20, 25, 30
+ * - Age 55 has terms: 10, 15, 20, 25
+ * - For target age 53, available terms are: 10, 15, 20, 25 (intersection)
+ *   because 30yr doesn't exist at the upper bound (age 55)
+ */
+export function getAvailableTermsForAge(
+  matrix: PremiumMatrix[],
+  age: number,
+): number[] {
+  // Get all unique ages in the matrix
+  const matrixAges = [...new Set(matrix.map((m) => m.age))].sort(
+    (a, b) => a - b,
+  );
+
+  if (matrixAges.length === 0) {
+    return [];
+  }
+
+  // Find bracketing ages
+  let lowerAge: number | null = null;
+  let upperAge: number | null = null;
+
+  for (const matrixAge of matrixAges) {
+    if (matrixAge <= age) {
+      lowerAge = matrixAge;
+    }
+    if (matrixAge >= age && upperAge === null) {
+      upperAge = matrixAge;
+    }
+  }
+
+  // Get terms at each bounding age
+  const getTermsAtAge = (targetAge: number): Set<number> => {
+    const terms = new Set<number>();
+    for (const row of matrix) {
+      if (row.term_years !== null && row.age === targetAge) {
+        terms.add(row.term_years);
+      }
+    }
+    return terms;
+  };
+
+  // If exact match, return terms at that age
+  if (lowerAge === age || upperAge === age) {
+    const exactAge = lowerAge === age ? lowerAge : upperAge!;
+    return Array.from(getTermsAtAge(exactAge)).sort((a, b) => a - b);
+  }
+
+  // If we have both bounds, return intersection (terms that exist at BOTH ages)
+  if (lowerAge !== null && upperAge !== null) {
+    const lowerTerms = getTermsAtAge(lowerAge);
+    const upperTerms = getTermsAtAge(upperAge);
+    const intersection = new Set<number>();
+    for (const term of lowerTerms) {
+      if (upperTerms.has(term)) {
+        intersection.add(term);
+      }
+    }
+    return Array.from(intersection).sort((a, b) => a - b);
+  }
+
+  // If only one bound exists (age is outside matrix range), use that bound
+  if (lowerAge !== null) {
+    return Array.from(getTermsAtAge(lowerAge)).sort((a, b) => a - b);
+  }
+  if (upperAge !== null) {
+    return Array.from(getTermsAtAge(upperAge)).sort((a, b) => a - b);
+  }
+
+  return [];
+}
+
+/**
  * Get the longest available term from a premium matrix.
  * Returns null if no term products (permanent only).
  */
@@ -996,6 +1176,19 @@ export function getLongestAvailableTerm(
   matrix: PremiumMatrix[],
 ): TermYears | null {
   const terms = getAvailableTerms(matrix);
+  if (terms.length === 0) return null;
+  return terms[terms.length - 1] as TermYears;
+}
+
+/**
+ * Get the longest available term from a premium matrix for a specific age.
+ * Only considers terms that have actual rate data for the given age.
+ */
+export function getLongestAvailableTermForAge(
+  matrix: PremiumMatrix[],
+  age: number,
+): TermYears | null {
+  const terms = getAvailableTermsForAge(matrix, age);
   if (terms.length === 0) return null;
   return terms[terms.length - 1] as TermYears;
 }

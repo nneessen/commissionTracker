@@ -1139,7 +1139,22 @@ function DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
               {reasonLabel}
             </span>
             <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-              {recommendation.healthClassResult}
+              {recommendation.wasFallback ? (
+                <>
+                  <span className="line-through opacity-50">
+                    {recommendation.healthClassRequested}
+                  </span>
+                  <span className="mx-1">→</span>
+                  <span className="font-semibold">
+                    {recommendation.healthClassUsed}
+                  </span>
+                  <span className="ml-1 text-[8px] text-orange-500">
+                    (fallback)
+                  </span>
+                </>
+              ) : (
+                recommendation.healthClassResult
+              )}
             </span>
           </div>
 

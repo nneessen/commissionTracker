@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-12 19:32:54
+Last Updated: 2026-01-13 11:58:26
 
 ## Metrics
-- Total Files: 29151
-- Total Lines of Code: 440268
-- Total Commits: 739
+- Total Files: 29170
+- Total Lines of Code: 446464
+- Total Commits: 741
 
 ## Recent Activity
+62b9171 feat(underwriting): add term display, multi-face-amount quotes, and term selector
+26ef701 docs: multiple changes in .,docs,docs/features
 59cd10b Merge branch 'uw-wizard' of https://github.com/nneessen/commissionTracker into uw-wizard
 c9c6d81 chore: cleanup old plans and update docs
 df141af Merge branch 'uw-wizard' of https://github.com/nneessen/commissionTracker into uw-wizard
-fe8a4d8 docs: add UI v2 implementation plan for rule engine
-7a1881b feat(underwriting): implement rule engine v2 with compound predicates

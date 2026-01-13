@@ -6,6 +6,100 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-13 11:58:26
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/reviews/condition-response-transformer-implementation.md`
+- `scripts/elco-rules-data.ts`
+- `scripts/foresters-rules-data.ts`
+- `scripts/import-elco-rules-v2.ts`
+- `scripts/import-foresters-rules.ts`
+- `scripts/import-kcl-medications.ts`
+- `scripts/import-moo-common-impairments.ts`
+- `scripts/import-moo-drug-exclusions.ts`
+- `scripts/import-moo-multi-impairment.ts`
+- `scripts/kcl-medications-data.ts`
+- `scripts/moo-common-impairments-data.ts`
+- `scripts/moo-drug-exclusions-data.ts`
+- `scripts/moo-multi-impairment-data.ts`
+- `scripts/query-foresters.ts`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/hooks/useDecisionEngineRecommendations.ts`
+- `src/services/underwriting/conditionResponseTransformer.test.ts`
+- `src/services/underwriting/conditionResponseTransformer.ts`
+- `src/services/underwriting/decisionEngine.ts`
+- `src/services/underwriting/premiumMatrixService.ts`
+- `supabase/functions/parse-underwriting-guide/index.ts`
+
+### Statistics
+```
+ 23 files changed, 4896 insertions(+), 50 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-13 11:58:03
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/reviews/condition-response-transformer-implementation.md`
+- `scripts/elco-rules-data.ts`
+- `scripts/foresters-rules-data.ts`
+- `scripts/import-elco-rules-v2.ts`
+- `scripts/import-foresters-rules.ts`
+- `scripts/import-kcl-medications.ts`
+- `scripts/import-moo-common-impairments.ts`
+- `scripts/import-moo-drug-exclusions.ts`
+- `scripts/import-moo-multi-impairment.ts`
+- `scripts/kcl-medications-data.ts`
+- `scripts/moo-common-impairments-data.ts`
+- `scripts/moo-drug-exclusions-data.ts`
+- `scripts/moo-multi-impairment-data.ts`
+- `scripts/query-foresters.ts`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/hooks/useDecisionEngineRecommendations.ts`
+- `src/services/underwriting/conditionResponseTransformer.test.ts`
+- `src/services/underwriting/conditionResponseTransformer.ts`
+- `src/services/underwriting/decisionEngine.ts`
+- `src/services/underwriting/premiumMatrixService.ts`
+- `supabase/functions/parse-underwriting-guide/index.ts`
+
+### Statistics
+```
+ 23 files changed, 4868 insertions(+), 50 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-13 11:57:48
+
+### Changed Files
+- `docs/reviews/condition-response-transformer-implementation.md`
+- `scripts/elco-rules-data.ts`
+- `scripts/foresters-rules-data.ts`
+- `scripts/import-elco-rules-v2.ts`
+- `scripts/import-foresters-rules.ts`
+- `scripts/import-kcl-medications.ts`
+- `scripts/import-moo-common-impairments.ts`
+- `scripts/import-moo-drug-exclusions.ts`
+- `scripts/import-moo-multi-impairment.ts`
+- `scripts/kcl-medications-data.ts`
+- `scripts/moo-common-impairments-data.ts`
+- `scripts/moo-drug-exclusions-data.ts`
+- `scripts/moo-multi-impairment-data.ts`
+- `scripts/query-foresters.ts`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/hooks/useDecisionEngineRecommendations.ts`
+- `src/services/underwriting/conditionResponseTransformer.test.ts`
+- `src/services/underwriting/conditionResponseTransformer.ts`
+- `src/services/underwriting/decisionEngine.ts`
+- `src/services/underwriting/premiumMatrixService.ts`
+- `supabase/functions/parse-underwriting-guide/index.ts`
+
+### Statistics
+```
+ 21 files changed, 4832 insertions(+), 44 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-12 19:32:54
 
 ### Changed Files
