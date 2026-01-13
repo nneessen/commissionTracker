@@ -1,6 +1,6 @@
 // src/features/underwriting/components/QuickQuote/index.ts
 
-export { default as QuickQuotePage } from "./QuickQuotePage";
+export { QuickQuoteDialog } from "./QuickQuoteDialog";
 export { QuoteComparisonGrid } from "./QuoteComparisonGrid";
 export { ThreeAmountInputs } from "./ThreeAmountInputs";
 

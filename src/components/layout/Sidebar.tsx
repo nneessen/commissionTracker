@@ -48,6 +48,7 @@ import { useImo } from "@/contexts/ImoContext";
 import { shouldGrantTemporaryAccess } from "@/lib/temporaryAccess";
 import {
   UnderwritingWizard,
+  QuickQuoteDialog,
   useUnderwritingFeatureFlag,
 } from "@/features/underwriting";
 
@@ -221,6 +222,7 @@ export default function Sidebar({
   // Underwriting wizard state
   const [isUnderwritingWizardOpen, setIsUnderwritingWizardOpen] =
     useState(false);
+  const [isQuickQuoteOpen, setIsQuickQuoteOpen] = useState(false);
   const { isEnabled: isUnderwritingEnabled, isLoading: isUnderwritingLoading } =
     useUnderwritingFeatureFlag();
 
@@ -776,21 +778,18 @@ export default function Sidebar({
                   />
                   {!isCollapsed && <span className="text-sm">UW Wizard</span>}
                 </Button>
-                <Link to="/underwriting/quote">
-                  <Button
-                    variant="outline"
-                    className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30`}
-                    title={isCollapsed ? "Quick Quote" : ""}
-                  >
-                    <Calculator
-                      size={16}
-                      className={isCollapsed ? "" : "mr-2.5"}
-                    />
-                    {!isCollapsed && (
-                      <span className="text-sm">Quick Quote</span>
-                    )}
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30`}
+                  onClick={() => setIsQuickQuoteOpen(true)}
+                  title={isCollapsed ? "Quick Quote" : ""}
+                >
+                  <Calculator
+                    size={16}
+                    className={isCollapsed ? "" : "mr-2.5"}
+                  />
+                  {!isCollapsed && <span className="text-sm">Quick Quote</span>}
+                </Button>
               </div>
             )}
           <div className="flex items-center gap-2 mb-2">
@@ -815,6 +814,14 @@ export default function Sidebar({
           <UnderwritingWizard
             open={isUnderwritingWizardOpen}
             onOpenChange={setIsUnderwritingWizardOpen}
+          />
+        )}
+
+        {/* Quick Quote Dialog */}
+        {isUnderwritingEnabled && (
+          <QuickQuoteDialog
+            open={isQuickQuoteOpen}
+            onOpenChange={setIsQuickQuoteOpen}
           />
         )}
       </div>

@@ -272,59 +272,56 @@ class HierarchyService {
 
   /**
    * Validate a proposed hierarchy change
-   * Checks for circular references and comp level constraints
+   * Uses RPC to bypass RLS for validation queries
    */
   async validateHierarchyChange(
     request: HierarchyChangeRequest,
   ): Promise<HierarchyValidationResult> {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
     try {
-      // Get agent profile
-      const agent = await this.hierarchyRepo.findById(request.agent_id);
-      if (!agent) {
-        errors.push("Agent not found");
-        return { valid: false, errors, warnings };
-      }
+      // Use RPC to validate (bypasses RLS with SECURITY DEFINER)
+      const { data, error } = await supabase.rpc("validate_hierarchy_change", {
+        p_agent_id: request.agent_id,
+        p_new_upline_id: request.new_upline_id,
+      });
 
-      // If setting upline to null, it's valid (becoming root agent)
-      if (request.new_upline_id === null) {
-        return { valid: true, errors: [], warnings: [] };
-      }
-
-      // Get proposed upline profile
-      const upline = await this.hierarchyRepo.findById(request.new_upline_id);
-      if (!upline) {
-        errors.push("Proposed upline not found");
-        return { valid: false, errors, warnings };
-      }
-
-      // Check if proposed upline is in agent's downline tree (would create cycle)
-      if ((upline.hierarchy_path || "").includes(agent.id)) {
-        errors.push(
-          "Cannot set upline to one of your downlines (would create circular reference)",
+      if (error) {
+        logger.error(
+          "HierarchyService.validateHierarchyChange",
+          new Error(error.message),
         );
+        return {
+          valid: false,
+          errors: [`Validation failed: ${error.message}`],
+          warnings: [],
+        };
       }
 
-      // Note: contractCompLevel is stored in auth.users.rawuser_meta_data, not user_profiles
-      // Database trigger will enforce this
+      // RPC returns JSON with valid, errors, warnings
+      const result = data as {
+        valid: boolean;
+        errors: string[];
+        warnings: string[];
+      };
+
+      return {
+        valid: result.valid,
+        errors: result.errors || [],
+        warnings: result.warnings || [],
+      };
     } catch (error) {
       logger.error(
         "HierarchyService.validateHierarchyChange",
         error instanceof Error ? error : new Error(String(error)),
       );
-      errors.push(
-        "Validation failed: " +
-          (error instanceof Error ? error.message : String(error)),
-      );
+      return {
+        valid: false,
+        errors: [
+          "Validation failed: " +
+            (error instanceof Error ? error.message : String(error)),
+        ],
+        warnings: [],
+      };
     }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings,
-    };
   }
 
   /**

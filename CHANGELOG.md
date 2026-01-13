@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-13 15:41:15
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/underwriting/components/QuickQuote/QuickQuoteDialog.tsx`
+- `src/features/underwriting/components/QuickQuote/QuickQuotePage.tsx`
+- `src/features/underwriting/components/QuickQuote/ThreeAmountInputs.tsx`
+- `src/features/underwriting/components/QuickQuote/index.ts`
+- `src/features/underwriting/index.ts`
+- `src/router.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `supabase/migrations/20260113_001_validate_hierarchy_change_rpc.sql`
+- `supabase/migrations/20260113_002_update_hierarchy_path_on_upline_change.sql`
+- `supabase/migrations/20260113_003_user_targets_own_access_policy.sql`
+
+### Statistics
+```
+ 12 files changed, 957 insertions(+), 548 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-13 14:06:36
 
 ### Changed Files

@@ -2,6 +2,7 @@
 
 // Components
 export { default as UnderwritingWizard } from "./components/UnderwritingWizard";
+export { QuickQuoteDialog } from "./components/QuickQuote";
 export { UnderwritingSettingsTab } from "./components/UnderwritingSettingsTab";
 export {
   SessionHistoryList,

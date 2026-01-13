@@ -21,6 +21,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useUpdateUserProfile } from "../../../hooks/settings/useUpdateUserProfile";
 import { useUpdateAgentHierarchy } from "../../../hooks/hierarchy/useUpdateAgentHierarchy";
 import { supabase } from "@/services/base/supabase";
+import { searchUsersForAssignment } from "@/services/users/userSearchService";
 import { getDisplayName } from "../../../types/user.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RoleName } from "@/types/permissions.types";
@@ -210,21 +211,22 @@ export function UserProfile() {
       }
     }
 
-    // Validate upline email exists
+    // Validate upline email exists using RPC (bypasses RLS safely)
     try {
-      const { data: upline, error } = await supabase
-        .from("user_profiles")
-        .select("id, email")
-        .eq("email", uplineEmail.trim())
-        .single();
+      const results = await searchUsersForAssignment({
+        searchTerm: uplineEmail.trim(),
+        approvalStatus: "approved",
+        excludeIds: [user.id], // exclude self
+        limit: 10,
+      });
 
-      if (error || !upline) {
+      // Find exact email match (case-insensitive)
+      const upline = results.find(
+        (u) => u.email.toLowerCase() === uplineEmail.trim().toLowerCase(),
+      );
+
+      if (!upline) {
         setUplineError("No user found with that email address");
-        return;
-      }
-
-      if (upline.id === user.id) {
-        setUplineError("You cannot set yourself as your own upline");
         return;
       }
 
@@ -237,9 +239,10 @@ export function UserProfile() {
       setCurrentUplineEmail(upline.email);
       setShowUplineSuccess(true);
       setTimeout(() => setShowUplineSuccess(false), 3000);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
-    } catch (error: any) {
-      setUplineError(error.message || "Failed to update upline");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update upline";
+      setUplineError(message);
     }
   };
 

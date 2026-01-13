@@ -16,13 +16,30 @@ interface ThreeAmountInputsProps {
   values: [number, number, number];
   onChange: (values: [number, number, number]) => void;
   className?: string;
+  /** Custom presets to override defaults */
+  customPresets?: [number, number, number][];
 }
 
 // =============================================================================
 // Preset Values
 // =============================================================================
 
-const COVERAGE_PRESETS: [number, number, number][] = [
+// Term Life presets (higher amounts - term is cheaper)
+export const TERM_COVERAGE_PRESETS: [number, number, number][] = [
+  [50000, 100000, 150000],
+  [100000, 200000, 300000],
+  [250000, 500000, 1000000],
+];
+
+// Whole Life / Perm presets (lower amounts - perm is more expensive)
+export const PERM_COVERAGE_PRESETS: [number, number, number][] = [
+  [10000, 20000, 30000],
+  [25000, 50000, 75000],
+  [50000, 100000, 150000],
+];
+
+// Default (mixed) - for when both term and perm selected
+const DEFAULT_COVERAGE_PRESETS: [number, number, number][] = [
   [25000, 50000, 100000],
   [50000, 100000, 250000],
   [100000, 250000, 500000],
@@ -141,7 +158,7 @@ function AmountInput({
           onBlur={handleBlur}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
-          className="pl-5 text-right tabular-nums h-8 text-sm"
+          className="pl-5 text-right tabular-nums h-8 text-sm bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
         />
         {mode === "budget" && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -162,8 +179,11 @@ export function ThreeAmountInputs({
   values,
   onChange,
   className,
+  customPresets,
 }: ThreeAmountInputsProps) {
-  const presets = mode === "coverage" ? COVERAGE_PRESETS : BUDGET_PRESETS;
+  const presets =
+    customPresets ??
+    (mode === "coverage" ? DEFAULT_COVERAGE_PRESETS : BUDGET_PRESETS);
 
   const handleSingleChange = useCallback(
     (index: number, newValue: number) => {
