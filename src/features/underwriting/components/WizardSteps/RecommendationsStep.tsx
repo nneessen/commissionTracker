@@ -70,6 +70,10 @@ interface RecommendationsStepProps {
   clientInfo: ClientInfo;
   healthInfo: HealthInfo;
   coverageRequest: CoverageRequest;
+  /** Currently selected term length (null = use longest available) */
+  selectedTermYears?: number | null;
+  /** Handler for term selection changes */
+  onTermChange?: (termYears: number | null) => void;
 }
 
 const HEALTH_TIER_CONFIG: Record<
@@ -128,6 +132,8 @@ export default function RecommendationsStep({
   clientInfo,
   healthInfo,
   coverageRequest,
+  selectedTermYears,
+  onTermChange,
 }: RecommendationsStepProps) {
   // Extract product IDs and carrier IDs from AI recommendations
   const productIds = aiResult?.recommendations.map((r) => r.productId) ?? [];
@@ -178,6 +184,30 @@ export default function RecommendationsStep({
   const tierConfig = aiResult
     ? HEALTH_TIER_CONFIG[aiResult.healthTier] || HEALTH_TIER_CONFIG.standard
     : null;
+
+  // Calculate available terms from all decision engine recommendations
+  const allAvailableTerms = new Set<number>();
+  if (decisionEngineResult) {
+    for (const rec of [
+      ...decisionEngineResult.recommendations,
+      ...decisionEngineResult.unknownEligibility,
+    ]) {
+      if (rec.availableTerms) {
+        for (const term of rec.availableTerms) {
+          allAvailableTerms.add(term);
+        }
+      }
+    }
+  }
+  const sortedTerms = Array.from(allAvailableTerms).sort((a, b) => a - b);
+  const hasTermOptions = sortedTerms.length > 1;
+
+  // Determine the currently displayed term
+  const displayedTerm =
+    selectedTermYears ??
+    decisionEngineResult?.recommendations[0]?.termYears ??
+    decisionEngineResult?.unknownEligibility[0]?.termYears ??
+    null;
 
   // Both loading - show initial loading state
   if (
@@ -274,6 +304,43 @@ export default function RecommendationsStep({
             Based on your rate data
           </span>
         </div>
+
+        {/* Term Length Selector */}
+        {hasTermOptions && onTermChange && (
+          <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide">
+                Term Length:
+              </span>
+              <div className="flex items-center gap-1">
+                {sortedTerms.map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => onTermChange(term)}
+                    disabled={isDecisionEngineLoading}
+                    className={cn(
+                      "px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors",
+                      "border",
+                      displayedTerm === term ||
+                        (displayedTerm === null &&
+                          term === sortedTerms[sortedTerms.length - 1])
+                        ? "bg-indigo-100 dark:bg-indigo-900/40 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300"
+                        : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700",
+                      isDecisionEngineLoading &&
+                        "opacity-50 cursor-not-allowed",
+                    )}
+                  >
+                    {term} Year
+                  </button>
+                ))}
+              </div>
+              {isDecisionEngineLoading && (
+                <div className="ml-2 h-3 w-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="p-3">
           {isDecisionEngineLoading ? (
             <div className="flex items-center gap-2 p-4 justify-center">
@@ -351,17 +418,101 @@ export default function RecommendationsStep({
               </div>
             </div>
           ) : decisionEngineResult ? (
-            <div className="p-4 text-center">
-              <Database className="h-6 w-6 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-              <p className="text-xs text-zinc-500">
-                No rate table matches found for this client profile.
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Database className="h-5 w-5 text-amber-500" />
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  No Quoted Products Available
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-500 mb-3">
+                We evaluated {decisionEngineResult.filtered.totalProducts}{" "}
+                products but couldn't generate pricing for any of them.
               </p>
-              <p className="text-[10px] text-zinc-400 mt-1">
-                Checked {decisionEngineResult.filtered.totalProducts} products
-                {decisionEngineResult.filtered.ineligible > 0 && (
-                  <> • {decisionEngineResult.filtered.ineligible} ineligible</>
+
+              {/* Pipeline breakdown */}
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded p-2 mb-3">
+                <p className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  Pipeline Breakdown:
+                </p>
+                <div className="space-y-1 text-[10px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">
+                      Stage 1 (Eligibility):
+                    </span>
+                    <span
+                      className={
+                        decisionEngineResult.filtered.passedEligibility > 0
+                          ? "text-emerald-600"
+                          : "text-red-500"
+                      }
+                    >
+                      {decisionEngineResult.filtered.passedEligibility} passed
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">Stage 2 (Approval):</span>
+                    <span
+                      className={
+                        decisionEngineResult.filtered.passedAcceptance > 0
+                          ? "text-emerald-600"
+                          : "text-red-500"
+                      }
+                    >
+                      {decisionEngineResult.filtered.passedAcceptance} passed
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">
+                      Stage 3 (Premium Lookup):
+                    </span>
+                    <span
+                      className={
+                        decisionEngineResult.filtered.withPremiums > 0
+                          ? "text-emerald-600"
+                          : "text-red-500 font-medium"
+                      }
+                    >
+                      {decisionEngineResult.filtered.withPremiums} found
+                      {decisionEngineResult.filtered.withPremiums === 0 &&
+                        " ← Issue here"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Likely causes */}
+              {decisionEngineResult.filtered.withPremiums === 0 &&
+                decisionEngineResult.filtered.passedAcceptance > 0 && (
+                  <div className="text-[10px] text-zinc-500 space-y-1">
+                    <p className="font-medium text-zinc-600 dark:text-zinc-400">
+                      Likely causes:
+                    </p>
+                    <ul className="list-disc list-inside space-y-0.5 text-zinc-400">
+                      <li>Premium rates not yet loaded for these products</li>
+                      <li>Health class not available in rate tables</li>
+                      <li>Gender or tobacco class mismatch</li>
+                      <li>Age/face amount outside rate grid</li>
+                    </ul>
+                    <p className="mt-2 text-zinc-400 italic">
+                      Check browser console for detailed diagnostics.
+                    </p>
+                  </div>
                 )}
-              </p>
+
+              {decisionEngineResult.filtered.passedEligibility === 0 && (
+                <div className="text-[10px] text-zinc-500 space-y-1">
+                  <p className="font-medium text-zinc-600 dark:text-zinc-400">
+                    All products failed eligibility:
+                  </p>
+                  <ul className="list-disc list-inside space-y-0.5 text-zinc-400">
+                    <li>Client age may be outside product age limits</li>
+                    <li>Requested face amount may exceed product maximums</li>
+                    <li>Client may have a knockout health condition</li>
+                    <li>State may not be available for these products</li>
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-4 text-center">
@@ -884,18 +1035,81 @@ function DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
 
         <div className="flex-1 min-w-0">
           {/* Header: Carrier & Product */}
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 mb-2">
             <div>
               <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
                 {recommendation.carrierName}
               </div>
               <div className="text-[11px] text-zinc-500">
                 {recommendation.productName}
+                {recommendation.termYears !== undefined &&
+                  recommendation.termYears !== null && (
+                    <span className="ml-1.5 text-indigo-500 dark:text-indigo-400">
+                      • {recommendation.termYears} Year Term
+                    </span>
+                  )}
+                {recommendation.termYears === null && (
+                  <span className="ml-1.5 text-emerald-500 dark:text-emerald-400">
+                    • Permanent
+                  </span>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Premium (prominent) */}
-            <div className="text-right">
+          {/* Face Amount Comparison Grid */}
+          {recommendation.alternativeQuotes &&
+          recommendation.alternativeQuotes.length > 0 ? (
+            <div className="grid grid-cols-3 gap-1 mb-2">
+              {recommendation.alternativeQuotes.map((quote, idx) => {
+                const isRequested =
+                  quote.faceAmount === recommendation.maxCoverage;
+                return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "text-center p-2 rounded-md border",
+                      isRequested
+                        ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700"
+                        : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "text-[10px] font-medium",
+                        isRequested
+                          ? "text-indigo-600 dark:text-indigo-400"
+                          : "text-zinc-500",
+                      )}
+                    >
+                      {formatDECurrency(quote.faceAmount)}
+                    </div>
+                    <div
+                      className={cn(
+                        "text-base font-bold",
+                        isRequested
+                          ? "text-indigo-600 dark:text-indigo-400"
+                          : "text-zinc-700 dark:text-zinc-300",
+                      )}
+                    >
+                      {formatDECurrency(quote.monthlyPremium)}
+                      <span className="text-[9px] font-normal text-zinc-400">
+                        /mo
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-zinc-400">
+                      ${quote.costPerThousand.toFixed(2)} per $1K
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Fallback: Single premium display */
+            <div className="mb-2 p-2 rounded-md bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-center">
+              <div className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400">
+                {formatDECurrency(recommendation.maxCoverage)}
+              </div>
               <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                 {recommendation.monthlyPremium !== null
                   ? formatDECurrency(recommendation.monthlyPremium)
@@ -904,14 +1118,14 @@ function DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
                   /mo
                 </span>
               </div>
-              <div className="text-[10px] text-zinc-500">
+              <div className="text-[9px] text-zinc-400">
                 {recommendation.maxCoverage > 0 &&
                 recommendation.monthlyPremium !== null
-                  ? `${formatDECurrency((recommendation.monthlyPremium * 12) / (recommendation.maxCoverage / 1000))} per $1K/yr`
+                  ? `$${((recommendation.monthlyPremium * 12) / (recommendation.maxCoverage / 1000)).toFixed(2)} per $1K`
                   : "N/A"}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Reason Badge & Health Class */}
           <div className="flex items-center gap-2 mt-2">
@@ -1074,6 +1288,17 @@ function UnknownEligibilityCard({
               </div>
               <div className="text-[11px] text-zinc-500">
                 {recommendation.productName}
+                {recommendation.termYears !== undefined &&
+                  recommendation.termYears !== null && (
+                    <span className="ml-1.5 text-yellow-600 dark:text-yellow-400">
+                      • {recommendation.termYears} Year Term
+                    </span>
+                  )}
+                {recommendation.termYears === null && (
+                  <span className="ml-1.5 text-yellow-600 dark:text-yellow-400">
+                    • Permanent
+                  </span>
+                )}
               </div>
             </div>
 

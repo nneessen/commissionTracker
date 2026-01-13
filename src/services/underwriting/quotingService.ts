@@ -417,7 +417,7 @@ async function getPremiumForProduct(
 
   const tobaccoClass: TobaccoClass = tobaccoUse ? "tobacco" : "non_tobacco";
 
-  return interpolatePremium(
+  const result = interpolatePremium(
     matrix,
     age,
     faceAmount,
@@ -426,6 +426,9 @@ async function getPremiumForProduct(
     healthClass,
     termYears,
   );
+
+  // Extract premium from result (health class fallback is handled internally)
+  return result.premium;
 }
 
 // ============================================================================

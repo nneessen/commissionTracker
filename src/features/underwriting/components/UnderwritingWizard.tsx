@@ -83,6 +83,9 @@ export default function UnderwritingWizard({
     null,
   );
   const [sessionStartTime] = useState<number>(Date.now());
+  const [selectedTermYears, setSelectedTermYears] = useState<number | null>(
+    null,
+  );
 
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
@@ -102,6 +105,7 @@ export default function UnderwritingWizard({
       });
       setErrors({});
       setAnalysisResult(null);
+      setSelectedTermYears(null);
       analysisMutation.reset();
       decisionEngineMutation.reset();
     }
@@ -224,6 +228,7 @@ export default function UnderwritingWizard({
         formData.health,
         formData.coverage,
         user?.imo_id || "",
+        selectedTermYears,
       );
 
       // Fire both mutations in parallel (non-blocking)
@@ -249,6 +254,7 @@ export default function UnderwritingWizard({
     analysisMutation,
     decisionEngineMutation,
     user,
+    selectedTermYears,
   ]);
 
   const handleBack = useCallback(() => {
@@ -282,6 +288,23 @@ export default function UnderwritingWizard({
       setErrors({});
     },
     [],
+  );
+
+  // Handle term year selection change - re-triggers decision engine
+  const handleTermChange = useCallback(
+    (termYears: number | null) => {
+      setSelectedTermYears(termYears);
+      // Re-run decision engine with new term
+      const decisionInput = transformWizardToDecisionEngineInput(
+        formData.client,
+        formData.health,
+        formData.coverage,
+        user?.imo_id || "",
+        termYears,
+      );
+      decisionEngineMutation.mutate(decisionInput);
+    },
+    [formData, user?.imo_id, decisionEngineMutation],
   );
 
   // Save session handler
@@ -387,6 +410,8 @@ export default function UnderwritingWizard({
             clientInfo={formData.client}
             healthInfo={formData.health}
             coverageRequest={formData.coverage}
+            selectedTermYears={selectedTermYears}
+            onTermChange={handleTermChange}
           />
         );
       default:

@@ -9013,6 +9013,7 @@ export type Database = {
           created_at: string | null;
           current_onboarding_phase: string | null;
           custom_permissions: Json | null;
+          custom_recruiting_url: string | null;
           date_of_birth: string | null;
           denial_reason: string | null;
           denied_at: string | null;
@@ -9067,6 +9068,7 @@ export type Database = {
           created_at?: string | null;
           current_onboarding_phase?: string | null;
           custom_permissions?: Json | null;
+          custom_recruiting_url?: string | null;
           date_of_birth?: string | null;
           denial_reason?: string | null;
           denied_at?: string | null;
@@ -9121,6 +9123,7 @@ export type Database = {
           created_at?: string | null;
           current_onboarding_phase?: string | null;
           custom_permissions?: Json | null;
+          custom_recruiting_url?: string | null;
           date_of_birth?: string | null;
           denial_reason?: string | null;
           denied_at?: string | null;

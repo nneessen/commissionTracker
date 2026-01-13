@@ -24,6 +24,80 @@ export type HealthClass =
   | "table_rated";
 export type TermYears = 10 | 15 | 20 | 25 | 30;
 
+/**
+ * Normalized health classes for premium quoting.
+ * These are the only classes that can have rates in premium_matrix.
+ * Matches HealthClass but explicitly named for quoting context.
+ */
+export type RateableHealthClass =
+  | "preferred_plus"
+  | "preferred"
+  | "standard_plus"
+  | "standard"
+  | "table_rated";
+
+/**
+ * Non-rateable health classes that should not attempt premium lookup.
+ * These require manual underwriting review.
+ */
+export type NonRateableHealthClass = "decline" | "refer";
+
+/** Fallback order for rateable classes (best to worst) */
+export const HEALTH_CLASS_FALLBACK_ORDER: RateableHealthClass[] = [
+  "preferred_plus",
+  "preferred",
+  "standard_plus",
+  "standard",
+  "table_rated",
+];
+
+/**
+ * Normalize DB/Stage2 health class to rateable class or null.
+ * @param healthClass - Raw health class from database or Stage 2 approval
+ * @returns Normalized rateable class, or null if non-rateable (decline, refer)
+ */
+export function normalizeHealthClass(
+  healthClass: string,
+): RateableHealthClass | null {
+  switch (healthClass) {
+    case "preferred_plus":
+    case "preferred":
+    case "standard_plus":
+    case "standard":
+      return healthClass;
+    case "substandard":
+    case "table_rated":
+      return "table_rated";
+    case "unknown":
+      return "standard"; // Default for unknown
+    case "decline":
+    case "refer":
+      return null; // Non-rateable - requires manual underwriting
+    default:
+      console.warn(
+        `[normalizeHealthClass] Unknown class: ${healthClass}, defaulting to standard`,
+      );
+      return "standard";
+  }
+}
+
+/**
+ * Result of premium lookup with fallback information.
+ */
+export type PremiumLookupResult =
+  | {
+      premium: number;
+      requested: RateableHealthClass;
+      used: RateableHealthClass;
+      wasExact: boolean;
+      /** Term length in years used for the lookup (null for permanent products) */
+      termYears: TermYears | null;
+    }
+  | {
+      premium: null;
+      reason: "NO_MATRIX" | "NON_RATEABLE_CLASS" | "NO_MATCHING_RATES";
+    };
+
 export interface PremiumMatrix extends PremiumMatrixRow {
   product?: {
     id: string;
@@ -179,7 +253,37 @@ export async function getPremiumMatrixForProduct(
     throw new Error(`Failed to fetch premium matrix: ${error.message}`);
   }
 
-  return (data || []) as PremiumMatrix[];
+  const result = (data || []) as PremiumMatrix[];
+
+  // Debug logging
+  if (result.length === 0) {
+    console.warn(
+      `[PremiumMatrix] NO DATA for product ${productId} + imo ${imoId}`,
+    );
+  } else {
+    const uniqueGenders = [...new Set(result.map((r) => r.gender))];
+    const uniqueHealthClasses = [...new Set(result.map((r) => r.health_class))];
+    const uniqueTobaccoClasses = [
+      ...new Set(result.map((r) => r.tobacco_class)),
+    ];
+    const uniqueAges = [...new Set(result.map((r) => r.age))].sort(
+      (a, b) => a - b,
+    );
+    const uniqueFaceAmounts = [
+      ...new Set(result.map((r) => r.face_amount)),
+    ].sort((a, b) => a - b);
+    console.log(`[PremiumMatrix] Found ${result.length} rows for product`, {
+      productId,
+      imoId,
+      genders: uniqueGenders,
+      healthClasses: uniqueHealthClasses,
+      tobaccoClasses: uniqueTobaccoClasses,
+      ageRange: `${Math.min(...uniqueAges)}-${Math.max(...uniqueAges)}`,
+      faceAmounts: uniqueFaceAmounts,
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -579,17 +683,16 @@ function findBounds(
 }
 
 /**
- * Estimate monthly premium using bilinear interpolation
- * Returns null if insufficient data for interpolation
- * For term products, termYears must match exactly (no interpolation across terms)
+ * Internal helper: Try to interpolate premium for a specific health class.
+ * Returns the premium or null if no matching data exists.
  */
-export function interpolatePremium(
+function tryInterpolatePremiumForClass(
   matrix: PremiumMatrix[],
   targetAge: number,
   targetFaceAmount: number,
   gender: GenderType,
   tobaccoClass: TobaccoClass,
-  healthClass: HealthClass,
+  healthClass: RateableHealthClass,
   termYears?: TermYears | null,
 ): number | null {
   // Filter to matching classification (including term_years)
@@ -602,7 +705,7 @@ export function interpolatePremium(
   );
 
   if (filtered.length === 0) {
-    return null;
+    return null; // Will try next health class in fallback
   }
 
   // Build lookup map
@@ -746,6 +849,107 @@ export function interpolatePremium(
 }
 
 /**
+ * Estimate monthly premium using bilinear interpolation with health class fallback.
+ *
+ * Normalizes the input health class and tries fallback classes if the exact class
+ * has no rates. For non-rateable classes (decline, refer), returns null immediately.
+ *
+ * @param matrix - The premium matrix data
+ * @param targetAge - Client age
+ * @param targetFaceAmount - Requested face amount
+ * @param gender - Client gender
+ * @param tobaccoClass - Tobacco classification
+ * @param healthClass - Raw health class from DB/Stage2 (will be normalized)
+ * @param termYears - Term length for term products, null for permanent
+ * @returns PremiumLookupResult with premium and metadata, or null reason
+ */
+export function interpolatePremium(
+  matrix: PremiumMatrix[],
+  targetAge: number,
+  targetFaceAmount: number,
+  gender: GenderType,
+  tobaccoClass: TobaccoClass,
+  healthClass: string,
+  termYears?: TermYears | null,
+): PremiumLookupResult {
+  // Handle empty matrix case
+  if (!matrix || matrix.length === 0) {
+    return { premium: null, reason: "NO_MATRIX" };
+  }
+
+  // Normalize the health class
+  const normalizedClass = normalizeHealthClass(healthClass);
+
+  // Non-rateable classes (decline, refer) should not attempt premium lookup
+  if (normalizedClass === null) {
+    console.log(
+      `[InterpolatePremium] Non-rateable health class: ${healthClass}`,
+    );
+    return { premium: null, reason: "NON_RATEABLE_CLASS" };
+  }
+
+  // Get fallback order starting from the normalized class
+  const startIndex = HEALTH_CLASS_FALLBACK_ORDER.indexOf(normalizedClass);
+  const classesToTry = HEALTH_CLASS_FALLBACK_ORDER.slice(startIndex);
+
+  // Try each health class from requested down to table_rated
+  for (const tryClass of classesToTry) {
+    const result = tryInterpolatePremiumForClass(
+      matrix,
+      targetAge,
+      targetFaceAmount,
+      gender,
+      tobaccoClass,
+      tryClass,
+      termYears,
+    );
+
+    if (result !== null) {
+      const wasExact = tryClass === normalizedClass;
+
+      if (!wasExact) {
+        console.log(
+          `[InterpolatePremium] Fallback: ${normalizedClass} → ${tryClass}`,
+        );
+      }
+
+      return {
+        premium: result,
+        requested: normalizedClass,
+        used: tryClass,
+        wasExact,
+        termYears: termYears ?? null,
+      };
+    }
+  }
+
+  // No rates found for any health class - log debug info
+  const matrixGenders = [...new Set(matrix.map((m) => m.gender))];
+  const matrixTobacco = [...new Set(matrix.map((m) => m.tobacco_class))];
+  const matrixHealth = [...new Set(matrix.map((m) => m.health_class))];
+  const matrixTerms = [...new Set(matrix.map((m) => m.term_years))];
+
+  console.warn(`[InterpolatePremium] No rates found after fallback`, {
+    totalMatrixRows: matrix.length,
+    requested: {
+      gender,
+      tobaccoClass,
+      healthClass: normalizedClass,
+      termYears,
+    },
+    triedClasses: classesToTry,
+    available: {
+      genders: matrixGenders,
+      tobaccoClasses: matrixTobacco,
+      healthClasses: matrixHealth,
+      termYears: matrixTerms,
+    },
+  });
+
+  return { premium: null, reason: "NO_MATCHING_RATES" };
+}
+
+/**
  * Get exact premium from matrix (no interpolation)
  */
 export function getExactPremium(
@@ -768,4 +972,130 @@ export function getExactPremium(
   );
 
   return match ? Number(match.monthly_premium) : null;
+}
+
+/**
+ * Get available term years from a premium matrix.
+ * Returns sorted array of unique term years (excludes null for permanent products).
+ */
+export function getAvailableTerms(matrix: PremiumMatrix[]): number[] {
+  const terms = new Set<number>();
+  for (const row of matrix) {
+    if (row.term_years !== null) {
+      terms.add(row.term_years);
+    }
+  }
+  return Array.from(terms).sort((a, b) => a - b);
+}
+
+/**
+ * Get the longest available term from a premium matrix.
+ * Returns null if no term products (permanent only).
+ */
+export function getLongestAvailableTerm(
+  matrix: PremiumMatrix[],
+): TermYears | null {
+  const terms = getAvailableTerms(matrix);
+  if (terms.length === 0) return null;
+  return terms[terms.length - 1] as TermYears;
+}
+
+/**
+ * Alternative quote for a different face amount.
+ */
+export interface AlternativeQuote {
+  faceAmount: number;
+  monthlyPremium: number;
+  costPerThousand: number;
+}
+
+/**
+ * Calculate alternative quotes for different face amounts.
+ * Returns quotes for the specified face amounts using the same parameters.
+ */
+export function calculateAlternativeQuotes(
+  matrix: PremiumMatrix[],
+  faceAmounts: number[],
+  targetAge: number,
+  gender: GenderType,
+  tobaccoClass: TobaccoClass,
+  healthClass: string,
+  termYears: TermYears | null,
+): AlternativeQuote[] {
+  const quotes: AlternativeQuote[] = [];
+
+  for (const faceAmount of faceAmounts) {
+    const result = interpolatePremium(
+      matrix,
+      targetAge,
+      faceAmount,
+      gender,
+      tobaccoClass,
+      healthClass,
+      termYears,
+    );
+
+    if (result.premium !== null) {
+      const annualPremium = result.premium * 12;
+      const coverageInThousands = faceAmount / 1000;
+      const costPerThousand = annualPremium / coverageInThousands;
+
+      quotes.push({
+        faceAmount,
+        monthlyPremium: result.premium,
+        costPerThousand: Math.round(costPerThousand * 100) / 100,
+      });
+    }
+  }
+
+  return quotes;
+}
+
+/**
+ * Determine face amounts to show for comparison.
+ * Returns 3 face amounts: one lower, the requested, and one higher.
+ * Respects product min/max limits.
+ */
+export function getComparisonFaceAmounts(
+  requestedFaceAmount: number,
+  minFaceAmount?: number | null,
+  maxFaceAmount?: number | null,
+): number[] {
+  // Standard comparison amounts
+  const standardAmounts = [
+    50000, 75000, 100000, 150000, 200000, 250000, 300000, 400000, 500000,
+    750000, 1000000, 1500000, 2000000,
+  ];
+
+  const min = minFaceAmount ?? 50000;
+  const max = maxFaceAmount ?? 10000000;
+
+  // Filter to amounts within product limits
+  const validAmounts = standardAmounts.filter((a) => a >= min && a <= max);
+
+  // Find amounts around the requested amount
+  const lowerAmounts = validAmounts.filter((a) => a < requestedFaceAmount);
+  const higherAmounts = validAmounts.filter((a) => a > requestedFaceAmount);
+
+  // Pick one lower and one higher
+  const lower =
+    lowerAmounts.length > 0 ? lowerAmounts[lowerAmounts.length - 1] : null;
+  const higher = higherAmounts.length > 0 ? higherAmounts[0] : null;
+
+  // Build result array (always include requested amount in middle)
+  const result: number[] = [];
+  if (lower !== null) result.push(lower);
+  result.push(requestedFaceAmount);
+  if (higher !== null) result.push(higher);
+
+  // If we only have 2, try to add another
+  if (result.length === 2) {
+    if (lower === null && higherAmounts.length > 1) {
+      result.push(higherAmounts[1]);
+    } else if (higher === null && lowerAmounts.length > 1) {
+      result.unshift(lowerAmounts[lowerAmounts.length - 2]);
+    }
+  }
+
+  return result;
 }

@@ -324,8 +324,8 @@ export function useEstimatePremium(
     };
   }
 
-  // Use interpolation
-  const interpolated = interpolatePremium(
+  // Use interpolation with health class fallback
+  const result = interpolatePremium(
     matrix,
     age,
     faceAmount,
@@ -335,5 +335,6 @@ export function useEstimatePremium(
     termYears,
   );
 
-  return { premium: interpolated, isInterpolated: true };
+  // Extract premium from result (health class fallback is handled internally)
+  return { premium: result.premium, isInterpolated: result.premium !== null };
 }

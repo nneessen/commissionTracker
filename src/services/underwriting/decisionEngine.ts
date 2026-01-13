@@ -25,9 +25,17 @@ import {
 import {
   getPremiumMatrixForProduct,
   interpolatePremium,
+  getAvailableTerms,
+  getLongestAvailableTerm,
+  calculateAlternativeQuotes,
+  getComparisonFaceAmounts,
   type GenderType,
   type TobaccoClass,
   type HealthClass,
+  type TermYears,
+  type RateableHealthClass,
+  type PremiumLookupResult,
+  type AlternativeQuote,
 } from "./premiumMatrixService";
 import { calculateDataCompleteness } from "./conditionMatcher";
 import { calculateApprovalV2 } from "./ruleEngineV2Adapter";
@@ -61,6 +69,21 @@ export interface DecisionEngineInput {
   client: ClientProfile;
   coverage: CoverageRequest;
   imoId: string;
+  /** Optional preferred term length. If not provided, uses longest available term. */
+  termYears?: number | null;
+}
+
+export interface ProductMetadata {
+  ageTieredFaceAmounts?: {
+    tiers: Array<{
+      minAge: number;
+      maxAge: number;
+      maxFaceAmount: number;
+    }>;
+  };
+  knockoutConditions?: string[];
+  fullUnderwritingThreshold?: number;
+  stateAvailability?: string[];
 }
 
 export interface ProductCandidate {
@@ -73,6 +96,7 @@ export interface ProductCandidate {
   maxAge: number | null;
   minFaceAmount: number | null;
   maxFaceAmount: number | null;
+  metadata: ProductMetadata | null;
 }
 
 interface ConditionDecision {
@@ -96,6 +120,22 @@ export interface Recommendation {
   maxCoverage: number;
   approvalLikelihood: number;
   healthClassResult: string;
+  /** Normalized health class requested for premium lookup */
+  healthClassRequested?: RateableHealthClass;
+  /** Actual health class used in premium lookup (if fallback occurred) */
+  healthClassUsed?: RateableHealthClass;
+  /** True if health class fallback was used (different from requested) */
+  wasFallback?: boolean;
+  /** Term length in years used for premium lookup (null for permanent products) */
+  termYears?: number | null;
+  /** Available term lengths for this product (sorted ascending) */
+  availableTerms?: number[];
+  /** Alternative quotes at different face amounts (same term as primary quote) */
+  alternativeQuotes?: {
+    faceAmount: number;
+    monthlyPremium: number;
+    costPerThousand: number;
+  }[];
   reason:
     | "cheapest"
     | "highest_coverage"
@@ -164,16 +204,25 @@ function checkEligibility(
   }
 
   const minFace = product.minFaceAmount ?? 0;
-  const maxFace = product.maxFaceAmount ?? Number.MAX_SAFE_INTEGER;
+  let maxFace = product.maxFaceAmount ?? Number.MAX_SAFE_INTEGER;
+
+  // Check age-tiered face amounts from product metadata FIRST
+  if (product.metadata?.ageTieredFaceAmounts?.tiers) {
+    for (const tier of product.metadata.ageTieredFaceAmounts.tiers) {
+      if (client.age >= tier.minAge && client.age <= tier.maxAge) {
+        maxFace = Math.min(maxFace, tier.maxFaceAmount);
+      }
+    }
+  }
 
   if (coverage.faceAmount < minFace) {
     ineligibleReasons.push(
       `Requested $${coverage.faceAmount.toLocaleString()} below minimum`,
     );
   }
-  if (coverage.faceAmount > maxFace) {
+  if (coverage.faceAmount > maxFace && maxFace < Number.MAX_SAFE_INTEGER) {
     ineligibleReasons.push(
-      `Requested $${coverage.faceAmount.toLocaleString()} above maximum`,
+      `Requested $${coverage.faceAmount.toLocaleString()} exceeds max $${maxFace.toLocaleString()} for age ${client.age}`,
     );
   }
 
@@ -482,25 +531,54 @@ function determineHealthClass(
 // ============================================================================
 
 /**
- * Get premium from premium_matrix with interpolation
+ * Get premium from premium_matrix with interpolation and health class fallback.
+ * Returns the premium result with metadata about the health class used.
  */
 async function getPremium(
   productId: string,
   age: number,
   gender: GenderType,
   tobacco: boolean,
-  healthClass: HealthClass,
+  healthClass: string, // Raw health class from Stage 2 (will be normalized)
   faceAmount: number,
   imoId: string,
-): Promise<number | null> {
+  termYears?: number | null,
+): Promise<PremiumLookupResult> {
   try {
     const matrix = await getPremiumMatrixForProduct(productId, imoId);
 
     if (!matrix || matrix.length === 0) {
-      return null;
+      return { premium: null, reason: "NO_MATRIX" };
     }
 
     const tobaccoClass: TobaccoClass = tobacco ? "tobacco" : "non_tobacco";
+
+    // If termYears not specified, try to find matching term from available data
+    let effectiveTermYears: TermYears | null | undefined = termYears as
+      | TermYears
+      | null
+      | undefined;
+    if (effectiveTermYears === undefined) {
+      // Check what term years are available in the matrix
+      const availableTerms = [...new Set(matrix.map((m) => m.term_years))];
+      if (availableTerms.length === 1 && availableTerms[0] === null) {
+        // All rows have null term_years - this is a permanent product
+        effectiveTermYears = null;
+      } else if (!availableTerms.includes(null)) {
+        // No null term_years - this is a term product, use default 20 years
+        // or the most common available term
+        const preferredTerms: TermYears[] = [20, 10, 15, 25, 30];
+        const matchedTerm = preferredTerms.find((t) =>
+          availableTerms.includes(t),
+        );
+        effectiveTermYears =
+          matchedTerm ||
+          (availableTerms.filter((t): t is TermYears => t !== null)[0] as
+            | TermYears
+            | undefined) ||
+          20;
+      }
+    }
 
     return interpolatePremium(
       matrix,
@@ -509,10 +587,11 @@ async function getPremium(
       gender,
       tobaccoClass,
       healthClass,
+      effectiveTermYears,
     );
   } catch (error) {
     console.error("Error getting premium:", error);
-    return null;
+    return { premium: null, reason: "NO_MATCHING_RATES" };
   }
 }
 
@@ -533,7 +612,7 @@ async function getProducts(
     .select(
       `
       id, name, product_type, min_age, max_age,
-      min_face_amount, max_face_amount, carrier_id,
+      min_face_amount, max_face_amount, carrier_id, metadata,
       carriers!inner(id, name)
     `,
     )
@@ -566,6 +645,7 @@ async function getProducts(
       maxAge: p.max_age,
       minFaceAmount: p.min_face_amount,
       maxFaceAmount: p.max_face_amount,
+      metadata: (p.metadata as ProductMetadata) || null,
     };
   });
 }
@@ -689,6 +769,22 @@ export async function getRecommendations(
     eligibility: EligibilityResult;
     approval: Awaited<ReturnType<typeof _calculateApproval>>;
     premium: number | null;
+    /** Normalized health class requested for premium lookup */
+    healthClassRequested?: RateableHealthClass;
+    /** Actual health class used in premium lookup (if fallback occurred) */
+    healthClassUsed?: RateableHealthClass;
+    /** True if health class fallback was used */
+    wasFallback?: boolean;
+    /** Term length in years used for premium lookup (null for permanent products) */
+    termYears?: number | null;
+    /** Available term lengths for this product */
+    availableTerms?: number[];
+    /** Alternative quotes at different face amounts */
+    alternativeQuotes?: {
+      faceAmount: number;
+      monthlyPremium: number;
+      costPerThousand: number;
+    }[];
     maxCoverage: number;
     scoreComponents: ScoreComponents;
     finalScore: number;
@@ -739,8 +835,39 @@ export async function getRecommendations(
     }
     stats.passedAcceptance++;
 
-    // Stage 3: Premium
-    const premium = await getPremium(
+    // Stage 3: Premium & Alternative Quotes
+    const premiumLookupParams = {
+      productId: product.productId,
+      productName: product.productName,
+      age: client.age,
+      gender: client.gender,
+      tobaccoClass: client.tobacco ? "tobacco" : "non_tobacco",
+      healthClass: approval.healthClass,
+      faceAmount: coverage.faceAmount,
+      imoId,
+    };
+    console.log(
+      `[DecisionEngine Stage 3] Attempting premium lookup:`,
+      premiumLookupParams,
+    );
+
+    // Get the premium matrix for this product
+    const matrix = await getPremiumMatrixForProduct(product.productId, imoId);
+    const availableTerms = getAvailableTerms(matrix);
+    const longestTerm = getLongestAvailableTerm(matrix);
+
+    // Determine term to use for quotes:
+    // 1. If input.termYears is specified and available for this product, use it
+    // 2. Otherwise fall back to longest available term
+    let termForQuotes: TermYears | null = longestTerm;
+    if (input.termYears !== undefined && input.termYears !== null) {
+      if (availableTerms.includes(input.termYears)) {
+        termForQuotes = input.termYears as TermYears;
+      }
+      // If requested term not available, keep using longestTerm
+    }
+
+    const premiumResult = await getPremium(
       product.productId,
       client.age,
       client.gender,
@@ -748,7 +875,65 @@ export async function getRecommendations(
       approval.healthClass,
       coverage.faceAmount,
       imoId,
+      termForQuotes, // Use longest term for primary quote
     );
+
+    // Extract premium and health class metadata from result
+    const premium = premiumResult.premium;
+    const healthClassRequested =
+      premiumResult.premium !== null ? premiumResult.requested : undefined;
+    const healthClassUsed =
+      premiumResult.premium !== null ? premiumResult.used : undefined;
+    const wasFallback =
+      premiumResult.premium !== null ? !premiumResult.wasExact : undefined;
+    const termYearsUsed =
+      premiumResult.premium !== null ? premiumResult.termYears : undefined;
+
+    // Calculate alternative quotes at different face amounts
+    let alternativeQuotes: AlternativeQuote[] = [];
+    if (premium !== null && healthClassUsed) {
+      const comparisonFaceAmounts = getComparisonFaceAmounts(
+        coverage.faceAmount,
+        product.minFaceAmount,
+        product.maxFaceAmount,
+      );
+      const tobaccoClass: TobaccoClass = client.tobacco
+        ? "tobacco"
+        : "non_tobacco";
+      alternativeQuotes = calculateAlternativeQuotes(
+        matrix,
+        comparisonFaceAmounts,
+        client.age,
+        client.gender,
+        tobaccoClass,
+        healthClassUsed,
+        termYearsUsed ?? null,
+      );
+    }
+
+    if (premium === null) {
+      const reason =
+        premiumResult.reason === "NON_RATEABLE_CLASS"
+          ? "Health class is non-rateable (decline/refer)"
+          : premiumResult.reason === "NO_MATRIX"
+            ? "No premium matrix data"
+            : "No matching rates after fallback";
+      console.warn(
+        `[DecisionEngine Stage 3] NO PREMIUM FOUND for ${product.productName}: ${reason}`,
+        {
+          ...premiumLookupParams,
+          reason: premiumResult.reason,
+        },
+      );
+    } else {
+      const fallbackInfo = wasFallback
+        ? ` (fallback: ${healthClassRequested} → ${healthClassUsed})`
+        : "";
+      console.log(
+        `[DecisionEngine Stage 3] Premium found for ${product.productName}: $${premium}/month${fallbackInfo}`,
+        { alternativeQuotes: alternativeQuotes.length },
+      );
+    }
 
     // For unknown eligibility, premium can be null (we still keep the product)
     if (eligibility.status === "eligible" && premium === null) {
@@ -781,6 +966,12 @@ export async function getRecommendations(
       eligibility,
       approval,
       premium,
+      healthClassRequested,
+      healthClassUsed,
+      wasFallback,
+      termYears: termYearsUsed,
+      availableTerms,
+      alternativeQuotes,
       maxCoverage,
       scoreComponents,
       finalScore,
@@ -838,6 +1029,12 @@ export async function getRecommendations(
     maxCoverage: e.maxCoverage,
     approvalLikelihood: e.approval.likelihood,
     healthClassResult: e.approval.healthClass,
+    healthClassRequested: e.healthClassRequested,
+    healthClassUsed: e.healthClassUsed,
+    wasFallback: e.wasFallback,
+    termYears: e.termYears,
+    availableTerms: e.availableTerms,
+    alternativeQuotes: e.alternativeQuotes,
     reason,
     concerns: e.approval.concerns,
     conditionDecisions: e.approval.conditionDecisions,

@@ -11,9 +11,12 @@ import {
   Link2,
   Copy,
   Check,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useUpdateUserProfile } from "../../../hooks/settings/useUpdateUserProfile";
 import { useUpdateAgentHierarchy } from "../../../hooks/hierarchy/useUpdateAgentHierarchy";
@@ -71,6 +74,15 @@ export function UserProfile() {
   const [showSlugSuccess, setShowSlugSuccess] = useState(false);
   const [slugCopied, setSlugCopied] = useState(false);
 
+  // Custom recruiting URL state
+  const [useCustomUrl, setUseCustomUrl] = useState(false);
+  const [customRecruitingUrl, setCustomRecruitingUrl] = useState<string>("");
+  const [savedCustomUrl, setSavedCustomUrl] = useState<string>("");
+  const [customUrlError, setCustomUrlError] = useState<string>("");
+  const [showCustomUrlSuccess, setShowCustomUrlSuccess] = useState(false);
+  const [customUrlCopied, setCustomUrlCopied] = useState(false);
+  const [showSetupInstructions, setShowSetupInstructions] = useState(false);
+
   // Load current user profile data on mount
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -78,7 +90,9 @@ export function UserProfile() {
 
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("upline_id, recruiter_slug, contract_level")
+        .select(
+          "upline_id, recruiter_slug, contract_level, custom_recruiting_url",
+        )
         .eq("id", user.id)
         .single();
 
@@ -96,6 +110,13 @@ export function UserProfile() {
       if (profile?.recruiter_slug) {
         setCurrentSlug(profile.recruiter_slug);
         setRecruiterSlug(profile.recruiter_slug);
+      }
+
+      // Load custom recruiting URL
+      if (profile?.custom_recruiting_url) {
+        setSavedCustomUrl(profile.custom_recruiting_url);
+        setCustomRecruitingUrl(profile.custom_recruiting_url);
+        setUseCustomUrl(true);
       }
 
       // Load upline info
@@ -309,13 +330,98 @@ export function UserProfile() {
   };
 
   const handleCopyLink = async () => {
-    const url = `https://www.thestandardhq.com/join-${currentSlug}`;
+    const url =
+      savedCustomUrl || `https://www.thestandardhq.com/join-${currentSlug}`;
     try {
       await navigator.clipboard.writeText(url);
-      setSlugCopied(true);
-      setTimeout(() => setSlugCopied(false), 2000);
+      if (savedCustomUrl) {
+        setCustomUrlCopied(true);
+        setTimeout(() => setCustomUrlCopied(false), 2000);
+      } else {
+        setSlugCopied(true);
+        setTimeout(() => setSlugCopied(false), 2000);
+      }
     } catch (error) {
       console.error("Failed to copy:", error);
+    }
+  };
+
+  // Custom URL validation and handlers
+  const validateCustomUrl = (value: string): boolean => {
+    if (!value.trim()) {
+      setCustomUrlError("Please enter a URL");
+      return false;
+    }
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:") {
+        setCustomUrlError("URL must use HTTPS");
+        return false;
+      }
+      setCustomUrlError("");
+      return true;
+    } catch {
+      setCustomUrlError("Please enter a valid URL (e.g., https://example.com)");
+      return false;
+    }
+  };
+
+  const handleCustomUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomRecruitingUrl(value);
+    setShowCustomUrlSuccess(false);
+    if (value) validateCustomUrl(value);
+    else setCustomUrlError("");
+  };
+
+  const handleCustomUrlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowCustomUrlSuccess(false);
+    setCustomUrlError("");
+
+    if (!validateCustomUrl(customRecruitingUrl)) {
+      return;
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({ custom_recruiting_url: customRecruitingUrl })
+        .eq("id", user?.id || "");
+
+      if (updateError) {
+        console.error("Error updating custom URL:", updateError);
+        setCustomUrlError("Failed to save. Please try again.");
+        return;
+      }
+
+      setSavedCustomUrl(customRecruitingUrl);
+      setShowCustomUrlSuccess(true);
+      setTimeout(() => setShowCustomUrlSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to update custom recruiting URL:", error);
+      setCustomUrlError("Failed to save. Please try again.");
+    }
+  };
+
+  const handleClearCustomUrl = async () => {
+    try {
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({ custom_recruiting_url: null })
+        .eq("id", user?.id || "");
+
+      if (updateError) {
+        console.error("Error clearing custom URL:", updateError);
+        return;
+      }
+
+      setSavedCustomUrl("");
+      setCustomRecruitingUrl("");
+      setUseCustomUrl(false);
+      setShowSetupInstructions(false);
+    } catch (error) {
+      console.error("Failed to clear custom recruiting URL:", error);
     }
   };
 
@@ -384,15 +490,16 @@ export function UserProfile() {
           </p>
 
           {/* Show current link if set */}
-          {currentSlug && (
+          {(currentSlug || savedCustomUrl) && (
             <div className="mb-3 p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded border border-emerald-200 dark:border-emerald-800">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mb-0.5">
-                    Your recruiting link:
+                    Your recruiting link{savedCustomUrl ? " (custom)" : ""}:
                   </p>
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono truncate">
-                    www.thestandardhq.com/join-{currentSlug}
+                    {savedCustomUrl ||
+                      `www.thestandardhq.com/join-${currentSlug}`}
                   </p>
                 </div>
                 <Button
@@ -402,7 +509,7 @@ export function UserProfile() {
                   onClick={handleCopyLink}
                   className="h-7 px-2 text-[10px] border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 flex-shrink-0"
                 >
-                  {slugCopied ? (
+                  {(savedCustomUrl ? customUrlCopied : slugCopied) ? (
                     <>
                       <Check className="h-3 w-3 mr-1" />
                       Copied!
@@ -469,6 +576,125 @@ export function UserProfile() {
               </p>
             </div>
           </form>
+
+          {/* Custom Domain Section */}
+          <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-3.5 w-3.5 text-zinc-400" />
+                <span className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">
+                  Use Custom Domain
+                </span>
+              </div>
+              <Switch
+                checked={useCustomUrl}
+                onCheckedChange={(checked) => {
+                  setUseCustomUrl(checked);
+                  if (!checked) {
+                    handleClearCustomUrl();
+                  }
+                }}
+              />
+            </div>
+
+            {useCustomUrl && (
+              <>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
+                  Enter the full URL you want displayed. You are responsible for
+                  setting up the redirect on your domain.
+                </p>
+
+                <form onSubmit={handleCustomUrlSubmit}>
+                  <div className="max-w-md">
+                    <label
+                      htmlFor="customRecruitingUrl"
+                      className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+                    >
+                      Custom URL
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="customRecruitingUrl"
+                        type="url"
+                        value={customRecruitingUrl}
+                        onChange={handleCustomUrlChange}
+                        placeholder="https://join.youragency.com/apply"
+                        className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 ${
+                          customUrlError ? "border-red-500" : ""
+                        }`}
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!!customUrlError}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
+                      >
+                        <Save className="h-3 w-3 mr-1" />
+                        Save
+                      </Button>
+                    </div>
+                    {customUrlError && (
+                      <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                        <AlertCircle className="h-3 w-3" />
+                        {customUrlError}
+                      </div>
+                    )}
+                    {showCustomUrlSuccess && (
+                      <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Custom URL saved successfully!
+                      </div>
+                    )}
+                  </div>
+                </form>
+
+                {/* Setup Instructions */}
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowSetupInstructions(!showSetupInstructions)
+                    }
+                    className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    <Info className="h-3 w-3" />
+                    {showSetupInstructions ? "Hide" : "View"} setup instructions
+                  </button>
+
+                  {showSetupInstructions && (
+                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
+                      <p className="text-[10px] font-medium text-blue-700 dark:text-blue-300 mb-1.5">
+                        How to set up your custom domain:
+                      </p>
+                      <ol className="text-[9px] text-blue-600 dark:text-blue-400 space-y-1 list-decimal list-inside">
+                        <li>
+                          Purchase a domain from any registrar (GoDaddy,
+                          Namecheap, Cloudflare, etc.)
+                        </li>
+                        <li>
+                          Set up a redirect in your registrar's DNS settings:
+                          <br />
+                          <span className="font-mono ml-3">
+                            your-domain.com → www.thestandardhq.com/join-
+                            {currentSlug || "your-slug"}
+                          </span>
+                        </li>
+                        <li>Enter your custom URL above and save</li>
+                        <li>
+                          Test by visiting your custom domain in a browser
+                        </li>
+                      </ol>
+                      <p className="text-[9px] text-blue-500 dark:text-blue-400 mt-1.5 italic">
+                        Most registrars offer free URL forwarding. Look for "URL
+                        redirect" or "forwarding" in DNS settings.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

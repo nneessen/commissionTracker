@@ -36,6 +36,7 @@ export function transformWizardToDecisionEngineInput(
   healthInfo: HealthInfo,
   coverageRequest: CoverageRequest,
   imoId: string,
+  termYears?: number | null,
 ): DecisionEngineInput {
   // Calculate BMI from height/weight
   const bmi = calculateBMI(
@@ -68,6 +69,7 @@ export function transformWizardToDecisionEngineInput(
       productTypes: mapProductTypes(coverageRequest.productTypes),
     },
     imoId,
+    termYears,
   };
 }
 

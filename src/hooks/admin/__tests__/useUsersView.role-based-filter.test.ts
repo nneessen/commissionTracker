@@ -59,6 +59,7 @@ describe("useUsersView role-based filtering logic", () => {
     profile_photo_url: null,
     recruiter_id: null,
     recruiter_slug: null,
+    custom_recruiting_url: null,
     referral_source: null,
     resident_state: null,
     roles: null,
