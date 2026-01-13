@@ -62,6 +62,8 @@ export interface ClientProfile {
 
 export interface CoverageRequest {
   faceAmount: number;
+  /** User-specified face amounts for quote comparison. If provided, these are used instead of auto-generated amounts. */
+  faceAmounts?: number[];
   productTypes?: ProductType[];
 }
 
@@ -1008,11 +1010,28 @@ export async function getRecommendations(
         termForQuotes,
       );
 
-      const comparisonFaceAmounts = getComparisonFaceAmounts(
-        coverage.faceAmount,
-        product.minFaceAmount,
-        ageTermAdjustedMaxFace, // Use age+term adjusted max
-      );
+      // Use user-provided faceAmounts if available, otherwise generate comparison amounts
+      let comparisonFaceAmounts: number[];
+      if (coverage.faceAmounts && coverage.faceAmounts.length > 0) {
+        // Filter user's amounts to be within product limits
+        const minFace = product.minFaceAmount ?? 0;
+        const maxFace = ageTermAdjustedMaxFace;
+        comparisonFaceAmounts = coverage.faceAmounts
+          .filter((amt) => amt >= minFace && amt <= maxFace)
+          .sort((a, b) => a - b);
+        // If no amounts fit within limits, use the closest valid amount
+        if (comparisonFaceAmounts.length === 0) {
+          comparisonFaceAmounts = [
+            Math.min(Math.max(coverage.faceAmount, minFace), maxFace),
+          ];
+        }
+      } else {
+        comparisonFaceAmounts = getComparisonFaceAmounts(
+          coverage.faceAmount,
+          product.minFaceAmount,
+          ageTermAdjustedMaxFace,
+        );
+      }
 
       // Diagnostic logging for alternative quotes calculation
       console.log(
@@ -1025,7 +1044,7 @@ export async function getRecommendations(
         `  Age+Term adjusted max: $${ageTermAdjustedMaxFace === Number.MAX_SAFE_INTEGER ? "unlimited" : ageTermAdjustedMaxFace.toLocaleString()}`,
       );
       console.log(
-        `  Face amounts: ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
+        `  Face amounts (${coverage.faceAmounts ? "user-provided" : "auto"}): ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
       );
 
       const tobaccoClass: TobaccoClass = client.tobacco

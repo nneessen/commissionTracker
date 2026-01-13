@@ -64,7 +64,8 @@ async function saveSession(
       conditions_reported: data.conditionsReported,
       tobacco_use: data.tobaccoUse,
       tobacco_details: data.tobaccoDetails,
-      requested_face_amount: data.requestedFaceAmount,
+      // Store primary face amount (database uses single number column)
+      requested_face_amount: data.requestedFaceAmounts?.[0] ?? null,
       requested_product_types: data.requestedProductTypes,
       ai_analysis: data.aiAnalysis,
       health_tier: data.healthTier,

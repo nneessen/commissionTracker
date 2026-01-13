@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-13 14:06:36
+
+### Changed Files
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardDialogLayout.tsx`
+- `src/features/underwriting/components/WizardSteps/CoverageRequestStep.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/MedicationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/hooks/useDecisionEngineRecommendations.ts`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/features/underwriting/types/underwriting.types.ts`
+- `src/services/underwriting/decisionEngine.ts`
+
+### Statistics
+```
+ 11 files changed, 1208 insertions(+), 611 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-13 11:58:26
 
 ### Changed Files

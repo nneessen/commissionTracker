@@ -69,69 +69,106 @@ export default function CoverageRequestStep({
     }
   };
 
+  // Update a specific face amount by index
+  const updateFaceAmount = (index: number, value: number) => {
+    const newAmounts = [...(data.faceAmounts || [0, 0, 0])];
+    newAmounts[index] = value;
+    onChange({ faceAmounts: newAmounts });
+  };
+
+  // Quick-select populates all three amounts with common increments
+  const applyQuickSelect = (baseAmount: number) => {
+    // Set amounts as base, 2x, and 4x (common comparison pattern)
+    const amounts = [baseAmount, baseAmount * 2, baseAmount * 4];
+    onChange({ faceAmounts: amounts });
+  };
+
+  const faceAmounts = data.faceAmounts || [0, 0, 0];
+  const validAmounts = faceAmounts.filter((a) => a >= 10000);
+
   return (
     <div className="space-y-4 p-1">
       <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-        Specify the coverage amount and product types the client is interested
-        in.
+        Specify up to 3 face amounts for quote comparison and select the product
+        types the client is interested in.
       </div>
 
-      {/* Face Amount */}
-      <div className="space-y-2">
+      {/* Face Amounts */}
+      <div className="space-y-3">
         <Label className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
-          Face Amount (Death Benefit) <span className="text-red-500">*</span>
+          Face Amounts (Death Benefit) <span className="text-red-500">*</span>
         </Label>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 -mt-1">
+          Enter up to 3 coverage amounts to compare quotes
+        </p>
 
         {/* Quick select buttons */}
-        <div className="flex flex-wrap gap-1.5">
-          {FACE_AMOUNT_PRESETS.map((amount) => (
-            <button
-              key={amount}
-              type="button"
-              onClick={() => onChange({ faceAmount: amount })}
-              className={cn(
-                "px-2 py-1 text-[10px] rounded border transition-colors",
-                data.faceAmount === amount
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-700",
+        <div className="space-y-1.5">
+          <span className="text-[10px] text-zinc-500">Quick-fill presets:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {FACE_AMOUNT_PRESETS.map((amount) => (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => applyQuickSelect(amount)}
+                className={cn(
+                  "px-2 py-1 text-[10px] rounded border transition-colors",
+                  faceAmounts[0] === amount
+                    ? "bg-amber-600 text-white border-amber-600"
+                    : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-amber-300 dark:hover:border-amber-700",
+                )}
+              >
+                {formatCurrency(amount)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Three face amount inputs */}
+        <div className="grid grid-cols-3 gap-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="space-y-1">
+              <label className="text-[10px] font-medium text-zinc-500">
+                Amount {index + 1}
+                {index === 0 && <span className="text-red-500 ml-0.5">*</span>}
+              </label>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                  $
+                </span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100000000}
+                  step={10000}
+                  value={faceAmounts[index] || ""}
+                  onChange={(e) =>
+                    updateFaceAmount(index, parseInt(e.target.value) || 0)
+                  }
+                  className={cn(
+                    "h-8 text-sm pl-5",
+                    index === 0 && errors.faceAmounts && "border-red-500",
+                  )}
+                  placeholder={
+                    index === 0
+                      ? "Required"
+                      : index === 1
+                        ? "Optional"
+                        : "Optional"
+                  }
+                />
+              </div>
+              {faceAmounts[index] > 0 && (
+                <p className="text-[9px] text-zinc-400">
+                  {formatCurrency(faceAmounts[index])}
+                </p>
               )}
-            >
-              {formatCurrency(amount)}
-            </button>
+            </div>
           ))}
         </div>
 
-        {/* Custom input */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-500">$</span>
-          <Input
-            type="number"
-            min={10000}
-            max={100000000}
-            step={10000}
-            value={data.faceAmount || ""}
-            onChange={(e) =>
-              onChange({ faceAmount: parseInt(e.target.value) || 0 })
-            }
-            className={cn(
-              "h-8 text-sm w-40",
-              errors.faceAmount && "border-red-500",
-            )}
-            placeholder="Enter amount"
-          />
-        </div>
-
-        {errors.faceAmount && (
-          <p className="text-[10px] text-red-500">{errors.faceAmount}</p>
-        )}
-
-        {data.faceAmount > 0 && (
-          <p className="text-xs text-zinc-500">
-            Coverage amount:{" "}
-            <span className="font-medium">
-              {formatCurrency(data.faceAmount)}
-            </span>
-          </p>
+        {errors.faceAmounts && (
+          <p className="text-[10px] text-red-500">{errors.faceAmounts}</p>
         )}
       </div>
 
@@ -154,7 +191,7 @@ export default function CoverageRequestStep({
                 className={cn(
                   "flex items-start gap-3 p-2 rounded-lg border cursor-pointer transition-colors",
                   isSelected
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700"
+                    ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700"
                     : "bg-white dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600",
                 )}
               >
@@ -168,7 +205,7 @@ export default function CoverageRequestStep({
                     className={cn(
                       "text-sm font-medium",
                       isSelected
-                        ? "text-blue-700 dark:text-blue-300"
+                        ? "text-amber-700 dark:text-amber-300"
                         : "text-zinc-700 dark:text-zinc-300",
                     )}
                   >
@@ -189,24 +226,27 @@ export default function CoverageRequestStep({
       </div>
 
       {/* Summary */}
-      {data.productTypes.length > 0 && data.faceAmount > 0 && (
+      {data.productTypes.length > 0 && validAmounts.length > 0 && (
         <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
           <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 mb-1">
             Coverage Summary
           </div>
-          <div className="text-xs text-emerald-600 dark:text-emerald-400">
-            Looking for{" "}
-            <span className="font-medium">
-              {formatCurrency(data.faceAmount)}
-            </span>{" "}
-            in{" "}
-            <span className="font-medium">
+          <div className="text-xs text-emerald-600 dark:text-emerald-400 space-y-0.5">
+            <div>
+              <span className="font-medium">
+                {validAmounts.length} quote
+                {validAmounts.length > 1 ? "s" : ""}:
+              </span>{" "}
+              {validAmounts.map((a) => formatCurrency(a)).join(", ")}
+            </div>
+            <div>
+              <span className="font-medium">Products:</span>{" "}
               {data.productTypes
                 .map(
                   (t) => PRODUCT_OPTIONS.find((o) => o.value === t)?.label || t,
                 )
                 .join(", ")}
-            </span>
+            </div>
           </div>
         </div>
       )}

@@ -159,9 +159,11 @@ export default function RecommendationsStep({
   }
 
   // Build client profile for eligibility checking
+  // Use the highest requested face amount for eligibility (most conservative)
+  const maxFaceAmount = Math.max(...(coverageRequest.faceAmounts || [0]));
   const clientProfile: EligibilityClientProfile = {
     age: clientInfo.age,
-    requestedFaceAmount: coverageRequest.faceAmount,
+    requestedFaceAmount: maxFaceAmount,
     conditionCodes: (healthInfo.conditions ?? []).map((c) => c.conditionCode),
   };
 
@@ -262,10 +264,14 @@ export default function RecommendationsStep({
               </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                 For {clientInfo.name || "this client"}, age {clientInfo.age}
-                {coverageRequest.faceAmount > 0 && (
+                {maxFaceAmount > 0 && (
                   <>
                     {" "}
-                    • Requested: {formatCurrency(coverageRequest.faceAmount)}
+                    • Requested:{" "}
+                    {(coverageRequest.faceAmounts || [])
+                      .filter((a) => a >= 10000)
+                      .map((a) => formatCurrency(a))
+                      .join(", ")}
                   </>
                 )}
               </p>

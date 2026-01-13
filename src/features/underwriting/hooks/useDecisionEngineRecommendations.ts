@@ -70,6 +70,12 @@ export function transformWizardToDecisionEngineInput(
     gender = clientInfo.gender;
   }
 
+  // Get valid face amounts (>= $10,000)
+  const validFaceAmounts = (coverageRequest.faceAmounts || []).filter(
+    (a) => a >= 10000,
+  );
+  const primaryFaceAmount = validFaceAmounts[0] || 0;
+
   return {
     client: {
       age: clientInfo.age,
@@ -81,7 +87,9 @@ export function transformWizardToDecisionEngineInput(
       conditionResponses,
     },
     coverage: {
-      faceAmount: coverageRequest.faceAmount,
+      faceAmount: primaryFaceAmount,
+      // Pass all user-specified face amounts for quote comparison
+      faceAmounts: validFaceAmounts.length > 0 ? validFaceAmounts : undefined,
       productTypes: mapProductTypes(coverageRequest.productTypes),
     },
     imoId,

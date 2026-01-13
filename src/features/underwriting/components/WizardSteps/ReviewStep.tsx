@@ -302,11 +302,20 @@ export default function ReviewStep({
           </span>
         </div>
         <div className="p-3 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Face Amount:</span>
-            <span className="text-zinc-700 dark:text-zinc-300 font-medium">
-              {formatCurrency(coverageRequest.faceAmount)}
-            </span>
+          <div className="flex items-start justify-between text-xs">
+            <span className="text-zinc-500">Face Amounts:</span>
+            <div className="flex flex-wrap gap-1 justify-end">
+              {(coverageRequest.faceAmounts || [])
+                .filter((a) => a >= 10000)
+                .map((amount, idx) => (
+                  <span
+                    key={idx}
+                    className="px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded text-[10px] text-emerald-700 dark:text-emerald-300 font-medium"
+                  >
+                    {formatCurrency(amount)}
+                  </span>
+                ))}
+            </div>
           </div>
           <div className="flex items-start justify-between text-xs">
             <span className="text-zinc-500">Product Types:</span>

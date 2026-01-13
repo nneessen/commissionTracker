@@ -1,10 +1,9 @@
 // src/features/underwriting/components/UnderwritingWizard.tsx
 
 import { useState, useCallback, useEffect } from "react";
-import { ArrowLeft, ArrowRight, Check, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useUnderwritingAnalysis,
@@ -25,9 +24,11 @@ import type {
 } from "../types/underwriting.types";
 import { WIZARD_STEPS } from "../types/underwriting.types";
 
-// Step components (will be implemented)
+// Layout and step components
+import { WizardDialogLayout } from "./WizardDialogLayout";
 import ClientInfoStep from "./WizardSteps/ClientInfoStep";
 import HealthConditionsStep from "./WizardSteps/HealthConditionsStep";
+import MedicationsStep from "./WizardSteps/MedicationsStep";
 import CoverageRequestStep from "./WizardSteps/CoverageRequestStep";
 import ReviewStep from "./WizardSteps/ReviewStep";
 import RecommendationsStep from "./WizardSteps/RecommendationsStep";
@@ -54,17 +55,47 @@ const initialHealthInfo: HealthInfo = {
     currentUse: false,
   },
   medications: {
+    // Cardiovascular
     bpMedCount: 0,
-    cholesterolMedCount: 0,
-    insulinUse: false,
     bloodThinners: false,
+    heartMeds: false,
+    cholesterolMedCount: 0,
+    // Diabetes
+    insulinUse: false,
+    oralDiabetesMeds: false,
+    // Mental Health
     antidepressants: false,
+    antianxiety: false,
+    antipsychotics: false,
+    moodStabilizers: false,
+    sleepAids: false,
+    adhdMeds: false,
+    // Pain & Neurological
     painMedications: "none",
+    seizureMeds: false,
+    migraineMeds: false,
+    // Respiratory
+    inhalers: false,
+    copdMeds: false,
+    // Thyroid & Hormonal
+    thyroidMeds: false,
+    hormonalTherapy: false,
+    steroids: false,
+    // Immune & Autoimmune
+    immunosuppressants: false,
+    biologics: false,
+    dmards: false,
+    // Specialty
+    cancerTreatment: false,
+    antivirals: false,
+    osteoporosisMeds: false,
+    kidneyMeds: false,
+    liverMeds: false,
   },
 };
 
 const initialCoverageRequest: CoverageRequest = {
-  faceAmount: 250000,
+  faceAmounts: [250000, 500000, 1000000],
   productTypes: ["term_life"],
 };
 
@@ -86,6 +117,8 @@ export default function UnderwritingWizard({
   const [selectedTermYears, setSelectedTermYears] = useState<number | null>(
     null,
   );
+  // Track if data changed since last analysis to avoid unnecessary re-runs
+  const [lastAnalyzedData, setLastAnalyzedData] = useState<string | null>(null);
 
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
@@ -106,10 +139,11 @@ export default function UnderwritingWizard({
       setErrors({});
       setAnalysisResult(null);
       setSelectedTermYears(null);
+      setLastAnalyzedData(null);
       analysisMutation.reset();
       decisionEngineMutation.reset();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset functions are stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Validation functions
@@ -144,8 +178,6 @@ export default function UnderwritingWizard({
   }, [formData]);
 
   const validateHealthInfo = useCallback((): boolean => {
-    // Health info is optional, but if conditions are selected, validate follow-ups
-    // For now, just return true - validation happens in the step component
     return true;
   }, []);
 
@@ -153,8 +185,10 @@ export default function UnderwritingWizard({
     const newErrors: Record<string, string> = {};
     const { coverage } = formData;
 
-    if (!coverage.faceAmount || coverage.faceAmount < 10000) {
-      newErrors.faceAmount = "Face amount must be at least $10,000";
+    const validAmounts = coverage.faceAmounts.filter((amt) => amt >= 10000);
+    if (validAmounts.length === 0) {
+      newErrors.faceAmounts =
+        "At least one face amount must be $10,000 or more";
     }
 
     if (!coverage.productTypes || coverage.productTypes.length === 0) {
@@ -165,6 +199,10 @@ export default function UnderwritingWizard({
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
+  const validateMedications = useCallback((): boolean => {
+    return true;
+  }, []);
+
   const validateStep = useCallback(
     (stepId: WizardStep): boolean => {
       switch (stepId) {
@@ -172,18 +210,33 @@ export default function UnderwritingWizard({
           return validateClientInfo();
         case "health":
           return validateHealthInfo();
+        case "medications":
+          return validateMedications();
         case "coverage":
           return validateCoverageRequest();
         case "review":
-          return true;
         case "results":
           return true;
         default:
           return true;
       }
     },
-    [validateClientInfo, validateHealthInfo, validateCoverageRequest],
+    [
+      validateClientInfo,
+      validateHealthInfo,
+      validateMedications,
+      validateCoverageRequest,
+    ],
   );
+
+  // Create a hash of form data to detect changes
+  const getDataHash = useCallback(() => {
+    return JSON.stringify({
+      client: formData.client,
+      health: formData.health,
+      coverage: formData.coverage,
+    });
+  }, [formData]);
 
   // Navigation handlers
   const handleNext = useCallback(async () => {
@@ -191,15 +244,21 @@ export default function UnderwritingWizard({
       return;
     }
 
-    // If we're on review step, fire both analyses in parallel
     if (currentStep.id === "review") {
+      const currentDataHash = getDataHash();
+
+      // If data unchanged and we have results, just navigate to results
+      if (lastAnalyzedData === currentDataHash && analysisResult) {
+        setCurrentStepIndex((prev) => prev + 1);
+        return;
+      }
+
       const bmi = calculateBMI(
         formData.client.heightFeet,
         formData.client.heightInches,
         formData.client.weight,
       );
 
-      // AI Analysis request
       const aiRequest: AIAnalysisRequest = {
         client: {
           age: formData.client.age,
@@ -216,13 +275,16 @@ export default function UnderwritingWizard({
           medications: formData.health.medications,
         },
         coverage: {
-          faceAmount: formData.coverage.faceAmount,
+          // Use primary (first valid) face amount for AI analysis
+          faceAmount:
+            formData.coverage.faceAmounts.find((a) => a >= 10000) ||
+            formData.coverage.faceAmounts[0] ||
+            0,
           productTypes: formData.coverage.productTypes,
         },
         imoId: user?.imo_id || undefined,
       };
 
-      // Decision Engine request
       const decisionInput = transformWizardToDecisionEngineInput(
         formData.client,
         formData.health,
@@ -231,7 +293,9 @@ export default function UnderwritingWizard({
         selectedTermYears,
       );
 
-      // Fire both mutations in parallel (non-blocking)
+      // Track what data we're analyzing
+      setLastAnalyzedData(currentDataHash);
+
       analysisMutation.mutate(aiRequest, {
         onSuccess: (result) => setAnalysisResult(result),
         onError: () =>
@@ -241,7 +305,6 @@ export default function UnderwritingWizard({
       });
       decisionEngineMutation.mutate(decisionInput);
 
-      // Advance to results step immediately
       setCurrentStepIndex((prev) => prev + 1);
       return;
     }
@@ -255,12 +318,44 @@ export default function UnderwritingWizard({
     decisionEngineMutation,
     user,
     selectedTermYears,
+    getDataHash,
+    lastAnalyzedData,
+    analysisResult,
   ]);
 
   const handleBack = useCallback(() => {
     setCurrentStepIndex((prev) => Math.max(prev - 1, 0));
     setErrors({});
   }, []);
+
+  const canNavigateToStep = useCallback(
+    (stepId: WizardStep): boolean => {
+      const targetIndex = WIZARD_STEPS.findIndex((s) => s.id === stepId);
+      // Can go back to any previous step
+      if (targetIndex < currentStepIndex) return true;
+      // Can go to results if we have results and data unchanged
+      if (
+        stepId === "results" &&
+        analysisResult &&
+        lastAnalyzedData === getDataHash()
+      ) {
+        return true;
+      }
+      return false;
+    },
+    [currentStepIndex, analysisResult, lastAnalyzedData, getDataHash],
+  );
+
+  // Step navigation from sidebar
+  const handleStepClick = useCallback(
+    (stepId: WizardStep) => {
+      if (!canNavigateToStep(stepId)) return;
+      const targetIndex = WIZARD_STEPS.findIndex((s) => s.id === stepId);
+      setCurrentStepIndex(targetIndex);
+      setErrors({});
+    },
+    [canNavigateToStep],
+  );
 
   // Update form data
   const updateClientInfo = useCallback((updates: Partial<ClientInfo>) => {
@@ -290,11 +385,23 @@ export default function UnderwritingWizard({
     [],
   );
 
-  // Handle term year selection change - re-triggers decision engine
+  const updateMedications = useCallback(
+    (updates: Partial<HealthInfo["medications"]>) => {
+      setFormData((prev) => ({
+        ...prev,
+        health: {
+          ...prev.health,
+          medications: { ...prev.health.medications, ...updates },
+        },
+      }));
+      setErrors({});
+    },
+    [],
+  );
+
   const handleTermChange = useCallback(
     (termYears: number | null) => {
       setSelectedTermYears(termYears);
-      // Re-run decision engine with new term
       const decisionInput = transformWizardToDecisionEngineInput(
         formData.client,
         formData.health,
@@ -307,7 +414,6 @@ export default function UnderwritingWizard({
     [formData, user?.imo_id, decisionEngineMutation],
   );
 
-  // Save session handler
   const handleSaveSession = useCallback(async () => {
     if (!analysisResult || !user?.imo_id) return;
 
@@ -335,7 +441,7 @@ export default function UnderwritingWizard({
       ),
       tobaccoUse: formData.health.tobacco.currentUse,
       tobaccoDetails: formData.health.tobacco,
-      requestedFaceAmount: formData.coverage.faceAmount,
+      requestedFaceAmounts: formData.coverage.faceAmounts,
       requestedProductTypes: formData.coverage.productTypes,
       aiAnalysis: analysisResult,
       healthTier: analysisResult.healthTier,
@@ -384,6 +490,14 @@ export default function UnderwritingWizard({
             errors={errors}
           />
         );
+      case "medications":
+        return (
+          <MedicationsStep
+            data={formData.health.medications}
+            onChange={updateMedications}
+            errors={errors}
+          />
+        );
       case "coverage":
         return (
           <CoverageRequestStep
@@ -427,106 +541,46 @@ export default function UnderwritingWizard({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl max-h-[90vh] p-3 flex flex-col bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+        className="max-w-5xl w-[95vw] p-0 gap-0 overflow-hidden bg-background border-0"
         hideCloseButton
       >
-        {/* Header */}
-        <div className="shrink-0 pb-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 -m-3 mb-2 p-3 rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-500" />
-              The Standard Underwriting Wizard (BETA)
-              <span className="text-red-500">
-                DO NOT USE FOR ACTUAL PRODUCT RECOMMENDATIONS
-              </span>
-            </DialogTitle>
-          </div>
+        <DialogTitle className="sr-only">Underwriting Wizard</DialogTitle>
 
-          {/* Step Progress */}
-          <div className="flex items-center gap-2 mt-2">
-            {WIZARD_STEPS.map((step, index) => {
-              const isActive = index === currentStepIndex;
-              const isCompleted = index < currentStepIndex;
-              const hasError = Object.keys(errors).some((key) => {
-                if (index === 0)
-                  return [
-                    "age",
-                    "gender",
-                    "state",
-                    "height",
-                    "weight",
-                  ].includes(key);
-                if (index === 2)
-                  return ["faceAmount", "productTypes"].includes(key);
-                return false;
-              });
-
-              return (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "flex items-center gap-1",
-                    isActive && "font-medium text-zinc-900 dark:text-zinc-100",
-                    isCompleted &&
-                      !isActive &&
-                      "text-zinc-500 dark:text-zinc-400",
-                    !isActive &&
-                      !isCompleted &&
-                      "text-zinc-400 dark:text-zinc-500",
-                    hasError && "text-red-600 dark:text-red-400",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex items-center justify-center w-5 h-5 rounded-full text-[10px]",
-                      isActive && "bg-blue-600 dark:bg-blue-500 text-white",
-                      isCompleted &&
-                        !isActive &&
-                        "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
-                      !isActive &&
-                        !isCompleted &&
-                        "bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400",
-                      hasError &&
-                        "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
-                    )}
-                  >
-                    {isCompleted && !isActive ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-                  <span className="text-[11px] hidden sm:inline">
-                    {step.label}
-                  </span>
-                  {index < WIZARD_STEPS.length - 1 && (
-                    <span className="text-zinc-300 dark:text-zinc-600 text-[11px] ml-1">
-                      →
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Error display */}
-          {errors.submit && (
-            <div className="mt-2 p-2 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-              <p className="text-[11px] text-red-600 dark:text-red-400">
-                {errors.submit}
-              </p>
+        <WizardDialogLayout
+          currentStep={currentStep.id}
+          onStepClick={handleStepClick}
+          canNavigateToStep={canNavigateToStep}
+        >
+          {/* Step Content */}
+          <div className="p-4">
+            {/* Step Title */}
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/50">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              <h3 className="text-sm font-semibold text-foreground">
+                {currentStep.label}
+              </h3>
+              {currentStep.id === "results" && (
+                <span className="text-[10px] text-red-500 ml-auto">
+                  BETA - Do not use for actual recommendations
+                </span>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="w-full">{renderStepContent()}</div>
-        </div>
+            {/* Error display */}
+            {errors.submit && (
+              <div className="mb-3 p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                <p className="text-[11px] text-red-600 dark:text-red-400">
+                  {errors.submit}
+                </p>
+              </div>
+            )}
 
-        {/* Footer */}
-        <div className="shrink-0 pt-2 mt-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30 -m-3 p-3 rounded-b-lg">
-          <div className="flex items-center justify-between">
+            {/* Step Form */}
+            {renderStepContent()}
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-3 border-t border-border/50 bg-muted/30 flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={() => onOpenChange(false)}
@@ -543,7 +597,7 @@ export default function UnderwritingWizard({
                 onClick={handleBack}
                 disabled={currentStepIndex === 0 || isAnalyzing || isSaving}
                 size="sm"
-                className="h-7 text-[11px] px-2 border-zinc-200 dark:border-zinc-700"
+                className="h-7 text-[11px] px-2"
               >
                 <ArrowLeft className="h-3 w-3 mr-1" />
                 Back
@@ -564,7 +618,7 @@ export default function UnderwritingWizard({
                   onClick={handleNext}
                   size="sm"
                   disabled={isAnalyzing}
-                  className="h-7 text-[11px] px-3 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="h-7 text-[11px] px-3 bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   {currentStep.id === "review" ? (
                     <>
@@ -581,7 +635,7 @@ export default function UnderwritingWizard({
               )}
             </div>
           </div>
-        </div>
+        </WizardDialogLayout>
       </DialogContent>
     </Dialog>
   );

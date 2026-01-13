@@ -91,12 +91,57 @@ export type PainMedicationType =
   | "opioid";
 
 export interface MedicationInfo {
+  // Cardiovascular
   bpMedCount: number;
-  cholesterolMedCount: number;
-  insulinUse: boolean;
   bloodThinners: boolean;
+  heartMeds: boolean; // beta blockers, nitrates, etc.
+
+  // Cholesterol
+  cholesterolMedCount: number;
+
+  // Diabetes
+  insulinUse: boolean;
+  oralDiabetesMeds: boolean;
+
+  // Mental Health
   antidepressants: boolean;
+  antianxiety: boolean;
+  antipsychotics: boolean;
+  moodStabilizers: boolean;
+
+  // Sleep
+  sleepAids: boolean;
+
+  // Pain
   painMedications: PainMedicationType;
+
+  // Neurological
+  seizureMeds: boolean;
+  migraineMeds: boolean;
+
+  // Respiratory
+  inhalers: boolean;
+  copdMeds: boolean;
+
+  // Thyroid & Hormonal
+  thyroidMeds: boolean;
+  hormonalTherapy: boolean;
+  steroids: boolean;
+
+  // Immune & Autoimmune
+  immunosuppressants: boolean;
+  biologics: boolean;
+  dmards: boolean; // Disease-modifying antirheumatic drugs
+
+  // Specialty/High-risk
+  cancerTreatment: boolean;
+  antivirals: boolean; // HIV, Hepatitis
+  adhdMeds: boolean;
+  osteoporosisMeds: boolean;
+  kidneyMeds: boolean;
+  liverMeds: boolean;
+
+  // Other
   otherMedications?: string[];
 }
 
@@ -107,7 +152,7 @@ export interface HealthInfo {
 }
 
 export interface CoverageRequest {
-  faceAmount: number;
+  faceAmounts: number[]; // Array of up to 3 face amounts for quote comparison
   productTypes: ProductType[];
 }
 
@@ -408,7 +453,7 @@ export interface AIAnalysisRequest {
     medications: MedicationInfo;
   };
   coverage: {
-    faceAmount: number;
+    faceAmount: number; // Primary face amount for AI analysis (edge function expects singular)
     productTypes: string[];
   };
   decisionTreeId?: string;
@@ -431,9 +476,15 @@ export type ConditionField =
   | "bp_med_count"
   | "cholesterol_med_count"
   | "insulin_use"
+  | "oral_diabetes_meds"
   | "blood_thinners"
   | "antidepressants"
-  | "pain_medications";
+  | "antianxiety"
+  | "sleep_aids"
+  | "pain_medications"
+  | "thyroid_meds"
+  | "heart_meds"
+  | "steroids";
 
 export type ConditionOperator =
   | "=="
@@ -483,6 +534,7 @@ export interface DecisionTreeRules {
 export type WizardStep =
   | "client"
   | "health"
+  | "medications"
   | "coverage"
   | "review"
   | "results";
@@ -494,9 +546,10 @@ export interface WizardStepConfig {
 }
 
 export const WIZARD_STEPS: WizardStepConfig[] = [
-  { id: "client", label: "Client Info", description: "Basic client details" },
-  { id: "health", label: "Health", description: "Medical history" },
-  { id: "coverage", label: "Coverage", description: "Policy requirements" },
+  { id: "client", label: "Client Info", description: "Basic demographics" },
+  { id: "health", label: "Conditions", description: "Health conditions" },
+  { id: "medications", label: "Medications", description: "Current meds" },
+  { id: "coverage", label: "Coverage", description: "Policy details" },
   { id: "review", label: "Review", description: "Confirm details" },
   { id: "results", label: "Results", description: "Recommendations" },
 ];
@@ -515,7 +568,7 @@ export interface SessionSaveData {
   conditionsReported: string[];
   tobaccoUse: boolean;
   tobaccoDetails?: TobaccoInfo;
-  requestedFaceAmount: number;
+  requestedFaceAmounts: number[]; // Array of face amounts
   requestedProductTypes: string[];
   aiAnalysis: AIAnalysisResult;
   healthTier: HealthTier;
