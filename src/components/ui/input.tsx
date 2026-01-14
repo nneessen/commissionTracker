@@ -10,9 +10,9 @@ const inputVariants = cva(
   {
     variants: {
       variant: {
-        // Default: Clean with subtle background
+        // Default: White background with border for clear visibility
         default:
-          "h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 px-3 py-2 text-foreground focus:bg-white dark:focus:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:ring-offset-2 focus:ring-offset-background",
+          "h-9 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-foreground hover:border-zinc-300 dark:hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-400 dark:focus:border-zinc-500 shadow-sm",
 
         // Minimal: Underline style
         minimal:

@@ -36,7 +36,7 @@ export function WizardDialogLayout({
   const currentStepConfig = WIZARD_STEPS.find((s) => s.id === currentStep);
 
   return (
-    <div className="flex h-[75vh] overflow-hidden">
+    <div className="flex h-[85vh] overflow-hidden">
       {/* Left Panel - Branding & Step Navigation */}
       <div className="hidden lg:flex lg:w-[280px] xl:w-[320px] bg-foreground relative overflow-hidden flex-shrink-0">
         {/* Grid pattern overlay */}
@@ -224,8 +224,8 @@ export function WizardDialogLayout({
           </div>
         </div>
 
-        {/* Form container with frosted glass effect */}
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        {/* Form container - flex column to allow sticky footer */}
+        <div className="flex-1 flex flex-col min-h-0">{children}</div>
       </div>
     </div>
   );

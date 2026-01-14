@@ -222,12 +222,15 @@ async function seedImpairmentRules() {
   console.log(`Existing health conditions in database: ${existingCodes.size}\n`);
 
   // Stats
-  let conditionsCreated = 0;
   let ruleSetsCreated = 0;
   let rulesCreated = 0;
   let errors = 0;
 
   // Process each impairment
+  // NOTE: We no longer create health conditions from carrier impairment rules.
+  // The underwriting_health_conditions table is reserved for user-selectable
+  // conditions with follow-up questions. Carrier rules can reference any
+  // condition_code without requiring a matching health condition record.
   for (const [impairmentName, bestClass] of IMPAIRMENTS) {
     const conditionCode = generateConditionCode(impairmentName);
 
@@ -235,34 +238,7 @@ async function seedImpairmentRules() {
     console.log(`   Code: ${conditionCode}`);
     console.log(`   Best Class: ${bestClass.toUpperCase()}`);
 
-    // Step 1: Ensure health condition exists
-    if (!existingCodes.has(conditionCode)) {
-      const { error: condError } = await supabase
-        .from('underwriting_health_conditions')
-        .insert({
-          code: conditionCode,
-          name: impairmentName,
-          category: 'medical_conditions',
-          follow_up_schema: {},
-          is_active: true,
-        });
-
-      if (condError) {
-        if (condError.code === '23505') {
-          // Already exists, that's fine
-        } else {
-          console.log(`   ⚠️  Error creating condition: ${condError.message}`);
-          errors++;
-          continue;
-        }
-      } else {
-        conditionsCreated++;
-        existingCodes.add(conditionCode);
-        console.log(`   ✓ Created health condition`);
-      }
-    }
-
-    // Step 2: Create rules for each Term/IUL product
+    // Create rules for each Term/IUL product
     for (const product of products) {
       // Check if rule set already exists
       let { data: existingRuleSet } = await supabase
@@ -352,7 +328,6 @@ async function seedImpairmentRules() {
   console.log('SUMMARY');
   console.log('='.repeat(50));
   console.log(`Total impairments processed: ${IMPAIRMENTS.length}`);
-  console.log(`Health conditions created: ${conditionsCreated}`);
   console.log(`Rule sets created: ${ruleSetsCreated}`);
   console.log(`Rules created: ${rulesCreated}`);
   console.log(`Errors: ${errors}`);

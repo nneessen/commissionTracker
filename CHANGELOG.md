@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-14 17:25:05
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/continuation-form-input-styling.md`
+- `plans/active/health-conditions-review-continuation.md`
+- `scripts/seed-fe-express-wl-rules.js`
+- `scripts/seed-transamerica-impairment-rules.js`
+- `src/components/ui/input.tsx`
+- `src/components/ui/select.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardDialogLayout.tsx`
+- `src/features/underwriting/components/WizardSteps/CoverageRequestStep.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260114_007_relax_condition_fk.sql`
+- `supabase/migrations/20260114_008_cleanup_health_conditions.sql`
+- `supabase/migrations/20260114_009_health_conditions_comprehensive_cleanup.sql`
+
+### Statistics
+```
+ 19 files changed, 14833 insertions(+), 12240 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-14 17:23:09
+
+### Changed Files
+- `plans/active/continuation-form-input-styling.md`
+- `plans/active/health-conditions-review-continuation.md`
+- `scripts/seed-fe-express-wl-rules.js`
+- `scripts/seed-transamerica-impairment-rules.js`
+- `src/components/ui/input.tsx`
+- `src/components/ui/select.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardDialogLayout.tsx`
+- `src/features/underwriting/components/WizardSteps/CoverageRequestStep.tsx`
+- `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/WizardSteps/ReviewStep.tsx`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260114_007_relax_condition_fk.sql`
+- `supabase/migrations/20260114_008_cleanup_health_conditions.sql`
+- `supabase/migrations/20260114_009_health_conditions_comprehensive_cleanup.sql`
+
+### Statistics
+```
+ 17 files changed, 14799 insertions(+), 12232 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-14 14:48:48
 
 ### Changed Files

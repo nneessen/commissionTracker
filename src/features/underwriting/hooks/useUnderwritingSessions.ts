@@ -50,11 +50,21 @@ async function saveSession(
 ): Promise<UnderwritingSession> {
   const { imoId, agencyId, data } = params;
 
+  // Get the current user for created_by
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User must be authenticated to save a session");
+  }
+
   const { data: session, error } = await supabase
     .from("underwriting_sessions")
     .insert({
       imo_id: imoId,
       agency_id: agencyId,
+      created_by: user.id,
       client_name: data.clientName,
       client_age: data.clientAge,
       client_gender: data.clientGender,

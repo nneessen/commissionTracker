@@ -6325,8 +6325,10 @@ export type Database = {
           hero_image_url: string | null;
           id: string;
           imo_id: string;
+          layout_variant: string | null;
           logo_dark_url: string | null;
           logo_light_url: string | null;
+          logo_size: string | null;
           primary_color: string | null;
           social_links: Json | null;
           subheadline: string | null;
@@ -6349,8 +6351,10 @@ export type Database = {
           hero_image_url?: string | null;
           id?: string;
           imo_id: string;
+          layout_variant?: string | null;
           logo_dark_url?: string | null;
           logo_light_url?: string | null;
+          logo_size?: string | null;
           primary_color?: string | null;
           social_links?: Json | null;
           subheadline?: string | null;
@@ -6373,8 +6377,10 @@ export type Database = {
           hero_image_url?: string | null;
           id?: string;
           imo_id?: string;
+          layout_variant?: string | null;
           logo_dark_url?: string | null;
           logo_light_url?: string | null;
+          logo_size?: string | null;
           primary_color?: string | null;
           social_links?: Json | null;
           subheadline?: string | null;
@@ -8085,13 +8091,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "carriers";
             referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "underwriting_rule_sets_condition_code_fkey";
-            columns: ["condition_code"];
-            isOneToOne: false;
-            referencedRelation: "underwriting_health_conditions";
-            referencedColumns: ["code"];
           },
           {
             foreignKeyName: "underwriting_rule_sets_created_by_fkey";
@@ -13608,6 +13607,7 @@ export type Database = {
         Args: { p_agency_id: string; p_imo_id: string; p_recipients: Json };
         Returns: boolean;
       };
+      validate_social_links_urls: { Args: { links: Json }; Returns: boolean };
       validate_template_content_for_platform: {
         Args: { p_content: string; p_platform: string };
         Returns: boolean;

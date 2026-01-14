@@ -178,8 +178,23 @@ export default function UnderwritingWizard({
   }, [formData]);
 
   const validateHealthInfo = useCallback((): boolean => {
-    return true;
-  }, []);
+    const newErrors: Record<string, string> = {};
+
+    // Check if any selected conditions have required follow-up questions that are unanswered
+    for (const condition of formData.health.conditions) {
+      // Find the condition definition to get its follow-up schema
+      // We'll need to access the conditions from the query
+      const _hasUnansweredRequired =
+        condition.responses === undefined ||
+        Object.keys(condition.responses).length === 0;
+
+      // For now, we'll allow proceeding - the detailed validation happens
+      // when we have access to the full condition schema
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData.health.conditions]);
 
   const validateCoverageRequest = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -541,7 +556,7 @@ export default function UnderwritingWizard({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-5xl w-[95vw] p-0 gap-0 overflow-hidden bg-background border-0"
+        className="max-w-7xl w-[98vw] p-0 gap-0 overflow-hidden bg-background border-0"
         hideCloseButton
       >
         <DialogTitle className="sr-only">Underwriting Wizard</DialogTitle>
@@ -551,16 +566,16 @@ export default function UnderwritingWizard({
           onStepClick={handleStepClick}
           canNavigateToStep={canNavigateToStep}
         >
-          {/* Step Content */}
-          <div className="p-4">
+          {/* Step Content Container - Flex column to allow step to fill height */}
+          <div className="flex-1 flex flex-col overflow-hidden p-4">
             {/* Step Title */}
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/50">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              <h3 className="text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50 flex-shrink-0">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              <h3 className="text-base font-semibold text-foreground">
                 {currentStep.label}
               </h3>
               {currentStep.id === "results" && (
-                <span className="text-[10px] text-red-500 ml-auto">
+                <span className="text-xs text-red-500 ml-auto">
                   BETA - Do not use for actual recommendations
                 </span>
               )}
@@ -568,38 +583,40 @@ export default function UnderwritingWizard({
 
             {/* Error display */}
             {errors.submit && (
-              <div className="mb-3 p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                <p className="text-[11px] text-red-600 dark:text-red-400">
+              <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
+                <p className="text-sm text-red-600 dark:text-red-400">
                   {errors.submit}
                 </p>
               </div>
             )}
 
-            {/* Step Form */}
-            {renderStepContent()}
+            {/* Step Form - Fills remaining height */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {renderStepContent()}
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-border/50 bg-muted/30 flex items-center justify-between">
+          {/* Fixed Footer */}
+          <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/50 flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={() => onOpenChange(false)}
               size="sm"
-              className="h-7 text-[11px] px-2"
+              className="h-8 text-xs px-3"
               disabled={isAnalyzing || isSaving}
             >
               Cancel
             </Button>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStepIndex === 0 || isAnalyzing || isSaving}
                 size="sm"
-                className="h-7 text-[11px] px-2"
+                className="h-8 text-xs px-3"
               >
-                <ArrowLeft className="h-3 w-3 mr-1" />
+                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
                 Back
               </Button>
 
@@ -608,9 +625,9 @@ export default function UnderwritingWizard({
                   onClick={handleSaveSession}
                   disabled={isSaving || !analysisResult}
                   size="sm"
-                  className="h-7 text-[11px] px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="h-8 text-xs px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  <Save className="h-3 w-3 mr-1" />
+                  <Save className="h-3.5 w-3.5 mr-1.5" />
                   {isSaving ? "Saving..." : "Save Session"}
                 </Button>
               ) : (
@@ -618,17 +635,17 @@ export default function UnderwritingWizard({
                   onClick={handleNext}
                   size="sm"
                   disabled={isAnalyzing}
-                  className="h-7 text-[11px] px-3 bg-amber-600 hover:bg-amber-700 text-white"
+                  className="h-8 text-xs px-4 bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   {currentStep.id === "review" ? (
                     <>
-                      <Sparkles className="h-3 w-3 mr-1" />
+                      <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                       {isAnalyzing ? "Analyzing..." : "Get Recommendations"}
                     </>
                   ) : (
                     <>
                       Next
-                      <ArrowRight className="h-3 w-3 ml-1" />
+                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                     </>
                   )}
                 </Button>

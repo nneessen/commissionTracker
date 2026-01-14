@@ -127,14 +127,14 @@ export default function ReviewStep({
       </div>
 
       {/* Client Information */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-          <User className="h-3.5 w-3.5 text-zinc-500" />
-          <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
+        <div className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 flex items-center gap-2">
+          <User className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
             Client Information
           </span>
         </div>
-        <div className="p-3 grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+        <div className="p-4 bg-white dark:bg-zinc-900 grid grid-cols-2 gap-y-2.5 gap-x-4 text-sm">
           {clientInfo.name && (
             <>
               <span className="text-zinc-500">Name:</span>
@@ -177,14 +177,14 @@ export default function ReviewStep({
       </div>
 
       {/* Health Information */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-          <Activity className="h-3.5 w-3.5 text-zinc-500" />
-          <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
+        <div className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 flex items-center gap-2">
+          <Activity className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
             Health Information
           </span>
         </div>
-        <div className="p-3 space-y-3">
+        <div className="p-4 bg-white dark:bg-zinc-900 space-y-3">
           {/* Conditions */}
           <div>
             <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide">
@@ -294,14 +294,14 @@ export default function ReviewStep({
       </div>
 
       {/* Coverage Request */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-          <DollarSign className="h-3.5 w-3.5 text-zinc-500" />
-          <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
+        <div className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
             Coverage Request
           </span>
         </div>
-        <div className="p-3 space-y-2">
+        <div className="p-4 bg-white dark:bg-zinc-900 space-y-2">
           <div className="flex items-start justify-between text-xs">
             <span className="text-zinc-500">Face Amounts:</span>
             <div className="flex flex-wrap gap-1 justify-end">

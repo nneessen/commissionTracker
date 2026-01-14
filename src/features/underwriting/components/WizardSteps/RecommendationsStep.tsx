@@ -301,12 +301,12 @@ export default function RecommendationsStep({
 
       {/* ========== SECTION 1: Decision Engine (Rate Table) Results ========== */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800 flex items-center gap-2">
-          <Database className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-          <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
+        <div className="px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800 flex items-center gap-2">
+          <Database className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
             Rate Table Recommendations
           </span>
-          <span className="text-[10px] text-indigo-500 dark:text-indigo-400 ml-auto">
+          <span className="text-xs text-indigo-500 dark:text-indigo-400 ml-auto">
             Based on your rate data
           </span>
         </div>
@@ -347,78 +347,48 @@ export default function RecommendationsStep({
           </div>
         )}
 
-        <div className="p-3">
+        <div className="p-4">
           {isDecisionEngineLoading ? (
-            <div className="flex items-center gap-2 p-4 justify-center">
-              <div className="h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-zinc-500">
+            <div className="flex items-center gap-3 p-6 justify-center">
+              <div className="h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-zinc-500">
                 Searching rate tables...
               </span>
             </div>
           ) : decisionEngineResult &&
             (decisionEngineResult.recommendations.length > 0 ||
               decisionEngineResult.unknownEligibility.length > 0) ? (
-            <div className="space-y-3">
-              {/* Eligible Recommendations */}
-              {decisionEngineResult.recommendations.length > 0 && (
-                <div className="space-y-2">
-                  {decisionEngineResult.recommendations.map((rec) => (
-                    <DecisionEngineCard
-                      key={`de-${rec.carrierId}-${rec.productId}`}
-                      recommendation={rec}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Unknown Eligibility Products */}
-              {decisionEngineResult.unknownEligibility.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <HelpCircle className="h-3.5 w-3.5 text-yellow-500" />
-                    <span className="text-[11px] font-medium text-yellow-700 dark:text-yellow-400">
-                      Verification Needed (
-                      {decisionEngineResult.unknownEligibility.length})
-                    </span>
-                    <span className="text-[10px] text-yellow-600 dark:text-yellow-500 ml-auto">
-                      Missing follow-up data
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {decisionEngineResult.unknownEligibility.map((rec) => (
-                      <UnknownEligibilityCard
-                        key={`de-unknown-${rec.carrierId}-${rec.productId}`}
-                        recommendation={rec}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="space-y-2">
+              {/* Compact Table for All Recommendations */}
+              <DecisionEngineTable
+                recommendations={decisionEngineResult.recommendations}
+                unknownEligibility={decisionEngineResult.unknownEligibility}
+              />
 
               {/* Stats Footer */}
-              <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 flex flex-wrap items-center gap-2">
+              <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500 dark:text-zinc-400 flex flex-wrap items-center gap-3">
                 <span>
                   Searched {decisionEngineResult.filtered.totalProducts}{" "}
                   products
                 </span>
-                <span>•</span>
-                <span className="text-emerald-600 dark:text-emerald-400">
+                <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                   {decisionEngineResult.filtered.passedEligibility} eligible
                 </span>
                 {decisionEngineResult.filtered.unknownEligibility > 0 && (
                   <>
-                    <span>•</span>
-                    <span className="text-yellow-600 dark:text-yellow-400">
+                    <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">
                       {decisionEngineResult.filtered.unknownEligibility} need
                       verification
                     </span>
                   </>
                 )}
-                <span>•</span>
+                <span className="text-zinc-300 dark:text-zinc-600">•</span>
                 <span>
                   {decisionEngineResult.filtered.withPremiums} with rates
                 </span>
-                <span className="ml-auto">
+                <span className="ml-auto text-zinc-400">
                   {decisionEngineResult.processingTime}ms
                 </span>
               </div>
@@ -533,20 +503,20 @@ export default function RecommendationsStep({
 
       {/* ========== SECTION 2: AI Analysis Results ========== */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800 flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-          <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300">
+        <div className="px-4 py-3 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
             AI-Powered Analysis
           </span>
-          <span className="text-[10px] text-purple-500 dark:text-purple-400 ml-auto">
+          <span className="text-xs text-purple-500 dark:text-purple-400 ml-auto">
             Using underwriting guides
           </span>
         </div>
-        <div className="p-3">
+        <div className="p-4">
           {isAILoading ? (
-            <div className="flex items-center gap-2 p-4 justify-center">
-              <div className="h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-zinc-500">
+            <div className="flex items-center gap-3 p-6 justify-center">
+              <div className="h-5 w-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-zinc-500">
                 AI analyzing underwriting guides...
               </span>
             </div>
@@ -562,78 +532,28 @@ export default function RecommendationsStep({
                 </div>
               )}
 
-              {/* Eligible Recommendations */}
+              {/* AI Recommendations Table */}
               {!constraintsLoading && !buildTablesLoading && (
-                <div>
-                  <div className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-1.5">
-                    <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                    Eligible Products
-                    <span className="text-zinc-400">
-                      ({eligibleRecommendations.length})
-                    </span>
-                  </div>
-
-                  {eligibleRecommendations.length > 0 ? (
-                    <div className="space-y-2">
-                      {eligibleRecommendations
-                        .sort((a, b) => a.priority - b.priority)
-                        .map((rec, index) => (
-                          <RecommendationCard
-                            key={`${rec.carrierId}-${rec.productId}`}
-                            recommendation={rec}
-                            rank={index + 1}
-                            clientHeight={{
-                              feet: clientInfo.heightFeet,
-                              inches: clientInfo.heightInches,
-                            }}
-                            clientWeight={clientInfo.weight}
-                            buildTable={buildTablesMap?.get(rec.carrierId)}
-                          />
-                        ))}
-                    </div>
-                  ) : constraintsMap ? (
-                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded text-center">
-                      <XCircle className="h-5 w-5 text-zinc-400 mx-auto mb-1" />
-                      <p className="text-[10px] text-zinc-500">
-                        No eligible products found.
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
+                <AIRecommendationsTable
+                  eligibleRecommendations={eligibleRecommendations}
+                  ineligibleRecommendations={ineligibleRecommendations}
+                  clientHeight={{
+                    feet: clientInfo.heightFeet,
+                    inches: clientInfo.heightInches,
+                  }}
+                  clientWeight={clientInfo.weight}
+                  buildTablesMap={buildTablesMap}
+                />
               )}
-
-              {/* Ineligible Recommendations */}
-              {!constraintsLoading &&
-                !buildTablesLoading &&
-                ineligibleRecommendations.length > 0 && (
-                  <div>
-                    <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-2 flex items-center gap-1.5">
-                      <Ban className="h-3.5 w-3.5 text-red-400" />
-                      Ineligible Products
-                      <span className="text-zinc-400">
-                        ({ineligibleRecommendations.length})
-                      </span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {ineligibleRecommendations.map((rec) => (
-                        <IneligibleRecommendationCard
-                          key={`${rec.carrierId}-${rec.productId}`}
-                          recommendation={rec}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
 
               {/* AI Reasoning */}
               {aiResult.reasoning && (
-                <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                  <div className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Info className="h-3 w-3" />
+                <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                  <div className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <Info className="h-4 w-4" />
                     Analysis Summary
                   </div>
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap">
                     {aiResult.reasoning}
                   </p>
                 </div>
@@ -641,8 +561,8 @@ export default function RecommendationsStep({
 
               {/* Processing Info */}
               {aiResult.processingTimeMs && (
-                <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 pt-2">
-                  <Clock className="h-3 w-3" />
+                <div className="flex items-center gap-2 text-xs text-zinc-400 pt-3">
+                  <Clock className="h-4 w-4" />
                   AI analysis completed in{" "}
                   {(aiResult.processingTimeMs / 1000).toFixed(1)}s
                 </div>
@@ -669,7 +589,7 @@ interface RecommendationCardProps {
   buildTable?: BuildTableData;
 }
 
-function RecommendationCard({
+function _RecommendationCard({
   recommendation,
   rank,
   clientHeight,
@@ -911,7 +831,7 @@ interface IneligibleRecommendationCardProps {
   recommendation: RecommendationWithEligibility;
 }
 
-function IneligibleRecommendationCard({
+function _IneligibleRecommendationCard({
   recommendation,
 }: IneligibleRecommendationCardProps) {
   const { eligibility } = recommendation;
@@ -997,6 +917,331 @@ function WeightGuidanceMessage({
 }
 
 // ============================================================================
+// AI Recommendations Table Component
+// ============================================================================
+
+interface AIRecommendationsTableProps {
+  eligibleRecommendations: RecommendationWithEligibility[];
+  ineligibleRecommendations: RecommendationWithEligibility[];
+  clientHeight: { feet: number; inches: number };
+  clientWeight: number;
+  buildTablesMap?: Map<string, BuildTableData>;
+}
+
+function AIRecommendationsTable({
+  eligibleRecommendations,
+  ineligibleRecommendations,
+  clientHeight,
+  clientWeight,
+  buildTablesMap,
+}: AIRecommendationsTableProps) {
+  const sortedEligible = [...eligibleRecommendations].sort(
+    (a, b) => a.priority - b.priority,
+  );
+
+  if (
+    eligibleRecommendations.length === 0 &&
+    ineligibleRecommendations.length === 0
+  ) {
+    return (
+      <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg text-center">
+        <XCircle className="h-6 w-6 text-zinc-400 mx-auto mb-2" />
+        <p className="text-sm text-zinc-500">
+          No AI recommendations available.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Eligible Products Table */}
+      {sortedEligible.length > 0 && (
+        <div>
+          <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
+            Eligible Products
+            <span className="text-zinc-400 text-xs">
+              ({eligibleRecommendations.length})
+            </span>
+          </div>
+
+          <div className="overflow-x-auto bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-zinc-200 dark:border-zinc-700 text-left bg-zinc-50 dark:bg-zinc-800/50">
+                  <th className="py-3 px-3 font-semibold text-zinc-600 dark:text-zinc-300 w-12">
+                    #
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-zinc-600 dark:text-zinc-300">
+                    Product
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-zinc-600 dark:text-zinc-300 text-center">
+                    Expected Rating
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-zinc-600 dark:text-zinc-300 text-center">
+                    Build Rating
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-zinc-600 dark:text-zinc-300 text-center">
+                    Confidence
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-zinc-600 dark:text-zinc-300">
+                    Key Factors
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {sortedEligible.map((rec, index) => (
+                  <AIRecommendationRow
+                    key={`${rec.carrierId}-${rec.productId}`}
+                    recommendation={rec}
+                    rank={index + 1}
+                    clientHeight={clientHeight}
+                    clientWeight={clientWeight}
+                    buildTable={buildTablesMap?.get(rec.carrierId)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Ineligible Products (collapsible summary) */}
+      {ineligibleRecommendations.length > 0 && (
+        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-3 flex items-center gap-2">
+            <Ban className="h-4 w-4 text-red-400" />
+            Ineligible Products
+            <span className="text-zinc-400 text-xs">
+              ({ineligibleRecommendations.length})
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm opacity-75">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-700 text-left">
+                  <th className="pb-2 pr-3 font-medium text-zinc-500 dark:text-zinc-400">
+                    Product
+                  </th>
+                  <th className="pb-2 pl-3 font-medium text-zinc-500 dark:text-zinc-400">
+                    Reason
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {ineligibleRecommendations.map((rec) => (
+                  <tr
+                    key={`${rec.carrierId}-${rec.productId}`}
+                    className="text-zinc-500 dark:text-zinc-400"
+                  >
+                    <td className="py-2 pr-3">
+                      <div className="font-medium">{rec.carrierName}</div>
+                      <div className="text-xs">{rec.productName}</div>
+                    </td>
+                    <td className="py-2 pl-3">
+                      <div className="flex flex-wrap gap-1">
+                        {rec.eligibility.ineligibilityReasons
+                          .slice(0, 2)
+                          .map((reason, i) => (
+                            <span
+                              key={i}
+                              className="text-xs px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                            >
+                              {reason}
+                            </span>
+                          ))}
+                        {rec.eligibility.ineligibilityReasons.length > 2 && (
+                          <span className="text-xs text-zinc-400">
+                            +{rec.eligibility.ineligibilityReasons.length - 2}{" "}
+                            more
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* No eligible products message */}
+      {eligibleRecommendations.length === 0 &&
+        ineligibleRecommendations.length > 0 && (
+          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-5 w-5" />
+              <span className="font-medium">No eligible products found</span>
+            </div>
+            <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+              All AI-recommended products failed eligibility checks. See
+              ineligible products above for details.
+            </p>
+          </div>
+        )}
+    </div>
+  );
+}
+
+// ============================================================================
+// AI Recommendation Row Component
+// ============================================================================
+
+interface AIRecommendationRowProps {
+  recommendation: RecommendationWithEligibility;
+  rank: number;
+  clientHeight: { feet: number; inches: number };
+  clientWeight: number;
+  buildTable?: BuildTableData;
+}
+
+function AIRecommendationRow({
+  recommendation,
+  rank,
+  clientHeight,
+  clientWeight,
+  buildTable,
+}: AIRecommendationRowProps) {
+  const buildRatingResult = lookupBuildRating(
+    clientHeight.feet,
+    clientHeight.inches,
+    clientWeight,
+    buildTable,
+  );
+
+  const confidenceColor =
+    recommendation.confidence >= 0.8
+      ? "text-emerald-600 dark:text-emerald-400"
+      : recommendation.confidence >= 0.6
+        ? "text-blue-600 dark:text-blue-400"
+        : recommendation.confidence >= 0.4
+          ? "text-yellow-600 dark:text-yellow-400"
+          : "text-orange-600 dark:text-orange-400";
+
+  const ratingColorClass = (() => {
+    const rating = recommendation.expectedRating.toLowerCase();
+    if (rating.includes("preferred"))
+      return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
+    if (rating.includes("standard"))
+      return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700";
+    if (rating.includes("table") || rating.includes("substandard"))
+      return "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700";
+    if (rating.includes("decline"))
+      return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700";
+    return "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700";
+  })();
+
+  const buildRatingColorClass = (() => {
+    const rating = buildRatingResult.ratingClass;
+    if (rating === "preferred_plus" || rating === "preferred")
+      return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300";
+    if (rating === "standard_plus" || rating === "standard")
+      return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300";
+    if (rating === "table_rated")
+      return "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
+    return "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400";
+  })();
+
+  return (
+    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors bg-white dark:bg-zinc-900">
+      {/* Rank */}
+      <td className="py-3 px-3">
+        <div
+          className={cn(
+            "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold",
+            rank === 1
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+          )}
+        >
+          {rank}
+        </div>
+      </td>
+
+      {/* Product */}
+      <td className="py-3 px-3">
+        <div className="font-medium text-zinc-800 dark:text-zinc-200">
+          {recommendation.carrierName}
+        </div>
+        <div className="text-xs text-zinc-500">
+          {recommendation.productName}
+        </div>
+      </td>
+
+      {/* Expected Rating */}
+      <td className="py-3 px-3 text-center">
+        <span
+          className={cn(
+            "inline-block px-2.5 py-1 rounded-md text-xs font-medium border",
+            ratingColorClass,
+          )}
+        >
+          {recommendation.expectedRating}
+        </span>
+      </td>
+
+      {/* Build Rating */}
+      <td className="py-3 px-3 text-center">
+        {buildRatingResult.hasTable &&
+        buildRatingResult.ratingClass !== "unknown" ? (
+          <div className="flex flex-col items-center gap-1">
+            <span
+              className={cn(
+                "inline-block px-2 py-0.5 rounded text-xs font-medium",
+                buildRatingColorClass,
+              )}
+            >
+              {BUILD_RATING_CLASS_LABELS[buildRatingResult.ratingClass]}
+            </span>
+            <span className="text-[10px] text-zinc-400 flex items-center gap-0.5">
+              <Ruler className="h-2.5 w-2.5" />
+              Build table
+            </span>
+          </div>
+        ) : (
+          <span className="text-xs text-zinc-400">—</span>
+        )}
+      </td>
+
+      {/* Confidence */}
+      <td className="py-3 px-3 text-center">
+        <div className={cn("font-semibold text-sm", confidenceColor)}>
+          {Math.round(recommendation.confidence * 100)}%
+        </div>
+        {recommendation.treeMatchBoost && recommendation.treeMatchBoost > 0 && (
+          <div className="text-[10px] text-emerald-500">
+            +{Math.round(recommendation.treeMatchBoost * 100)}% boost
+          </div>
+        )}
+      </td>
+
+      {/* Key Factors */}
+      <td className="py-3 px-3">
+        <div className="flex flex-wrap gap-1.5">
+          {recommendation.keyFactors.slice(0, 3).map((factor, i) => (
+            <span
+              key={i}
+              className="text-xs px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+            >
+              {factor}
+            </span>
+          ))}
+          {recommendation.concerns.length > 0 && (
+            <span className="text-xs px-2 py-1 rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300">
+              {recommendation.concerns.length} concern
+              {recommendation.concerns.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ============================================================================
 // Decision Engine Card Component
 // ============================================================================
 
@@ -1004,7 +1249,7 @@ interface DecisionEngineCardProps {
   recommendation: DecisionEngineRecommendation;
 }
 
-function DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
+function _DecisionEngineCard({ recommendation }: DecisionEngineCardProps) {
   const reasonBadgeColor = getReasonBadgeColor(recommendation.reason);
   const reasonLabel = formatRecommendationReason(recommendation.reason);
 
@@ -1289,7 +1534,7 @@ interface UnknownEligibilityCardProps {
   recommendation: DecisionEngineRecommendation;
 }
 
-function UnknownEligibilityCard({
+function _UnknownEligibilityCard({
   recommendation,
 }: UnknownEligibilityCardProps) {
   return (
@@ -1425,5 +1670,215 @@ function UnknownEligibilityCard({
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// Decision Engine Table Component (Compact Display)
+// ============================================================================
+
+interface DecisionEngineTableProps {
+  recommendations: DecisionEngineRecommendation[];
+  unknownEligibility: DecisionEngineRecommendation[];
+}
+
+function DecisionEngineTable({
+  recommendations,
+  unknownEligibility,
+}: DecisionEngineTableProps) {
+  // Sort by premium (low to high), with nulls at the end
+  const sortByPremium = (
+    a: DecisionEngineRecommendation,
+    b: DecisionEngineRecommendation,
+  ) => {
+    if (a.monthlyPremium === null && b.monthlyPremium === null) return 0;
+    if (a.monthlyPremium === null) return 1;
+    if (b.monthlyPremium === null) return -1;
+    return a.monthlyPremium - b.monthlyPremium;
+  };
+
+  const sortedRecommendations = [...recommendations].sort(sortByPremium);
+  const sortedUnknown = [...unknownEligibility].sort(sortByPremium);
+
+  const allRecs = [
+    ...sortedRecommendations.map((r) => ({ ...r, isUnknown: false })),
+    ...sortedUnknown.map((r) => ({ ...r, isUnknown: true })),
+  ];
+
+  if (allRecs.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b-2 border-zinc-200 dark:border-zinc-700 text-left bg-zinc-50 dark:bg-zinc-800/50">
+            <th className="py-3 px-4 font-semibold text-zinc-600 dark:text-zinc-300">
+              Product
+            </th>
+            <th className="py-3 px-4 font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+              Monthly Premium
+            </th>
+            <th className="py-3 px-4 font-semibold text-zinc-600 dark:text-zinc-300 text-center">
+              Health Class
+            </th>
+            <th className="py-3 px-4 font-semibold text-zinc-600 dark:text-zinc-300">
+              Coverage Options
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          {allRecs.map((rec) => (
+            <DecisionEngineRow
+              key={`${rec.carrierId}-${rec.productId}`}
+              recommendation={rec}
+              isUnknown={rec.isUnknown}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ============================================================================
+// Decision Engine Row Component (Compact Table Row)
+// ============================================================================
+
+interface DecisionEngineRowProps {
+  recommendation: DecisionEngineRecommendation & { isUnknown?: boolean };
+  isUnknown: boolean;
+}
+
+function DecisionEngineRow({
+  recommendation,
+  isUnknown,
+}: DecisionEngineRowProps) {
+  const healthClassDisplay = recommendation.wasFallback ? (
+    <span className="text-xs">
+      <span className="line-through opacity-50 mr-0.5">
+        {recommendation.healthClassRequested?.slice(0, 4)}
+      </span>
+      →
+      <span className="font-medium ml-0.5">
+        {recommendation.healthClassUsed?.slice(0, 4)}
+      </span>
+    </span>
+  ) : (
+    <span className="text-xs">{recommendation.healthClassResult}</span>
+  );
+
+  return (
+    <tr
+      className={cn(
+        "hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors bg-white dark:bg-zinc-900",
+        isUnknown && "bg-yellow-50 dark:bg-yellow-900/20",
+      )}
+    >
+      {/* Product Column */}
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          {isUnknown && (
+            <HelpCircle className="h-4 w-4 text-yellow-500 shrink-0" />
+          )}
+          <div className="min-w-0">
+            <div className="font-medium text-zinc-800 dark:text-zinc-200 truncate text-sm">
+              {recommendation.carrierName}
+            </div>
+            <div className="text-xs text-zinc-500 truncate">
+              {recommendation.productName}
+              {recommendation.termYears !== null &&
+                recommendation.termYears !== undefined && (
+                  <span className="text-indigo-500 ml-1.5 font-medium">
+                    {recommendation.termYears} Year
+                  </span>
+                )}
+              {recommendation.termYears === null && (
+                <span className="text-emerald-500 ml-1.5 font-medium">
+                  Permanent
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </td>
+
+      {/* Premium Column */}
+      <td className="py-3 px-4 text-right">
+        {recommendation.monthlyPremium !== null ? (
+          <div>
+            <span className="font-bold text-base text-zinc-800 dark:text-zinc-200">
+              {formatDECurrency(recommendation.monthlyPremium)}
+            </span>
+            <span className="text-xs text-zinc-400 ml-0.5">/mo</span>
+          </div>
+        ) : (
+          <span className="text-zinc-400 text-sm">TBD</span>
+        )}
+      </td>
+
+      {/* Health Class Column */}
+      <td className="py-3 px-4 text-center">
+        <span className="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium border border-zinc-200 dark:border-zinc-700">
+          {healthClassDisplay}
+        </span>
+      </td>
+
+      {/* Coverage Options Column - Mini Table */}
+      <td className="py-2 px-3">
+        {recommendation.alternativeQuotes &&
+        recommendation.alternativeQuotes.length > 0 ? (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                <th className="py-1 px-2 text-left font-medium text-zinc-500 dark:text-zinc-400">
+                  Face Amount
+                </th>
+                <th className="py-1 px-2 text-right font-medium text-zinc-500 dark:text-zinc-400">
+                  Monthly
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {recommendation.alternativeQuotes.map((quote, idx) => {
+                const isRequested =
+                  quote.faceAmount === recommendation.maxCoverage;
+                return (
+                  <tr
+                    key={idx}
+                    className={cn(
+                      "border-b border-zinc-100 dark:border-zinc-800 last:border-0",
+                      isRequested && "bg-indigo-50 dark:bg-indigo-900/30",
+                    )}
+                  >
+                    <td
+                      className={cn(
+                        "py-1.5 px-2",
+                        isRequested
+                          ? "font-semibold text-indigo-600 dark:text-indigo-400"
+                          : "text-zinc-700 dark:text-zinc-300",
+                      )}
+                    >
+                      {formatDECurrency(quote.faceAmount)}
+                    </td>
+                    <td
+                      className={cn(
+                        "py-1.5 px-2 text-right",
+                        isRequested
+                          ? "font-semibold text-indigo-600 dark:text-indigo-400"
+                          : "text-zinc-600 dark:text-zinc-400",
+                      )}
+                    >
+                      {formatDECurrency(quote.monthlyPremium)}/mo
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <span className="text-xs text-zinc-400">—</span>
+        )}
+      </td>
+    </tr>
   );
 }

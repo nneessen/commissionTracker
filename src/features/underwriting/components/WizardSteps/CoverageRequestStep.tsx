@@ -42,9 +42,20 @@ const PRODUCT_OPTIONS: {
   },
 ];
 
-const FACE_AMOUNT_PRESETS = [
-  100000, 250000, 500000, 750000, 1000000, 2000000, 5000000,
+// Face amount presets by product category
+const TERM_LIFE_PRESETS = [100000, 250000, 500000, 750000, 1000000, 2000000];
+const WHOLE_LIFE_PRESETS = [10000, 15000, 25000, 35000, 50000, 75000, 100000];
+
+// Product types that are considered "whole life" category (smaller face amounts)
+const WHOLE_LIFE_CATEGORY: ProductType[] = [
+  "whole_life",
+  "universal_life",
+  "indexed_universal_life",
 ];
+
+// Default face amounts by category
+const TERM_DEFAULTS = [250000, 500000, 1000000];
+const WHOLE_LIFE_DEFAULTS = [15000, 25000, 35000];
 
 export default function CoverageRequestStep({
   data,
@@ -60,12 +71,77 @@ export default function CoverageRequestStep({
     }).format(amount);
   };
 
+  // Determine if only whole life category products are selected
+  const isWholeLifeOnly = (): boolean => {
+    const selected = data.productTypes || [];
+    if (selected.length === 0) return false;
+    return selected.every((t) => WHOLE_LIFE_CATEGORY.includes(t));
+  };
+
+  // Determine if only term life is selected
+  const isTermLifeOnly = (): boolean => {
+    const selected = data.productTypes || [];
+    return selected.length > 0 && selected.every((t) => t === "term_life");
+  };
+
+  // Get the appropriate presets based on selection
+  const getPresets = (): number[] => {
+    if (isWholeLifeOnly()) return WHOLE_LIFE_PRESETS;
+    if (isTermLifeOnly()) return TERM_LIFE_PRESETS;
+    // Mixed selection - show term presets (larger amounts work for both)
+    return TERM_LIFE_PRESETS;
+  };
+
   const toggleProductType = (type: ProductType) => {
     const current = data.productTypes || [];
+    let newTypes: ProductType[];
+
     if (current.includes(type)) {
-      onChange({ productTypes: current.filter((t) => t !== type) });
+      newTypes = current.filter((t) => t !== type);
     } else {
-      onChange({ productTypes: [...current, type] });
+      newTypes = [...current, type];
+    }
+
+    // Determine if we're switching categories
+    const wasWholeLifeOnly =
+      current.length > 0 &&
+      current.every((t) => WHOLE_LIFE_CATEGORY.includes(t));
+    const willBeWholeLifeOnly =
+      newTypes.length > 0 &&
+      newTypes.every((t) => WHOLE_LIFE_CATEGORY.includes(t));
+    const wasTermLifeOnly =
+      current.length > 0 && current.every((t) => t === "term_life");
+    const willBeTermLifeOnly =
+      newTypes.length > 0 && newTypes.every((t) => t === "term_life");
+
+    // If switching between categories, reset face amounts to appropriate defaults
+    const currentAmounts = data.faceAmounts || [0, 0, 0];
+    const hasUserEnteredAmounts = currentAmounts.some((a) => a > 0);
+
+    if (wasWholeLifeOnly !== willBeWholeLifeOnly && !hasUserEnteredAmounts) {
+      // Switching categories with no user input - apply defaults
+      const defaults = willBeWholeLifeOnly
+        ? WHOLE_LIFE_DEFAULTS
+        : TERM_DEFAULTS;
+      onChange({ productTypes: newTypes, faceAmounts: defaults });
+    } else if (
+      willBeWholeLifeOnly &&
+      !wasWholeLifeOnly &&
+      hasUserEnteredAmounts &&
+      currentAmounts[0] > 100000
+    ) {
+      // Switching TO whole life with large amounts - suggest smaller
+      onChange({ productTypes: newTypes, faceAmounts: WHOLE_LIFE_DEFAULTS });
+    } else if (
+      willBeTermLifeOnly &&
+      !wasTermLifeOnly &&
+      hasUserEnteredAmounts &&
+      currentAmounts[0] < 50000
+    ) {
+      // Switching TO term only with small amounts - suggest larger
+      onChange({ productTypes: newTypes, faceAmounts: TERM_DEFAULTS });
+    } else {
+      onChange({ productTypes: newTypes });
     }
   };
 
@@ -78,8 +154,20 @@ export default function CoverageRequestStep({
 
   // Quick-select populates all three amounts with common increments
   const applyQuickSelect = (baseAmount: number) => {
-    // Set amounts as base, 2x, and 4x (common comparison pattern)
-    const amounts = [baseAmount, baseAmount * 2, baseAmount * 4];
+    let amounts: number[];
+
+    if (isWholeLifeOnly()) {
+      // Whole life: smaller increments (base, +10k, +20k) capped at 100k
+      amounts = [
+        baseAmount,
+        Math.min(baseAmount + 10000, 100000),
+        Math.min(baseAmount + 25000, 100000),
+      ];
+    } else {
+      // Term life: larger increments (base, 2x, 4x)
+      amounts = [baseAmount, baseAmount * 2, baseAmount * 4];
+    }
+
     onChange({ faceAmounts: amounts });
   };
 
@@ -102,11 +190,14 @@ export default function CoverageRequestStep({
           Enter up to 3 coverage amounts to compare quotes
         </p>
 
-        {/* Quick select buttons */}
+        {/* Quick select buttons - dynamic based on product type */}
         <div className="space-y-1.5">
-          <span className="text-[10px] text-zinc-500">Quick-fill presets:</span>
+          <span className="text-[10px] text-zinc-500">
+            Quick-fill presets
+            {isWholeLifeOnly() && " (whole life amounts)"}:
+          </span>
           <div className="flex flex-wrap gap-1.5">
-            {FACE_AMOUNT_PRESETS.map((amount) => (
+            {getPresets().map((amount) => (
               <button
                 key={amount}
                 type="button"
