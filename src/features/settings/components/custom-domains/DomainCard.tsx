@@ -193,6 +193,14 @@ export function DomainCard({ domain }: DomainCardProps) {
             <DnsInstructions
               hostname={domain.hostname}
               verificationToken={domain.verification_token}
+              vercelCname={
+                domain.provider_metadata &&
+                typeof domain.provider_metadata === "object" &&
+                "vercel_cname" in domain.provider_metadata
+                  ? (domain.provider_metadata as { vercel_cname?: string })
+                      .vercel_cname
+                  : null
+              }
             />
           )}
         </div>

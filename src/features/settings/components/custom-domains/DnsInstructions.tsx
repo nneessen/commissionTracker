@@ -7,11 +7,13 @@ import { Copy, Check, Info } from "lucide-react";
 interface DnsInstructionsProps {
   hostname: string;
   verificationToken: string;
+  vercelCname?: string | null;
 }
 
 export function DnsInstructions({
   hostname,
   verificationToken,
+  vercelCname,
 }: DnsInstructionsProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -71,10 +73,19 @@ export function DnsInstructions({
           <div className="flex items-center justify-between">
             <span className="text-zinc-500">Value:</span>
             <span className="flex items-center text-zinc-900">
-              cname.vercel-dns.com
-              <CopyButton value="cname.vercel-dns.com" field="cname-value" />
+              {vercelCname || "cname.vercel-dns.com"}
+              <CopyButton
+                value={vercelCname || "cname.vercel-dns.com"}
+                field="cname-value"
+              />
             </span>
           </div>
+          {!vercelCname && (
+            <p className="mt-1 text-xs text-amber-600">
+              Note: Check Vercel dashboard for domain-specific CNAME if this
+              generic one doesn't work.
+            </p>
+          )}
         </div>
       </div>
 

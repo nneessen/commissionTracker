@@ -146,6 +146,64 @@ export async function getDomainStatus(
 }
 
 /**
+ * Get domain DNS configuration from Vercel (includes expected CNAME target)
+ */
+export async function getDomainConfig(hostname: string): Promise<{
+  success: boolean;
+  data?: {
+    configuredBy?: string | null;
+    nameservers?: string[];
+    serviceType?: string;
+    cnames?: string[];
+    aValues?: string[];
+    conflicts?: unknown[];
+    acceptedChallenges?: string[];
+    misconfigured?: boolean;
+  };
+  error?: string;
+}> {
+  try {
+    const { token } = getVercelCredentials();
+
+    // The domain config endpoint gives us the expected DNS configuration
+    const response = await fetch(
+      `${VERCEL_API_BASE}/v6/domains/${encodeURIComponent(hostname)}/config`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (response.status === 404) {
+      return { success: false, error: "Domain config not found" };
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("[vercel-api] Get domain config failed:", data);
+      return {
+        success: false,
+        error: data.error?.message || `Vercel API error: ${response.status}`,
+      };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("[vercel-api] Get domain config exception:", err);
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Unknown error getting domain config",
+    };
+  }
+}
+
+/**
  * Remove a domain from the Vercel project
  */
 export async function removeDomainFromVercel(

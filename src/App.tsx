@@ -11,9 +11,29 @@ import { CookieConsentBanner } from "./features/legal";
 import { getDisplayName } from "./types/user.types";
 import { SubscriptionAnnouncementDialog } from "./components/subscription";
 import { useSubscriptionAnnouncement } from "./hooks/subscription";
+import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
+
+// Primary domains (not custom domains)
+const PRIMARY_DOMAINS = [
+  "thestandardhq.com",
+  "www.thestandardhq.com",
+  "localhost",
+  "127.0.0.1",
+];
+
+const isVercelPreview = (hostname: string) =>
+  hostname.endsWith(".vercel.app") || hostname.endsWith(".vercel.sh");
 
 function App() {
   const location = useLocation();
+  const hostname =
+    typeof window !== "undefined" ? window.location.hostname : "";
+
+  // Check if we're on a custom domain
+  const isOnCustomDomain =
+    hostname &&
+    !PRIMARY_DOMAINS.includes(hostname) &&
+    !isVercelPreview(hostname);
 
   // Check if public path BEFORE calling useAuth to avoid unnecessary auth checks
   const publicPaths = [
@@ -33,6 +53,17 @@ function App() {
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),
   );
+
+  // Custom domain at root path should show recruiting page
+  if (isOnCustomDomain && location.pathname === "/") {
+    return (
+      <>
+        <Toaster />
+        <CookieConsentBanner />
+        <PublicJoinPage />
+      </>
+    );
+  }
 
   // For public paths, render immediately without auth
   if (isPublicPath) {

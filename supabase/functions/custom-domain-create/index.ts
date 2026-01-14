@@ -1,10 +1,11 @@
 // Edge Function: custom-domain-create
-// Creates a new custom domain record and initiates DNS verification flow
+// Creates a new custom domain record, adds to Vercel, and initiates DNS verification flow
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 import { validateHostname, getDnsInstructions } from "../_shared/dns-lookup.ts";
+import { addDomainToVercel, getDomainConfig } from "../_shared/vercel-api.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -179,6 +180,82 @@ serve(async (req) => {
       );
     }
 
+    // Add domain to Vercel immediately to get the correct CNAME target
+    console.log("[custom-domain-create] Adding to Vercel:", normalizedHostname);
+    const vercelResult = await addDomainToVercel(normalizedHostname);
+
+    let vercelCname: string | null = null;
+    let vercelData: Record<string, unknown> | null = null;
+
+    if (vercelResult.success && vercelResult.data) {
+      vercelData = vercelResult.data as unknown as Record<string, unknown>;
+
+      // Extract the CNAME target from Vercel's verification array
+      // Vercel returns something like: verification: [{ type: "TXT", domain: "...", value: "..." }]
+      // But the actual CNAME comes from the domain config endpoint
+      // The CNAME target is typically in the format: {hash}.vercel-dns-{number}.com
+      // We need to check if Vercel provided a specific CNAME target
+      if (vercelData.verification && Array.isArray(vercelData.verification)) {
+        const cnameVerification = (
+          vercelData.verification as Array<{
+            type: string;
+            domain: string;
+            value: string;
+          }>
+        ).find((v) => v.type === "CNAME");
+        if (cnameVerification) {
+          vercelCname = cnameVerification.value;
+        }
+      }
+
+      // If no specific CNAME in verification, check if there's a cname property
+      if (!vercelCname && vercelData.cname) {
+        vercelCname = vercelData.cname as string;
+      }
+
+      console.log("[custom-domain-create] Vercel response:", {
+        name: vercelData.name,
+        configured: vercelData.configured,
+        verified: vercelData.verified,
+        vercelCname,
+      });
+
+      // If we still don't have a CNAME, try getting the domain config
+      if (!vercelCname) {
+        const configResult = await getDomainConfig(normalizedHostname);
+        if (configResult.success && configResult.data) {
+          // The cnames array contains the expected CNAME target
+          if (configResult.data.cnames && configResult.data.cnames.length > 0) {
+            vercelCname = configResult.data.cnames[0];
+            console.log(
+              "[custom-domain-create] Got CNAME from config:",
+              vercelCname,
+            );
+          }
+        }
+      }
+    } else {
+      // Vercel add failed - log but continue (user can still see generic instructions)
+      console.warn(
+        "[custom-domain-create] Vercel add failed:",
+        vercelResult.error,
+      );
+    }
+
+    // Update domain with Vercel data if available
+    if (vercelData) {
+      await supabaseAdmin
+        .from("custom_domains")
+        .update({
+          provider_domain_id: (vercelData.name as string) || normalizedHostname,
+          provider_metadata: {
+            ...vercelData,
+            vercel_cname: vercelCname,
+          },
+        })
+        .eq("id", domain.id);
+    }
+
     // Transition to pending_dns status via admin function
     const { data: updatedDomain, error: transitionError } =
       await supabaseAdmin.rpc("admin_update_domain_status", {
@@ -203,7 +280,7 @@ serve(async (req) => {
       );
     }
 
-    // Generate DNS instructions
+    // Generate DNS instructions (include Vercel CNAME if available)
     const dnsInstructions = getDnsInstructions(
       normalizedHostname,
       verificationToken,
@@ -213,12 +290,21 @@ serve(async (req) => {
       id: domain.id,
       hostname: normalizedHostname,
       user_id: user.id,
+      vercelCname,
     });
+
+    // Refetch the domain to get updated provider_metadata
+    const { data: finalDomain } = await supabaseAdmin
+      .from("custom_domains")
+      .select("*")
+      .eq("id", domain.id)
+      .single();
 
     return new Response(
       JSON.stringify({
-        domain: updatedDomain,
+        domain: finalDomain || updatedDomain,
         dns_instructions: dnsInstructions,
+        vercel_cname: vercelCname,
         message: "Domain created. Please add the DNS records and click Verify.",
       }),
       {
