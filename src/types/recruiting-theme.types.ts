@@ -11,6 +11,24 @@ export type LayoutVariant =
   | "multi-section";
 
 /**
+ * Logo size options
+ */
+export type LogoSize = "small" | "medium" | "large" | "xlarge";
+
+/**
+ * Logo size to pixel mapping
+ */
+export const LOGO_SIZE_MAP: Record<
+  LogoSize,
+  { desktop: number; mobile: number }
+> = {
+  small: { desktop: 56, mobile: 40 },
+  medium: { desktop: 80, mobile: 56 },
+  large: { desktop: 112, mobile: 80 },
+  xlarge: { desktop: 144, mobile: 104 },
+};
+
+/**
  * Social media link configuration
  */
 export interface SocialLinks {
@@ -30,6 +48,7 @@ export interface EnabledFeatures {
   collect_phone?: boolean;
   show_location?: boolean;
   show_about?: boolean;
+  show_display_name?: boolean; // Show/hide the display name heading
 }
 
 /**
@@ -43,6 +62,7 @@ export interface RecruitingPageTheme {
 
   // Layout
   layout_variant: LayoutVariant;
+  logo_size: LogoSize;
 
   // Branding
   display_name: string;
@@ -87,6 +107,7 @@ export interface RecruitingPageSettings {
 
   // Layout
   layout_variant: LayoutVariant;
+  logo_size: LogoSize;
 
   // Branding
   display_name: string | null;
@@ -129,6 +150,7 @@ export interface RecruitingPageSettings {
  */
 export interface RecruitingPageSettingsInput {
   layout_variant?: LayoutVariant;
+  logo_size?: LogoSize;
   display_name?: string | null;
   headline?: string | null;
   subheadline?: string | null;
@@ -156,6 +178,7 @@ export const DEFAULT_THEME: RecruitingPageTheme = {
   recruiter_first_name: "",
   recruiter_last_name: "",
   layout_variant: "split-panel",
+  logo_size: "medium",
   display_name: "Insurance Agency",
   headline: "Join Our Team",
   subheadline: "Build your career in insurance",
@@ -176,6 +199,7 @@ export const DEFAULT_THEME: RecruitingPageTheme = {
     show_location: false,
     show_about: true,
     show_testimonials: false,
+    show_display_name: false,
   },
   default_city: null,
   default_state: null,

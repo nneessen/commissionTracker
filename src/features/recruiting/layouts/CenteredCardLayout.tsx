@@ -3,6 +3,7 @@
 
 import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
+import { LOGO_SIZE_MAP } from "@/types/recruiting-theme.types";
 import type { LayoutProps } from "./types";
 import { getActiveSocialLinks } from "./types";
 
@@ -20,6 +21,8 @@ export function CenteredCardLayout({
   onFormSuccess,
 }: LayoutProps) {
   const activeSocialLinks = getActiveSocialLinks(theme.social_links);
+  const logoSize = LOGO_SIZE_MAP[theme.logo_size || "medium"];
+  const showDisplayName = theme.enabled_features?.show_display_name !== false;
 
   return (
     <div className="min-h-screen bg-background relative overflow-auto">
@@ -68,32 +71,39 @@ export function CenteredCardLayout({
             <img
               src={theme.logo_dark_url}
               alt={theme.display_name}
-              className="h-10 w-10 object-contain"
+              className="object-contain"
+              style={{ height: logoSize.mobile, width: logoSize.mobile }}
             />
           ) : (
             <div
-              className="h-10 w-10 rounded-lg flex items-center justify-center text-white text-lg font-bold"
-              style={{ backgroundColor: theme.primary_color }}
+              className="rounded-lg flex items-center justify-center text-white text-lg font-bold"
+              style={{
+                backgroundColor: theme.primary_color,
+                height: logoSize.mobile,
+                width: logoSize.mobile,
+              }}
             >
               {theme.display_name.charAt(0)}
             </div>
           )}
-          <div className="flex flex-col">
-            <span
-              className="text-foreground text-lg font-bold tracking-wide"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {theme.display_name.toUpperCase()}
-            </span>
-            {theme.default_city && theme.default_state && (
+          {showDisplayName && (
+            <div className="flex flex-col">
               <span
-                className="text-[9px] uppercase tracking-[0.2em] font-medium"
-                style={{ color: theme.primary_color }}
+                className="text-foreground text-lg font-bold tracking-wide"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
-                {theme.default_city}, {theme.default_state}
+                {theme.display_name.toUpperCase()}
               </span>
-            )}
-          </div>
+              {theme.default_city && theme.default_state && (
+                <span
+                  className="text-[9px] uppercase tracking-[0.2em] font-medium"
+                  style={{ color: theme.primary_color }}
+                >
+                  {theme.default_city}, {theme.default_state}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Headline */}

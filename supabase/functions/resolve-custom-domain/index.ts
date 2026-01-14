@@ -14,12 +14,16 @@ type LayoutVariant =
   | "hero-slide"
   | "multi-section";
 
+// Logo size type
+type LogoSize = "small" | "medium" | "large" | "xlarge";
+
 // Theme interface matching get_public_recruiting_theme RPC response
 // These are the ONLY fields that can be returned to the public
 interface RecruitingPageTheme {
   recruiter_first_name: string;
   recruiter_last_name: string;
   layout_variant: LayoutVariant;
+  logo_size: LogoSize;
   display_name: string;
   headline: string;
   subheadline: string;
@@ -57,6 +61,18 @@ function isValidLayoutVariant(value: unknown): value is LayoutVariant {
 }
 
 /**
+ * Validate logo size
+ */
+function isValidLogoSize(value: unknown): value is LogoSize {
+  return (
+    value === "small" ||
+    value === "medium" ||
+    value === "large" ||
+    value === "xlarge"
+  );
+}
+
+/**
  * Sanitize and whitelist theme fields from RPC response
  * SECURITY: Only returns explicitly whitelisted fields
  * Never use object spread on untrusted data
@@ -71,6 +87,11 @@ function sanitizeTheme(rawTheme: Record<string, unknown>): RecruitingPageTheme {
     layout_variant: isValidLayoutVariant(rawTheme.layout_variant)
       ? rawTheme.layout_variant
       : "split-panel",
+
+    // Logo size - validated enum
+    logo_size: isValidLogoSize(rawTheme.logo_size)
+      ? rawTheme.logo_size
+      : "medium",
 
     // Branding - strings only
     display_name: String(rawTheme.display_name || "Insurance Agency"),
@@ -178,7 +199,7 @@ function sanitizeSocialLinks(links: unknown): Record<string, string> {
  */
 function sanitizeEnabledFeatures(features: unknown): Record<string, boolean> {
   if (!features || typeof features !== "object") {
-    return { show_stats: true, collect_phone: true };
+    return { show_stats: true, collect_phone: true, show_display_name: true };
   }
 
   const result: Record<string, boolean> = {};
@@ -188,6 +209,7 @@ function sanitizeEnabledFeatures(features: unknown): Record<string, boolean> {
     "collect_phone",
     "show_location",
     "show_about",
+    "show_display_name",
   ];
 
   for (const key of allowedKeys) {

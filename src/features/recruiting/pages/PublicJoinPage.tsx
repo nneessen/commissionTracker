@@ -22,6 +22,7 @@ import {
   HeroSlideLayout,
   MultiSectionLayout,
 } from "../layouts";
+import { NickCustomLayout } from "../layouts/NickCustomLayout";
 
 /**
  * Extract recruiter slug from pathname or route params
@@ -207,6 +208,11 @@ export function PublicJoinPage() {
     recruiterId: recruiterId || "",
     onFormSuccess: (leadId: string) => setSubmittedLeadId(leadId),
   };
+
+  // Nick's custom layout for his personal page
+  if (recruiterId === "the-standard") {
+    return <NickCustomLayout {...layoutProps} />;
+  }
 
   // Render the appropriate layout based on theme's layout_variant
   switch (displayTheme.layout_variant) {

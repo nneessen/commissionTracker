@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { getRecruiterFullName } from "@/lib/recruiting-theme";
+import { LOGO_SIZE_MAP } from "@/types/recruiting-theme.types";
 import type { LayoutProps } from "./types";
 import { getActiveSocialLinks } from "./types";
 
@@ -35,6 +36,8 @@ export function SplitPanelLayout({
 }: LayoutProps) {
   const activeSocialLinks = getActiveSocialLinks(theme.social_links);
   const recruiterFullName = getRecruiterFullName(theme);
+  const logoSize = LOGO_SIZE_MAP[theme.logo_size || "medium"];
+  const showDisplayName = theme.enabled_features?.show_display_name !== false;
 
   return (
     <div className="h-screen flex flex-col lg:flex-row bg-background overflow-hidden">
@@ -93,33 +96,40 @@ export function SplitPanelLayout({
                 <img
                   src={theme.logo_light_url}
                   alt={theme.display_name}
-                  className="relative h-14 w-14 object-contain drop-shadow-2xl"
+                  className="relative object-contain drop-shadow-2xl"
+                  style={{ height: logoSize.desktop, width: logoSize.desktop }}
                 />
               ) : (
                 <div
-                  className="relative h-14 w-14 rounded-xl flex items-center justify-center text-white text-2xl font-bold"
-                  style={{ backgroundColor: theme.primary_color }}
+                  className="relative rounded-xl flex items-center justify-center text-white text-2xl font-bold"
+                  style={{
+                    backgroundColor: theme.primary_color,
+                    height: logoSize.desktop,
+                    width: logoSize.desktop,
+                  }}
                 >
                   {theme.display_name.charAt(0)}
                 </div>
               )}
             </div>
-            <div className="flex flex-col">
-              <span
-                className="text-white dark:text-black text-2xl font-bold tracking-wide"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                {theme.display_name.toUpperCase()}
-              </span>
-              {theme.default_city && theme.default_state && (
+            {showDisplayName && (
+              <div className="flex flex-col">
                 <span
-                  className="text-[10px] uppercase tracking-[0.3em] font-medium"
-                  style={{ color: theme.primary_color }}
+                  className="text-white dark:text-black text-2xl font-bold tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
-                  {theme.default_city}, {theme.default_state}
+                  {theme.display_name.toUpperCase()}
                 </span>
-              )}
-            </div>
+                {theme.default_city && theme.default_state && (
+                  <span
+                    className="text-[10px] uppercase tracking-[0.3em] font-medium"
+                    style={{ color: theme.primary_color }}
+                  >
+                    {theme.default_city}, {theme.default_state}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Middle - Main messaging */}
@@ -285,32 +295,39 @@ export function SplitPanelLayout({
                 <img
                   src={theme.logo_dark_url}
                   alt={theme.display_name}
-                  className="h-10 w-10 object-contain"
+                  className="object-contain"
+                  style={{ height: logoSize.mobile, width: logoSize.mobile }}
                 />
               ) : (
                 <div
-                  className="h-10 w-10 rounded-lg flex items-center justify-center text-white text-lg font-bold"
-                  style={{ backgroundColor: theme.primary_color }}
+                  className="rounded-lg flex items-center justify-center text-white text-lg font-bold"
+                  style={{
+                    backgroundColor: theme.primary_color,
+                    height: logoSize.mobile,
+                    width: logoSize.mobile,
+                  }}
                 >
                   {theme.display_name.charAt(0)}
                 </div>
               )}
-              <div className="flex flex-col">
-                <span
-                  className="text-foreground text-xl font-bold tracking-wide"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
-                  {theme.display_name.toUpperCase()}
-                </span>
-                {theme.default_city && theme.default_state && (
+              {showDisplayName && (
+                <div className="flex flex-col">
                   <span
-                    className="text-[9px] uppercase tracking-[0.25em] font-medium"
-                    style={{ color: theme.primary_color }}
+                    className="text-foreground text-xl font-bold tracking-wide"
+                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                   >
-                    {theme.default_city}, {theme.default_state}
+                    {theme.display_name.toUpperCase()}
                   </span>
-                )}
-              </div>
+                  {theme.default_city && theme.default_state && (
+                    <span
+                      className="text-[9px] uppercase tracking-[0.25em] font-medium"
+                      style={{ color: theme.primary_color }}
+                    >
+                      {theme.default_city}, {theme.default_state}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

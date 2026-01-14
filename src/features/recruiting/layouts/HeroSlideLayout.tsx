@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
+import { LOGO_SIZE_MAP } from "@/types/recruiting-theme.types";
 import type { LayoutProps } from "./types";
 import { getActiveSocialLinks } from "./types";
 
@@ -46,6 +47,8 @@ export function HeroSlideLayout({
 }: LayoutProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const activeSocialLinks = getActiveSocialLinks(theme.social_links);
+  const logoSize = LOGO_SIZE_MAP[theme.logo_size || "medium"];
+  const showDisplayName = theme.enabled_features?.show_display_name !== false;
 
   return (
     <div className="min-h-screen bg-foreground relative overflow-hidden">
@@ -106,22 +109,29 @@ export function HeroSlideLayout({
               <img
                 src={theme.logo_light_url}
                 alt={theme.display_name}
-                className="h-10 w-10 object-contain"
+                className="object-contain"
+                style={{ height: logoSize.mobile, width: logoSize.mobile }}
               />
             ) : (
               <div
-                className="h-10 w-10 rounded-lg flex items-center justify-center text-white text-lg font-bold"
-                style={{ backgroundColor: theme.primary_color }}
+                className="rounded-lg flex items-center justify-center text-white text-lg font-bold"
+                style={{
+                  backgroundColor: theme.primary_color,
+                  height: logoSize.mobile,
+                  width: logoSize.mobile,
+                }}
               >
                 {theme.display_name.charAt(0)}
               </div>
             )}
-            <span
-              className="text-white text-lg font-bold tracking-wide hidden sm:block"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {theme.display_name.toUpperCase()}
-            </span>
+            {showDisplayName && (
+              <span
+                className="text-white text-lg font-bold tracking-wide hidden sm:block"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                {theme.display_name.toUpperCase()}
+              </span>
+            )}
           </div>
 
           {/* Desktop CTA in header */}
@@ -253,19 +263,26 @@ export function HeroSlideLayout({
                 <img
                   src={theme.logo_dark_url}
                   alt={theme.display_name}
-                  className="h-8 w-8 object-contain"
+                  className="object-contain"
+                  style={{ height: 32, width: 32 }}
                 />
               ) : (
                 <div
-                  className="h-8 w-8 rounded flex items-center justify-center text-white text-sm font-bold"
-                  style={{ backgroundColor: theme.primary_color }}
+                  className="rounded flex items-center justify-center text-white text-sm font-bold"
+                  style={{
+                    backgroundColor: theme.primary_color,
+                    height: 32,
+                    width: 32,
+                  }}
                 >
                   {theme.display_name.charAt(0)}
                 </div>
               )}
-              <span className="text-sm font-semibold text-foreground">
-                {theme.display_name}
-              </span>
+              {showDisplayName && (
+                <span className="text-sm font-semibold text-foreground">
+                  {theme.display_name}
+                </span>
+              )}
             </div>
             <Button
               variant="ghost"

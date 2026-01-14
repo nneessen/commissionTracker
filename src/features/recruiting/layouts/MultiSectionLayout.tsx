@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { getRecruiterFullName } from "@/lib/recruiting-theme";
+import { LOGO_SIZE_MAP } from "@/types/recruiting-theme.types";
 import type { LayoutProps } from "./types";
 import { getActiveSocialLinks } from "./types";
 
@@ -70,6 +71,8 @@ export function MultiSectionLayout({
 }: LayoutProps) {
   const activeSocialLinks = getActiveSocialLinks(theme.social_links);
   const recruiterFullName = getRecruiterFullName(theme);
+  const logoSize = LOGO_SIZE_MAP[theme.logo_size || "medium"];
+  const showDisplayName = theme.enabled_features?.show_display_name !== false;
 
   const scrollToForm = () => {
     const formSection = document.getElementById("apply-section");
@@ -101,32 +104,39 @@ export function MultiSectionLayout({
               <img
                 src={theme.logo_light_url}
                 alt={theme.display_name}
-                className="h-10 w-10 object-contain"
+                className="object-contain"
+                style={{ height: logoSize.mobile, width: logoSize.mobile }}
               />
             ) : (
               <div
-                className="h-10 w-10 rounded-lg flex items-center justify-center text-white text-lg font-bold"
-                style={{ backgroundColor: theme.primary_color }}
+                className="rounded-lg flex items-center justify-center text-white text-lg font-bold"
+                style={{
+                  backgroundColor: theme.primary_color,
+                  height: logoSize.mobile,
+                  width: logoSize.mobile,
+                }}
               >
                 {theme.display_name.charAt(0)}
               </div>
             )}
-            <div className="flex flex-col">
-              <span
-                className="text-white text-lg font-bold tracking-wide"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                {theme.display_name.toUpperCase()}
-              </span>
-              {theme.default_city && theme.default_state && (
+            {showDisplayName && (
+              <div className="flex flex-col">
                 <span
-                  className="text-[9px] uppercase tracking-[0.2em]"
-                  style={{ color: theme.primary_color }}
+                  className="text-white text-lg font-bold tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
-                  {theme.default_city}, {theme.default_state}
+                  {theme.display_name.toUpperCase()}
                 </span>
-              )}
-            </div>
+                {theme.default_city && theme.default_state && (
+                  <span
+                    className="text-[9px] uppercase tracking-[0.2em]"
+                    style={{ color: theme.primary_color }}
+                  >
+                    {theme.default_city}, {theme.default_state}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <Button
             onClick={scrollToForm}
@@ -317,19 +327,26 @@ export function MultiSectionLayout({
                 <img
                   src={theme.logo_light_url}
                   alt={theme.display_name}
-                  className="h-8 w-8 object-contain"
+                  className="object-contain"
+                  style={{ height: 32, width: 32 }}
                 />
               ) : (
                 <div
-                  className="h-8 w-8 rounded flex items-center justify-center text-white text-sm font-bold"
-                  style={{ backgroundColor: theme.primary_color }}
+                  className="rounded flex items-center justify-center text-white text-sm font-bold"
+                  style={{
+                    backgroundColor: theme.primary_color,
+                    height: 32,
+                    width: 32,
+                  }}
                 >
                   {theme.display_name.charAt(0)}
                 </div>
               )}
-              <span className="text-white/80 text-sm font-medium">
-                {theme.display_name}
-              </span>
+              {showDisplayName && (
+                <span className="text-white/80 text-sm font-medium">
+                  {theme.display_name}
+                </span>
+              )}
             </div>
 
             {activeSocialLinks.length > 0 && (

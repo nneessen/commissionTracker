@@ -6,6 +6,76 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-14 14:00:47
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `public/logos/Dark Letter Logo  (3).png`
+- `public/logos/Dark Letter Logo  (3).png:Zone.Identifier`
+- `public/logos/Light Letter Logo .png`
+- `public/logos/Light Letter Logo .png:Zone.Identifier`
+- `public/logos/The Standard (2).png`
+- `public/logos/The Standard (2).png:Zone.Identifier`
+- `public/logos/The Standard blackwhite (2).png`
+- `public/logos/The Standard blackwhite (2).png:Zone.Identifier`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/layouts/CenteredCardLayout.tsx`
+- `src/features/recruiting/layouts/HeroSlideLayout.tsx`
+- `src/features/recruiting/layouts/MultiSectionLayout.tsx`
+- `src/features/recruiting/layouts/NickCustomLayout.tsx`
+- `src/features/recruiting/layouts/SplitPanelLayout.tsx`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/features/settings/components/BrandingSettings.tsx`
+- `src/hooks/custom-domains/useCustomDomains.ts`
+- `src/index.css`
+- `src/lib/recruiting-validation.ts`
+- `src/types/recruiting-theme.types.ts`
+- `supabase/functions/debug-vercel-domain/index.ts`
+- `supabase/functions/resolve-custom-domain/index.ts`
+- `supabase/migrations/20260114_004_logo_size.sql`
+- `supabase/migrations/20260114_005_fix_domain_error_transition.sql`
+- `supabase/migrations/20260114_006_remove_superadmin_domain_policy.sql`
+
+### Statistics
+```
+ 27 files changed, 1232 insertions(+), 96 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-14 14:00:26
+
+### Changed Files
+- `public/logos/Dark Letter Logo  (3).png`
+- `public/logos/Dark Letter Logo  (3).png:Zone.Identifier`
+- `public/logos/Light Letter Logo .png`
+- `public/logos/Light Letter Logo .png:Zone.Identifier`
+- `public/logos/The Standard (2).png`
+- `public/logos/The Standard (2).png:Zone.Identifier`
+- `public/logos/The Standard blackwhite (2).png`
+- `public/logos/The Standard blackwhite (2).png:Zone.Identifier`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/layouts/CenteredCardLayout.tsx`
+- `src/features/recruiting/layouts/HeroSlideLayout.tsx`
+- `src/features/recruiting/layouts/MultiSectionLayout.tsx`
+- `src/features/recruiting/layouts/NickCustomLayout.tsx`
+- `src/features/recruiting/layouts/SplitPanelLayout.tsx`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/features/settings/components/BrandingSettings.tsx`
+- `src/hooks/custom-domains/useCustomDomains.ts`
+- `src/index.css`
+- `src/lib/recruiting-validation.ts`
+- `src/types/recruiting-theme.types.ts`
+- `supabase/functions/debug-vercel-domain/index.ts`
+- `supabase/functions/resolve-custom-domain/index.ts`
+- `supabase/migrations/20260114_004_logo_size.sql`
+- `supabase/migrations/20260114_005_fix_domain_error_transition.sql`
+- `supabase/migrations/20260114_006_remove_superadmin_domain_policy.sql`
+
+### Statistics
+```
+ 25 files changed, 1194 insertions(+), 91 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-14 11:37:12
 
 ### Changed Files

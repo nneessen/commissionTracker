@@ -35,8 +35,13 @@ import { useBrandingSettingsOperations } from "../hooks/useBrandingSettings";
 import type {
   RecruitingPageSettingsInput,
   SocialLinks,
+  EnabledFeatures,
 } from "@/types/recruiting-theme.types";
-import { COLOR_PRESETS, DEFAULT_THEME } from "@/types/recruiting-theme.types";
+import {
+  COLOR_PRESETS,
+  DEFAULT_THEME,
+  LOGO_SIZE_MAP,
+} from "@/types/recruiting-theme.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { isValidHexColor, isValidSafeUrl } from "@/lib/recruiting-validation";
 
@@ -235,6 +240,7 @@ export function BrandingSettings() {
   // Form state
   const [formData, setFormData] = useState<RecruitingPageSettingsInput>({
     layout_variant: "split-panel",
+    logo_size: "medium",
     display_name: "",
     headline: "",
     subheadline: "",
@@ -251,6 +257,7 @@ export function BrandingSettings() {
     disclaimer_text: "",
     default_city: "",
     default_state: "",
+    enabled_features: DEFAULT_THEME.enabled_features,
   });
 
   // Initialize form with settings when loaded
@@ -258,6 +265,7 @@ export function BrandingSettings() {
     if (settings) {
       setFormData({
         layout_variant: settings.layout_variant || "split-panel",
+        logo_size: settings.logo_size || "medium",
         display_name: settings.display_name || "",
         headline: settings.headline || "",
         subheadline: settings.subheadline || "",
@@ -274,6 +282,8 @@ export function BrandingSettings() {
         disclaimer_text: settings.disclaimer_text || "",
         default_city: settings.default_city || "",
         default_state: settings.default_state || "",
+        enabled_features:
+          settings.enabled_features || DEFAULT_THEME.enabled_features,
       });
     }
   }, [settings]);
@@ -295,6 +305,17 @@ export function BrandingSettings() {
       setFormData((prev) => ({
         ...prev,
         social_links: { ...prev.social_links, [platform]: url },
+      }));
+    },
+    [],
+  );
+
+  // Update enabled feature
+  const updateEnabledFeature = useCallback(
+    (feature: keyof EnabledFeatures, value: boolean) => {
+      setFormData((prev) => ({
+        ...prev,
+        enabled_features: { ...prev.enabled_features, [feature]: value },
       }));
     },
     [],
@@ -441,6 +462,7 @@ export function BrandingSettings() {
       await resetToDefaults();
       setFormData({
         layout_variant: "split-panel",
+        logo_size: "medium",
         display_name: "",
         headline: "",
         subheadline: "",
@@ -457,6 +479,7 @@ export function BrandingSettings() {
         disclaimer_text: "",
         default_city: "",
         default_state: "",
+        enabled_features: DEFAULT_THEME.enabled_features,
       });
       setValidationErrors([]);
     }
@@ -766,6 +789,131 @@ export function BrandingSettings() {
               </p>
             </button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Logo Size */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <div className="flex items-center gap-2">
+            <Image className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm">Logo Size</CardTitle>
+          </div>
+          <CardDescription className="text-xs">
+            Control how large your logo appears on the page
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="flex gap-2">
+            {(["small", "medium", "large", "xlarge"] as const).map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => updateField("logo_size", size)}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg border-2 transition-all ${
+                  formData.logo_size === size
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                {formData.logo_size === size && (
+                  <Check className="h-3 w-3 text-primary absolute -top-1 -right-1" />
+                )}
+                <div
+                  className="rounded bg-muted flex items-center justify-center"
+                  style={{
+                    width: LOGO_SIZE_MAP[size].desktop * 0.6,
+                    height: LOGO_SIZE_MAP[size].desktop * 0.6,
+                    backgroundColor:
+                      formData.primary_color || DEFAULT_THEME.primary_color,
+                  }}
+                >
+                  <span className="text-white text-[8px] font-bold">
+                    {LOGO_SIZE_MAP[size].desktop}px
+                  </span>
+                </div>
+                <span className="text-xs font-medium capitalize">{size}</span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Display Options */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm">Display Options</CardTitle>
+          <CardDescription className="text-xs">
+            Control what elements appear on your recruiting page
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.enabled_features?.show_display_name !== false}
+              onChange={(e) =>
+                updateEnabledFeature("show_display_name", e.target.checked)
+              }
+              className="rounded border-border h-4 w-4 text-primary focus:ring-primary"
+            />
+            <div>
+              <span className="text-xs font-medium">
+                Show Display Name Heading
+              </span>
+              <p className="text-[10px] text-muted-foreground">
+                Display your agency name as a heading next to your logo
+              </p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.enabled_features?.show_stats !== false}
+              onChange={(e) =>
+                updateEnabledFeature("show_stats", e.target.checked)
+              }
+              className="rounded border-border h-4 w-4 text-primary focus:ring-primary"
+            />
+            <div>
+              <span className="text-xs font-medium">Show Earnings Stats</span>
+              <p className="text-[10px] text-muted-foreground">
+                Display the "$20,000+ average monthly commissions" highlight
+              </p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.enabled_features?.show_about !== false}
+              onChange={(e) =>
+                updateEnabledFeature("show_about", e.target.checked)
+              }
+              className="rounded border-border h-4 w-4 text-primary focus:ring-primary"
+            />
+            <div>
+              <span className="text-xs font-medium">Show About Section</span>
+              <p className="text-[10px] text-muted-foreground">
+                Display the about text on your recruiting page
+              </p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.enabled_features?.collect_phone !== false}
+              onChange={(e) =>
+                updateEnabledFeature("collect_phone", e.target.checked)
+              }
+              className="rounded border-border h-4 w-4 text-primary focus:ring-primary"
+            />
+            <div>
+              <span className="text-xs font-medium">Collect Phone Number</span>
+              <p className="text-[10px] text-muted-foreground">
+                Ask for phone number on the interest form
+              </p>
+            </div>
+          </label>
         </CardContent>
       </Card>
 

@@ -19,20 +19,35 @@ import type {
 // Query keys
 export const customDomainKeys = {
   all: ["custom-domains"] as const,
-  list: () => [...customDomainKeys.all, "list"] as const,
+  list: (userId?: string) => [...customDomainKeys.all, "list", userId] as const,
   detail: (id: string) => [...customDomainKeys.all, "detail", id] as const,
 };
 
 /**
  * Get all custom domains for the current user
+ *
+ * SECURITY: Explicitly filters by user_id even though RLS policies exist.
+ * This prevents super admins from seeing other users' domains in the UI
+ * (the super admin RLS policy is for SQL debugging, not UI display).
+ * Query key includes user_id to prevent cache pollution between users.
  */
 export function useMyCustomDomains() {
   return useQuery({
-    queryKey: customDomainKeys.list(),
+    queryKey: customDomainKeys.list("current"),
     queryFn: async (): Promise<CustomDomain[]> => {
+      // Get current user to filter explicitly (defense-in-depth for super admins)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from("custom_domains")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -47,6 +62,9 @@ export function useMyCustomDomains() {
 
 /**
  * Get a single custom domain by ID
+ *
+ * SECURITY: Explicitly filters by user_id to prevent super admins from
+ * accessing other users' domain details in the UI.
  */
 export function useCustomDomainDetail(domainId: string | null) {
   return useQuery({
@@ -54,14 +72,22 @@ export function useCustomDomainDetail(domainId: string | null) {
     queryFn: async (): Promise<CustomDomain | null> => {
       if (!domainId) return null;
 
+      // Get current user for explicit ownership check
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from("custom_domains")
         .select("*")
         .eq("id", domainId)
+        .eq("user_id", user.id)
         .single();
 
       if (error) {
-        if (error.code === "PGRST116") return null; // Not found
+        if (error.code === "PGRST116") return null; // Not found or not owned
         throw new Error(`Failed to fetch domain: ${error.message}`);
       }
 

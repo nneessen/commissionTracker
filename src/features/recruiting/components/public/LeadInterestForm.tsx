@@ -63,6 +63,7 @@ interface LeadInterestFormProps {
   onSuccess: (leadId: string) => void;
   ctaText?: string;
   primaryColor?: string;
+  darkMode?: boolean;
 }
 
 // Helper to extract error message from Zod error
@@ -79,7 +80,16 @@ export function LeadInterestForm({
   onSuccess,
   ctaText = "Submit Your Interest",
   primaryColor,
+  darkMode = false,
 }: LeadInterestFormProps) {
+  // Dark mode classes for inputs (prefixed with _ to indicate intentionally unused for now)
+  const _inputClass = darkMode
+    ? "bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400/20"
+    : "";
+  const _labelClass = darkMode ? "text-gray-200" : "";
+  const _selectTriggerClass = darkMode
+    ? "bg-white/10 border-white/20 text-white [&>span]:text-white"
+    : "";
   const submitLeadMutation = useSubmitLead();
   const [honeypot, setHoneypot] = useState("");
   const [selectedSpecialties, setSelectedSpecialties] = useState<
@@ -156,7 +166,7 @@ export function LeadInterestForm({
         e.stopPropagation();
         form.handleSubmit();
       }}
-      className="space-y-3"
+      className={`space-y-3 ${darkMode ? "lead-form-dark" : ""}`}
     >
       {/* Honeypot field - hidden from real users */}
       <div className="absolute -left-[9999px]" aria-hidden="true">

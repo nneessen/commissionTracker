@@ -28,6 +28,12 @@ export function isValidLayoutVariant(value: unknown): value is LayoutVariant {
 }
 
 // ============================================================================
+// LOGO SIZE VALIDATION
+// ============================================================================
+
+const logoSizeSchema = z.enum(["small", "medium", "large", "xlarge"]);
+
+// ============================================================================
 // URL VALIDATION
 // ============================================================================
 
@@ -176,6 +182,7 @@ export const enabledFeaturesSchema = z
     collect_phone: z.boolean().optional(),
     show_location: z.boolean().optional(),
     show_about: z.boolean().optional(),
+    show_display_name: z.boolean().optional(),
   })
   .strict()
   .optional()
@@ -209,6 +216,7 @@ export const recruitingPageThemeSchema = z.object({
   recruiter_first_name: z.string().default(""),
   recruiter_last_name: z.string().default(""),
   layout_variant: layoutVariantSchema.default("split-panel"),
+  logo_size: logoSizeSchema.default("medium"),
   display_name: z.string().default(DEFAULT_THEME.display_name),
   headline: z.string().default(DEFAULT_THEME.headline),
   subheadline: z.string().default(DEFAULT_THEME.subheadline),
@@ -268,6 +276,7 @@ export function validateRecruitingTheme(data: unknown): RecruitingPageTheme {
  */
 export const brandingSettingsInputSchema = z.object({
   layout_variant: layoutVariantSchema.optional(),
+  logo_size: logoSizeSchema.optional(),
   display_name: z.string().nullable().optional(),
   headline: z.string().nullable().optional(),
   subheadline: z.string().nullable().optional(),

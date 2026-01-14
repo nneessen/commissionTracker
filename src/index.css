@@ -243,3 +243,40 @@
     @apply w-full;
   }
 }
+
+/* ==================== DARK MODE LEAD FORM ==================== */
+/* Styles for the lead interest form when used on dark backgrounds */
+.lead-form-dark label {
+  @apply text-gray-200;
+}
+
+.lead-form-dark input,
+.lead-form-dark textarea {
+  @apply bg-white/10 border-white/20 text-white placeholder:text-gray-400;
+}
+
+.lead-form-dark input:focus,
+.lead-form-dark textarea:focus {
+  @apply border-blue-400 ring-blue-400/20;
+}
+
+.lead-form-dark [data-radix-select-trigger],
+.lead-form-dark button[role="combobox"] {
+  @apply bg-white/10 border-white/20 text-white;
+}
+
+.lead-form-dark [data-radix-radio-group-item] {
+  @apply border-white/30;
+}
+
+.lead-form-dark [data-radix-radio-group-item][data-state="checked"] {
+  @apply border-blue-400 bg-blue-400;
+}
+
+.lead-form-dark .text-muted-foreground {
+  @apply text-gray-400;
+}
+
+.lead-form-dark .text-foreground {
+  @apply text-white;
+}
