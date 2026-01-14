@@ -1,7 +1,8 @@
 // src/features/underwriting/components/WizardDialogLayout.tsx
 
-import { Check } from "lucide-react";
+import { Check, History } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import type { WizardStep } from "../types/underwriting.types";
 import { WIZARD_STEPS } from "../types/underwriting.types";
 
@@ -10,6 +11,8 @@ interface WizardDialogLayoutProps {
   children: React.ReactNode;
   onStepClick?: (step: WizardStep) => void;
   canNavigateToStep?: (step: WizardStep) => boolean;
+  onHistoryClick?: () => void;
+  showingHistory?: boolean;
 }
 
 export function WizardDialogLayout({
@@ -17,6 +20,8 @@ export function WizardDialogLayout({
   children,
   onStepClick,
   canNavigateToStep,
+  onHistoryClick,
+  showingHistory,
 }: WizardDialogLayoutProps) {
   const currentStepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -195,6 +200,24 @@ export function WizardDialogLayout({
               />
             </div>
           </div>
+
+          {/* History Button */}
+          {onHistoryClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onHistoryClick}
+              className={cn(
+                "w-full mt-4 h-8 text-[11px] justify-start gap-2",
+                showingHistory
+                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  : "text-white/70 dark:text-black/70 hover:text-white dark:hover:text-black hover:bg-white/10 dark:hover:bg-black/10",
+              )}
+            >
+              <History className="h-3.5 w-3.5" />
+              Session History
+            </Button>
+          )}
         </div>
       </div>
 

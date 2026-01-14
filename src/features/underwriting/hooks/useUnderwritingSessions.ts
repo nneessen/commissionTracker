@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImo } from "@/contexts/ImoContext";
 import { underwritingQueryKeys } from "./useHealthConditions";
 import type {
   UnderwritingSession,
@@ -20,6 +21,22 @@ async function fetchUserSessions(
 
   if (error) {
     throw new Error(`Failed to fetch sessions: ${error.message}`);
+  }
+
+  return data || [];
+}
+
+async function fetchAgencySessions(
+  agencyId: string,
+): Promise<UnderwritingSession[]> {
+  const { data, error } = await supabase
+    .from("underwriting_sessions")
+    .select("*")
+    .eq("agency_id", agencyId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch agency sessions: ${error.message}`);
   }
 
   return data || [];
@@ -126,16 +143,35 @@ export function useUnderwritingSession(sessionId: string) {
 export function useSaveUnderwritingSession() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { agency } = useImo();
 
   return useMutation({
     mutationFn: saveSession,
     onSuccess: () => {
-      // Invalidate the sessions list
+      // Invalidate the sessions list (both user and agency)
       if (user?.id) {
         queryClient.invalidateQueries({
           queryKey: underwritingQueryKeys.sessions(user.id),
         });
       }
+      if (agency?.id) {
+        queryClient.invalidateQueries({
+          queryKey: underwritingQueryKeys.agencySessions(agency.id),
+        });
+      }
     },
+  });
+}
+
+/**
+ * Hook to fetch all sessions for the current agency (agency-wide access)
+ */
+export function useAgencySessions() {
+  const { agency, loading: imoLoading } = useImo();
+
+  return useQuery({
+    queryKey: underwritingQueryKeys.agencySessions(agency?.id || ""),
+    queryFn: () => fetchAgencySessions(agency!.id!),
+    enabled: !!agency?.id && !imoLoading,
   });
 }

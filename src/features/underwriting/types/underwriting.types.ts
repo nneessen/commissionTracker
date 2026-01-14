@@ -558,6 +558,17 @@ export const WIZARD_STEPS: WizardStepConfig[] = [
 // Session Types
 // ============================================================================
 
+/** Simplified rate table recommendation stored in session */
+export interface RateTableRecommendation {
+  carrierName: string;
+  productName: string;
+  termYears: number | null;
+  healthClass: string;
+  monthlyPremium: number;
+  faceAmount: number;
+  reason: string;
+}
+
 export interface SessionSaveData {
   clientName?: string;
   clientAge: number;
@@ -570,10 +581,11 @@ export interface SessionSaveData {
   tobaccoDetails?: TobaccoInfo;
   requestedFaceAmounts: number[]; // Array of face amounts
   requestedProductTypes: string[];
-  aiAnalysis: AIAnalysisResult;
+  aiAnalysis: AIAnalysisResult | null; // Now nullable - we store rate table recs instead
   healthTier: HealthTier;
   riskFactors: string[];
-  recommendations: CarrierRecommendation[];
+  // Can be AI recommendations (legacy) or rate table recommendations (new)
+  recommendations: CarrierRecommendation[] | RateTableRecommendation[];
   decisionTreeId?: string;
   sessionDurationSeconds?: number;
   notes?: string;

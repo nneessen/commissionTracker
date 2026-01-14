@@ -23,6 +23,8 @@ export const underwritingQueryKeys = {
     [...underwritingQueryKeys.all, "sessions", userId] as const,
   session: (sessionId: string) =>
     [...underwritingQueryKeys.all, "session", sessionId] as const,
+  agencySessions: (agencyId: string) =>
+    [...underwritingQueryKeys.all, "agency-sessions", agencyId] as const,
   featureEnabled: (agencyId: string) =>
     [...underwritingQueryKeys.all, "feature-enabled", agencyId] as const,
 };

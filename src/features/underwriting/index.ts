@@ -7,6 +7,8 @@ export { UnderwritingSettingsTab } from "./components/UnderwritingSettingsTab";
 export {
   SessionHistoryList,
   SessionDetailDialog,
+  SessionDetailSheet,
+  WizardSessionHistory,
 } from "./components/SessionHistory";
 export { GuideList, GuideUploader } from "./components/GuideManager";
 
@@ -19,6 +21,7 @@ export {
   useUnderwritingSessions,
   useUnderwritingSession,
   useSaveUnderwritingSession,
+  useAgencySessions,
   useUnderwritingGuides,
   useUnderwritingGuide,
   useUploadGuide,
@@ -46,6 +49,7 @@ export type {
   AIAnalysisResult,
   AIAnalysisRequest,
   CarrierRecommendation,
+  RateTableRecommendation,
   HealthTier,
   ConditionResponse,
   FollowUpQuestion,

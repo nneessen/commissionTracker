@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-14 18:37:23
+
+### Changed Files
+- `src/features/underwriting/components/SessionHistory/SessionDetailSheet.tsx`
+- `src/features/underwriting/components/SessionHistory/WizardSessionHistory.tsx`
+- `src/features/underwriting/components/SessionHistory/index.ts`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardDialogLayout.tsx`
+- `src/features/underwriting/hooks/index.ts`
+- `src/features/underwriting/hooks/useHealthConditions.ts`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/features/underwriting/index.ts`
+- `src/features/underwriting/types/underwriting.types.ts`
+
+### Statistics
+```
+ 10 files changed, 1186 insertions(+), 86 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-14 17:25:05
 
 ### Changed Files

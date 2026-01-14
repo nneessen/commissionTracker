@@ -21,11 +21,17 @@ import type {
   AIAnalysisResult,
   AIAnalysisRequest,
   SessionSaveData,
+  UnderwritingSession,
+  ConditionResponse,
+  TobaccoInfo,
+  ProductType,
 } from "../types/underwriting.types";
 import { WIZARD_STEPS } from "../types/underwriting.types";
+import { safeParseJsonObject, safeParseJsonArray } from "../utils/formatters";
 
 // Layout and step components
 import { WizardDialogLayout } from "./WizardDialogLayout";
+import { WizardSessionHistory } from "./SessionHistory";
 import ClientInfoStep from "./WizardSteps/ClientInfoStep";
 import HealthConditionsStep from "./WizardSteps/HealthConditionsStep";
 import MedicationsStep from "./WizardSteps/MedicationsStep";
@@ -119,6 +125,8 @@ export default function UnderwritingWizard({
   );
   // Track if data changed since last analysis to avoid unnecessary re-runs
   const [lastAnalyzedData, setLastAnalyzedData] = useState<string | null>(null);
+  // Session history view toggle
+  const [showingHistory, setShowingHistory] = useState(false);
 
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
@@ -140,6 +148,7 @@ export default function UnderwritingWizard({
       setAnalysisResult(null);
       setSelectedTermYears(null);
       setLastAnalyzedData(null);
+      setShowingHistory(false);
       analysisMutation.reset();
       decisionEngineMutation.reset();
     }
@@ -438,6 +447,19 @@ export default function UnderwritingWizard({
       formData.client.weight,
     );
 
+    // Get top 3 rate table recommendations (from decision engine, not AI)
+    const decisionEngineRecs =
+      decisionEngineMutation.data?.recommendations || [];
+    const topRateTableRecs = decisionEngineRecs.slice(0, 3).map((rec) => ({
+      carrierName: rec.carrierName,
+      productName: rec.productName,
+      termYears: rec.termYears ?? null,
+      healthClass: rec.healthClassResult,
+      monthlyPremium: rec.monthlyPremium ?? 0,
+      faceAmount: rec.maxCoverage,
+      reason: rec.reason || "best_value",
+    }));
+
     const sessionData: SessionSaveData = {
       clientName: formData.client.name || undefined,
       clientAge: formData.client.age,
@@ -458,10 +480,11 @@ export default function UnderwritingWizard({
       tobaccoDetails: formData.health.tobacco,
       requestedFaceAmounts: formData.coverage.faceAmounts,
       requestedProductTypes: formData.coverage.productTypes,
-      aiAnalysis: analysisResult,
+      // Store top 3 rate table recommendations instead of AI analysis
+      aiAnalysis: null,
       healthTier: analysisResult.healthTier,
       riskFactors: analysisResult.riskFactors,
-      recommendations: analysisResult.recommendations,
+      recommendations: topRateTableRecs,
       sessionDurationSeconds: Math.floor(
         (Date.now() - sessionStartTime) / 1000,
       ),
@@ -479,12 +502,88 @@ export default function UnderwritingWizard({
     }
   }, [
     analysisResult,
+    decisionEngineMutation.data,
     user,
     formData,
     sessionStartTime,
     saveSessionMutation,
     onOpenChange,
   ]);
+
+  // Load a previous session into the form for editing
+  const handleLoadSession = useCallback(
+    (session: UnderwritingSession) => {
+      // Parse height from total inches (if stored) or from BMI calculation
+      const totalHeightInches = session.client_height_inches || 66; // default 5'6"
+      const heightFeet = Math.floor(totalHeightInches / 12);
+      const heightInches = totalHeightInches % 12;
+
+      // Parse health responses from JSON
+      const healthResponses = safeParseJsonObject<
+        Record<string, ConditionResponse>
+      >(session.health_responses);
+
+      // Convert health responses back to array format
+      const conditions: ConditionResponse[] = Object.values(healthResponses);
+
+      // Parse tobacco details
+      const tobaccoDetails = session.tobacco_details as TobaccoInfo | null;
+
+      // Parse product types
+      const productTypes = safeParseJsonArray<ProductType>(
+        session.requested_product_types,
+      );
+
+      // Build the form data from session
+      const loadedFormData: WizardFormData = {
+        client: {
+          name: session.client_name || "",
+          dob: session.client_dob || null,
+          age: session.client_age || 0,
+          gender: (session.client_gender as ClientInfo["gender"]) || "",
+          state: session.client_state || "",
+          heightFeet,
+          heightInches,
+          weight: session.client_weight_lbs || 150,
+        },
+        health: {
+          conditions,
+          tobacco: tobaccoDetails || {
+            currentUse: session.tobacco_use || false,
+          },
+          // Medications aren't stored in session - use defaults
+          medications: initialHealthInfo.medications,
+        },
+        coverage: {
+          // Session stores single face amount, convert to array with common options
+          faceAmounts: session.requested_face_amount
+            ? [
+                session.requested_face_amount,
+                session.requested_face_amount * 2,
+                session.requested_face_amount * 4,
+              ].filter((amt) => amt <= 5000000)
+            : [250000, 500000, 1000000],
+          productTypes: productTypes.length > 0 ? productTypes : ["term_life"],
+        },
+      };
+
+      // Update form state
+      setFormData(loadedFormData);
+
+      // Reset analysis state since we're editing
+      setAnalysisResult(null);
+      setLastAnalyzedData(null);
+      setSelectedTermYears(null);
+      analysisMutation.reset();
+      decisionEngineMutation.reset();
+
+      // Navigate to first step and close history
+      setCurrentStepIndex(0);
+      setShowingHistory(false);
+      setErrors({});
+    },
+    [analysisMutation, decisionEngineMutation],
+  );
 
   // Render current step
   const renderStepContent = () => {
@@ -555,103 +654,112 @@ export default function UnderwritingWizard({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-7xl w-[98vw] p-0 gap-0 overflow-hidden bg-background border-0"
-        hideCloseButton
-      >
+      <DialogContent className="max-w-7xl w-[98vw] p-0 gap-0 overflow-hidden bg-background border-0">
         <DialogTitle className="sr-only">Underwriting Wizard</DialogTitle>
 
         <WizardDialogLayout
           currentStep={currentStep.id}
           onStepClick={handleStepClick}
           canNavigateToStep={canNavigateToStep}
+          onHistoryClick={() => setShowingHistory(!showingHistory)}
+          showingHistory={showingHistory}
         >
-          {/* Step Content Container - Flex column to allow step to fill height */}
-          <div className="flex-1 flex flex-col overflow-hidden p-4">
-            {/* Step Title */}
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50 flex-shrink-0">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              <h3 className="text-base font-semibold text-foreground">
-                {currentStep.label}
-              </h3>
-              {currentStep.id === "results" && (
-                <span className="text-xs text-red-500 ml-auto">
-                  BETA - Do not use for actual recommendations
-                </span>
-              )}
-            </div>
-
-            {/* Error display */}
-            {errors.submit && (
-              <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {errors.submit}
-                </p>
-              </div>
-            )}
-
-            {/* Step Form - Fills remaining height */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              {renderStepContent()}
-            </div>
-          </div>
-
-          {/* Fixed Footer */}
-          <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/50 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              size="sm"
-              className="h-8 text-xs px-3"
-              disabled={isAnalyzing || isSaving}
-            >
-              Cancel
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={currentStepIndex === 0 || isAnalyzing || isSaving}
-                size="sm"
-                className="h-8 text-xs px-3"
-              >
-                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                Back
-              </Button>
-
-              {isLastStep ? (
-                <Button
-                  onClick={handleSaveSession}
-                  disabled={isSaving || !analysisResult}
-                  size="sm"
-                  className="h-8 text-xs px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <Save className="h-3.5 w-3.5 mr-1.5" />
-                  {isSaving ? "Saving..." : "Save Session"}
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNext}
-                  size="sm"
-                  disabled={isAnalyzing}
-                  className="h-8 text-xs px-4 bg-amber-600 hover:bg-amber-700 text-white"
-                >
-                  {currentStep.id === "review" ? (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                      {isAnalyzing ? "Analyzing..." : "Get Recommendations"}
-                    </>
-                  ) : (
-                    <>
-                      Next
-                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                    </>
+          {showingHistory ? (
+            /* Session History View */
+            <WizardSessionHistory
+              onClose={() => setShowingHistory(false)}
+              onLoadSession={handleLoadSession}
+            />
+          ) : (
+            <>
+              {/* Step Content Container - Flex column to allow step to fill height */}
+              <div className="flex-1 flex flex-col overflow-hidden p-4">
+                {/* Step Title */}
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50 flex-shrink-0">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  <h3 className="text-base font-semibold text-foreground">
+                    {currentStep.label}
+                  </h3>
+                  {currentStep.id === "results" && (
+                    <span className="text-xs text-red-500 ml-auto">
+                      BETA - Do not use for actual recommendations
+                    </span>
                   )}
+                </div>
+
+                {/* Error display */}
+                {errors.submit && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {errors.submit}
+                    </p>
+                  </div>
+                )}
+
+                {/* Step Form - Fills remaining height */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  {renderStepContent()}
+                </div>
+              </div>
+
+              {/* Fixed Footer */}
+              <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/50 flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  onClick={() => onOpenChange(false)}
+                  size="sm"
+                  className="h-8 text-xs px-3"
+                  disabled={isAnalyzing || isSaving}
+                >
+                  Cancel
                 </Button>
-              )}
-            </div>
-          </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleBack}
+                    disabled={currentStepIndex === 0 || isAnalyzing || isSaving}
+                    size="sm"
+                    className="h-8 text-xs px-3"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                    Back
+                  </Button>
+
+                  {isLastStep ? (
+                    <Button
+                      onClick={handleSaveSession}
+                      disabled={isSaving || !analysisResult}
+                      size="sm"
+                      className="h-8 text-xs px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      <Save className="h-3.5 w-3.5 mr-1.5" />
+                      {isSaving ? "Saving..." : "Save Session"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleNext}
+                      size="sm"
+                      disabled={isAnalyzing}
+                      className="h-8 text-xs px-4 bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      {currentStep.id === "review" ? (
+                        <>
+                          <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                          {isAnalyzing ? "Analyzing..." : "Get Recommendations"}
+                        </>
+                      ) : (
+                        <>
+                          Next
+                          <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </WizardDialogLayout>
       </DialogContent>
     </Dialog>
