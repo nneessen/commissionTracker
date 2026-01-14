@@ -32,6 +32,17 @@ export function useChecklistItemAutomations(itemId: string | undefined) {
 }
 
 // ========================================
+// SYSTEM AUTOMATIONS (password reminders, etc.)
+// ========================================
+
+export function useSystemAutomations() {
+  return useQuery({
+    queryKey: ["pipeline-automations", "system"],
+    queryFn: () => pipelineAutomationService.getSystemAutomations(),
+  });
+}
+
+// ========================================
 // SINGLE AUTOMATION
 // ========================================
 
@@ -59,10 +70,14 @@ export function useCreateAutomation() {
         queryClient.invalidateQueries({
           queryKey: ["pipeline-automations", "phase", data.phase_id],
         });
-      }
-      if (data.checklist_item_id) {
+      } else if (data.checklist_item_id) {
         queryClient.invalidateQueries({
           queryKey: ["pipeline-automations", "item", data.checklist_item_id],
+        });
+      } else {
+        // System-level automation (no phase or item)
+        queryClient.invalidateQueries({
+          queryKey: ["pipeline-automations", "system"],
         });
       }
     },
@@ -92,10 +107,14 @@ export function useUpdateAutomation() {
         queryClient.invalidateQueries({
           queryKey: ["pipeline-automations", "phase", data.phase_id],
         });
-      }
-      if (data.checklist_item_id) {
+      } else if (data.checklist_item_id) {
         queryClient.invalidateQueries({
           queryKey: ["pipeline-automations", "item", data.checklist_item_id],
+        });
+      } else {
+        // System-level automation - invalidate system cache
+        queryClient.invalidateQueries({
+          queryKey: ["pipeline-automations", "system"],
         });
       }
     },
@@ -114,16 +133,20 @@ export function useDeleteAutomation() {
       id: string;
       phaseId?: string;
       itemId?: string;
+      isSystem?: boolean;
     }) => pipelineAutomationService.delete(variables.id),
     onSuccess: (_data, variables) => {
       if (variables.phaseId) {
         queryClient.invalidateQueries({
           queryKey: ["pipeline-automations", "phase", variables.phaseId],
         });
-      }
-      if (variables.itemId) {
+      } else if (variables.itemId) {
         queryClient.invalidateQueries({
           queryKey: ["pipeline-automations", "item", variables.itemId],
+        });
+      } else if (variables.isSystem) {
+        queryClient.invalidateQueries({
+          queryKey: ["pipeline-automations", "system"],
         });
       }
     },

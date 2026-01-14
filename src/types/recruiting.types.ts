@@ -515,7 +515,9 @@ export type AutomationTriggerType =
   | "phase_stall"
   | "item_complete"
   | "item_approval_needed"
-  | "item_deadline_approaching";
+  | "item_deadline_approaching"
+  | "password_not_set_24h"
+  | "password_not_set_12h";
 
 export type AutomationRecipientType =
   | "recruit"
@@ -547,6 +549,7 @@ export interface PipelineAutomation {
   id: string;
   phase_id: string | null;
   checklist_item_id: string | null;
+  imo_id: string | null; // Required for system automations, null for phase/item automations
   trigger_type: AutomationTriggerType;
   communication_type: AutomationCommunicationType;
   delay_days: number | null;
@@ -578,6 +581,7 @@ export interface PipelineAutomationLog {
 export interface CreateAutomationInput {
   phase_id?: string;
   checklist_item_id?: string;
+  imo_id?: string; // Required for system automations (password_not_set_*)
   trigger_type: AutomationTriggerType;
   communication_type?: AutomationCommunicationType;
   delay_days?: number;
@@ -606,6 +610,8 @@ export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTriggerType, string> =
     item_complete: "On Item Complete",
     item_approval_needed: "Approval Request",
     item_deadline_approaching: "Deadline Reminder",
+    password_not_set_24h: "Password Reminder (24h before expiry)",
+    password_not_set_12h: "Password Reminder (12h before expiry)",
   };
 
 export const AUTOMATION_RECIPIENT_LABELS: Record<
@@ -644,6 +650,11 @@ export function isItemAutomation(trigger: AutomationTriggerType): boolean {
   ].includes(trigger);
 }
 
+// Helper to check if trigger is system-level (not tied to phase or item)
+export function isSystemAutomation(trigger: AutomationTriggerType): boolean {
+  return ["password_not_set_24h", "password_not_set_12h"].includes(trigger);
+}
+
 // Short trigger labels for compact UI display
 export const PHASE_TRIGGER_SHORT_LABELS: Record<string, string> = {
   phase_enter: "On Enter",
@@ -657,10 +668,16 @@ export const ITEM_TRIGGER_SHORT_LABELS: Record<string, string> = {
   item_deadline_approaching: "Deadline Reminder",
 };
 
+export const SYSTEM_TRIGGER_SHORT_LABELS: Record<string, string> = {
+  password_not_set_24h: "24h Warning",
+  password_not_set_12h: "12h Warning",
+};
+
 // Combined short labels for all triggers
 export const TRIGGER_SHORT_LABELS: Record<string, string> = {
   ...PHASE_TRIGGER_SHORT_LABELS,
   ...ITEM_TRIGGER_SHORT_LABELS,
+  ...SYSTEM_TRIGGER_SHORT_LABELS,
 };
 
 // =============================================================================

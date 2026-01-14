@@ -13,6 +13,7 @@ export interface PipelineAutomationEntity {
   id: string;
   phaseId: string | null;
   checklistItemId: string | null;
+  imoId: string | null; // Required for system automations, null for phase/item automations
   triggerType: AutomationTriggerType;
   communicationType: AutomationCommunicationType;
   delayDays: number | null;
@@ -35,6 +36,7 @@ export interface PipelineAutomationEntity {
 export interface CreatePipelineAutomationData {
   phaseId?: string;
   checklistItemId?: string;
+  imoId?: string; // Required for system automations
   triggerType: AutomationTriggerType;
   communicationType?: AutomationCommunicationType;
   delayDays?: number;
@@ -196,6 +198,46 @@ export class PipelineAutomationRepository extends BaseRepository<
   }
 
   /**
+   * Find system-level automations (no phase_id or checklist_item_id)
+   * These are automations that trigger on system events like password not set
+   */
+  async findSystemAutomations(): Promise<PipelineAutomationEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .is("phase_id", null)
+      .is("checklist_item_id", null)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, "findSystemAutomations");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Find active system-level automations by trigger type
+   */
+  async findActiveSystemByTrigger(
+    triggerType: AutomationTriggerType,
+  ): Promise<PipelineAutomationEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .is("phase_id", null)
+      .is("checklist_item_id", null)
+      .eq("trigger_type", triggerType)
+      .eq("is_active", true);
+
+    if (error) {
+      throw this.handleError(error, "findActiveSystemByTrigger");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
    * Transform database row to entity
    */
   protected transformFromDB(
@@ -205,6 +247,7 @@ export class PipelineAutomationRepository extends BaseRepository<
       id: dbRecord.id as string,
       phaseId: dbRecord.phase_id as string | null,
       checklistItemId: dbRecord.checklist_item_id as string | null,
+      imoId: dbRecord.imo_id as string | null,
       triggerType: dbRecord.trigger_type as AutomationTriggerType,
       communicationType:
         (dbRecord.communication_type as AutomationCommunicationType) || "both",
@@ -274,6 +317,7 @@ export class PipelineAutomationRepository extends BaseRepository<
     return {
       phase_id: createData.phaseId ?? null,
       checklist_item_id: createData.checklistItemId ?? null,
+      imo_id: createData.imoId ?? null,
       trigger_type: createData.triggerType,
       communication_type: createData.communicationType ?? "both",
       delay_days: createData.delayDays ?? null,

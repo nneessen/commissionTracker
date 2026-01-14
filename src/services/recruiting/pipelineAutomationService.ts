@@ -104,12 +104,22 @@ export const pipelineAutomationService = {
   },
 
   /**
+   * Get all system-level automations (not tied to a phase or checklist item)
+   * These are automations like password reminders that apply globally
+   */
+  async getSystemAutomations(): Promise<PipelineAutomation[]> {
+    const entities = await automationRepository.findSystemAutomations();
+    return entities.map(mapEntityToType);
+  },
+
+  /**
    * Create a new automation
    */
   async create(data: CreateAutomationInput): Promise<PipelineAutomation> {
     const createData: CreatePipelineAutomationData = {
       phaseId: data.phase_id,
       checklistItemId: data.checklist_item_id,
+      imoId: data.imo_id,
       triggerType: data.trigger_type,
       communicationType: data.communication_type,
       delayDays: data.delay_days,
@@ -862,6 +872,7 @@ function mapEntityToType(entity: PipelineAutomationEntity): PipelineAutomation {
     id: entity.id,
     phase_id: entity.phaseId,
     checklist_item_id: entity.checklistItemId,
+    imo_id: entity.imoId,
     trigger_type: entity.triggerType,
     communication_type: entity.communicationType,
     delay_days: entity.delayDays,

@@ -436,6 +436,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) throw error;
 
+      // Track password set time in user_profiles (only if not already set)
+      // This enables password reminder automations to skip users who've set their password
+      if (user?.id) {
+        const { error: profileError } = await supabase
+          .from("user_profiles")
+          .update({ password_set_at: new Date().toISOString() })
+          .eq("id", user.id)
+          .is("password_set_at", null);
+
+        if (profileError) {
+          // Log but don't fail - password update succeeded, tracking is secondary
+          logger.error("Failed to track password_set_at", profileError, "Auth");
+        }
+      }
+
       logger.auth("Password updated successfully");
     } catch (err: unknown) {
       logger.error(

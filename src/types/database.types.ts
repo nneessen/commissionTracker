@@ -4948,6 +4948,7 @@ export type Database = {
           email_subject: string | null;
           email_template_id: string | null;
           id: string;
+          imo_id: string | null;
           is_active: boolean | null;
           notification_message: string | null;
           notification_title: string | null;
@@ -4971,6 +4972,7 @@ export type Database = {
           email_subject?: string | null;
           email_template_id?: string | null;
           id?: string;
+          imo_id?: string | null;
           is_active?: boolean | null;
           notification_message?: string | null;
           notification_title?: string | null;
@@ -4994,6 +4996,7 @@ export type Database = {
           email_subject?: string | null;
           email_template_id?: string | null;
           id?: string;
+          imo_id?: string | null;
           is_active?: boolean | null;
           notification_message?: string | null;
           notification_title?: string | null;
@@ -5019,6 +5022,13 @@ export type Database = {
             columns: ["email_template_id"];
             isOneToOne: false;
             referencedRelation: "email_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_automations_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
             referencedColumns: ["id"];
           },
           {
@@ -9038,6 +9048,7 @@ export type Database = {
           onboarding_completed_at: string | null;
           onboarding_started_at: string | null;
           onboarding_status: string | null;
+          password_set_at: string | null;
           personal_website: string | null;
           phone: string | null;
           pipeline_template_id: string | null;
@@ -9093,6 +9104,7 @@ export type Database = {
           onboarding_completed_at?: string | null;
           onboarding_started_at?: string | null;
           onboarding_status?: string | null;
+          password_set_at?: string | null;
           personal_website?: string | null;
           phone?: string | null;
           pipeline_template_id?: string | null;
@@ -9148,6 +9160,7 @@ export type Database = {
           onboarding_completed_at?: string | null;
           onboarding_started_at?: string | null;
           onboarding_status?: string | null;
+          password_set_at?: string | null;
           personal_website?: string | null;
           phone?: string | null;
           pipeline_template_id?: string | null;
@@ -11509,6 +11522,21 @@ export type Database = {
         Returns: Json;
       };
       get_active_decision_tree: { Args: { p_imo_id: string }; Returns: Json };
+      get_active_system_automations: {
+        Args: { p_imo_id: string; p_trigger_type: string };
+        Returns: {
+          communication_type: string;
+          email_body_html: string;
+          email_subject: string;
+          id: string;
+          imo_id: string;
+          notification_message: string;
+          notification_title: string;
+          recipients: Json;
+          sms_message: string;
+          trigger_type: string;
+        }[];
+      };
       get_agencies_for_join: {
         Args: { p_imo_id: string };
         Returns: {
@@ -12161,6 +12189,13 @@ export type Database = {
           updated_at: string;
         }[];
       };
+      get_imos_with_system_automations: {
+        Args: { p_trigger_type: string };
+        Returns: {
+          imo_id: string;
+          imo_name: string;
+        }[];
+      };
       get_knockout_conditions: {
         Args: never;
         Returns: Database["public"]["CompositeTypes"]["knockout_condition_def"][];
@@ -12390,6 +12425,18 @@ export type Database = {
           pct_of_agency_overrides: number;
           pending_amount: number;
           total_amount: number;
+        }[];
+      };
+      get_password_reminder_users: {
+        Args: { filter_imo_id: string; hours_since_creation: number };
+        Returns: {
+          created_at: string;
+          email: string;
+          first_name: string;
+          imo_id: string;
+          last_name: string;
+          phone: string;
+          user_id: string;
         }[];
       };
       get_pending_agency_request_count: { Args: never; Returns: number };
@@ -13354,6 +13401,10 @@ export type Database = {
         Args: { p_requirements: Json };
         Returns: boolean;
       };
+      validate_hierarchy_change: {
+        Args: { p_agent_id: string; p_new_upline_id: string };
+        Returns: Json;
+      };
       validate_invitation_acceptance: {
         Args: { p_invitation_id: string; p_invitee_id: string };
         Returns: {
@@ -13489,7 +13540,9 @@ export type Database = {
         | "phase_stall"
         | "item_complete"
         | "item_approval_needed"
-        | "item_deadline_approaching";
+        | "item_deadline_approaching"
+        | "password_not_set_24h"
+        | "password_not_set_12h";
       policy_status: "active" | "pending" | "lapsed" | "cancelled" | "expired";
       product_type:
         | "term_life"
@@ -13811,6 +13864,8 @@ export const Constants = {
         "item_complete",
         "item_approval_needed",
         "item_deadline_approaching",
+        "password_not_set_24h",
+        "password_not_set_12h",
       ],
       policy_status: ["active", "pending", "lapsed", "cancelled", "expired"],
       product_type: [

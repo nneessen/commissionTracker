@@ -55,6 +55,7 @@ describe("useUsersView role-based filtering logic", () => {
     onboarding_status: null,
     personal_website: null,
     phone: null,
+    password_set_at: null,
     pipeline_template_id: null,
     profile_photo_url: null,
     recruiter_id: null,

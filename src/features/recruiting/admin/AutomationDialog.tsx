@@ -42,7 +42,11 @@ interface AutomationDialogProps {
   onOpenChange: (open: boolean) => void;
   phaseId?: string;
   checklistItemId?: string;
+  /** Required for system-level automations for tenant isolation */
+  imoId?: string;
   editingAutomation?: PipelineAutomation | null;
+  /** Set to 'system' for system-level automations like password reminders */
+  mode?: "phase" | "item" | "system";
 }
 
 // All phase-level triggers
@@ -88,6 +92,26 @@ const ITEM_TRIGGERS: {
     value: "item_deadline_approaching",
     label: "Deadline Reminder",
     description: "Triggers X days before the item deadline",
+  },
+];
+
+// System-level triggers (not tied to a phase or item)
+const SYSTEM_TRIGGERS: {
+  value: AutomationTriggerType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "password_not_set_24h",
+    label: "Password Not Set (24h Warning)",
+    description:
+      "Triggers 24 hours before password setup link expires (48h after account creation)",
+  },
+  {
+    value: "password_not_set_12h",
+    label: "Password Not Set (12h Warning)",
+    description:
+      "Triggers 12 hours before password setup link expires (60h after account creation)",
   },
 ];
 
@@ -371,14 +395,32 @@ export function AutomationDialog({
   onOpenChange,
   phaseId,
   checklistItemId,
+  imoId,
   editingAutomation,
+  mode: explicitMode,
 }: AutomationDialogProps) {
   const createAutomation = useCreateAutomation();
   const updateAutomation = useUpdateAutomation();
 
   const isEditing = !!editingAutomation;
-  const isPhaseLevel = !!phaseId && !checklistItemId;
-  const triggers = isPhaseLevel ? PHASE_TRIGGERS : ITEM_TRIGGERS;
+
+  // Determine mode: explicit mode prop takes precedence, then infer from IDs
+  const mode =
+    explicitMode ??
+    (phaseId && !checklistItemId
+      ? "phase"
+      : checklistItemId
+        ? "item"
+        : "system");
+  const isPhaseLevel = mode === "phase";
+  const isSystemLevel = mode === "system";
+
+  // Select appropriate triggers based on mode
+  const triggers = isSystemLevel
+    ? SYSTEM_TRIGGERS
+    : isPhaseLevel
+      ? PHASE_TRIGGERS
+      : ITEM_TRIGGERS;
 
   // Refs for text inputs to enable insert-at-cursor
   const emailSubjectRef = useRef<HTMLInputElement>(null);
@@ -697,6 +739,7 @@ export function AutomationDialog({
         const data: CreateAutomationInput = {
           phase_id: phaseId,
           checklist_item_id: checklistItemId,
+          imo_id: imoId, // Required for system automations for tenant isolation
           trigger_type: triggerType,
           communication_type: communicationType,
           delay_days: needsDelayDays ? delayDays : undefined,
@@ -764,7 +807,8 @@ export function AutomationDialog({
                 {isEditing ? "Edit Automation" : "Add Automation"}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {isPhaseLevel ? "Phase" : "Item"}-level trigger
+                {isSystemLevel ? "System" : isPhaseLevel ? "Phase" : "Item"}
+                -level trigger
               </p>
             </div>
 

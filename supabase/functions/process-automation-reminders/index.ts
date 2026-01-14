@@ -26,9 +26,19 @@ interface DeadlineItemRecord {
   automation_delay_days: number;
 }
 
+interface PasswordReminderUserRecord {
+  user_id: string;
+  email: string;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+}
+
 interface ProcessResult {
   phaseStallTriggered: number;
   deadlineApproachingTriggered: number;
+  passwordReminderTriggered: number;
   errors: string[];
 }
 
@@ -342,6 +352,7 @@ serve(async (req) => {
     const result: ProcessResult = {
       phaseStallTriggered: 0,
       deadlineApproachingTriggered: 0,
+      passwordReminderTriggered: 0,
       errors: [],
     };
 
@@ -544,8 +555,137 @@ serve(async (req) => {
       }
     }
 
+    // ========================================
+    // 3. Process Password Set Reminder Automations
+    // ========================================
+    // Find users who haven't set their password and are approaching link expiration
+    // IMPORTANT: Process per-IMO to ensure tenant isolation
+    const passwordTriggerTypes = [
+      { type: "password_not_set_24h", hours: 48 }, // 24h before expiry (72-48=24)
+      { type: "password_not_set_12h", hours: 60 }, // 12h before expiry (72-60=12)
+    ];
+
+    for (const trigger of passwordTriggerTypes) {
+      // Get all IMOs that have active automations for this trigger type
+      const { data: imosWithAutomations, error: imosError } =
+        await supabase.rpc("get_imos_with_system_automations", {
+          p_trigger_type: trigger.type,
+        });
+
+      if (imosError) {
+        console.error(
+          `[AutomationReminders] Error fetching IMOs for ${trigger.type}:`,
+          imosError,
+        );
+        result.errors.push(
+          `IMO query failed for ${trigger.type}: ${imosError.message}`,
+        );
+        continue;
+      }
+
+      if (!imosWithAutomations || imosWithAutomations.length === 0) {
+        console.log(
+          `[AutomationReminders] No IMOs with active ${trigger.type} automations`,
+        );
+        continue;
+      }
+
+      console.log(
+        `[AutomationReminders] Found ${imosWithAutomations.length} IMOs with active ${trigger.type} automations`,
+      );
+
+      // Process each IMO separately for tenant isolation
+      for (const imo of imosWithAutomations as {
+        imo_id: string;
+        imo_name: string;
+      }[]) {
+        // Get active automations for this trigger type AND this IMO
+        const { data: automations, error: automationsError } =
+          await supabase.rpc("get_active_system_automations", {
+            p_trigger_type: trigger.type,
+            p_imo_id: imo.imo_id,
+          });
+
+        if (automationsError || !automations || automations.length === 0) {
+          continue;
+        }
+
+        console.log(
+          `[AutomationReminders] Processing ${automations.length} ${trigger.type} automations for IMO: ${imo.imo_name}`,
+        );
+
+        // Get users needing reminder for this time window AND this IMO
+        const { data: users, error: usersError } = await supabase.rpc(
+          "get_password_reminder_users",
+          { hours_since_creation: trigger.hours, filter_imo_id: imo.imo_id },
+        );
+
+        if (usersError) {
+          console.error(
+            `[AutomationReminders] Error fetching users for ${trigger.type} in IMO ${imo.imo_name}:`,
+            usersError,
+          );
+          result.errors.push(
+            `Password reminder query failed for ${trigger.type} in IMO ${imo.imo_name}: ${usersError.message}`,
+          );
+          continue;
+        }
+
+        if (!users || users.length === 0) {
+          console.log(
+            `[AutomationReminders] No users found for ${trigger.type} reminder in IMO: ${imo.imo_name}`,
+          );
+          continue;
+        }
+
+        console.log(
+          `[AutomationReminders] Found ${users.length} users for ${trigger.type} reminder in IMO: ${imo.imo_name}`,
+        );
+
+        // Calculate hours remaining until link expires
+        const hoursRemaining = 72 - trigger.hours;
+
+        for (const user of users as PasswordReminderUserRecord[]) {
+          // Build context for this user
+          const context = {
+            user_name:
+              `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+              "User",
+            user_first_name: user.first_name || "User",
+            user_last_name: user.last_name || "",
+            user_email: user.email || "",
+            hours_remaining: String(hoursRemaining),
+            portal_link:
+              Deno.env.get("VITE_APP_URL") || "https://www.thestandardhq.com",
+          };
+
+          for (const automation of automations) {
+            // For password reminders, recipients should target the user directly
+            // Override recipients to always be the user
+            const passwordAutomation = {
+              ...automation,
+              recipients: [{ type: "recruit" }], // "recruit" maps to the user in executeAutomation
+            };
+
+            const execResult = await executeAutomation(
+              supabase,
+              passwordAutomation,
+              user.user_id, // Using user_id as the "recruit_id" for logging
+              context,
+            );
+
+            if (execResult.success) {
+              result.passwordReminderTriggered++;
+            } else if (execResult.error) {
+              result.errors.push(execResult.error);
+            }
+          }
+        }
+      }
+    }
+
     console.log(
-      `[AutomationReminders] Complete: ${result.phaseStallTriggered} phase_stall, ${result.deadlineApproachingTriggered} deadline_approaching, ${result.errors.length} errors`,
+      `[AutomationReminders] Complete: ${result.phaseStallTriggered} phase_stall, ${result.deadlineApproachingTriggered} deadline_approaching, ${result.passwordReminderTriggered} password_reminder, ${result.errors.length} errors`,
     );
 
     return new Response(JSON.stringify(result), {
