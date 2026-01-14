@@ -40,6 +40,11 @@ window.addEventListener("vite:preloadError", () => {
         // Version changed - new deployment detected
         console.log("[Version Check] New version detected:", currentVersion);
 
+        // Update stored version BEFORE showing banner
+        // This ensures refresh won't trigger the banner again
+        initialVersion = currentVersion;
+        sessionStorage.setItem("app-version", currentVersion);
+
         // Show update notification using a simple DOM alert
         // (sonner toast isn't available yet at this point)
         const existing = document.getElementById("version-update-banner");

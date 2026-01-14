@@ -923,6 +923,11 @@ export async function getRecommendations(
     const availableTerms = getAvailableTermsForAge(matrix, client.age);
     const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
 
+    // Check if this is a permanent product (all matrix rows have term_years === null)
+    // Permanent products (whole life, participating whole life, etc.) don't have term years
+    const isPermanentProduct =
+      matrix.length > 0 && matrix.every((row) => row.term_years === null);
+
     // Debug: Log product metadata to verify age-tiered constraints
     if (DEBUG_DECISION_ENGINE) {
       console.log(
@@ -932,12 +937,18 @@ export async function getRecommendations(
           ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
           hasMetadata: !!product.metadata,
           availableTermsForAge: availableTerms,
+          isPermanentProduct,
         },
       );
     }
 
-    // Skip product if no terms are available for this age
-    if (availableTerms.length === 0 && matrix.length > 0) {
+    // Skip product if no terms are available for this age (only for term products)
+    // Permanent products have no term years (term_years = null), so they're not skipped
+    if (
+      availableTerms.length === 0 &&
+      matrix.length > 0 &&
+      !isPermanentProduct
+    ) {
       // Matrix has data but no terms for this age - skip the product
       if (DEBUG_DECISION_ENGINE) {
         console.log(
@@ -949,9 +960,12 @@ export async function getRecommendations(
     }
 
     // Determine term to use for quotes:
-    // 1. If input.termYears is specified and available for this age, use it
-    // 2. Otherwise fall back to longest available term for this age
-    let termForQuotes: TermYears | null = longestTerm;
+    // 1. For permanent products, use null (no term)
+    // 2. If input.termYears is specified and available for this age, use it
+    // 3. Otherwise fall back to longest available term for this age
+    let termForQuotes: TermYears | null = isPermanentProduct
+      ? null
+      : longestTerm;
     if (input.termYears !== undefined && input.termYears !== null) {
       if (availableTerms.includes(input.termYears)) {
         termForQuotes = input.termYears as TermYears;
