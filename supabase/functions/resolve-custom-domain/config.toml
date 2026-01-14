@@ -1,0 +1,2 @@
+# Public endpoint - resolves custom domains for unauthenticated visitors
+verify_jwt = false
