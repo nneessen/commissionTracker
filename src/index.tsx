@@ -15,6 +15,81 @@ window.addEventListener("vite:preloadError", () => {
   }
 });
 
+// Version polling for automatic update detection
+// Checks version.json every 5 minutes and prompts refresh on new deploy
+(function setupVersionPolling() {
+  const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  let initialVersion: string | null = null;
+
+  async function checkVersion() {
+    try {
+      // Add cache-busting query param to bypass any caching
+      const response = await fetch(`/version.json?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const currentVersion = data.v;
+
+      if (initialVersion === null) {
+        // First load - store the version
+        initialVersion = currentVersion;
+        sessionStorage.setItem("app-version", currentVersion);
+      } else if (currentVersion !== initialVersion) {
+        // Version changed - new deployment detected
+        console.log("[Version Check] New version detected:", currentVersion);
+
+        // Show update notification using a simple DOM alert
+        // (sonner toast isn't available yet at this point)
+        const existing = document.getElementById("version-update-banner");
+        if (!existing) {
+          const banner = document.createElement("div");
+          banner.id = "version-update-banner";
+          banner.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+            background: #2563eb; color: white; padding: 10px 16px;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            font-family: system-ui, sans-serif; font-size: 14px;
+          `;
+          banner.innerHTML = `
+            <span>A new version is available.</span>
+            <button onclick="window.location.reload()" style="
+              background: white; color: #2563eb; border: none; padding: 6px 12px;
+              border-radius: 4px; cursor: pointer; font-weight: 500;
+            ">Refresh Now</button>
+          `;
+          document.body.prepend(banner);
+        }
+      }
+    } catch (_e) {
+      // Silently ignore - version.json might not exist in dev
+    }
+  }
+
+  // Check immediately on load, then every 5 minutes
+  if (typeof window !== "undefined") {
+    // Try to restore version from session (in case of soft navigation)
+    const storedVersion = sessionStorage.getItem("app-version");
+    if (storedVersion) {
+      initialVersion = storedVersion;
+    }
+
+    // Initial check after a short delay (let app render first)
+    setTimeout(checkVersion, 3000);
+
+    // Periodic checks
+    setInterval(checkVersion, POLL_INTERVAL);
+
+    // Also check when tab becomes visible again
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        checkVersion();
+      }
+    });
+  }
+})();
+
 // CRITICAL: Capture recovery tokens BEFORE Supabase client can process them
 // This must run before any other imports to prevent race conditions
 (function handleRecoveryRedirect() {
