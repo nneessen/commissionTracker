@@ -960,13 +960,19 @@ export async function getRecommendations(
     }
 
     // Determine term to use for quotes:
-    // 1. For permanent products, use null (no term)
+    // 1. For permanent products, use null (no term) - ignore any term selection
     // 2. If input.termYears is specified and available for this age, use it
     // 3. Otherwise fall back to longest available term for this age
     let termForQuotes: TermYears | null = isPermanentProduct
       ? null
       : longestTerm;
-    if (input.termYears !== undefined && input.termYears !== null) {
+
+    // Only check term availability for term products (not permanent products)
+    if (
+      !isPermanentProduct &&
+      input.termYears !== undefined &&
+      input.termYears !== null
+    ) {
       if (availableTerms.includes(input.termYears)) {
         termForQuotes = input.termYears as TermYears;
       } else {

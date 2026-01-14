@@ -59,7 +59,7 @@ window.addEventListener("vite:preloadError", () => {
           `;
           banner.innerHTML = `
             <span>A new version is available.</span>
-            <button onclick="window.location.reload()" style="
+            <button onclick="sessionStorage.removeItem('app-version'); window.location.href = window.location.pathname + '?_v=' + Date.now();" style="
               background: white; color: #2563eb; border: none; padding: 6px 12px;
               border-radius: 4px; cursor: pointer; font-weight: 500;
             ">Refresh Now</button>
