@@ -35,3 +35,5 @@ plans/continuation-prompts/
 
 # PreCompact hook logs
 .claude/hooks/pre-compact.log
+build.log
+dev.log

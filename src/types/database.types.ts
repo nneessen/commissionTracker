@@ -1983,6 +1983,62 @@ export type Database = {
           },
         ];
       };
+      custom_domains: {
+        Row: {
+          created_at: string;
+          hostname: string;
+          id: string;
+          imo_id: string;
+          last_error: string | null;
+          provider: string;
+          provider_domain_id: string | null;
+          provider_metadata: Json | null;
+          status: Database["public"]["Enums"]["custom_domain_status"];
+          updated_at: string;
+          user_id: string;
+          verification_token: string;
+          verified_at: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          hostname: string;
+          id?: string;
+          imo_id: string;
+          last_error?: string | null;
+          provider?: string;
+          provider_domain_id?: string | null;
+          provider_metadata?: Json | null;
+          status?: Database["public"]["Enums"]["custom_domain_status"];
+          updated_at?: string;
+          user_id: string;
+          verification_token: string;
+          verified_at?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          hostname?: string;
+          id?: string;
+          imo_id?: string;
+          last_error?: string | null;
+          provider?: string;
+          provider_domain_id?: string | null;
+          provider_metadata?: Json | null;
+          status?: Database["public"]["Enums"]["custom_domain_status"];
+          updated_at?: string;
+          user_id?: string;
+          verification_token?: string;
+          verified_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "custom_domains_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       daily_sales_logs: {
         Row: {
           channel_id: string;
@@ -10948,6 +11004,10 @@ export type Database = {
         Args: { approver_id: string; target_user_id: string };
         Returns: boolean;
       };
+      admin_delete_domain: {
+        Args: { p_domain_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       admin_delete_user: { Args: { target_user_id: string }; Returns: Json };
       admin_deleteuser: { Args: { target_user_id: string }; Returns: Json };
       admin_deny_user: {
@@ -11040,6 +11100,38 @@ export type Database = {
       admin_set_pending_user: {
         Args: { target_user_id: string };
         Returns: boolean;
+      };
+      admin_update_domain_status: {
+        Args: {
+          p_domain_id: string;
+          p_last_error?: string;
+          p_new_status: Database["public"]["Enums"]["custom_domain_status"];
+          p_provider_domain_id?: string;
+          p_provider_metadata?: Json;
+          p_user_id: string;
+          p_verified_at?: string;
+        };
+        Returns: {
+          created_at: string;
+          hostname: string;
+          id: string;
+          imo_id: string;
+          last_error: string | null;
+          provider: string;
+          provider_domain_id: string | null;
+          provider_metadata: Json | null;
+          status: Database["public"]["Enums"]["custom_domain_status"];
+          updated_at: string;
+          user_id: string;
+          verification_token: string;
+          verified_at: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "custom_domains";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       admin_update_user: {
         Args: { p_updates: Json; p_user_id: string };
@@ -13473,6 +13565,13 @@ export type Database = {
         | "clawback"
         | "charged_back";
       comp_level: "street" | "release" | "enhanced" | "premium";
+      custom_domain_status:
+        | "draft"
+        | "pending_dns"
+        | "verified"
+        | "provisioning"
+        | "active"
+        | "error";
       expense_category:
         | "insurance_leads"
         | "software_tools"
@@ -13792,6 +13891,14 @@ export const Constants = {
         "charged_back",
       ],
       comp_level: ["street", "release", "enhanced", "premium"],
+      custom_domain_status: [
+        "draft",
+        "pending_dns",
+        "verified",
+        "provisioning",
+        "active",
+        "error",
+      ],
       expense_category: [
         "insurance_leads",
         "software_tools",

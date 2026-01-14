@@ -18,6 +18,8 @@ import { leadsService } from "@/services/leads";
 import type { PublicRecruiterInfo } from "@/types/leads.types";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LeadSubmissionConfirmation } from "../components/public/LeadSubmissionConfirmation";
+import { useCustomDomain } from "@/contexts/CustomDomainContext";
+import { CustomDomainError } from "../components/CustomDomainError";
 
 /**
  * Extract recruiter slug from pathname or route params
@@ -39,40 +41,51 @@ function extractSlug(
 export function PublicJoinPage() {
   const location = useLocation();
   const params = useParams({ strict: false }) as { recruiterId?: string };
+  const {
+    customDomainSlug,
+    isCustomDomain,
+    isLoading: isCustomDomainLoading,
+  } = useCustomDomain();
 
-  const recruiterId = useMemo(() => {
-    const slug = extractSlug(location.pathname, params);
-    return slug;
-  }, [location.pathname, params]);
-
+  // All hooks must be called before any conditional returns
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
   const [recruiterInfo, setRecruiterInfo] =
     useState<PublicRecruiterInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRecruiter, setIsLoadingRecruiter] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Use custom domain slug if available, otherwise extract from URL
+  const recruiterId = useMemo(() => {
+    // If on custom domain with resolved slug, use it
+    if (customDomainSlug) {
+      return customDomainSlug;
+    }
+    // Otherwise extract from URL path/params
+    return extractSlug(location.pathname, params);
+  }, [customDomainSlug, location.pathname, params]);
+
   useEffect(() => {
-    if (!recruiterId) {
-      setIsLoading(false);
+    if (!recruiterId || isCustomDomainLoading) {
+      setIsLoadingRecruiter(false);
       return;
     }
 
     let cancelled = false;
 
     async function fetchRecruiter() {
-      setIsLoading(true);
+      setIsLoadingRecruiter(true);
       setError(null);
 
       try {
         const data = await leadsService.getPublicRecruiterInfo(recruiterId!);
         if (!cancelled) {
           setRecruiterInfo(data);
-          setIsLoading(false);
+          setIsLoadingRecruiter(false);
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error("Failed to fetch"));
-          setIsLoading(false);
+          setIsLoadingRecruiter(false);
         }
       }
     }
@@ -81,10 +94,27 @@ export function PublicJoinPage() {
     return () => {
       cancelled = true;
     };
-  }, [recruiterId]);
+  }, [recruiterId, isCustomDomainLoading]);
+
+  // Show loading while custom domain is resolving
+  if (isCustomDomainLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+          <p className="text-xs text-muted-foreground mt-2">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show custom domain error page if resolution failed
+  if (isCustomDomain && !customDomainSlug) {
+    return <CustomDomainError hostname={window.location.hostname} />;
+  }
 
   // Loading state
-  if (isLoading) {
+  if (isLoadingRecruiter) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

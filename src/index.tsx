@@ -48,6 +48,7 @@ import { ThemeProvider } from "next-themes";
 import { router } from "./router";
 import { AuthProvider } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { CustomDomainProvider } from "./contexts/CustomDomainContext";
 import { Toaster } from "@/components/ui/sonner";
 import { metricsService } from "./services/observability/MetricsService";
 import { ChunkErrorBoundary } from "./components/shared/ChunkErrorBoundary";
@@ -82,13 +83,15 @@ root.render(
         storageKey="commission-tracker-theme"
       >
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <NotificationProvider>
-              <RouterProvider router={router} />
-              <Toaster />
-              <ReactQueryDevtools initialIsOpen={false} />
-            </NotificationProvider>
-          </AuthProvider>
+          <CustomDomainProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <RouterProvider router={router} />
+                <Toaster />
+                <ReactQueryDevtools initialIsOpen={false} />
+              </NotificationProvider>
+            </AuthProvider>
+          </CustomDomainProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </ChunkErrorBoundary>

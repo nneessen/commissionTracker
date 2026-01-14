@@ -1,0 +1,64 @@
+// Custom Domain Error Page
+// Shown when a custom domain cannot be resolved
+
+import React from "react";
+import { Globe, AlertCircle, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface CustomDomainErrorProps {
+  hostname: string;
+}
+
+export function CustomDomainError({ hostname }: CustomDomainErrorProps) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+      <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+          <Globe className="h-6 w-6 text-zinc-400" />
+        </div>
+
+        <h1 className="mt-4 text-lg font-semibold text-zinc-900">
+          Domain Not Configured
+        </h1>
+
+        <p className="mt-2 text-sm text-zinc-600">
+          The domain <strong className="font-medium">{hostname}</strong> is not
+          connected to a recruiting page.
+        </p>
+
+        <div className="mt-4 rounded-md bg-zinc-50 p-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-400" />
+            <div className="text-left text-xs text-zinc-600">
+              <p className="font-medium">If you own this domain:</p>
+              <ul className="mt-1 list-inside list-disc space-y-0.5">
+                <li>Verify DNS records are configured correctly</li>
+                <li>Complete domain verification in your settings</li>
+                <li>Wait for SSL certificate provisioning</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-2">
+          <Button asChild className="w-full">
+            <a href="https://www.thestandardhq.com">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Go to The Standard HQ
+            </a>
+          </Button>
+
+          <p className="text-xs text-zinc-500">
+            Need help?{" "}
+            <a
+              href="mailto:support@thestandardhq.com"
+              className="text-zinc-700 underline hover:text-zinc-900"
+            >
+              Contact support
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
