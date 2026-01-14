@@ -32,8 +32,11 @@ async function sendPasswordResetEmail(
           <tr>
             <td style="padding: 32px 32px 24px;">
               <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 600; color: #18181b;">Welcome to The Standard HQ!</h1>
-              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #52525b;">
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #52525b;">
                 Your account has been created. Click the button below to set your password and get started.
+              </p>
+              <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.5; color: #dc2626; font-weight: 500;">
+                ⚠️ This link expires in 72 hours. Please set your password soon.
               </p>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
@@ -77,6 +80,8 @@ Welcome to The Standard HQ!
 Your account has been created. Click this link to set your password:
 ${resetLink}
 
+IMPORTANT: This link expires in 72 hours. Please set your password soon.
+
 If you didn't expect this email, you can safely ignore it.
 
 © ${new Date().getFullYear()} The Standard HQ
@@ -119,6 +124,73 @@ If you didn't expect this email, you can safely ignore it.
   }
 }
 
+// Helper function to send SMS notification via Twilio
+// Uses same env vars as send-sms edge function
+async function sendSmsNotification(
+  phoneNumber: string,
+  message: string,
+): Promise<{ success: boolean; error?: string }> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  // Match the existing send-sms edge function pattern
+  const fromNumber =
+    Deno.env.get("MY_TWILIO_NUMBER") || Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.log("[create-auth-user] SMS skipped - Twilio not configured");
+    return { success: false, error: "Twilio not configured" };
+  }
+
+  // Validate phone number format (basic check)
+  const cleanPhone = phoneNumber.replace(/\D/g, "");
+  if (cleanPhone.length < 10) {
+    console.log(
+      "[create-auth-user] SMS skipped - Invalid phone number:",
+      phoneNumber,
+    );
+    return { success: false, error: "Invalid phone number" };
+  }
+
+  // Format phone number with country code if needed
+  const formattedPhone =
+    cleanPhone.length === 10 ? `+1${cleanPhone}` : `+${cleanPhone}`;
+
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const credentials = btoa(`${accountSid}:${authToken}`);
+
+    const body = new URLSearchParams({
+      To: formattedPhone,
+      From: fromNumber,
+      Body: message,
+    });
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[create-auth-user] Twilio error:", errorText);
+      return { success: false, error: `Twilio API error: ${response.status}` };
+    }
+
+    console.log("[create-auth-user] SMS sent successfully to:", formattedPhone);
+    return { success: true };
+  } catch (err) {
+    console.error("[create-auth-user] SMS send error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
+  }
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === "OPTIONS") {
@@ -144,6 +216,7 @@ serve(async (req) => {
       isAdmin,
       skipPipeline,
       profileId: _profileId,
+      phone,
     } = await req.json();
 
     if (!email) {
@@ -304,11 +377,28 @@ serve(async (req) => {
       }
     }
 
+    // Send SMS notification if phone provided and email was sent
+    let smsSent = false;
+    if (phone && emailSent) {
+      const smsResult = await sendSmsNotification(
+        phone,
+        "Welcome to The Standard HQ! Check your email to set your password. The link expires in 72 hours.",
+      );
+      smsSent = smsResult.success;
+      console.log("[create-auth-user] SMS result:", {
+        success: smsSent,
+        error: smsResult.error || null,
+      });
+    } else if (phone && !emailSent) {
+      console.log("[create-auth-user] SMS skipped - email was not sent");
+    }
+
     // Log final status
     console.log("[create-auth-user] Complete:", {
       userId: authUser.user?.id,
       email: normalizedEmail,
       emailSent,
+      smsSent,
     });
 
     return new Response(
@@ -318,6 +408,7 @@ serve(async (req) => {
           ? "User created successfully. Password reset email sent."
           : "User created but email could not be sent. Check edge function logs.",
         emailSent,
+        smsSent,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

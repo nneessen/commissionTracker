@@ -262,6 +262,7 @@ class UserService {
             roles: assignedRoles,
             isAdmin: assignedRoles.includes("admin"),
             skipPipeline: false,
+            phone: userData.phone || null,
           }),
         },
       );
