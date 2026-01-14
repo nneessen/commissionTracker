@@ -1,5 +1,6 @@
 // src/services/leads/leadsService.ts
 // Service for managing recruiting leads from public funnel
+// Security-hardened with validation for public theme data
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
@@ -15,6 +16,8 @@ import type {
   EnrichedLead,
   LeadStatus,
 } from "../../types/leads.types";
+import type { RecruitingPageTheme } from "../../types/recruiting-theme.types";
+import { validateRecruitingTheme } from "@/lib/recruiting-validation";
 
 /**
  * Service for managing recruiting leads
@@ -30,10 +33,6 @@ export const leadsService = {
   async getPublicRecruiterInfo(
     slug: string,
   ): Promise<PublicRecruiterInfo | null> {
-    console.log(
-      "[leadsService] getPublicRecruiterInfo called with slug:",
-      slug,
-    );
     try {
       // Try RPC first (if migration is applied)
       const { data: rpcData, error: rpcError } = await supabase.rpc(
@@ -41,13 +40,7 @@ export const leadsService = {
         { p_slug: slug },
       );
 
-      console.log("[leadsService] RPC result:", {
-        rpcData,
-        rpcError: rpcError?.message,
-      });
-
       if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
-        console.log("[leadsService] Returning RPC data:", rpcData[0]);
         return rpcData[0] as PublicRecruiterInfo;
       }
 
@@ -107,6 +100,47 @@ export const leadsService = {
     } catch (error) {
       logger.error(
         "Error getting public recruiter info",
+        error instanceof Error ? error : String(error),
+        "leadsService",
+      );
+      return null;
+    }
+  },
+
+  /**
+   * Get public recruiting page theme by slug (no auth required)
+   * Returns branding configuration with precedence: user -> IMO -> platform defaults
+   * SECURITY: Validates theme data before returning to prevent malformed JSONB issues
+   */
+  async getPublicRecruitingTheme(
+    slug: string,
+  ): Promise<RecruitingPageTheme | null> {
+    try {
+      const { data, error } = await supabase.rpc(
+        "get_public_recruiting_theme",
+        {
+          p_slug: slug,
+        },
+      );
+
+      if (error) {
+        logger.error(
+          "Failed to get public recruiting theme",
+          error,
+          "leadsService",
+        );
+        return null;
+      }
+
+      // Validate and sanitize theme data
+      if (!data) {
+        return null;
+      }
+
+      return validateRecruitingTheme(data);
+    } catch (error) {
+      logger.error(
+        "Error getting public recruiting theme",
         error instanceof Error ? error : String(error),
         "leadsService",
       );

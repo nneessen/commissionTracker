@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-13 15:41:15
+Last Updated: 2026-01-14 11:37:12
 
 ## Metrics
-- Total Files: 29172
-- Total Lines of Code: 451391
-- Total Commits: 743
+- Total Files: 29202
+- Total Lines of Code: 458960
+- Total Commits: 753
 
 ## Recent Activity
-f420065 docs: multiple changes in .,src/features/underwriting/components,src/features/underwriting/components/WizardSteps
-c932455 docs: multiple changes in .,docs/reviews,scripts
-62b9171 feat(underwriting): add term display, multi-face-amount quotes, and term selector
-26ef701 docs: multiple changes in .,docs,docs/features
-59cd10b Merge branch 'uw-wizard' of https://github.com/nneessen/commissionTracker into uw-wizard
+c5cf095 fix(cache): add version polling for automatic update detection
+c1cee47 fix(custom-domains): make resolve-custom-domain public (verify_jwt=false)
+b659afb fix(custom-domains): route custom domain root to recruiting page
+32f1a17 docs: add custom domains continuation/handoff document
+2fb8d15 docs: add comprehensive custom domains feature documentation

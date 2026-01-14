@@ -1,5 +1,6 @@
+// src/contexts/CustomDomainContext.tsx
 // Custom Domain Context
-// Detects if app is loaded on a custom domain and resolves to recruiter_slug
+// Detects if app is loaded on a custom domain and resolves to recruiter_slug + theme
 
 import React, {
   createContext,
@@ -9,6 +10,11 @@ import React, {
   ReactNode,
 } from "react";
 import type { CustomDomainContextValue } from "@/types/custom-domain.types";
+import type { RecruitingPageTheme } from "@/types/recruiting-theme.types";
+import {
+  applyRecruitingTheme,
+  clearRecruitingTheme,
+} from "@/lib/recruiting-theme";
 
 const SUPABASE_FUNCTIONS_URL =
   import.meta.env.VITE_SUPABASE_FUNCTIONS_URL ||
@@ -31,6 +37,7 @@ const CustomDomainContext = createContext<CustomDomainContextValue>({
   isCustomDomain: false,
   isLoading: true,
   error: null,
+  theme: null,
 });
 
 export function useCustomDomain() {
@@ -51,6 +58,7 @@ export function CustomDomainProvider({ children }: CustomDomainProviderProps) {
     isCustomDomain: false,
     isLoading: true,
     error: null,
+    theme: null,
   });
 
   useEffect(() => {
@@ -66,6 +74,7 @@ export function CustomDomainProvider({ children }: CustomDomainProviderProps) {
         isCustomDomain: false,
         isLoading: false,
         error: null,
+        theme: null,
       });
       return;
     }
@@ -90,6 +99,7 @@ export function CustomDomainProvider({ children }: CustomDomainProviderProps) {
             isCustomDomain: true,
             isLoading: false,
             error: "Domain not configured",
+            theme: null,
           });
           return;
         }
@@ -101,11 +111,19 @@ export function CustomDomainProvider({ children }: CustomDomainProviderProps) {
         const data = await response.json();
 
         if (data.recruiter_slug) {
+          const theme: RecruitingPageTheme | null = data.theme || null;
+
+          // Apply theme CSS variables if theme is present
+          if (theme) {
+            applyRecruitingTheme(theme);
+          }
+
           setState({
             customDomainSlug: data.recruiter_slug,
             isCustomDomain: true,
             isLoading: false,
             error: null,
+            theme,
           });
         } else {
           setState({
@@ -113,6 +131,7 @@ export function CustomDomainProvider({ children }: CustomDomainProviderProps) {
             isCustomDomain: true,
             isLoading: false,
             error: "Domain not configured",
+            theme: null,
           });
         }
       } catch (err) {
@@ -122,11 +141,17 @@ export function CustomDomainProvider({ children }: CustomDomainProviderProps) {
           isCustomDomain: true,
           isLoading: false,
           error: "Failed to resolve domain",
+          theme: null,
         });
       }
     };
 
     resolveCustomDomain();
+
+    // Cleanup: clear theme CSS variables when component unmounts
+    return () => {
+      clearRecruitingTheme();
+    };
   }, []);
 
   return (

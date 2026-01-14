@@ -23,6 +23,7 @@ import { getDisplayName } from "../../../types/user.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RoleName } from "@/types/permissions.types";
 import { CustomDomainManager } from "./custom-domains";
+import { BrandingSettings } from "./BrandingSettings";
 
 export function UserProfile() {
   const { user } = useAuth();
@@ -477,6 +478,11 @@ export function UserProfile() {
           {/* Custom Domain Section */}
           <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
             <CustomDomainManager />
+          </div>
+
+          {/* Branding Settings Section */}
+          <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+            <BrandingSettings />
           </div>
         </div>
       </div>

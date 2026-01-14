@@ -45,6 +45,15 @@
       "Helvetica Neue", Arial, sans-serif;
     --font-mono:
       "SF Mono", Monaco, "Cascadia Code", Consolas, "Courier New", monospace;
+
+    /* ==================== RECRUITING PAGE THEME VARIABLES ==================== */
+    /* These are dynamically set by applyRecruitingTheme() for branded pages */
+    --recruiting-primary: #0ea5e9;
+    --recruiting-primary-light: #e0f2fe;
+    --recruiting-primary-dark: #0284c7;
+    --recruiting-accent: #22c55e;
+    --recruiting-accent-light: #dcfce7;
+    --recruiting-accent-dark: #16a34a;
   }
 
   .dark {
@@ -103,6 +112,51 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ==================== RECRUITING PAGE THEME UTILITIES ==================== */
+/* Utility classes for recruiting page branding - use CSS variables */
+.text-recruiting-primary {
+  color: var(--recruiting-primary);
+}
+.text-recruiting-accent {
+  color: var(--recruiting-accent);
+}
+.bg-recruiting-primary {
+  background-color: var(--recruiting-primary);
+}
+.bg-recruiting-primary-light {
+  background-color: var(--recruiting-primary-light);
+}
+.bg-recruiting-accent {
+  background-color: var(--recruiting-accent);
+}
+.bg-recruiting-accent-light {
+  background-color: var(--recruiting-accent-light);
+}
+.border-recruiting-primary {
+  border-color: var(--recruiting-primary);
+}
+.border-recruiting-accent {
+  border-color: var(--recruiting-accent);
+}
+/* Gradient utility for recruiting pages */
+.bg-gradient-recruiting {
+  background: linear-gradient(
+    to right,
+    var(--recruiting-primary),
+    var(--recruiting-accent)
+  );
+}
+.text-gradient-recruiting {
+  background: linear-gradient(
+    to right,
+    var(--recruiting-primary),
+    var(--recruiting-accent)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Accessibility: Reduced motion support for logo spinner */

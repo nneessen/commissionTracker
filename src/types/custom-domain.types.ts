@@ -1,7 +1,9 @@
+// src/types/custom-domain.types.ts
 // Custom Domain Types
 // Matches database schema and Edge Function responses
 
 import type { Database } from "./database.types";
+import type { RecruitingPageTheme } from "./recruiting-theme.types";
 
 // Database row type
 export type CustomDomain =
@@ -76,6 +78,7 @@ export interface DeleteDomainResponse {
 
 export interface ResolveDomainResponse {
   recruiter_slug: string;
+  theme?: RecruitingPageTheme;
 }
 
 // UI State Types
@@ -84,6 +87,7 @@ export interface CustomDomainContextValue {
   isCustomDomain: boolean;
   isLoading: boolean;
   error: string | null;
+  theme: RecruitingPageTheme | null;
 }
 
 // Status display helpers

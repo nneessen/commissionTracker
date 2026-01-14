@@ -61,6 +61,8 @@ const leadFormSchema = z.object({
 interface LeadInterestFormProps {
   recruiterSlug: string;
   onSuccess: (leadId: string) => void;
+  ctaText?: string;
+  primaryColor?: string;
 }
 
 // Helper to extract error message from Zod error
@@ -75,6 +77,8 @@ const getErrorMessage = (errors: any[]): string => {
 export function LeadInterestForm({
   recruiterSlug,
   onSuccess,
+  ctaText = "Submit Your Interest",
+  primaryColor,
 }: LeadInterestFormProps) {
   const submitLeadMutation = useSubmitLead();
   const [honeypot, setHoneypot] = useState("");
@@ -634,10 +638,20 @@ export function LeadInterestForm({
         )}
       </form.Field>
 
-      {/* Submit Button - Amber/Gold CTA */}
+      {/* Submit Button - Theme-colored CTA */}
       <Button
         type="submit"
-        className="w-full h-10 bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg hover:shadow-xl transition-all"
+        className={`w-full h-10 font-semibold shadow-lg hover:shadow-xl transition-all ${
+          !primaryColor ? "bg-amber-500 hover:bg-amber-600 text-black" : ""
+        }`}
+        style={
+          primaryColor
+            ? {
+                backgroundColor: primaryColor,
+                color: "#ffffff",
+              }
+            : undefined
+        }
         disabled={submitLeadMutation.isPending}
       >
         {submitLeadMutation.isPending ? (
@@ -646,7 +660,7 @@ export function LeadInterestForm({
             Submitting...
           </>
         ) : (
-          "Submit Your Interest"
+          ctaText
         )}
       </Button>
     </form>

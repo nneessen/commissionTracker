@@ -6309,6 +6309,89 @@ export type Database = {
           },
         ];
       };
+      recruiting_page_settings: {
+        Row: {
+          about_text: string | null;
+          accent_color: string | null;
+          calendly_url: string | null;
+          created_at: string;
+          cta_text: string | null;
+          default_city: string | null;
+          default_state: string | null;
+          disclaimer_text: string | null;
+          display_name: string | null;
+          enabled_features: Json | null;
+          headline: string | null;
+          hero_image_url: string | null;
+          id: string;
+          imo_id: string;
+          logo_dark_url: string | null;
+          logo_light_url: string | null;
+          primary_color: string | null;
+          social_links: Json | null;
+          subheadline: string | null;
+          support_phone: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          about_text?: string | null;
+          accent_color?: string | null;
+          calendly_url?: string | null;
+          created_at?: string;
+          cta_text?: string | null;
+          default_city?: string | null;
+          default_state?: string | null;
+          disclaimer_text?: string | null;
+          display_name?: string | null;
+          enabled_features?: Json | null;
+          headline?: string | null;
+          hero_image_url?: string | null;
+          id?: string;
+          imo_id: string;
+          logo_dark_url?: string | null;
+          logo_light_url?: string | null;
+          primary_color?: string | null;
+          social_links?: Json | null;
+          subheadline?: string | null;
+          support_phone?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          about_text?: string | null;
+          accent_color?: string | null;
+          calendly_url?: string | null;
+          created_at?: string;
+          cta_text?: string | null;
+          default_city?: string | null;
+          default_state?: string | null;
+          disclaimer_text?: string | null;
+          display_name?: string | null;
+          enabled_features?: Json | null;
+          headline?: string | null;
+          hero_image_url?: string | null;
+          id?: string;
+          imo_id?: string;
+          logo_dark_url?: string | null;
+          logo_light_url?: string | null;
+          primary_color?: string | null;
+          social_links?: Json | null;
+          subheadline?: string | null;
+          support_phone?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recruiting_page_settings_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       role_permissions: {
         Row: {
           created_at: string | null;
@@ -12697,6 +12780,7 @@ export type Database = {
           recruiter_last_name: string;
         }[];
       };
+      get_public_recruiting_theme: { Args: { p_slug: string }; Returns: Json };
       get_recruiting_by_agency: { Args: { p_imo_id: string }; Returns: Json };
       get_recruiting_by_recruiter: {
         Args: { p_agency_id: string };

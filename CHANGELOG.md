@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-14 11:37:12
+
+### Changed Files
+- `plans/active/recruiting-page-branding.md`
+- `plans/active/recruiting-page-layouts.md`
+- `src/contexts/CustomDomainContext.tsx`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/layouts/CenteredCardLayout.tsx`
+- `src/features/recruiting/layouts/HeroSlideLayout.tsx`
+- `src/features/recruiting/layouts/MultiSectionLayout.tsx`
+- `src/features/recruiting/layouts/SplitPanelLayout.tsx`
+- `src/features/recruiting/layouts/index.ts`
+- `src/features/recruiting/layouts/types.ts`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/features/settings/components/BrandingSettings.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/settings/hooks/useBrandingSettings.ts`
+- `src/index.css`
+- `src/lib/recruiting-theme.ts`
+- `src/lib/recruiting-validation.ts`
+- `src/services/leads/leadsService.ts`
+- `src/services/recruiting/brandingSettingsService.ts`
+- `src/services/recruiting/index.ts`
+- `src/types/custom-domain.types.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting-theme.types.ts`
+- `supabase/functions/resolve-custom-domain/index.ts`
+- `supabase/migrations/20260114_001_recruiting_page_settings.sql`
+- `supabase/migrations/20260114_002_recruiting_assets_bucket.sql`
+- `supabase/migrations/20260114_003_layout_variant.sql`
+- `supabase/migrations/20260114_003_recruiting_settings_url_validation.sql`
+
+### Statistics
+```
+ 28 files changed, 17037 insertions(+), 12104 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-13 15:41:15
 
 ### Changed Files
