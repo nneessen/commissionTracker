@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 import {
+  isTokenAboutToExpire,
   isTokenRecentlyExpired,
   attemptTokenRefresh,
   updateIntegrationToken,
@@ -233,7 +234,40 @@ serve(async (req) => {
     }
 
     // Decrypt the access token
-    const accessToken = await decrypt(integration.access_token_encrypted);
+    let accessToken = await decrypt(integration.access_token_encrypted);
+
+    // PROACTIVE TOKEN REFRESH - refresh BEFORE expiry while token is still valid
+    // Instagram tokens can ONLY be refreshed while valid, not after expiry
+    if (isTokenAboutToExpire(integration.token_expires_at, 7)) {
+      console.log(
+        "[instagram-send-message] Token expiring within 7 days, refreshing proactively",
+      );
+      const refreshResult = await attemptTokenRefresh(
+        integration.access_token_encrypted,
+      );
+      if (
+        refreshResult.success &&
+        refreshResult.newToken &&
+        refreshResult.newExpiresAt
+      ) {
+        await updateIntegrationToken(
+          supabase,
+          integration.id,
+          refreshResult.newToken,
+          refreshResult.newExpiresAt,
+        );
+        // Use the new token for this request
+        accessToken = await decrypt(refreshResult.newToken);
+        console.log(
+          "[instagram-send-message] Token refreshed proactively, using new token",
+        );
+      } else {
+        console.warn(
+          "[instagram-send-message] Proactive refresh failed, continuing with current token",
+        );
+      }
+    }
+
     const igUserId = integration.instagram_user_id;
     const recipientId = conversation.participant_instagram_id;
 

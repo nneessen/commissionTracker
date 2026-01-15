@@ -11,8 +11,30 @@ interface RefreshResult {
 }
 
 /**
+ * Check if the token is ABOUT TO expire (within N days)
+ * This enables PROACTIVE refresh BEFORE expiry - which is required because
+ * Instagram tokens can ONLY be refreshed while still valid, not after expiry.
+ */
+export function isTokenAboutToExpire(
+  tokenExpiresAt: string | null | undefined,
+  daysThreshold: number = 7,
+): boolean {
+  if (!tokenExpiresAt) return false;
+
+  const expiresAt = new Date(tokenExpiresAt);
+  const now = new Date();
+  const daysUntilExpiry =
+    (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+  // Token is still valid but expires within threshold - refresh proactively
+  return daysUntilExpiry > 0 && daysUntilExpiry <= daysThreshold;
+}
+
+/**
  * Check if the token was recently expired (within last 24 hours)
- * and thus might be refreshable
+ * This is a fallback in case the DB token_expires_at was wrong but
+ * the token is actually still valid (edge case).
+ * Note: Instagram typically won't allow refresh of truly expired tokens.
  */
 export function isTokenRecentlyExpired(
   tokenExpiresAt: string | null | undefined,
