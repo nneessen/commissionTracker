@@ -296,6 +296,7 @@ serve(async (req) => {
                 "[instagram-get-conversations] Token refreshed, client should retry",
               );
               // Tell client to retry - token was refreshed
+              // Use 200 so Supabase invoke doesn't treat as transport error
               return new Response(
                 JSON.stringify({
                   ok: false,
@@ -304,7 +305,7 @@ serve(async (req) => {
                   retry: true,
                 }),
                 {
-                  status: 409, // Conflict - indicating state changed, retry
+                  status: 200,
                   headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json",

@@ -310,15 +310,19 @@ export function useSyncInstagramConversations() {
       });
     },
     onSuccess: (data, variables) => {
-      // Update the conversations in cache
-      queryClient.setQueryData(
-        instagramKeys.conversations(variables.integrationId),
-        data.conversations,
+      // Update ALL cached conversation lists for this integration (base + filtered variants)
+      // This ensures that filtered queries (priority, search, etc.) are also updated
+      queryClient.setQueriesData(
+        { queryKey: instagramKeys.conversations(variables.integrationId) },
+        (old: unknown) => {
+          const oldList = (old as InstagramConversation[]) ?? [];
+          const byId = new Map<string, InstagramConversation>();
+          // Prefer newest server payload; merge over old
+          for (const c of oldList) byId.set(c.id, c);
+          for (const c of data.conversations ?? []) byId.set(c.id, c);
+          return Array.from(byId.values());
+        },
       );
-      // Also invalidate to ensure any filtered queries are refreshed
-      queryClient.invalidateQueries({
-        queryKey: instagramKeys.conversations(variables.integrationId),
-      });
     },
   });
 }

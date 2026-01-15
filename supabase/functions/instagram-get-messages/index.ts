@@ -330,7 +330,7 @@ serve(async (req) => {
                   retry: true,
                 }),
                 {
-                  status: 409, // Conflict - indicating state changed, retry
+                  status: 200, // Success response - token refreshed, client will retry automatically
                   headers: {
                     ...corsHeaders,
                     "Content-Type": "application/json",

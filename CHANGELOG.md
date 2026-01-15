@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-15 11:55:10
+
+### Changed Files
+- `instagram-review-25-files.zip`
+- `src/hooks/instagram/useInstagramIntegration.ts`
+- `src/hooks/instagram/useInstagramRealtime.ts`
+- `src/services/instagram/instagramService.ts`
+- `src/services/leads/leadsService.ts`
+- `supabase/functions/instagram-get-conversations/index.ts`
+- `supabase/functions/instagram-get-messages/index.ts`
+- `supabase/functions/instagram-send-message/index.ts`
+- `supabase/migrations/20260115_005_seed_all_stage_templates.sql`
+
+### Statistics
+```
+ 9 files changed, 638 insertions(+), 34 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-15 10:34:33
 
 ### Changed Files

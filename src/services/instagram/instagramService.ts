@@ -163,9 +163,8 @@ class InstagramServiceClass {
     syncedCount: number;
   }> {
     const headers = await this.getAuthHeaders();
-    const { data, error } = await supabase.functions.invoke(
-      "instagram-get-conversations",
-      {
+    const invoke = () =>
+      supabase.functions.invoke("instagram-get-conversations", {
         headers,
         body: {
           integrationId,
@@ -173,8 +172,9 @@ class InstagramServiceClass {
           cursor: options?.cursor,
           syncToDb: true,
         },
-      },
-    );
+      });
+
+    const { data, error } = await invoke();
 
     if (error) {
       console.error("[InstagramService] Error syncing conversations:", error);
@@ -182,6 +182,29 @@ class InstagramServiceClass {
     }
 
     if (!data?.ok) {
+      // Handle TOKEN_REFRESHED: server refreshed token, retry once
+      if (data?.code === "TOKEN_REFRESHED" && data?.retry) {
+        console.log(
+          "[InstagramService] Token was refreshed server-side, retrying...",
+        );
+        const retryRes = await invoke();
+        if (retryRes.error) {
+          console.error("[InstagramService] Retry failed:", retryRes.error);
+          throw new Error("Failed to sync Instagram conversations");
+        }
+        if (!retryRes.data?.ok) {
+          throw new Error(
+            retryRes.data?.error || "Failed to sync conversations",
+          );
+        }
+        return {
+          conversations: retryRes.data.conversations || [],
+          hasMore: retryRes.data.hasMore || false,
+          nextCursor: retryRes.data.nextCursor,
+          syncedCount: retryRes.data.syncedCount || 0,
+        };
+      }
+
       if (data?.code === "TOKEN_EXPIRED") {
         throw new Error("Instagram token expired. Please reconnect.");
       }
@@ -294,9 +317,8 @@ class InstagramServiceClass {
     syncedCount: number;
   }> {
     const headers = await this.getAuthHeaders();
-    const { data, error } = await supabase.functions.invoke(
-      "instagram-get-messages",
-      {
+    const invoke = () =>
+      supabase.functions.invoke("instagram-get-messages", {
         headers,
         body: {
           conversationId,
@@ -304,8 +326,9 @@ class InstagramServiceClass {
           cursor: options?.cursor,
           syncToDb: true,
         },
-      },
-    );
+      });
+
+    const { data, error } = await invoke();
 
     if (error) {
       console.error("[InstagramService] Error syncing messages:", error);
@@ -313,6 +336,27 @@ class InstagramServiceClass {
     }
 
     if (!data?.ok) {
+      // Handle TOKEN_REFRESHED: server refreshed token, retry once
+      if (data?.code === "TOKEN_REFRESHED" && data?.retry) {
+        console.log(
+          "[InstagramService] Token was refreshed server-side, retrying syncMessages...",
+        );
+        const retryRes = await invoke();
+        if (retryRes.error) {
+          console.error("[InstagramService] Retry failed:", retryRes.error);
+          throw new Error("Failed to sync Instagram messages");
+        }
+        if (!retryRes.data?.ok) {
+          throw new Error(retryRes.data?.error || "Failed to sync messages");
+        }
+        return {
+          messages: retryRes.data.messages || [],
+          hasMore: retryRes.data.hasMore || false,
+          nextCursor: retryRes.data.nextCursor,
+          syncedCount: retryRes.data.syncedCount || 0,
+        };
+      }
+
       if (data?.code === "TOKEN_EXPIRED") {
         throw new Error("Instagram token expired. Please reconnect.");
       }
@@ -336,17 +380,17 @@ class InstagramServiceClass {
     templateId?: string,
   ): Promise<InstagramMessage> {
     const headers = await this.getAuthHeaders();
-    const { data, error } = await supabase.functions.invoke(
-      "instagram-send-message",
-      {
+    const invoke = () =>
+      supabase.functions.invoke("instagram-send-message", {
         headers,
         body: {
           conversationId,
           messageText,
           templateId,
         },
-      },
-    );
+      });
+
+    const { data, error } = await invoke();
 
     if (error) {
       console.error("[InstagramService] Error sending message:", error);
@@ -354,6 +398,33 @@ class InstagramServiceClass {
     }
 
     if (!data?.ok) {
+      // Handle TOKEN_REFRESHED: server refreshed token, retry once
+      if (data?.code === "TOKEN_REFRESHED" && data?.retry) {
+        console.log(
+          "[InstagramService] Token was refreshed server-side, retrying sendMessage...",
+        );
+        const retryRes = await invoke();
+        if (retryRes.error) {
+          console.error("[InstagramService] Retry failed:", retryRes.error);
+          throw new Error("Failed to send Instagram message");
+        }
+        if (!retryRes.data?.ok) {
+          // Preserve specific error codes on retry
+          if (retryRes.data?.code === "WINDOW_CLOSED") {
+            throw new Error(
+              "Messaging window closed. You can only reply within 24 hours of the last message from this user.",
+            );
+          }
+          if (retryRes.data?.code === "RATE_LIMITED") {
+            throw new Error(
+              "Instagram API rate limit reached. Please try again later.",
+            );
+          }
+          throw new Error(retryRes.data?.error || "Failed to send message");
+        }
+        return retryRes.data.message;
+      }
+
       if (data?.code === "TOKEN_EXPIRED") {
         throw new Error("Instagram token expired. Please reconnect.");
       }

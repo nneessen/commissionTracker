@@ -146,13 +146,12 @@ export function useInstagramConversationsRealtime(
 
           const updatedConversation = payload.new as InstagramConversationRow;
 
-          // Update conversation in cache
-          queryClient.setQueryData<InstagramConversationRow[]>(
-            instagramKeys.conversations(integrationId),
-            (oldConversations) => {
-              if (!oldConversations) return oldConversations;
-
-              return oldConversations.map((c) =>
+          // Update ALL conversation list variants (base + filtered) in cache
+          queryClient.setQueriesData(
+            { queryKey: instagramKeys.conversations(integrationId) },
+            (old: unknown) => {
+              const oldList = (old as InstagramConversationRow[]) ?? [];
+              return oldList.map((c) =>
                 c.id === updatedConversation.id ? updatedConversation : c,
               );
             },

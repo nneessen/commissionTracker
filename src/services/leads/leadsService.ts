@@ -237,6 +237,7 @@ export const leadsService = {
 
   /**
    * Get leads for the current user (recruiter)
+   * SECURITY: Always filters by recruiter_id to ensure users only see their own leads
    */
   async getMyLeads(
     filters?: LeadsFilters,
@@ -244,9 +245,20 @@ export const leadsService = {
     pageSize: number = 25,
   ): Promise<PaginatedLeadsResponse> {
     try {
+      // Get current user for security filter
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user?.id) throw new Error("Not authenticated");
+
       let query = supabase
         .from("recruiting_leads")
         .select("*", { count: "exact" });
+
+      // SECURITY: Hard filter - "My Leads" must always be scoped to recruiter_id
+      query = query.eq("recruiter_id", user.id);
 
       // Apply status filter
       if (filters?.status && filters.status.length > 0) {
@@ -316,9 +328,18 @@ export const leadsService = {
 
   /**
    * Get a single lead by ID
+   * SECURITY: Verifies the lead belongs to the current user or user is super admin
    */
   async getLeadById(leadId: string): Promise<RecruitingLead | null> {
     try {
+      // Get current user for authorization check
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user?.id) throw new Error("Not authenticated");
+
       const { data, error } = await supabase
         .from("recruiting_leads")
         .select("*")
@@ -331,6 +352,24 @@ export const leadsService = {
         }
         logger.error("Failed to get lead by ID", error, "leadsService");
         throw error;
+      }
+
+      // SECURITY: Authorization check - verify ownership or super admin
+      if (data.recruiter_id !== user.id) {
+        // Check if user is super admin
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("is_super_admin")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.is_super_admin) {
+          logger.warn(
+            `Unauthorized access attempt to lead ${leadId} by user ${user.id}`,
+            "leadsService",
+          );
+          return null; // Return null to avoid leaking lead existence
+        }
       }
 
       return data;
@@ -455,13 +494,24 @@ export const leadsService = {
   },
 
   /**
-   * Get pending leads count (for badge display)
+   * Get pending leads count for the current user (for badge display)
+   * SECURITY: Only counts leads owned by the current user
    */
   async getPendingLeadsCount(): Promise<number> {
     try {
+      // Get current user for security filter
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError || !user?.id) {
+        return 0; // Not authenticated - return 0 instead of throwing
+      }
+
       const { count, error } = await supabase
         .from("recruiting_leads")
         .select("*", { count: "exact", head: true })
+        .eq("recruiter_id", user.id) // SECURITY: Only count user's own pending leads
         .eq("status", "pending");
 
       if (error) {
