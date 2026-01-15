@@ -51,19 +51,19 @@ export function VersionUpdateDialog() {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        className="bg-card/95 backdrop-blur-md"
+        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl"
       >
         <DialogHeader className="text-center sm:text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-            <RefreshCw className="h-7 w-7 text-amber-500" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/20">
+            <RefreshCw className="h-7 w-7 text-amber-600 dark:text-amber-400" />
           </div>
           <DialogTitle
-            className="text-xl"
+            className="text-xl text-slate-900 dark:text-slate-100"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Update Available
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground pt-1">
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-300 pt-1">
             A new version is available. Refresh to get the latest features and
             fixes.
           </DialogDescription>
