@@ -15,7 +15,7 @@ import type {
   HealthInfo,
   CoverageRequest,
 } from "../../types/underwriting.types";
-import { US_STATES } from "../../types/underwriting.types";
+import { US_STATES } from "@/constants/states";
 import {
   calculateBMI,
   getBMICategory,

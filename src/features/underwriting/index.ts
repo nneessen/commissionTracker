@@ -58,12 +58,14 @@ export type {
 
 export {
   WIZARD_STEPS,
-  US_STATES,
   CONDITION_CATEGORY_LABELS,
   calculateBMI,
   getBMICategory,
   getHealthTierLabel,
 } from "./types/underwriting.types";
+
+// Re-export US_STATES from centralized constants
+export { US_STATES } from "@/constants/states";
 
 // Utils
 export {

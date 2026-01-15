@@ -20,7 +20,7 @@ import type {
   HealthClass,
   TermYears,
 } from "@/services/underwriting/premiumMatrixService";
-import { US_STATES } from "../../types/underwriting.types";
+import { US_STATES } from "@/constants/states";
 
 interface QuickQuoteFormProps {
   formData: Partial<QuoteInput>;

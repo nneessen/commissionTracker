@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSubmitLead } from "../../hooks/useLeads";
+import { US_STATES } from "@/constants/states";
 import {
-  US_STATES,
   INCOME_GOAL_OPTIONS,
   SPECIALTY_OPTIONS,
   type LeadAvailability,
