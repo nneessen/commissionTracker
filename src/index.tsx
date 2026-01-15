@@ -45,27 +45,9 @@ window.addEventListener("vite:preloadError", () => {
         initialVersion = currentVersion;
         sessionStorage.setItem("app-version", currentVersion);
 
-        // Show update notification using a simple DOM alert
-        // (sonner toast isn't available yet at this point)
-        const existing = document.getElementById("version-update-banner");
-        if (!existing) {
-          const banner = document.createElement("div");
-          banner.id = "version-update-banner";
-          banner.style.cssText = `
-            position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
-            background: #2563eb; color: white; padding: 10px 16px;
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-            font-family: system-ui, sans-serif; font-size: 14px;
-          `;
-          banner.innerHTML = `
-            <span>A new version is available.</span>
-            <button onclick="sessionStorage.removeItem('app-version'); window.location.href = window.location.pathname + '?_v=' + Date.now();" style="
-              background: white; color: #2563eb; border: none; padding: 6px 12px;
-              border-radius: 4px; cursor: pointer; font-weight: 500;
-            ">Refresh Now</button>
-          `;
-          document.body.prepend(banner);
-        }
+        // Dispatch custom event for React to handle
+        // The VersionUpdateDialog component listens for this event
+        window.dispatchEvent(new CustomEvent("version-update-available"));
       }
     } catch (_e) {
       // Silently ignore - version.json might not exist in dev
@@ -132,6 +114,7 @@ import { CustomDomainProvider } from "./contexts/CustomDomainContext";
 import { Toaster } from "@/components/ui/sonner";
 import { metricsService } from "./services/observability/MetricsService";
 import { ChunkErrorBoundary } from "./components/shared/ChunkErrorBoundary";
+import { VersionUpdateDialog } from "./components/shared/VersionUpdateDialog";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -168,6 +151,7 @@ root.render(
               <NotificationProvider>
                 <RouterProvider router={router} />
                 <Toaster />
+                <VersionUpdateDialog />
                 <ReactQueryDevtools initialIsOpen={false} />
               </NotificationProvider>
             </AuthProvider>
