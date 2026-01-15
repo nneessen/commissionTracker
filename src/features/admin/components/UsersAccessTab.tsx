@@ -206,6 +206,9 @@ export function UsersAccessTab({
                 <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[120px]">
                   Roles
                 </TableHead>
+                <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[120px]">
+                  Upline
+                </TableHead>
                 {isSuperAdmin && (
                   <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[70px]">
                     IMO
@@ -267,6 +270,14 @@ export function UsersAccessTab({
                         </Badge>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                      {user.upline
+                        ? `${user.upline.first_name || ""} ${user.upline.last_name || ""}`.trim() ||
+                          "-"
+                        : "-"}
+                    </span>
                   </TableCell>
                   {isSuperAdmin && (
                     <TableCell className="py-1.5">
@@ -332,7 +343,7 @@ export function UsersAccessTab({
               {paginatedUsers?.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={isSuperAdmin ? 7 : 6}
+                    colSpan={isSuperAdmin ? 8 : 7}
                     className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                   >
                     No users found

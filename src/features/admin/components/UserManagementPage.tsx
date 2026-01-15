@@ -284,6 +284,9 @@ export function UserManagementPage() {
               <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
                 Roles
               </TableHead>
+              <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[120px]">
+                Upline
+              </TableHead>
               <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px]">
                 Status
               </TableHead>
@@ -341,6 +344,14 @@ export function UserManagementPage() {
                   </div>
                 </TableCell>
                 <TableCell className="py-1.5">
+                  <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                    {user.upline
+                      ? `${user.upline.first_name || ""} ${user.upline.last_name || ""}`.trim() ||
+                        "-"
+                      : "-"}
+                  </span>
+                </TableCell>
+                <TableCell className="py-1.5">
                   {user.approval_status === "approved" ? (
                     <Badge
                       variant="outline"
@@ -375,7 +386,7 @@ export function UserManagementPage() {
             {filteredUsers?.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                 >
                   No users found matching "{searchQuery}"

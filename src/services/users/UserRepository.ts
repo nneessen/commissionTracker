@@ -129,7 +129,9 @@ export class UserRepository extends BaseRepository<
     filters?: UserFilters,
     options?: QueryOptions,
   ): Promise<UserBaseEntity[]> {
-    let query = this.client.from(this.tableName).select("*");
+    let query = this.client
+      .from(this.tableName)
+      .select("*, upline:upline_id(id, first_name, last_name)");
 
     if (filters) {
       if (filters.roles && filters.roles.length > 0) {
