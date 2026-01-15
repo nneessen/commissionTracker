@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-15 10:34:33
+
+### Changed Files
+- `docs/hierarchy-and-ap-calculation-guide.md`
+- `docs/hierarchy-review-prompt.md`
+- `plans/active/hierarchy-ap-calculation-continuation.md`
+- `supabase/migrations/20260115_001_fix_agency_metrics_hierarchy.sql`
+- `supabase/migrations/20260115_002_fix_remaining_hierarchy_bugs.sql`
+- `supabase/migrations/20260115_003_revert_imo_production_by_agency.sql`
+
+### Statistics
+```
+ 6 files changed, 1600 insertions(+)
+```
+
 ## [Checkpoint] - 2026-01-14 18:37:23
 
 ### Changed Files
