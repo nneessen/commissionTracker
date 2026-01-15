@@ -850,16 +850,91 @@ export async function getRecommendations(
   const unknownProducts: EvaluatedProduct[] = [];
 
   for (const product of products) {
+    // ==========================================================================
+    // FIX 3: DETERMINE TERM BEFORE ELIGIBILITY
+    // We must determine the effective term FIRST, then use it consistently for
+    // both eligibility checking AND premium lookup. This prevents the bug where
+    // eligibility passes with undefined term (using base limits) but pricing
+    // uses a specific term with stricter limits.
+    // ==========================================================================
+
+    // Get the premium matrix FIRST to determine available terms
+    const matrix = await getPremiumMatrixForProduct(product.productId, imoId);
+    const availableTerms = getAvailableTermsForAge(matrix, client.age);
+    const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
+
+    // Check if this is a permanent product (all matrix rows have term_years === null)
+    const isPermanentProduct =
+      matrix.length > 0 && matrix.every((row) => row.term_years === null);
+
+    // Skip product if no terms are available for this age (only for term products)
+    if (
+      availableTerms.length === 0 &&
+      matrix.length > 0 &&
+      !isPermanentProduct
+    ) {
+      if (DEBUG_DECISION_ENGINE) {
+        console.log(
+          `[DecisionEngine] Skipping ${product.productName}: No terms available for age ${client.age}`,
+        );
+      }
+      stats.ineligible++;
+      continue;
+    }
+
+    // Determine effective term for BOTH eligibility AND pricing:
+    // 1. For permanent products, use null (no term)
+    // 2. If input.termYears is specified and available, use it
+    // 3. Otherwise fall back to longest available term
+    let effectiveTermYears: TermYears | null = isPermanentProduct
+      ? null
+      : longestTerm;
+
+    if (
+      !isPermanentProduct &&
+      input.termYears !== undefined &&
+      input.termYears !== null
+    ) {
+      if (availableTerms.includes(input.termYears)) {
+        effectiveTermYears = input.termYears as TermYears;
+      } else {
+        // Requested term not available for this age - skip this product
+        if (DEBUG_DECISION_ENGINE) {
+          console.log(
+            `[DecisionEngine] Skipping ${product.productName}: Requested term ${input.termYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
+          );
+        }
+        stats.ineligible++;
+        continue;
+      }
+    }
+
+    // Debug: Log term determination
+    if (DEBUG_DECISION_ENGINE) {
+      console.log(
+        `[DecisionEngine] Term determined for ${product.productName}:`,
+        {
+          inputTermYears: input.termYears,
+          effectiveTermYears,
+          availableTerms,
+          isPermanentProduct,
+          maxFaceAmount: product.maxFaceAmount,
+          ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
+        },
+      );
+    }
+
     // Stage 1: Eligibility (tri-state)
+    // CRITICAL: Pass effectiveTermYears (not input.termYears) to enforce
+    // term-specific face amount restrictions consistently
     const criteria = await getExtractedCriteria(product.productId);
-    // Pass termYears to enable term-specific face amount restrictions
     const eligibility = checkEligibility(
       product,
       client,
       coverage,
       criteria,
       undefined, // requiredFieldsByCondition
-      input.termYears,
+      effectiveTermYears, // Use same term for eligibility AND pricing
     );
 
     // Handle tri-state eligibility
@@ -900,6 +975,7 @@ export async function getRecommendations(
     stats.passedAcceptance++;
 
     // Stage 3: Premium & Alternative Quotes
+    // Use the same effectiveTermYears determined above
     const premiumLookupParams = {
       productId: product.productId,
       productName: product.productName,
@@ -909,6 +985,7 @@ export async function getRecommendations(
       healthClass: approval.healthClass,
       faceAmount: coverage.faceAmount,
       imoId,
+      termYears: effectiveTermYears,
     };
     if (DEBUG_DECISION_ENGINE) {
       console.log(
@@ -917,16 +994,8 @@ export async function getRecommendations(
       );
     }
 
-    // Get the premium matrix for this product
-    const matrix = await getPremiumMatrixForProduct(product.productId, imoId);
-    // Use age-filtered terms to only show terms with actual rate data for this age
-    const availableTerms = getAvailableTermsForAge(matrix, client.age);
-    const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
-
-    // Check if this is a permanent product (all matrix rows have term_years === null)
-    // Permanent products (whole life, participating whole life, etc.) don't have term years
-    const isPermanentProduct =
-      matrix.length > 0 && matrix.every((row) => row.term_years === null);
+    // termForQuotes is now effectiveTermYears (already determined above)
+    const termForQuotes = effectiveTermYears;
 
     // Debug: Log product metadata to verify age-tiered constraints
     if (DEBUG_DECISION_ENGINE) {
@@ -938,53 +1007,9 @@ export async function getRecommendations(
           hasMetadata: !!product.metadata,
           availableTermsForAge: availableTerms,
           isPermanentProduct,
+          effectiveTermYears,
         },
       );
-    }
-
-    // Skip product if no terms are available for this age (only for term products)
-    // Permanent products have no term years (term_years = null), so they're not skipped
-    if (
-      availableTerms.length === 0 &&
-      matrix.length > 0 &&
-      !isPermanentProduct
-    ) {
-      // Matrix has data but no terms for this age - skip the product
-      if (DEBUG_DECISION_ENGINE) {
-        console.log(
-          `[DecisionEngine Stage 3] Skipping ${product.productName}: No terms available for age ${client.age}`,
-        );
-      }
-      stats.ineligible++;
-      continue;
-    }
-
-    // Determine term to use for quotes:
-    // 1. For permanent products, use null (no term) - ignore any term selection
-    // 2. If input.termYears is specified and available for this age, use it
-    // 3. Otherwise fall back to longest available term for this age
-    let termForQuotes: TermYears | null = isPermanentProduct
-      ? null
-      : longestTerm;
-
-    // Only check term availability for term products (not permanent products)
-    if (
-      !isPermanentProduct &&
-      input.termYears !== undefined &&
-      input.termYears !== null
-    ) {
-      if (availableTerms.includes(input.termYears)) {
-        termForQuotes = input.termYears as TermYears;
-      } else {
-        // Requested term not available for this age - skip this product
-        if (DEBUG_DECISION_ENGINE) {
-          console.log(
-            `[DecisionEngine Stage 3] Skipping ${product.productName}: Requested term ${input.termYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
-          );
-        }
-        stats.ineligible++;
-        continue;
-      }
     }
 
     const premiumResult = await getPremium(
@@ -995,7 +1020,7 @@ export async function getRecommendations(
       approval.healthClass,
       coverage.faceAmount,
       imoId,
-      termForQuotes, // Use longest term for primary quote
+      termForQuotes, // Use effectiveTermYears for both eligibility and pricing
     );
 
     // Extract premium and health class metadata from result

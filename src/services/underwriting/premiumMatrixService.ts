@@ -95,7 +95,12 @@ export type PremiumLookupResult =
     }
   | {
       premium: null;
-      reason: "NO_MATRIX" | "NON_RATEABLE_CLASS" | "NO_MATCHING_RATES";
+      reason:
+        | "NO_MATRIX"
+        | "NON_RATEABLE_CLASS"
+        | "NO_MATCHING_RATES"
+        | "OUT_OF_RANGE"
+        | "INVALID_PREMIUM";
     };
 
 export interface PremiumMatrix extends PremiumMatrixRow {
@@ -707,6 +712,39 @@ function lerp(
 }
 
 /**
+ * Validate a computed premium value.
+ * Returns the premium if valid, null if invalid (NaN, Infinity, negative, unreasonably high).
+ *
+ * @param premium - The computed premium value
+ * @param maxMonthlyPremium - Maximum reasonable monthly premium (default $100,000)
+ * @returns The premium if valid, null otherwise
+ */
+function validatePremium(
+  premium: number,
+  maxMonthlyPremium: number = 100000,
+): number | null {
+  if (!Number.isFinite(premium)) {
+    console.warn(
+      `[InterpolatePremium] Invalid premium computed: ${premium} (not finite)`,
+    );
+    return null;
+  }
+  if (premium <= 0) {
+    console.warn(
+      `[InterpolatePremium] Non-positive premium computed: ${premium}`,
+    );
+    return null;
+  }
+  if (premium > maxMonthlyPremium) {
+    console.warn(
+      `[InterpolatePremium] Premium exceeds guardrail: $${premium} > $${maxMonthlyPremium}`,
+    );
+    return null;
+  }
+  return premium;
+}
+
+/**
  * Find the nearest lower and upper values in a sorted array
  */
 function findBounds(
@@ -807,23 +845,56 @@ function tryInterpolatePremiumForClass(
     (a, b) => a - b,
   );
 
+  // ==========================================================================
+  // FIX 1: STRICT BOUNDS CHECKING
+  // Reject out-of-range requests instead of silently clamping to boundary values.
+  // This prevents "fake rates" for age/face amounts not actually in the matrix.
+  // ==========================================================================
+  const minAge = ages[0];
+  const maxAge = ages[ages.length - 1];
+  const minFaceAmount = faceAmounts[0];
+  const maxFaceAmount = faceAmounts[faceAmounts.length - 1];
+
+  if (targetAge < minAge || targetAge > maxAge) {
+    console.warn(
+      `[InterpolatePremium] Age ${targetAge} out of matrix range [${minAge}-${maxAge}] for health_class="${healthClass}"`,
+    );
+    return null;
+  }
+
+  if (targetFaceAmount < minFaceAmount || targetFaceAmount > maxFaceAmount) {
+    console.warn(
+      `[InterpolatePremium] Face $${targetFaceAmount} out of matrix range [$${minFaceAmount}-$${maxFaceAmount}] for health_class="${healthClass}"`,
+    );
+    return null;
+  }
+
   // Exact match
   const exactKey = `${targetAge}-${targetFaceAmount}`;
   if (lookup.has(exactKey)) {
-    return lookup.get(exactKey)!;
+    const exactPremium = lookup.get(exactKey)!;
+    return validatePremium(exactPremium);
   }
 
   // ==========================================================================
-  // RATE-PER-THOUSAND (CPT) CALCULATION
-  // When we only have ONE face amount in the data, derive rate-per-thousand
-  // and calculate premium for any requested face amount.
-  // This allows importing rates at a single face amount (e.g., $100k) and
-  // calculating premiums for any other face amount.
+  // FIX 2: SINGLE-FACE-AMOUNT SAFETY GATE
+  // When matrix has only one face amount, require EXACT MATCH only.
+  // Linear rate-per-thousand scaling is DISABLED by default as it can produce
+  // fake premiums for face amounts the carrier hasn't actually approved.
   // ==========================================================================
   if (faceAmounts.length === 1) {
     const knownFaceAmount = faceAmounts[0];
 
-    // Find rate at target age or interpolate between ages
+    // SAFETY: Only allow exact face amount match for single-face matrices
+    if (targetFaceAmount !== knownFaceAmount) {
+      console.warn(
+        `[InterpolatePremium] Single-face matrix ($${knownFaceAmount}), requested $${targetFaceAmount}. ` +
+          `Exact match required - linear scaling disabled for safety.`,
+      );
+      return null;
+    }
+
+    // Face amount matches exactly, only interpolate by age
     const ageBounds = findBounds(targetAge, ages);
     const ageLow = ageBounds.lower ?? ageBounds.upper;
     const ageHigh = ageBounds.upper ?? ageBounds.lower;
@@ -859,23 +930,7 @@ function tryInterpolatePremiumForClass(
       premiumAtKnownFace = premiumLow ?? premiumHigh!;
     }
 
-    // Calculate rate per thousand from the known rate
-    const ratePerThousand = premiumAtKnownFace / (knownFaceAmount / 1000);
-    const calculatedPremium = ratePerThousand * (targetFaceAmount / 1000);
-
-    // Debug: Log rate-per-thousand calculation
-    console.log(`[InterpolatePremium] Using RATE-PER-THOUSAND scaling:`, {
-      knownFaceAmount,
-      premiumAtKnownFace,
-      ratePerThousand,
-      targetFaceAmount,
-      calculatedPremium,
-      healthClass,
-      termYears,
-    });
-
-    // Calculate premium for target face amount
-    return calculatedPremium;
+    return validatePremium(premiumAtKnownFace);
   }
 
   // Find bounds
@@ -906,10 +961,12 @@ function tryInterpolatePremiumForClass(
   // Need at least two corners for interpolation
   const corners = [q11, q12, q21, q22].filter((v) => v !== undefined);
   if (corners.length < 2) {
-    // Return average of available corners
-    return corners.length > 0
-      ? corners.reduce((a, b) => a + b!, 0) / corners.length
-      : null;
+    // Return average of available corners (with validation)
+    if (corners.length > 0) {
+      const avgPremium = corners.reduce((a, b) => a + b!, 0) / corners.length;
+      return validatePremium(avgPremium);
+    }
+    return null;
   }
 
   // If all four corners exist, do bilinear interpolation
@@ -923,28 +980,30 @@ function tryInterpolatePremiumForClass(
     const r1 = lerp(targetFaceAmount, faceLow, faceHigh, q11, q12);
     const r2 = lerp(targetFaceAmount, faceLow, faceHigh, q21, q22);
     // Interpolate along age
-    return lerp(targetAge, ageLow, ageHigh, r1, r2);
+    const bilinearPremium = lerp(targetAge, ageLow, ageHigh, r1, r2);
+    return validatePremium(bilinearPremium);
   }
 
   // Partial interpolation - use available corners
   // If we have same-age corners, interpolate along face amount
   if (q11 !== undefined && q12 !== undefined) {
-    return lerp(targetFaceAmount, faceLow, faceHigh, q11, q12);
+    return validatePremium(lerp(targetFaceAmount, faceLow, faceHigh, q11, q12));
   }
   if (q21 !== undefined && q22 !== undefined) {
-    return lerp(targetFaceAmount, faceLow, faceHigh, q21, q22);
+    return validatePremium(lerp(targetFaceAmount, faceLow, faceHigh, q21, q22));
   }
 
   // If we have same-face corners, interpolate along age
   if (q11 !== undefined && q21 !== undefined) {
-    return lerp(targetAge, ageLow, ageHigh, q11, q21);
+    return validatePremium(lerp(targetAge, ageLow, ageHigh, q11, q21));
   }
   if (q12 !== undefined && q22 !== undefined) {
-    return lerp(targetAge, ageLow, ageHigh, q12, q22);
+    return validatePremium(lerp(targetAge, ageLow, ageHigh, q12, q22));
   }
 
-  // Fallback: average of available corners
-  return corners.reduce((a, b) => a + b!, 0) / corners.length;
+  // Fallback: average of available corners (with validation)
+  const fallbackPremium = corners.reduce((a, b) => a + b!, 0) / corners.length;
+  return validatePremium(fallbackPremium);
 }
 
 /**
