@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ClientInfo } from "../../types/underwriting.types";
-import { US_STATES } from "../../types/underwriting.types";
+import { US_STATES } from "@/constants/states";
 import {
   calculateBMI,
   getBMICategory,

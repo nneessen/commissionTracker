@@ -13,7 +13,7 @@ import {
   Policy,
 } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
-import { US_STATES } from "../../types/user.types";
+import { US_STATES } from "@/constants/states";
 import { formatDateForDB } from "../../lib/date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

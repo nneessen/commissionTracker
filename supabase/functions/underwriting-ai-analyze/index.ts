@@ -173,20 +173,129 @@ serve(async (req) => {
   }
 
   try {
+    // ==========================================================================
+    // FIX 4: JWT VERIFICATION AND TENANT OWNERSHIP VALIDATION
+    // Previously: Auth header checked for existence only, imoId came from body.
+    // Now: Verify JWT, get user identity, derive tenant from user_profiles.
+    // ==========================================================================
+
     // Get auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("Missing authorization header");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Missing authorization header",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    // Create Supabase client
+    // Extract JWT token
+    const token = authHeader.replace("Bearer ", "");
+    if (!token || token === authHeader) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid authorization header format",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Create Supabase clients
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Create user client to verify JWT
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Verify JWT and get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await userClient.auth.getUser();
+    if (authError || !user) {
+      console.error("[Auth] JWT verification failed:", authError?.message);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid or expired authentication token",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Create service client for cross-table queries
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user's IMO from profile (source of truth for tenant)
+    const { data: userProfile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("imo_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !userProfile?.imo_id) {
+      console.error(
+        "[Auth] User profile lookup failed:",
+        profileError?.message,
+      );
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "User profile not found or has no IMO assignment",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const authenticatedImoId = userProfile.imo_id;
 
     // Parse request body
     const body: AnalysisRequest = await req.json();
-    const { client, health, coverage, decisionTreeId, imoId } = body;
+    const {
+      client,
+      health,
+      coverage,
+      decisionTreeId,
+      imoId: requestedImoId,
+    } = body;
+
+    // CRITICAL: Validate imoId ownership - prevent cross-tenant access
+    if (requestedImoId && requestedImoId !== authenticatedImoId) {
+      console.warn(
+        `[Auth] Cross-tenant access attempt blocked: User ${user.id} (IMO: ${authenticatedImoId}) requested IMO: ${requestedImoId}`,
+      );
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Forbidden: Cannot access data for another organization",
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Use authenticated IMO for all tenant-scoped queries
+    const imoId = authenticatedImoId;
 
     // Validate required fields
     if (!client || !client.age || !client.gender || !client.state) {
@@ -530,13 +639,20 @@ serve(async (req) => {
 
     // Try specified tree first, then fall back to IMO's default active tree
     if (decisionTreeId) {
-      const { data: treeData } = await supabase
+      // FIX 4: Add IMO validation to prevent accessing other orgs' decision trees
+      const { data: treeData, error: treeError } = await supabase
         .from("underwriting_decision_trees")
         .select("rules")
         .eq("id", decisionTreeId)
+        .eq("imo_id", imoId) // CRITICAL: Ensure tree belongs to user's IMO
         .single();
 
-      if (treeData?.rules) {
+      if (treeError) {
+        console.warn(
+          `[DecisionTree] Access denied or tree not found: ${decisionTreeId} for IMO ${imoId}`,
+        );
+        // Continue without tree rather than exposing error details
+      } else if (treeData?.rules) {
         decisionTreeRules = treeData.rules as DecisionTreeRules;
       }
     } else if (imoId) {

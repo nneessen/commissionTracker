@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateLeadFromInstagram } from "@/hooks/instagram";
-import { US_STATES } from "@/types/leads.types";
+import { US_STATES } from "@/constants/states";
 import type { InstagramConversation } from "@/types/instagram.types";
 
 interface CreateLeadFromIGDialogProps {
