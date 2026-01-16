@@ -863,8 +863,13 @@ export async function getRecommendations(
     // uses a specific term with stricter limits.
     // ==========================================================================
 
+    // OPTIMIZATION: Start both matrix and criteria fetches in parallel
+    // Matrix is awaited immediately for term calculations, criteria awaited later
+    const matrixPromise = getPremiumMatrixForProduct(product.productId, imoId);
+    const criteriaPromise = getExtractedCriteria(product.productId);
+
     // Get the premium matrix FIRST to determine available terms
-    const matrix = await getPremiumMatrixForProduct(product.productId, imoId);
+    const matrix = await matrixPromise;
     const availableTerms = getAvailableTermsForAge(matrix, client.age);
     const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
 
@@ -932,7 +937,7 @@ export async function getRecommendations(
     // Stage 1: Eligibility (tri-state)
     // CRITICAL: Pass effectiveTermYears (not input.termYears) to enforce
     // term-specific face amount restrictions consistently
-    const criteria = await getExtractedCriteria(product.productId);
+    const criteria = await criteriaPromise; // Await the parallel fetch
     const eligibility = checkEligibility(
       product,
       client,
