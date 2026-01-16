@@ -5228,6 +5228,10 @@ export type Database = {
           expiration_date: string | null;
           id: string;
           imo_id: string | null;
+          lead_purchase_id: string | null;
+          lead_source_type:
+            | Database["public"]["Enums"]["lead_source_type"]
+            | null;
           monthly_premium: number;
           notes: string | null;
           payment_frequency:
@@ -5255,6 +5259,10 @@ export type Database = {
           expiration_date?: string | null;
           id?: string;
           imo_id?: string | null;
+          lead_purchase_id?: string | null;
+          lead_source_type?:
+            | Database["public"]["Enums"]["lead_source_type"]
+            | null;
           monthly_premium: number;
           notes?: string | null;
           payment_frequency?:
@@ -5282,6 +5290,10 @@ export type Database = {
           expiration_date?: string | null;
           id?: string;
           imo_id?: string | null;
+          lead_purchase_id?: string | null;
+          lead_source_type?:
+            | Database["public"]["Enums"]["lead_source_type"]
+            | null;
           monthly_premium?: number;
           notes?: string | null;
           payment_frequency?:
@@ -5323,6 +5335,13 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "policies_lead_purchase_id_fkey";
+            columns: ["lead_purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "lead_purchases";
             referencedColumns: ["id"];
           },
           {
@@ -13932,6 +13951,7 @@ export type Database = {
         | "indexed_universal_life"
         | "variable_life";
       lead_freshness: "fresh" | "aged";
+      lead_source_type: "lead_purchase" | "free_lead" | "other";
       linkedin_connection_status:
         | "connected"
         | "disconnected"
@@ -14262,6 +14282,7 @@ export const Constants = {
         "variable_life",
       ],
       lead_freshness: ["fresh", "aged"],
+      lead_source_type: ["lead_purchase", "free_lead", "other"],
       linkedin_connection_status: [
         "connected",
         "disconnected",

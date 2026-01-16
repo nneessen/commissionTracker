@@ -2,6 +2,7 @@ import {
   Policy,
   PolicyFilters,
   CreatePolicyData,
+  LeadSourceType,
 } from "../../types/policy.types";
 import { PolicyRepository } from "./PolicyRepository";
 import { supabase } from "../base/supabase";
@@ -223,6 +224,50 @@ class PolicyService {
   }
 
   /**
+   * Update a policy's lead source attribution
+   * This links a policy to a lead purchase for ROI tracking
+   *
+   * @param policyId - Policy ID to update
+   * @param leadSourceType - Type of lead source (lead_purchase, free_lead, other, or null)
+   * @param leadPurchaseId - Lead purchase ID (required when sourceType is 'lead_purchase')
+   * @returns Updated policy
+   */
+  async updateLeadSource(
+    policyId: string,
+    leadSourceType: LeadSourceType | null,
+    leadPurchaseId?: string | null,
+  ): Promise<Policy> {
+    // Validate: if leadSourceType is 'lead_purchase', leadPurchaseId is required
+    if (leadSourceType === "lead_purchase" && !leadPurchaseId) {
+      throw new ValidationError(
+        "Lead purchase ID is required when source type is lead_purchase",
+        [
+          {
+            field: "leadPurchaseId",
+            message: "Lead purchase ID is required",
+            value: leadPurchaseId,
+          },
+        ],
+      );
+    }
+
+    // If source type is not lead_purchase, clear the leadPurchaseId
+    const updateData = {
+      leadSourceType,
+      leadPurchaseId:
+        leadSourceType === "lead_purchase" ? leadPurchaseId : null,
+    };
+
+    logger.info(
+      "Updating policy lead source",
+      { policyId, leadSourceType, leadPurchaseId },
+      "PolicyService.updateLeadSource",
+    );
+
+    return this.repository.update(policyId, updateData);
+  }
+
+  /**
    * Delete a policy
    */
   async delete(id: string): Promise<void> {
@@ -399,6 +444,26 @@ class PolicyService {
    */
   async findByAgent(userId: string): Promise<Policy[]> {
     return this.repository.findByAgent(userId);
+  }
+
+  /**
+   * Find policies linked to a specific lead purchase
+   * Used for ROI tracking display in LeadPurchaseDialog
+   */
+  async findByLeadPurchaseId(leadPurchaseId: string): Promise<Policy[]> {
+    return this.repository.findByLeadPurchaseId(leadPurchaseId);
+  }
+
+  /**
+   * Find recent policies that are NOT linked to any lead purchase
+   * Used for the policy selector in LeadPurchaseDialog
+   * Only returns the specified user's policies
+   */
+  async findUnlinkedRecent(
+    userId: string,
+    limit: number = 50,
+  ): Promise<Policy[]> {
+    return this.repository.findUnlinkedRecent(userId, limit);
   }
 
   /**

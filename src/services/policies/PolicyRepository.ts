@@ -358,6 +358,86 @@ export class PolicyRepository extends BaseRepository<
     }
   }
 
+  /**
+   * Find recent policies that are NOT linked to any lead purchase
+   * Used for the policy selector in LeadPurchaseDialog
+   * Returns only the current user's policies from the last 90 days with client info
+   */
+  async findUnlinkedRecent(
+    userId: string,
+    limit: number = 50,
+  ): Promise<Policy[]> {
+    try {
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select(
+          `
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email
+          )
+        `,
+        )
+        .eq("user_id", userId)
+        .is("lead_purchase_id", null)
+        .gte("effective_date", ninetyDaysAgo.toISOString().split("T")[0])
+        .order("effective_date", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw this.handleError(error, "findUnlinkedRecent");
+      }
+
+      return data?.map(this.transformFromDB) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findUnlinkedRecent");
+    }
+  }
+
+  /**
+   * Find policies linked to a specific lead purchase
+   * Returns policies with client info for ROI tracking display
+   */
+  async findByLeadPurchaseId(leadPurchaseId: string): Promise<Policy[]> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select(
+          `
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address,
+            date_of_birth
+          ),
+          commissions (
+            id,
+            amount,
+            type
+          )
+        `,
+        )
+        .eq("lead_purchase_id", leadPurchaseId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw this.handleError(error, "findByLeadPurchaseId");
+      }
+
+      return data?.map(this.transformFromDB) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findByLeadPurchaseId");
+    }
+  }
+
   // -------------------------------------------------------------------------
   // BATCH METHODS (for hierarchy/team queries)
   // -------------------------------------------------------------------------
@@ -960,6 +1040,8 @@ export class PolicyRepository extends BaseRepository<
       updated_at: dbRecord.updated_at,
       createdBy: dbRecord.created_by,
       notes: dbRecord.notes,
+      leadPurchaseId: dbRecord.lead_purchase_id,
+      leadSourceType: dbRecord.lead_source_type,
     };
     return policy;
   }
@@ -1001,6 +1083,11 @@ export class PolicyRepository extends BaseRepository<
     // advanceMonths removed - now only in commissions table
     if (data.createdBy !== undefined) dbData.created_by = data.createdBy;
     if (data.notes !== undefined) dbData.notes = data.notes;
+    // Lead source tracking
+    if (data.leadPurchaseId !== undefined)
+      dbData.lead_purchase_id = data.leadPurchaseId;
+    if (data.leadSourceType !== undefined)
+      dbData.lead_source_type = data.leadSourceType;
 
     return dbData;
   }

@@ -19,6 +19,8 @@ import {
   XCircle,
   Plus,
   FileText,
+  Link2Off,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateForDB, parseLocalDate } from "@/lib/date";
@@ -47,6 +49,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useCarriers } from "../../hooks/carriers";
 import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { useUpdateCommissionStatus } from "../../hooks/commissions/useUpdateCommissionStatus";
@@ -59,6 +67,7 @@ import type { SortConfig } from "./hooks/usePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { LeadPurchaseLinkDialog } from "./components/LeadPurchaseLinkDialog";
 
 interface PolicyListProps {
   onEditPolicy: (policyId: string) => void;
@@ -154,6 +163,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   // UI state
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [policyToLink, setPolicyToLink] = useState<Policy | null>(null);
 
   // Create a map of policy_id -> commission for quick lookup
   const commissionsByPolicy = commissions.reduce(
@@ -668,7 +679,21 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                     className="h-9 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <TableCell className="text-[11px] text-zinc-900 dark:text-zinc-100 py-1.5 px-2 font-medium">
-                      {policy.policyNumber}
+                      <div className="flex items-center gap-1.5">
+                        {policy.policyNumber}
+                        {!policy.leadPurchaseId && (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link2Off className="h-3 w-3 text-amber-500" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="text-xs">
+                                Not linked to lead purchase
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-[11px] py-1.5 px-2">
                       <div className="flex flex-col gap-0">
@@ -790,6 +815,18 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             <Edit className="mr-2 h-3.5 w-3.5" />
                             Edit Policy
                           </DropdownMenuItem>
+                          {!policy.leadPurchaseId && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setPolicyToLink(policy);
+                                setLinkDialogOpen(true);
+                              }}
+                              className="text-[11px]"
+                            >
+                              <Link2 className="mr-2 h-3.5 w-3.5" />
+                              Link to Lead Purchase
+                            </DropdownMenuItem>
+                          )}
                           {policy.status === "active" && (
                             <>
                               <DropdownMenuItem
@@ -996,6 +1033,17 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Lead Purchase Link Dialog */}
+      <LeadPurchaseLinkDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        policy={policyToLink}
+        onLinked={() => {
+          setPolicyToLink(null);
+          refresh();
+        }}
+      />
     </div>
   );
 };

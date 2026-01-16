@@ -15,6 +15,15 @@ type LeadPurchaseUpdate =
 // Lead freshness enum
 export type LeadFreshness = Database["public"]["Enums"]["lead_freshness"];
 
+// Lead source type (re-exported for convenience)
+export type LeadSourceType = Database["public"]["Enums"]["lead_source_type"];
+
+// Lead source selection for the dialog
+export interface LeadSourceSelection {
+  sourceType: LeadSourceType | null;
+  leadPurchaseId?: string; // Only set when sourceType = 'lead_purchase'
+}
+
 // =============================================================================
 // LEAD VENDOR TYPES
 // =============================================================================

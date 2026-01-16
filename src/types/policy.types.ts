@@ -22,6 +22,9 @@ export type PolicyUpdate = Database["public"]["Tables"]["policies"]["Update"];
 export type PaymentFrequencyDB =
   Database["public"]["Enums"]["payment_frequency"];
 
+/** Lead source type enum from database */
+export type LeadSourceType = Database["public"]["Enums"]["lead_source_type"];
+
 // =============================================================================
 // APP-LEVEL TYPES (CamelCase for React components)
 // =============================================================================
@@ -99,6 +102,10 @@ export interface Policy {
   updated_at?: Date; // Optional for BaseEntity compatibility
   createdBy?: string;
   notes?: string;
+
+  // Lead source tracking
+  leadPurchaseId?: string | null;
+  leadSourceType?: LeadSourceType | null;
 }
 
 // =============================================================================
@@ -191,6 +198,9 @@ export interface CreatePolicyData {
   commissionPercentage: number;
   notes?: string;
   status?: PolicyStatus;
+  // Lead source tracking
+  leadPurchaseId?: string | null;
+  leadSourceType?: LeadSourceType | null;
 }
 
 export type UpdatePolicyData = Partial<CreatePolicyData>;
@@ -225,6 +235,8 @@ export function policyRowToPolicy(
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
     notes: row.notes || undefined,
+    leadPurchaseId: row.lead_purchase_id,
+    leadSourceType: row.lead_source_type,
   };
 }
 

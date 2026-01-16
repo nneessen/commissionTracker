@@ -1,8 +1,8 @@
 // src/features/policies/queries.ts
 
-import {queryOptions} from "@tanstack/react-query";
-import {policyService} from "@/services/policies/policyService";
-import type {PolicyFilters} from "@/types/policy.types";
+import { queryOptions } from "@tanstack/react-query";
+import { policyService } from "@/services/policies/policyService";
+import type { PolicyFilters } from "@/types/policy.types";
 
 export const policyKeys = {
   all: ["policies"] as const,
@@ -15,6 +15,10 @@ export const policyKeys = {
     [...policyKeys.all, "count", filters] as const,
   metrics: (filters?: PolicyFilters) =>
     [...policyKeys.all, "metrics", filters] as const,
+  byLeadPurchase: (leadPurchaseId: string) =>
+    [...policyKeys.all, "by-lead-purchase", leadPurchaseId] as const,
+  unlinkedRecent: (userId: string) =>
+    [...policyKeys.all, "unlinked-recent", userId] as const,
 };
 
 export const policyQueries = {
@@ -63,5 +67,19 @@ export const policyQueries = {
       queryKey: policyKeys.metrics(filters),
       queryFn: () => policyService.getAggregateMetrics(filters),
       staleTime: 1000 * 60 * 5,
+    }),
+
+  byLeadPurchase: (leadPurchaseId: string) =>
+    queryOptions({
+      queryKey: policyKeys.byLeadPurchase(leadPurchaseId),
+      queryFn: () => policyService.findByLeadPurchaseId(leadPurchaseId),
+      staleTime: 1000 * 60 * 5,
+    }),
+
+  unlinkedRecent: (userId: string) =>
+    queryOptions({
+      queryKey: policyKeys.unlinkedRecent(userId),
+      queryFn: () => policyService.findUnlinkedRecent(userId),
+      staleTime: 1000 * 60 * 2, // 2 minutes - refresh more often
     }),
 };

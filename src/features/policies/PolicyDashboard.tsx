@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PolicyDialog } from "./components/PolicyDialog";
 import { FirstSellerNamingDialog } from "./components/FirstSellerNamingDialog";
+import { LeadSourceDialog } from "./components/LeadSourceDialog";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
 import { PolicyList } from "./PolicyList";
 import {
@@ -30,6 +31,12 @@ interface PendingFirstSaleLog {
   agencyName: string;
 }
 
+// Type for pending lead source attribution
+interface PendingLeadSource {
+  policyId: string;
+  policyNumber: string | null;
+}
+
 // Polling configuration for first-seller check
 const FIRST_SELLER_POLL_MAX_ATTEMPTS = 6;
 const FIRST_SELLER_POLL_INTERVAL_MS = 500;
@@ -42,6 +49,9 @@ export const PolicyDashboard: React.FC = () => {
     PendingFirstSaleLog[]
   >([]);
   const [currentFirstSaleIndex, setCurrentFirstSaleIndex] = useState(0);
+  // Lead source attribution dialog state
+  const [pendingLeadSource, setPendingLeadSource] =
+    useState<PendingLeadSource | null>(null);
 
   // Ref to track active polling and allow cancellation
   const pollingAbortRef = useRef<AbortController | null>(null);
@@ -186,6 +196,27 @@ export const PolicyDashboard: React.FC = () => {
         onNewPolicy={() => setIsPolicyFormOpen(true)}
       />
 
+      {/* Lead Source Dialog - shown after policy creation, before FirstSellerNamingDialog */}
+      {/* Only show if no first sale dialog is pending (prevents dialog overlap) */}
+      {pendingLeadSource && !currentFirstSale && (
+        <LeadSourceDialog
+          open={true}
+          onOpenChange={() => {
+            // Not used - LeadSourceDialog calls onComplete directly
+          }}
+          policyId={pendingLeadSource.policyId}
+          policyNumber={pendingLeadSource.policyNumber}
+          onComplete={() => {
+            // Lead source recorded or skipped - proceed to first seller check
+            // Only check if no first sale dialogs are already pending
+            setPendingLeadSource(null);
+            if (user?.id && pendingFirstSales.length === 0) {
+              checkFirstSeller(user.id);
+            }
+          }}
+        />
+      )}
+
       {/* First Seller Naming Dialog(s) - supports multi-channel naming */}
       {currentFirstSale && (
         <FirstSellerNamingDialog
@@ -260,9 +291,12 @@ export const PolicyDashboard: React.FC = () => {
                 `Policy ${result.policyNumber} created successfully!`,
               );
 
-              // Check if user is first seller immediately
-              // The edge function now stores pending data for first sales instead of posting
-              checkFirstSeller(user.id);
+              // Show lead source dialog BEFORE checking first seller
+              // The dialog's onComplete will trigger checkFirstSeller
+              setPendingLeadSource({
+                policyId: result.id,
+                policyNumber: result.policyNumber,
+              });
 
               return result;
             }

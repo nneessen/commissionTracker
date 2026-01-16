@@ -28,10 +28,11 @@ import {
 import {
   Plus,
   MoreVertical,
-  Edit,
+  Eye,
   Trash2,
   TrendingUp,
   TrendingDown,
+  Link2,
   ShoppingCart,
   Building2,
   Settings,
@@ -58,7 +59,7 @@ import {
   useDeleteLeadPurchase,
   useLeadVendors,
 } from "@/hooks/lead-purchases";
-import { LeadPurchaseDialog } from "./LeadPurchaseDialog";
+import { ManageLeadPurchaseDialog } from "./ManageLeadPurchaseDialog";
 import { LeadVendorDialog } from "./LeadVendorDialog";
 import { VendorManagementDialog } from "./VendorManagementDialog";
 import { useCreateLeadVendor } from "@/hooks/lead-purchases";
@@ -755,7 +756,7 @@ export function LeadPurchaseDashboard() {
                             <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem
                             onClick={() => {
                               setSelectedPurchase(purchase);
@@ -763,8 +764,18 @@ export function LeadPurchaseDashboard() {
                             }}
                             className="text-[11px]"
                           >
-                            <Edit className="mr-2 h-3.5 w-3.5" />
-                            Edit Purchase
+                            <Eye className="mr-2 h-3.5 w-3.5" />
+                            View / Manage
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedPurchase(purchase);
+                              setIsDialogOpen(true);
+                            }}
+                            className="text-[11px] text-blue-600 dark:text-blue-400"
+                          >
+                            <Link2 className="mr-2 h-3.5 w-3.5" />
+                            Link Policies
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -946,7 +957,7 @@ export function LeadPurchaseDashboard() {
         </div>
       </div>
 
-      <LeadPurchaseDialog
+      <ManageLeadPurchaseDialog
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open);

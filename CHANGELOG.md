@@ -6,6 +6,74 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-16 18:20:27
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/lead-source-attribution-continuation.md`
+- `src/features/expenses/leads/LeadPurchaseDashboard.tsx`
+- `src/features/expenses/leads/LeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/ManageLeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/PolicySelector.tsx`
+- `src/features/expenses/leads/VendorCombobox.tsx`
+- `src/features/expenses/leads/index.ts`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/components/LeadPurchaseLinkDialog.tsx`
+- `src/features/policies/components/LeadPurchaseSelector.tsx`
+- `src/features/policies/components/LeadSourceDialog.tsx`
+- `src/features/policies/hooks/index.ts`
+- `src/features/policies/hooks/usePoliciesByLeadPurchase.ts`
+- `src/features/policies/hooks/useUnlinkedRecentPolicies.ts`
+- `src/features/policies/hooks/useUpdatePolicyLeadSource.ts`
+- `src/features/policies/queries.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/database.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `src/types/policy.types.ts`
+- `supabase/migrations/20260116_004_lead_source_attribution.sql`
+- `supabase/migrations/20260116_005_fix_lead_roi_trigger.sql`
+
+### Statistics
+```
+ 26 files changed, 14337 insertions(+), 12485 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-16 18:19:43
+
+### Changed Files
+- `plans/active/lead-source-attribution-continuation.md`
+- `src/features/expenses/leads/LeadPurchaseDashboard.tsx`
+- `src/features/expenses/leads/LeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/ManageLeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/PolicySelector.tsx`
+- `src/features/expenses/leads/VendorCombobox.tsx`
+- `src/features/expenses/leads/index.ts`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/components/LeadPurchaseLinkDialog.tsx`
+- `src/features/policies/components/LeadPurchaseSelector.tsx`
+- `src/features/policies/components/LeadSourceDialog.tsx`
+- `src/features/policies/hooks/index.ts`
+- `src/features/policies/hooks/usePoliciesByLeadPurchase.ts`
+- `src/features/policies/hooks/useUnlinkedRecentPolicies.ts`
+- `src/features/policies/hooks/useUpdatePolicyLeadSource.ts`
+- `src/features/policies/queries.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/database.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `src/types/policy.types.ts`
+- `supabase/migrations/20260116_004_lead_source_attribution.sql`
+- `supabase/migrations/20260116_005_fix_lead_roi_trigger.sql`
+
+### Statistics
+```
+ 24 files changed, 14299 insertions(+), 12480 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-16 13:59:33
 
 ### Changed Files

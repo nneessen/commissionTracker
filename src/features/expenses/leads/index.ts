@@ -1,4 +1,4 @@
 // src/features/expenses/leads/index.ts
 export { LeadPurchaseDashboard } from "./LeadPurchaseDashboard";
-export { LeadPurchaseDialog } from "./LeadPurchaseDialog";
+export { ManageLeadPurchaseDialog } from "./ManageLeadPurchaseDialog";
 export { LeadVendorDialog } from "./LeadVendorDialog";
