@@ -191,7 +191,7 @@ export default function RecommendationsStep({
   const allAvailableTerms = new Set<number>();
   if (decisionEngineResult) {
     for (const rec of [
-      ...decisionEngineResult.recommendations,
+      ...decisionEngineResult.eligibleProducts,
       ...decisionEngineResult.unknownEligibility,
     ]) {
       if (rec.availableTerms) {
@@ -208,6 +208,7 @@ export default function RecommendationsStep({
   const displayedTerm =
     selectedTermYears ??
     decisionEngineResult?.recommendations[0]?.termYears ??
+    decisionEngineResult?.eligibleProducts[0]?.termYears ??
     decisionEngineResult?.unknownEligibility[0]?.termYears ??
     null;
 
@@ -357,11 +358,12 @@ export default function RecommendationsStep({
             </div>
           ) : decisionEngineResult &&
             (decisionEngineResult.recommendations.length > 0 ||
+              decisionEngineResult.eligibleProducts.length > 0 ||
               decisionEngineResult.unknownEligibility.length > 0) ? (
             <div className="space-y-2">
               {/* Compact Table for All Recommendations */}
               <DecisionEngineTable
-                recommendations={decisionEngineResult.recommendations}
+                eligibleProducts={decisionEngineResult.eligibleProducts}
                 unknownEligibility={decisionEngineResult.unknownEligibility}
               />
 
@@ -1678,12 +1680,12 @@ function _UnknownEligibilityCard({
 // ============================================================================
 
 interface DecisionEngineTableProps {
-  recommendations: DecisionEngineRecommendation[];
+  eligibleProducts: DecisionEngineRecommendation[];
   unknownEligibility: DecisionEngineRecommendation[];
 }
 
 function DecisionEngineTable({
-  recommendations,
+  eligibleProducts,
   unknownEligibility,
 }: DecisionEngineTableProps) {
   // Sort by premium (low to high), with nulls at the end
@@ -1697,7 +1699,7 @@ function DecisionEngineTable({
     return a.monthlyPremium - b.monthlyPremium;
   };
 
-  const sortedRecommendations = [...recommendations].sort(sortByPremium);
+  const sortedRecommendations = [...eligibleProducts].sort(sortByPremium);
   const sortedUnknown = [...unknownEligibility].sort(sortByPremium);
 
   const allRecs = [

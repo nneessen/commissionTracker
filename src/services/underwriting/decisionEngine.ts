@@ -173,6 +173,8 @@ export interface Recommendation {
 
 export interface DecisionEngineResult {
   recommendations: Recommendation[];
+  /** All eligible products (may include entries without premiums) */
+  eligibleProducts: Recommendation[];
   /** Products with unknown eligibility (kept in results but ranked lower) */
   unknownEligibility: Recommendation[];
   filtered: {
@@ -712,27 +714,37 @@ async function getProducts(
 }
 
 /**
- * Get extracted criteria for a product
- * Uses carrier_underwriting_criteria table with criteria column
+ * Get extracted criteria for multiple products (latest approved per product).
  */
-async function getExtractedCriteria(
-  productId: string,
-): Promise<ExtractedCriteria | undefined> {
+async function getExtractedCriteriaMap(
+  productIds: string[],
+): Promise<Map<string, ExtractedCriteria>> {
+  const criteriaMap = new Map<string, ExtractedCriteria>();
+  if (productIds.length === 0) return criteriaMap;
+
   const { data, error } = await supabase
     .from("carrier_underwriting_criteria")
-    .select("criteria")
-    .eq("product_id", productId)
+    .select("product_id, criteria, updated_at")
+    .in("product_id", productIds)
     .eq("review_status", "approved")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("product_id", { ascending: true })
+    .order("updated_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching extracted criteria:", error);
-    return undefined;
+    return criteriaMap;
   }
 
-  return data?.criteria as unknown as ExtractedCriteria | undefined;
+  for (const row of data || []) {
+    if (!criteriaMap.has(row.product_id)) {
+      criteriaMap.set(
+        row.product_id,
+        row.criteria as unknown as ExtractedCriteria,
+      );
+    }
+  }
+
+  return criteriaMap;
 }
 
 /**
@@ -823,6 +835,9 @@ export async function getRecommendations(
 
   const products = await getProducts(input);
   stats.totalProducts = products.length;
+  const criteriaMap = await getExtractedCriteriaMap(
+    products.map((p) => p.productId),
+  );
 
   // Internal type for evaluated products
   interface EvaluatedProduct {
@@ -863,10 +878,8 @@ export async function getRecommendations(
     // uses a specific term with stricter limits.
     // ==========================================================================
 
-    // OPTIMIZATION: Start both matrix and criteria fetches in parallel
-    // Matrix is awaited immediately for term calculations, criteria awaited later
+    // OPTIMIZATION: Start matrix fetch in parallel with other work
     const matrixPromise = getPremiumMatrixForProduct(product.productId, imoId);
-    const criteriaPromise = getExtractedCriteria(product.productId);
 
     // Get the premium matrix FIRST to determine available terms
     const matrix = await matrixPromise;
@@ -937,7 +950,7 @@ export async function getRecommendations(
     // Stage 1: Eligibility (tri-state)
     // CRITICAL: Pass effectiveTermYears (not input.termYears) to enforce
     // term-specific face amount restrictions consistently
-    const criteria = await criteriaPromise; // Await the parallel fetch
+    const criteria = criteriaMap.get(product.productId);
     const eligibility = checkEligibility(
       product,
       client,
@@ -1162,9 +1175,6 @@ export async function getRecommendations(
     }
 
     // For unknown eligibility, premium can be null (we still keep the product)
-    if (eligibility.status === "eligible" && premium === null) {
-      continue;
-    }
     if (premium !== null) {
       stats.withPremiums++;
     }
@@ -1273,19 +1283,22 @@ export async function getRecommendations(
     draftRulesFyi: e.approval.draftRules,
   });
 
-  // Build recommendations from eligible products
+  // Build recommendations from eligible products (only those with premiums)
   const recommendations: Recommendation[] = [];
   const seen = new Set<string>();
+  const scoredEligibleWithPremium = scoredEligible.filter(
+    (e) => e.premium !== null,
+  );
 
   // Best value (highest score among eligible)
-  if (scoredEligible.length > 0) {
-    const best = scoredEligible[0];
+  if (scoredEligibleWithPremium.length > 0) {
+    const best = scoredEligibleWithPremium[0];
     seen.add(best.product.productId);
     recommendations.push(toRecommendation(best, "best_value"));
   }
 
   // Cheapest (lowest premium among eligible)
-  const byPrice = [...scoredEligible]
+  const byPrice = [...scoredEligibleWithPremium]
     .filter((e) => e.premium !== null)
     .sort((a, b) => a.premium! - b.premium!);
   const cheapest = byPrice.find((p) => !seen.has(p.product.productId));
@@ -1295,7 +1308,7 @@ export async function getRecommendations(
   }
 
   // Best approval (highest likelihood among eligible)
-  const byApproval = [...scoredEligible].sort(
+  const byApproval = [...scoredEligibleWithPremium].sort(
     (a, b) => b.approval.likelihood - a.approval.likelihood,
   );
   const bestApproval = byApproval.find((p) => !seen.has(p.product.productId));
@@ -1305,7 +1318,7 @@ export async function getRecommendations(
   }
 
   // Highest coverage (max coverage among eligible)
-  const byCoverage = [...scoredEligible].sort(
+  const byCoverage = [...scoredEligibleWithPremium].sort(
     (a, b) => b.maxCoverage - a.maxCoverage,
   );
   const highestCoverage = byCoverage.find(
@@ -1315,6 +1328,11 @@ export async function getRecommendations(
     recommendations.push(toRecommendation(highestCoverage, "highest_coverage"));
   }
 
+  // Build all eligible list (no specific reason, sorted by score)
+  const eligibleRecommendations: Recommendation[] = scoredEligible.map((e) =>
+    toRecommendation(e, null),
+  );
+
   // Build unknown eligibility list (no specific reason, sorted by score)
   const unknownEligibility: Recommendation[] = scoredUnknown.map((e) =>
     toRecommendation(e, null),
@@ -1322,6 +1340,7 @@ export async function getRecommendations(
 
   return {
     recommendations,
+    eligibleProducts: eligibleRecommendations,
     unknownEligibility,
     filtered: stats,
     processingTime: Date.now() - startTime,

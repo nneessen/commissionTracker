@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-15 12:03:54
+Last Updated: 2026-01-16 09:51:45
 
 ## Metrics
-- Total Files: 29207
-- Total Lines of Code: 462238
-- Total Commits: 762
+- Total Files: 29214
+- Total Lines of Code: 466054
+- Total Commits: 772
 
 ## Recent Activity
-32df4fe docs: multiple changes in .,src/hooks/instagram,src/services/instagram
-ca2ff06 docs: multiple changes in .,docs,plans/active
-789af18 feat(admin): add upline column to users table + fix hierarchy AP calculation
-c8faad2 docs: multiple changes in .,src/features/underwriting,src/features/underwriting/components
-aa3c3d9 docs: multiple changes in .,plans/active,scripts
+fc92bea Merge remote-tracking branch 'origin/refactor/consolidate-us-states-constant'
+a6e9ca4 perf: parallelize premium matrix and criteria fetches in decision engine
+b91dcf8 perf: optimize decision engine by reusing pre-fetched premium matrix
+4f53954 feat: add BaseRepository benchmark scripts and UW improvements
+e4e9d17 fix(ui): improve VersionUpdateDialog contrast and readability
