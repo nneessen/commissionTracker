@@ -157,15 +157,68 @@ export const GRID_AGES = [
 ] as const;
 
 // Face amounts by product type
-// Term Life: larger coverage amounts
+// Term Life: $50k to $500k in $10k increments
 export const TERM_FACE_AMOUNTS = [
-  25000, 50000, 75000, 100000, 150000, 200000, 250000, 500000, 1000000,
-] as const;
+  50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000, 130000, 140000,
+  150000, 160000, 170000, 180000, 190000, 200000, 210000, 220000, 230000,
+  240000, 250000, 260000, 270000, 280000, 290000, 300000, 310000, 320000,
+  330000, 340000, 350000, 360000, 370000, 380000, 390000, 400000, 410000,
+  420000, 430000, 440000, 450000, 460000, 470000, 480000, 490000, 500000,
+] as const; // 46 columns
 
-// Whole Life / Final Expense: 5k to 50k in 5k increments
+// Whole Life / Final Expense: $5k to $50k in $1k increments + outliers
 export const WHOLE_LIFE_FACE_AMOUNTS = [
-  5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000,
-] as const;
+  5000,
+  6000,
+  7000,
+  8000,
+  9000,
+  10000,
+  11000,
+  12000,
+  13000,
+  14000,
+  15000,
+  16000,
+  17000,
+  18000,
+  19000,
+  20000,
+  21000,
+  22000,
+  23000,
+  24000,
+  25000,
+  26000,
+  27000,
+  28000,
+  29000,
+  30000,
+  31000,
+  32000,
+  33000,
+  34000,
+  35000,
+  36000,
+  37000,
+  38000,
+  39000,
+  40000,
+  41000,
+  42000,
+  43000,
+  44000,
+  45000,
+  46000,
+  47000,
+  48000,
+  49000,
+  50000,
+  75000,
+  100000,
+  125000,
+  150000, // outliers at end
+] as const; // 50 columns
 
 // Participating Whole Life: 5k to 50k in 5k increments, then 75k to 300k in 25k increments
 export const PARTICIPATING_WHOLE_LIFE_FACE_AMOUNTS = [
@@ -175,6 +228,109 @@ export const PARTICIPATING_WHOLE_LIFE_FACE_AMOUNTS = [
 
 // Default face amounts (for backward compatibility)
 export const GRID_FACE_AMOUNTS = TERM_FACE_AMOUNTS;
+
+// =============================================================================
+// Increment Configuration for UI
+// =============================================================================
+
+// Increment options for Whole Life products
+export const WHOLE_LIFE_INCREMENT_OPTIONS = [
+  { value: 1000, label: "$1k" },
+  { value: 2500, label: "$2.5k" },
+  { value: 5000, label: "$5k" },
+] as const;
+
+// Increment options for Term Life products
+export const TERM_INCREMENT_OPTIONS = [
+  { value: 10000, label: "$10k" },
+  { value: 25000, label: "$25k" },
+  { value: 50000, label: "$50k" },
+] as const;
+
+// Face amount ranges by product type
+export const FACE_AMOUNT_RANGES = {
+  whole_life: {
+    min: 5000,
+    max: 50000,
+    outliers: [75000, 100000, 125000, 150000],
+    defaultIncrement: 1000,
+  },
+  final_expense: {
+    min: 5000,
+    max: 50000,
+    outliers: [75000, 100000, 125000, 150000],
+    defaultIncrement: 1000,
+  },
+  term_life: { min: 50000, max: 500000, outliers: [], defaultIncrement: 10000 },
+  participating_whole_life: {
+    min: 5000,
+    max: 300000,
+    outliers: [],
+    defaultIncrement: 5000,
+  },
+} as const;
+
+/**
+ * Generate face amounts for a given range and increment.
+ * Includes outliers that are beyond the max value.
+ */
+export function generateFaceAmounts(
+  min: number,
+  max: number,
+  increment: number,
+  outliers: readonly number[] = [],
+): number[] {
+  const amounts: number[] = [];
+  for (let amt = min; amt <= max; amt += increment) {
+    amounts.push(amt);
+  }
+  // Add outliers that are beyond max
+  for (const outlier of outliers) {
+    if (outlier > max && !amounts.includes(outlier)) {
+      amounts.push(outlier);
+    }
+  }
+  return amounts;
+}
+
+/**
+ * Get increment options for a product type.
+ */
+export function getIncrementOptionsForProductType(
+  productType: string,
+): readonly { value: number; label: string }[] {
+  switch (productType) {
+    case "whole_life":
+    case "final_expense":
+    case "participating_whole_life":
+      return WHOLE_LIFE_INCREMENT_OPTIONS;
+    case "term_life":
+    default:
+      return TERM_INCREMENT_OPTIONS;
+  }
+}
+
+/**
+ * Get the default increment for a product type.
+ */
+export function getDefaultIncrementForProductType(productType: string): number {
+  const range =
+    FACE_AMOUNT_RANGES[productType as keyof typeof FACE_AMOUNT_RANGES];
+  return range?.defaultIncrement ?? 10000;
+}
+
+/**
+ * Get the face amount range for a product type.
+ */
+export function getFaceAmountRangeForProductType(productType: string): {
+  min: number;
+  max: number;
+  outliers: readonly number[];
+} {
+  const range =
+    FACE_AMOUNT_RANGES[productType as keyof typeof FACE_AMOUNT_RANGES];
+  return range ?? { min: 50000, max: 500000, outliers: [] };
+}
 
 // Get face amounts based on product type
 export function getFaceAmountsForProductType(

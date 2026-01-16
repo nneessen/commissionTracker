@@ -2,6 +2,7 @@
 // Grid-based premium entry component (age × face amount) with term support
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,12 +20,15 @@ import {
 } from "../../hooks/usePremiumMatrix";
 import {
   GRID_AGES,
-  getFaceAmountsForProductType,
   GENDER_OPTIONS,
   TOBACCO_OPTIONS,
   HEALTH_CLASS_OPTIONS,
   TERM_OPTIONS,
   formatFaceAmount,
+  generateFaceAmounts,
+  getIncrementOptionsForProductType,
+  getDefaultIncrementForProductType,
+  getFaceAmountRangeForProductType,
   type GenderType,
   type TobaccoClass,
   type HealthClass,
@@ -52,11 +56,54 @@ export function PremiumMatrixGrid({
   // Is this a term product?
   const isTermProduct = productType === "term_life";
 
-  // Get face amounts based on product type
-  const faceAmounts = useMemo(
-    () => getFaceAmountsForProductType(productType),
+  // Get increment options and default for this product type
+  const incrementOptions = useMemo(
+    () => getIncrementOptionsForProductType(productType),
     [productType],
   );
+
+  // Selected increment state (persisted to localStorage)
+  const [selectedIncrement, setSelectedIncrement] = useState<number>(() => {
+    const storageKey = `premiumGrid_increment_${productType}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return getDefaultIncrementForProductType(productType);
+  });
+
+  // Persist increment changes to localStorage
+  useEffect(() => {
+    const storageKey = `premiumGrid_increment_${productType}`;
+    localStorage.setItem(storageKey, selectedIncrement.toString());
+  }, [selectedIncrement, productType]);
+
+  // Reset increment when product type changes
+  useEffect(() => {
+    const defaultIncrement = getDefaultIncrementForProductType(productType);
+    const storageKey = `premiumGrid_increment_${productType}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed)) {
+        setSelectedIncrement(parsed);
+        return;
+      }
+    }
+    setSelectedIncrement(defaultIncrement);
+  }, [productType]);
+
+  // Get face amounts based on product type and selected increment
+  const faceAmounts = useMemo(() => {
+    const range = getFaceAmountRangeForProductType(productType);
+    return generateFaceAmounts(
+      range.min,
+      range.max,
+      selectedIncrement,
+      range.outliers,
+    );
+  }, [productType, selectedIncrement]);
 
   // Filter state
   const [selectedGender, setSelectedGender] = useState<GenderType>("male");
@@ -73,6 +120,18 @@ export function PremiumMatrixGrid({
 
   // Ref for keyboard navigation
   const inputRefs = useRef<Map<CellKey, HTMLInputElement>>(new Map());
+
+  // Ref for virtualized scroll container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Column virtualizer for horizontal virtualization
+  const columnVirtualizer = useVirtualizer({
+    count: faceAmounts.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 62, // min-w-[60px] + padding
+    horizontal: true,
+    overscan: 5, // render 5 extra columns on each side for smooth scrolling
+  });
 
   // Fetch existing data
   const { data: existingData, isLoading } = usePremiumMatrixForClassification(
@@ -197,15 +256,23 @@ export function PremiumMatrixGrid({
       }
 
       if (nextAge !== age || nextFace !== faceAmount) {
-        const nextKey: CellKey = `${nextAge}-${nextFace}`;
-        const nextInput = inputRefs.current.get(nextKey);
-        if (nextInput && e.key !== "Tab") {
-          nextInput.focus();
-          nextInput.select();
+        const nextFaceIndex = faceAmounts.indexOf(nextFace);
+        // Scroll the virtualizer to ensure the target column is visible
+        if (nextFaceIndex !== -1) {
+          columnVirtualizer.scrollToIndex(nextFaceIndex, { align: "auto" });
         }
+        // Use setTimeout to allow the virtualizer to render the column first
+        setTimeout(() => {
+          const nextKey: CellKey = `${nextAge}-${nextFace}`;
+          const nextInput = inputRefs.current.get(nextKey);
+          if (nextInput && e.key !== "Tab") {
+            nextInput.focus();
+            nextInput.select();
+          }
+        }, 0);
       }
     },
-    [faceAmounts],
+    [faceAmounts, columnVirtualizer],
   );
 
   // Save all changes
@@ -339,6 +406,32 @@ export function PremiumMatrixGrid({
             </div>
           )}
 
+          {/* Increment Selector */}
+          <div>
+            <label className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 mb-0.5 block">
+              Increment
+            </label>
+            <Select
+              value={selectedIncrement.toString()}
+              onValueChange={(v) => setSelectedIncrement(parseInt(v, 10))}
+            >
+              <SelectTrigger className="h-6 w-16 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {incrementOptions.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value.toString()}
+                    className="text-[10px]"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <label className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 mb-0.5 block">
               Gender
@@ -432,87 +525,137 @@ export function PremiumMatrixGrid({
           </Button>
         </div>
 
-        {/* Premium Grid */}
-        <div className="overflow-x-auto border border-zinc-200 dark:border-zinc-700 rounded">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-zinc-100 dark:bg-zinc-800">
-                <th className="px-1.5 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-left sticky left-0 bg-zinc-100 dark:bg-zinc-800 z-10 w-10">
+        {/* Premium Grid - Virtualized */}
+        <div className="border border-zinc-200 dark:border-zinc-700 rounded">
+          {/* Scrollable container */}
+          <div ref={scrollContainerRef} className="overflow-x-auto">
+            {/* Virtual scroll area */}
+            <div
+              style={{
+                width: `${columnVirtualizer.getTotalSize() + 40}px`, // +40 for age column
+                minWidth: "100%",
+              }}
+            >
+              {/* Header row */}
+              <div className="flex bg-zinc-100 dark:bg-zinc-800">
+                {/* Age header - sticky */}
+                <div className="sticky left-0 z-20 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-left w-10 flex-shrink-0">
                   Age
-                </th>
-                {faceAmounts.map((faceAmount) => (
-                  <th
-                    key={faceAmount}
-                    className="px-1 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-center min-w-[60px]"
-                  >
-                    {formatFaceAmount(faceAmount)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {GRID_AGES.map((age, ageIndex) => (
-                <tr
-                  key={age}
-                  className="border-t border-zinc-100 dark:border-zinc-800"
+                </div>
+                {/* Virtualized column headers */}
+                <div
+                  className="relative flex-1"
+                  style={{
+                    height: 24,
+                    width: columnVirtualizer.getTotalSize(),
+                  }}
                 >
-                  <td className="px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 dark:text-zinc-300 sticky left-0 bg-white dark:bg-zinc-900 z-10">
-                    {age}
-                  </td>
-                  {faceAmounts.map((faceAmount, faceIndex) => {
-                    const key: CellKey = `${age}-${faceAmount}`;
-                    const value = getCellValue(age, faceAmount);
-                    const hasData = cellHasData(age, faceAmount);
-                    const hasChanges = cellHasChanges(age, faceAmount);
-
+                  {columnVirtualizer.getVirtualItems().map((virtualColumn) => {
+                    const faceAmount = faceAmounts[virtualColumn.index];
                     return (
-                      <td key={faceAmount} className="p-0.5">
-                        <div className="relative">
-                          <Input
-                            ref={(el) => {
-                              if (el) {
-                                inputRefs.current.set(key, el);
-                              } else {
-                                inputRefs.current.delete(key);
-                              }
-                            }}
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="—"
-                            value={value}
-                            onChange={(e) =>
-                              handleCellChange(age, faceAmount, e.target.value)
-                            }
-                            onKeyDown={(e) =>
-                              handleKeyDown(
-                                e,
-                                age,
-                                faceAmount,
-                                ageIndex,
-                                faceIndex,
-                              )
-                            }
-                            className={cn(
-                              "h-6 w-full text-center text-[10px] px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-                              hasData &&
-                                !hasChanges &&
-                                "bg-green-50 dark:bg-green-950/20",
-                              hasChanges &&
-                                "bg-yellow-50 dark:bg-yellow-950/20",
-                            )}
-                          />
-                          {hasData && !hasChanges && (
-                            <Check className="absolute right-0.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-green-500 pointer-events-none" />
-                          )}
-                        </div>
-                      </td>
+                      <div
+                        key={faceAmount}
+                        className="absolute top-0 h-full px-1 py-1 text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 text-center"
+                        style={{
+                          left: virtualColumn.start,
+                          width: virtualColumn.size,
+                        }}
+                      >
+                        {formatFaceAmount(faceAmount)}
+                      </div>
                     );
                   })}
-                </tr>
+                </div>
+              </div>
+
+              {/* Data rows */}
+              {GRID_AGES.map((age, ageIndex) => (
+                <div
+                  key={age}
+                  className="flex border-t border-zinc-100 dark:border-zinc-800"
+                >
+                  {/* Age cell - sticky */}
+                  <div className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 dark:text-zinc-300 w-10 flex-shrink-0 flex items-center">
+                    {age}
+                  </div>
+                  {/* Virtualized data cells */}
+                  <div
+                    className="relative flex-1"
+                    style={{
+                      height: 28,
+                      width: columnVirtualizer.getTotalSize(),
+                    }}
+                  >
+                    {columnVirtualizer
+                      .getVirtualItems()
+                      .map((virtualColumn) => {
+                        const faceAmount = faceAmounts[virtualColumn.index];
+                        const faceIndex = virtualColumn.index;
+                        const key: CellKey = `${age}-${faceAmount}`;
+                        const value = getCellValue(age, faceAmount);
+                        const hasData = cellHasData(age, faceAmount);
+                        const hasChanges = cellHasChanges(age, faceAmount);
+
+                        return (
+                          <div
+                            key={faceAmount}
+                            className="absolute top-0 h-full p-0.5"
+                            style={{
+                              left: virtualColumn.start,
+                              width: virtualColumn.size,
+                            }}
+                          >
+                            <div className="relative h-full">
+                              <Input
+                                ref={(el) => {
+                                  if (el) {
+                                    inputRefs.current.set(key, el);
+                                  } else {
+                                    inputRefs.current.delete(key);
+                                  }
+                                }}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="—"
+                                value={value}
+                                onChange={(e) =>
+                                  handleCellChange(
+                                    age,
+                                    faceAmount,
+                                    e.target.value,
+                                  )
+                                }
+                                onKeyDown={(e) =>
+                                  handleKeyDown(
+                                    e,
+                                    age,
+                                    faceAmount,
+                                    ageIndex,
+                                    faceIndex,
+                                  )
+                                }
+                                className={cn(
+                                  "h-6 w-full text-center text-[10px] px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                                  hasData &&
+                                    !hasChanges &&
+                                    "bg-green-50 dark:bg-green-950/20",
+                                  hasChanges &&
+                                    "bg-yellow-50 dark:bg-yellow-950/20",
+                                )}
+                              />
+                              {hasData && !hasChanges && (
+                                <Check className="absolute right-0.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-green-500 pointer-events-none" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
         {/* Legend & Help */}
