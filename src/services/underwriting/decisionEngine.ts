@@ -40,6 +40,7 @@ import {
   type RateableHealthClass,
   type PremiumLookupResult,
   type AlternativeQuote,
+  type PremiumMatrix,
 } from "./premiumMatrixService";
 import { calculateDataCompleteness } from "./conditionMatcher";
 import { calculateApprovalV2 } from "./ruleEngineV2Adapter";
@@ -599,9 +600,13 @@ async function getPremium(
   faceAmount: number,
   imoId: string,
   termYears?: number | null,
+  /** Optional pre-fetched matrix to avoid duplicate DB query */
+  prefetchedMatrix?: PremiumMatrix[],
 ): Promise<PremiumLookupResult> {
   try {
-    const matrix = await getPremiumMatrixForProduct(productId, imoId);
+    // Use pre-fetched matrix if provided, otherwise fetch (backward compatibility)
+    const matrix =
+      prefetchedMatrix ?? (await getPremiumMatrixForProduct(productId, imoId));
 
     if (!matrix || matrix.length === 0) {
       return { premium: null, reason: "NO_MATRIX" };
@@ -1021,6 +1026,7 @@ export async function getRecommendations(
       coverage.faceAmount,
       imoId,
       termForQuotes, // Use effectiveTermYears for both eligibility and pricing
+      matrix, // Pass pre-fetched matrix to avoid duplicate DB query
     );
 
     // Extract premium and health class metadata from result
