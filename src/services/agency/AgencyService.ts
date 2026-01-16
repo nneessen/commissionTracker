@@ -32,10 +32,12 @@ import {
 } from "../../types/dashboard-metrics.schemas";
 import {
   parseAgencyPerformanceReport,
+  parseAgencyWeeklyProduction,
   formatDateForQuery,
   validateReportDateRange,
   buildDateRangeParams,
   type AgencyPerformanceReport,
+  type AgencyWeeklyReport,
   type ReportDateRange,
 } from "../../types/team-reports.schemas";
 
@@ -749,6 +751,106 @@ class AgencyService {
     } catch (error) {
       logger.error(
         "Failed to get agency performance report",
+        error instanceof Error ? error : new Error(String(error)),
+        "AgencyService",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get agency weekly production report
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   * @param dateRange - Optional date range. Defaults to last 12 weeks.
+   */
+  async getWeeklyProduction(
+    agencyId?: string,
+    dateRange?: ReportDateRange,
+  ): Promise<AgencyWeeklyReport | null> {
+    try {
+      // Validate date range if provided
+      validateReportDateRange(dateRange);
+
+      // Default to last 12 weeks
+      const now = new Date();
+      const twelveWeeksAgo = new Date();
+      twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 84); // 12 weeks
+
+      const params = {
+        p_agency_id: agencyId ?? null,
+        p_start_date: dateRange
+          ? formatDateForQuery(dateRange.startDate)
+          : formatDateForQuery(twelveWeeksAgo),
+        p_end_date: dateRange
+          ? formatDateForQuery(dateRange.endDate)
+          : formatDateForQuery(now),
+      };
+
+      const { data, error } = await supabase.rpc(
+        "get_agency_weekly_production",
+        params,
+      );
+
+      if (error) {
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error) ||
+          isFunctionNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied, invalid params, or function not found for agency weekly production",
+            { agencyId, code: error.code },
+            "AgencyService",
+          );
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          agency_id: agencyId || "",
+          weeks: [],
+          summary: {
+            total_new_policies: 0,
+            total_new_premium: 0,
+            total_commissions: 0,
+            total_lapsed: 0,
+            net_growth: 0,
+          },
+        };
+      }
+
+      const validated = parseAgencyWeeklyProduction(data);
+
+      // Calculate summary from weekly data
+      const summary = validated.reduce(
+        (acc, row) => ({
+          total_new_policies: acc.total_new_policies + row.new_policies,
+          total_new_premium: acc.total_new_premium + row.new_premium,
+          total_commissions: acc.total_commissions + row.commissions_earned,
+          total_lapsed: acc.total_lapsed + row.policies_lapsed,
+          net_growth: acc.net_growth + row.net_premium_change,
+        }),
+        {
+          total_new_policies: 0,
+          total_new_premium: 0,
+          total_commissions: 0,
+          total_lapsed: 0,
+          net_growth: 0,
+        },
+      );
+
+      return {
+        agency_id: agencyId || "",
+        weeks: validated,
+        summary,
+      };
+    } catch (error) {
+      logger.error(
+        "Failed to get agency weekly production",
         error instanceof Error ? error : new Error(String(error)),
         "AgencyService",
       );

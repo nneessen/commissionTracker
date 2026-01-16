@@ -160,33 +160,71 @@ serve(async (req) => {
       );
     }
 
-    const accessToken = tokenData.access_token;
+    const shortLivedToken = tokenData.access_token;
     const instagramUserId = tokenData.user_id;
     console.log(
-      "[instagram-oauth-callback] Access token obtained, user_id:",
+      "[instagram-oauth-callback] Short-lived token obtained, user_id:",
       instagramUserId,
     );
 
     // =========================================================================
-    // Step 2: Use the token directly (skip long-lived exchange)
+    // Step 2: Exchange short-lived token for long-lived token (60 days)
     // =========================================================================
-    // NOTE: The Instagram API with Instagram Login (instagram_business_* scopes)
-    // does NOT support the ig_exchange_token endpoint - that's for Basic Display API.
-    // The token from api.instagram.com/oauth/access_token works directly.
-    // Token expiry is handled via refresh_access_token endpoint later if needed.
-    // Default to 60 days expiry (Instagram's standard for these tokens).
-
-    // IMPORTANT: Log the actual expires_in from Meta for debugging token lifetime issues
+    // CRITICAL: The initial token from api.instagram.com/oauth/access_token is
+    // SHORT-LIVED (~1 hour). We MUST exchange it for a long-lived token (60 days)
+    // using the ig_exchange_token endpoint. This is required for both:
+    // - Instagram Basic Display API (deprecated Dec 2024)
+    // - Instagram API with Instagram Login (current)
+    //
+    // Reference: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login
     console.log(
-      `[instagram-oauth-callback] Token expires_in from Instagram API: ${tokenData.expires_in || "NOT PROVIDED (using 60 day default)"}`,
+      "[instagram-oauth-callback] Exchanging short-lived token for long-lived token...",
     );
 
-    const expiresInSeconds = tokenData.expires_in || 5184000; // 60 days default
-    const tokenExpiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+    const exchangeUrl = new URL("https://graph.instagram.com/access_token");
+    exchangeUrl.searchParams.set("grant_type", "ig_exchange_token");
+    exchangeUrl.searchParams.set("client_secret", INSTAGRAM_APP_SECRET);
+    exchangeUrl.searchParams.set("access_token", shortLivedToken);
+
+    const exchangeResponse = await fetch(exchangeUrl.toString(), {
+      method: "GET",
+    });
+    const exchangeData = await exchangeResponse.json();
 
     console.log(
-      `[instagram-oauth-callback] Using access token directly, setting expiry to ${Math.round(expiresInSeconds / 86400)} days (expires: ${tokenExpiresAt.toISOString()})`,
+      "[instagram-oauth-callback] Token exchange response:",
+      JSON.stringify({
+        ...exchangeData,
+        access_token: exchangeData.access_token ? "[REDACTED]" : undefined,
+      }),
     );
+
+    let accessToken: string;
+    let tokenExpiresAt: Date;
+
+    if (exchangeData.error || !exchangeData.access_token) {
+      // Token exchange failed - fall back to short-lived token with correct expiry
+      console.warn(
+        "[instagram-oauth-callback] Long-lived token exchange failed:",
+        exchangeData.error?.message || "No access token in response",
+      );
+      console.warn(
+        "[instagram-oauth-callback] Falling back to short-lived token (1 hour expiry)",
+      );
+      accessToken = shortLivedToken;
+      // Short-lived tokens expire in ~1 hour (3600 seconds)
+      const shortLivedExpiry = tokenData.expires_in || 3600;
+      tokenExpiresAt = new Date(Date.now() + shortLivedExpiry * 1000);
+    } else {
+      // Successfully got long-lived token
+      accessToken = exchangeData.access_token;
+      // Long-lived tokens expire in ~60 days (5184000 seconds)
+      const expiresInSeconds = exchangeData.expires_in || 5184000;
+      tokenExpiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+      console.log(
+        `[instagram-oauth-callback] Long-lived token obtained, expires in ${Math.round(expiresInSeconds / 86400)} days (${tokenExpiresAt.toISOString()})`,
+      );
+    }
 
     // =========================================================================
     // Step 3: Get Instagram profile details

@@ -7,11 +7,25 @@ import {
   ReportSection,
   ReportMetric,
 } from "../../types/reports.types";
+import { Database } from "../../types/database.types";
 import { supabase } from "../base/supabase";
 import { InsightsService } from "./insightsService";
 import { ForecastingService } from "./forecastingService";
 import { formatCurrency, formatPercent } from "../../lib/format";
 import { logger } from "../base/logger";
+
+// Type aliases for MV row types (used by secure RPCs)
+type CommissionAgingRow =
+  Database["public"]["Views"]["mv_commission_aging"]["Row"];
+type ClientLtvRow = Database["public"]["Views"]["mv_client_ltv"]["Row"];
+type CohortRetentionRow =
+  Database["public"]["Views"]["mv_cohort_retention"]["Row"];
+type ProductionVelocityRow =
+  Database["public"]["Views"]["mv_production_velocity"]["Row"];
+type ExpenseSummaryRow =
+  Database["public"]["Views"]["mv_expense_summary"]["Row"];
+type ChargebackSummaryRow =
+  Database["public"]["Views"]["commission_chargeback_summary"]["Row"];
 
 interface GenerateReportOptions {
   userId: string;
@@ -122,7 +136,7 @@ export class ReportGenerationService {
       { label: "Expenses", value: formatCurrency(totalExpenses) },
       { label: "Active Policies", value: activePolicies },
       { label: "Total Premium", value: formatCurrency(totalPremium) },
-      { label: "Retention", value: formatPercent(retentionRate) },
+      { label: "Retention", value: formatPercent(retentionRate * 100) },
     ];
 
     // Single section with top insights - no redundant tables
@@ -168,20 +182,16 @@ export class ReportGenerationService {
 
     const hasNoPolicies = (policyCount ?? 0) === 0;
 
-    // Fetch MVs for deep analysis
+    // Fetch MVs for deep analysis (using secure RPCs that enforce auth.uid())
     const [chargebackSummaryResult, carrierPerformance, commissionAging] =
       await Promise.all([
-        supabase
-          .from("commission_chargeback_summary")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle(),
+        supabase.rpc("get_user_commission_chargeback_summary"),
         // Only fetch carrier performance if user has policies
         hasNoPolicies
           ? Promise.resolve([])
           : this.fetchCarrierPerformance(userId, filters),
         // Only fetch commission aging if user has policies
-        hasNoPolicies ? Promise.resolve([]) : this.fetchCommissionAging(userId),
+        hasNoPolicies ? Promise.resolve([]) : this.fetchCommissionAging(),
       ]);
 
     if (chargebackSummaryResult.error) {
@@ -191,16 +201,18 @@ export class ReportGenerationService {
     }
 
     // Default to zeros if user has no commissions yet
-    const chargebackSummary = chargebackSummaryResult.data || {
-      total_chargebacks: 0,
-      total_chargeback_amount: 0,
-      total_advances: 0,
-      total_earned: 0,
-      chargeback_rate_percentage: 0,
-      charged_back_count: 0,
-      high_risk_count: 0,
-      at_risk_amount: 0,
-    };
+    const chargebackSummary: ChargebackSummaryRow =
+      (chargebackSummaryResult.data as ChargebackSummaryRow) || {
+        total_chargebacks: 0,
+        total_chargeback_amount: 0,
+        total_advances: 0,
+        total_earned: 0,
+        chargeback_rate_percentage: 0,
+        charged_back_count: 0,
+        high_risk_count: 0,
+        at_risk_amount: 0,
+        user_id: null,
+      };
 
     // Risk metrics from aging MV
     const totalAtRisk = commissionAging.reduce(
@@ -225,8 +237,8 @@ export class ReportGenerationService {
       .map((carrier) => [
         carrier.carrier_name || "Unknown",
         formatCurrency(carrier.total_commission_amount || 0),
-        formatPercent((carrier.avg_commission_rate_pct || 0) / 100),
-        formatPercent((carrier.persistency_rate || 0) / 100),
+        formatPercent(carrier.avg_commission_rate_pct || 0),
+        formatPercent(carrier.persistency_rate || 0),
         carrier.total_policies || 0,
       ]);
 
@@ -265,7 +277,7 @@ export class ReportGenerationService {
           {
             label: "Chargeback Rate",
             value: formatPercent(
-              (chargebackSummary?.chargeback_rate_percentage || 0) / 100,
+              chargebackSummary?.chargeback_rate_percentage || 0,
             ),
           },
         ],
@@ -363,7 +375,7 @@ export class ReportGenerationService {
 
     // Fetch cohort retention MV + carrier performance for persistency breakdown
     const [cohortRetention, carrierPerformance, insights] = await Promise.all([
-      hasNoPolicies ? Promise.resolve([]) : this.fetchCohortRetention(userId),
+      hasNoPolicies ? Promise.resolve([]) : this.fetchCohortRetention(),
       hasNoPolicies
         ? Promise.resolve([])
         : this.fetchCarrierPerformance(userId, filters),
@@ -401,7 +413,7 @@ export class ReportGenerationService {
         }),
         cohort.cohort_size || 0,
         cohort.still_active || 0,
-        formatPercent((cohort.retention_rate || 0) / 100),
+        formatPercent(cohort.retention_rate || 0),
       ];
     });
 
@@ -411,7 +423,7 @@ export class ReportGenerationService {
       .sort((a, b) => (b.persistency_rate || 0) - (a.persistency_rate || 0))
       .map((carrier) => [
         carrier.carrier_name || "Unknown",
-        formatPercent((carrier.persistency_rate || 0) / 100),
+        formatPercent(carrier.persistency_rate || 0),
         carrier.active_policies || 0,
         carrier.lapsed_policies || 0,
       ]);
@@ -434,7 +446,7 @@ export class ReportGenerationService {
         metrics: [
           {
             label: "13-Month Persistency",
-            value: formatPercent(avgPersistency13Month / 100),
+            value: formatPercent(avgPersistency13Month || 0),
           },
           { label: "Total Cohorts Tracked", value: uniqueCohorts.length },
         ],
@@ -516,9 +528,9 @@ export class ReportGenerationService {
 
     const hasNoClients = (clientCount ?? 0) === 0;
 
-    // Fetch client LTV from MV
+    // Fetch client LTV from MV (uses secure RPC with auth.uid())
     const [clientLTV, insights] = await Promise.all([
-      hasNoClients ? Promise.resolve([]) : this.fetchClientLTV(userId),
+      hasNoClients ? Promise.resolve([]) : this.fetchClientLTV(),
       InsightsService.generateInsights({
         userId,
         startDate: filters.startDate,
@@ -677,7 +689,7 @@ export class ReportGenerationService {
     // Fetch expense summary MV + raw expense data for breakdown
     const [_expenseSummary, expenses, commissions, insights] =
       await Promise.all([
-        this.fetchExpenseSummary(userId),
+        this.fetchExpenseSummary(),
         this.fetchExpenseData(userId, filters),
         this.fetchCommissionData(userId, filters),
         InsightsService.generateInsights({
@@ -710,7 +722,7 @@ export class ReportGenerationService {
         category,
         formatCurrency(amount as number),
         formatPercent(
-          totalExpenses > 0 ? (amount as number) / totalExpenses : 0,
+          totalExpenses > 0 ? ((amount as number) / totalExpenses) * 100 : 0,
         ),
       ]);
 
@@ -728,7 +740,7 @@ export class ReportGenerationService {
           { label: "Total Expenses", value: formatCurrency(totalExpenses) },
           {
             label: "Expense Ratio",
-            value: formatPercent(expenseRatio / 100),
+            value: formatPercent(expenseRatio),
             description: "Expenses as % of commission",
           },
           { label: "Recurring", value: formatCurrency(recurringExpenses) },
@@ -787,7 +799,10 @@ export class ReportGenerationService {
             label: "3-Month Total",
             value: formatCurrency(forecast.threeMonth),
           },
-          { label: "Confidence", value: formatPercent(forecast.confidence) },
+          {
+            label: "Confidence",
+            value: formatPercent(forecast.confidence * 100),
+          },
           {
             label: "Trend",
             value:
@@ -908,6 +923,7 @@ export class ReportGenerationService {
         policy:policies!policy_id (
           carrier_id,
           status,
+          commission_percentage,
           carrier:carriers!carrier_id (
             name
           )
@@ -936,16 +952,17 @@ export class ReportGenerationService {
       return dateToCheck >= filters.startDate && dateToCheck <= filters.endDate;
     });
 
-    // Aggregate by carrier
+    // Aggregate by carrier, deduplicating policies
     const carrierMap = new Map<
       string,
       {
         carrier_name: string;
         total_commission_amount: number;
-        total_policies: number;
-        active_policies: number;
-        lapsed_policies: number;
-        commission_rates: number[];
+        policyIds: Set<string>;
+        activePolicyIds: Set<string>;
+        lapsedPolicyIds: Set<string>;
+        commissionRateSum: number;
+        commissionRateCount: number;
       }
     >();
 
@@ -953,56 +970,71 @@ export class ReportGenerationService {
       const policy = commission.policy as {
         carrier_id: string;
         status: string;
+        commission_percentage: number | null;
         carrier: { name: string } | null;
       } | null;
-      if (!policy?.carrier) continue;
+      if (!policy?.carrier || !policy.carrier_id) continue;
 
-      const carrierName = policy.carrier.name;
-      const existing = carrierMap.get(carrierName) || {
+      const carrierId = policy.carrier_id;
+      const carrierName = policy.carrier.name || "Unknown";
+      const existing = carrierMap.get(carrierId) || {
         carrier_name: carrierName,
         total_commission_amount: 0,
-        total_policies: 0,
-        active_policies: 0,
-        lapsed_policies: 0,
-        commission_rates: [],
+        policyIds: new Set<string>(),
+        activePolicyIds: new Set<string>(),
+        lapsedPolicyIds: new Set<string>(),
+        commissionRateSum: 0,
+        commissionRateCount: 0,
       };
 
       existing.total_commission_amount += commission.amount || 0;
-      existing.total_policies += 1;
-      if (policy.status === "active") {
-        existing.active_policies += 1;
-      } else if (policy.status === "lapsed") {
-        existing.lapsed_policies += 1;
+
+      const policyId = commission.policy_id;
+      if (policyId && !existing.policyIds.has(policyId)) {
+        existing.policyIds.add(policyId);
+        if (policy.status === "active") {
+          existing.activePolicyIds.add(policyId);
+        } else if (policy.status === "lapsed") {
+          existing.lapsedPolicyIds.add(policyId);
+        }
+        if (policy.commission_percentage !== null) {
+          existing.commissionRateSum += policy.commission_percentage;
+          existing.commissionRateCount += 1;
+        }
       }
 
-      carrierMap.set(carrierName, existing);
+      carrierMap.set(carrierId, existing);
     }
 
     // Convert to array and calculate derived metrics
-    return Array.from(carrierMap.values()).map((carrier) => ({
-      carrier_name: carrier.carrier_name,
-      total_commission_amount: carrier.total_commission_amount,
-      total_policies: carrier.total_policies,
-      active_policies: carrier.active_policies,
-      lapsed_policies: carrier.lapsed_policies,
-      avg_commission_rate_pct: 0, // Not calculated from raw data
-      persistency_rate:
-        carrier.total_policies > 0
-          ? carrier.active_policies / carrier.total_policies
-          : 0,
-    }));
+    return Array.from(carrierMap.values()).map((carrier) => {
+      const totalPolicies = carrier.policyIds.size;
+      const activePolicies = carrier.activePolicyIds.size;
+      const lapsedPolicies = carrier.lapsedPolicyIds.size;
+      const avgCommissionRate =
+        carrier.commissionRateCount > 0
+          ? carrier.commissionRateSum / carrier.commissionRateCount
+          : 0;
+
+      return {
+        carrier_name: carrier.carrier_name,
+        total_commission_amount: carrier.total_commission_amount,
+        total_policies: totalPolicies,
+        active_policies: activePolicies,
+        lapsed_policies: lapsedPolicies,
+        avg_commission_rate_pct: avgCommissionRate,
+        persistency_rate:
+          totalPolicies > 0 ? (activePolicies / totalPolicies) * 100 : 0,
+      };
+    });
   }
 
   /**
-   * Fetch commission aging analysis from materialized view
+   * Fetch commission aging data via secure RPC (auth.uid() enforced server-side)
    * Pre-computed: risk buckets (0-3mo, 3-6mo, etc.), at-risk amounts
    */
-  private static async fetchCommissionAging(userId: string) {
-    const { data, error } = await supabase
-      .from("mv_commission_aging")
-      .select("*")
-      .eq("user_id", userId)
-      .order("bucket_order", { ascending: true });
+  private static async fetchCommissionAging(): Promise<CommissionAgingRow[]> {
+    const { data, error } = await supabase.rpc("get_user_commission_aging");
 
     if (error) {
       logger.error(
@@ -1011,22 +1043,19 @@ export class ReportGenerationService {
         "ReportGenerationService",
       );
       throw new ReportDataFetchError(
-        "commission aging (mv_commission_aging)",
+        "commission aging (get_user_commission_aging RPC)",
         error,
       );
     }
-    return data || [];
+    return (data as CommissionAgingRow[]) || [];
   }
 
   /**
-   * Fetch client lifetime value metrics from materialized view
+   * Fetch client lifetime value metrics via secure RPC (auth.uid() enforced server-side)
    * Pre-computed: client tiers (A/B/C/D), cross-sell opportunities, LTV
    */
-  private static async fetchClientLTV(userId: string) {
-    const { data, error } = await supabase
-      .from("mv_client_ltv")
-      .select("*")
-      .eq("user_id", userId);
+  private static async fetchClientLTV(): Promise<ClientLtvRow[]> {
+    const { data, error } = await supabase.rpc("get_user_client_ltv");
 
     if (error) {
       logger.error(
@@ -1034,21 +1063,20 @@ export class ReportGenerationService {
         error,
         "ReportGenerationService",
       );
-      throw new ReportDataFetchError("client LTV (mv_client_ltv)", error);
+      throw new ReportDataFetchError(
+        "client LTV (get_user_client_ltv RPC)",
+        error,
+      );
     }
-    return data || [];
+    return (data as ClientLtvRow[]) || [];
   }
 
   /**
-   * Fetch cohort retention data from materialized view
+   * Fetch cohort retention data via secure RPC (auth.uid() enforced server-side)
    * Pre-computed: retention rates by cohort month
    */
-  private static async fetchCohortRetention(userId: string) {
-    const { data, error } = await supabase
-      .from("mv_cohort_retention")
-      .select("*")
-      .eq("user_id", userId)
-      .order("cohort_month", { ascending: false });
+  private static async fetchCohortRetention(): Promise<CohortRetentionRow[]> {
+    const { data, error } = await supabase.rpc("get_user_cohort_retention");
 
     if (error) {
       logger.error(
@@ -1057,24 +1085,23 @@ export class ReportGenerationService {
         "ReportGenerationService",
       );
       throw new ReportDataFetchError(
-        "cohort retention (mv_cohort_retention)",
+        "cohort retention (get_user_cohort_retention RPC)",
         error,
       );
     }
-    return data || [];
+    return (data as CohortRetentionRow[]) || [];
   }
 
   /**
-   * Fetch production velocity metrics from materialized view
+   * Fetch production velocity metrics via secure RPC (auth.uid() enforced server-side)
    * Pre-computed: weekly/monthly policies and premium
    */
-  private static async fetchProductionVelocity(userId: string) {
-    const { data, error } = await supabase
-      .from("mv_production_velocity")
-      .select("*")
-      .eq("user_id", userId)
-      .order("week_start", { ascending: false })
-      .limit(12); // Last 12 weeks
+  private static async fetchProductionVelocity(): Promise<
+    ProductionVelocityRow[]
+  > {
+    const { data, error } = await supabase.rpc("get_user_production_velocity", {
+      p_limit: 12, // Last 12 weeks
+    });
 
     if (error) {
       logger.error(
@@ -1083,23 +1110,19 @@ export class ReportGenerationService {
         "ReportGenerationService",
       );
       throw new ReportDataFetchError(
-        "production velocity (mv_production_velocity)",
+        "production velocity (get_user_production_velocity RPC)",
         error,
       );
     }
-    return data || [];
+    return (data as ProductionVelocityRow[]) || [];
   }
 
   /**
-   * Fetch expense summary from materialized view
+   * Fetch expense summary via secure RPC (auth.uid() enforced server-side)
    * Pre-computed: expenses by category and month
    */
-  private static async fetchExpenseSummary(userId: string) {
-    const { data, error } = await supabase
-      .from("mv_expense_summary")
-      .select("*")
-      .eq("user_id", userId)
-      .order("expense_month", { ascending: false });
+  private static async fetchExpenseSummary(): Promise<ExpenseSummaryRow[]> {
+    const { data, error } = await supabase.rpc("get_user_expense_summary");
 
     if (error) {
       logger.error(
@@ -1108,11 +1131,11 @@ export class ReportGenerationService {
         "ReportGenerationService",
       );
       throw new ReportDataFetchError(
-        "expense summary (mv_expense_summary)",
+        "expense summary (get_user_expense_summary RPC)",
         error,
       );
     }
-    return data || [];
+    return (data as ExpenseSummaryRow[]) || [];
   }
 
   private static calculateHealthScore(params: {

@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-16 12:33:46
+
+### Changed Files
+- `.serena/memories/instagram_token_fix_2026_01_16.md`
+- `docs/scripts/termFetcher.md`
+- `plans/todo/reports-review-plan.md`
+- `src/features/reports/components/AgencyPerformanceReport.tsx`
+- `src/hooks/imo/useImoQueries.ts`
+- `src/services/agency/AgencyService.ts`
+- `src/services/reports/drillDownService.ts`
+- `src/services/reports/reportGenerationService.ts`
+- `src/types/database.types.ts`
+- `src/types/team-reports.schemas.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/functions/instagram-oauth-callback/index.ts`
+- `supabase/migrations/20260116_001_secure_report_mvs.sql`
+- `supabase/migrations/20260116_002_secure_report_mvs_fix.sql`
+- `supabase/migrations/20260116_003_agency_weekly_production.sql`
+
+### Statistics
+```
+ 15 files changed, 13501 insertions(+), 12188 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-16 09:51:45
 
 ### Changed Files

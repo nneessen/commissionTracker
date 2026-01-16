@@ -1,8 +1,29 @@
 // src/features/reports/components/AgencyPerformanceReport.tsx
 
-import { useMemo, useCallback } from "react";
-import { Loader2, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { useMemo, useCallback, useState } from "react";
+import {
+  Loader2,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  Users,
+  DollarSign,
+  FileText,
+  Calendar,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 import { cn } from "../../../lib/utils";
 import {
   Table,
@@ -12,10 +33,11 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
-import { TrendLineChart } from "./charts/TrendLineChart";
 import {
   useAgencyPerformanceReport,
   useAgencyProductionByAgent,
+  useAgencyDashboardMetrics,
+  useAgencyWeeklyProduction,
   agencyKeys,
 } from "../../../hooks/imo/useImoQueries";
 import { formatCurrency } from "../../../lib/format";
@@ -31,11 +53,14 @@ interface AgencyPerformanceReportProps {
   dateRange?: ReportDateRange;
 }
 
+type ViewMode = "monthly" | "weekly";
+
 function AgencyPerformanceReportContent({
   agencyId,
   dateRange,
 }: AgencyPerformanceReportProps) {
   const queryClient = useQueryClient();
+  const [viewMode, setViewMode] = useState<ViewMode>("monthly");
 
   const {
     data: performanceReport,
@@ -44,32 +69,102 @@ function AgencyPerformanceReportContent({
   } = useAgencyPerformanceReport(agencyId, dateRange);
 
   const {
+    data: weeklyReport,
+    isLoading: isLoadingWeekly,
+    error: errorWeekly,
+  } = useAgencyWeeklyProduction(agencyId, dateRange);
+
+  const {
     data: agentProduction,
     isLoading: isLoadingAgents,
     error: errorAgents,
   } = useAgencyProductionByAgent(agencyId);
 
-  const isLoading = isLoadingPerformance || isLoadingAgents;
+  const {
+    data: dashboardMetrics,
+    isLoading: isLoadingDashboard,
+    error: errorDashboard,
+  } = useAgencyDashboardMetrics(agencyId, dateRange);
+
+  const isLoading =
+    isLoadingPerformance ||
+    isLoadingAgents ||
+    isLoadingDashboard ||
+    isLoadingWeekly;
 
   const hasCriticalError = errorPerformance !== null;
 
   const secondaryErrors = [
     { name: "Agent Production", error: errorAgents },
+    { name: "Dashboard Metrics", error: errorDashboard },
+    { name: "Weekly Data", error: errorWeekly },
   ].filter((e) => e.error !== null);
 
   const handleRetry = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: agencyKeys.all });
   }, [queryClient]);
 
-  const trendData = useMemo(() => {
+  // Format chart data for monthly view
+  const monthlyChartData = useMemo(() => {
     if (!performanceReport?.months) return [];
     return performanceReport.months.map((month) => ({
       label: month.month_label,
-      premium: month.new_premium,
-      commissions: month.commissions_earned,
+      newPremium: month.new_premium,
+      lapsedPremium: month.lapsed_premium,
+      netChange: month.net_premium_change,
       policies: month.new_policies,
+      lapsed: month.policies_lapsed,
+      runningPremium: month.running_total_premium,
     }));
   }, [performanceReport]);
+
+  // Format chart data for weekly view
+  const weeklyChartData = useMemo(() => {
+    if (!weeklyReport?.weeks) return [];
+    return weeklyReport.weeks.map((week) => ({
+      label: week.week_label,
+      newPremium: week.new_premium,
+      lapsedPremium: week.lapsed_premium,
+      netChange: week.net_premium_change,
+      policies: week.new_policies,
+      lapsed: week.policies_lapsed,
+      runningPremium: week.running_total_premium,
+    }));
+  }, [weeklyReport]);
+
+  const chartData = viewMode === "monthly" ? monthlyChartData : weeklyChartData;
+
+  // Custom tooltip for charts
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    return (
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 text-[11px]">
+        <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+          {label}
+        </p>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-zinc-500 dark:text-zinc-400">
+                {entry.name}:
+              </span>
+            </span>
+            <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+              {typeof entry.value === "number"
+                ? formatCurrency(entry.value)
+                : entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -116,7 +211,7 @@ function AgencyPerformanceReportContent({
   const netGrowthPositive = summary.net_growth >= 0;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {secondaryErrors.length > 0 && (
         <QueryErrorAlert
           title="Some data failed to load"
@@ -125,14 +220,202 @@ function AgencyPerformanceReportContent({
         />
       )}
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-        {/* Summary Stats Card */}
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {/* Active Policies */}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="w-3.5 h-3.5 text-blue-500" />
+            <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Active Policies
+            </span>
+          </div>
+          <p className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100">
+            {dashboardMetrics?.active_policies?.toLocaleString() || 0}
+          </p>
+        </div>
+
+        {/* Total Premium */}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Total Premium
+            </span>
+          </div>
+          <p className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100">
+            {formatCurrency(dashboardMetrics?.total_annual_premium || 0)}
+          </p>
+        </div>
+
+        {/* Total AP (YTD) */}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Total AP (YTD)
+            </span>
+          </div>
+          <p className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(dashboardMetrics?.total_commissions_ytd || 0)}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[9px] text-blue-600 dark:text-blue-400">
+              Earned: {formatCurrency(dashboardMetrics?.total_earned_ytd || 0)}
+            </span>
+            <span className="text-[9px] text-amber-600 dark:text-amber-400">
+              Pending: {formatCurrency(dashboardMetrics?.total_unearned || 0)}
+            </span>
+          </div>
+        </div>
+
+        {/* Agents */}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="w-3.5 h-3.5 text-violet-500" />
+            <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Agents
+            </span>
+          </div>
+          <p className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100">
+            {dashboardMetrics?.agent_count || 0}
+          </p>
+          <p className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-1">
+            Avg:{" "}
+            {formatCurrency(dashboardMetrics?.avg_production_per_agent || 0)}
+            /agent
+          </p>
+        </div>
+      </div>
+
+      {/* Premium Growth Chart */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Premium Activity
+            </span>
+          </div>
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5">
+            <button
+              onClick={() => setViewMode("monthly")}
+              className={cn(
+                "px-2 py-1 text-[10px] font-medium rounded transition-colors",
+                viewMode === "monthly"
+                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+              )}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setViewMode("weekly")}
+              className={cn(
+                "px-2 py-1 text-[10px] font-medium rounded transition-colors",
+                viewMode === "weekly"
+                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+              )}
+            >
+              Weekly
+            </button>
+          </div>
+        </div>
+
+        {chartData.length > 0 ? (
+          <div className="h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient
+                    id="colorNewPremium"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient
+                    id="colorLapsedPremium"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#e5e7eb"
+                  opacity={0.5}
+                />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#71717a", fontSize: 10 }}
+                  stroke="#e5e7eb"
+                  tickLine={false}
+                  axisLine={{ stroke: "#e5e7eb" }}
+                />
+                <YAxis
+                  tick={{ fill: "#71717a", fontSize: 10 }}
+                  stroke="#e5e7eb"
+                  tickLine={false}
+                  axisLine={{ stroke: "#e5e7eb" }}
+                  tickFormatter={(value) => {
+                    if (value >= 1000000)
+                      return `$${(value / 1000000).toFixed(1)}M`;
+                    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+                    return `$${value}`;
+                  }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  wrapperStyle={{ fontSize: "10px", paddingTop: "8px" }}
+                  iconType="circle"
+                  iconSize={8}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="newPremium"
+                  name="New Premium"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  fill="url(#colorNewPremium)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="lapsedPremium"
+                  name="Lapsed Premium"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  fill="url(#colorLapsedPremium)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-[220px] flex items-center justify-center border border-dashed border-zinc-200 dark:border-zinc-700 rounded-lg">
+            <p className="text-[11px] text-zinc-400">No data available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Period Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {/* Period Stats */}
         <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              Performance Summary
-            </div>
+            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Period Performance
+            </span>
             <div
               className={cn(
                 "px-1.5 py-0.5 rounded text-[9px] font-medium",
@@ -144,8 +427,7 @@ function AgencyPerformanceReportContent({
               {netGrowthPositive ? "GROWTH" : "DECLINE"}
             </div>
           </div>
-
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-zinc-500 dark:text-zinc-400">
                 New Premium
@@ -156,38 +438,23 @@ function AgencyPerformanceReportContent({
             </div>
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-zinc-500 dark:text-zinc-400">
-                Commissions
-              </span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(summary.total_commissions)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-zinc-500 dark:text-zinc-400">
                 New Policies
               </span>
               <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
                 {summary.total_new_policies.toLocaleString()}
               </span>
             </div>
-            <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-zinc-500 dark:text-zinc-400">
-                New Agents
+                Commissions
               </span>
-              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                {summary.total_new_agents.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-zinc-500 dark:text-zinc-400">Lapsed</span>
-              <span className="font-mono font-bold text-red-600 dark:text-red-400">
-                {summary.total_lapsed.toLocaleString()}
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(summary.total_commissions)}
               </span>
             </div>
-            <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+            <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-zinc-500 dark:text-zinc-400 uppercase">
+              <span className="text-zinc-500 dark:text-zinc-400">
                 Net Growth
               </span>
               <div className="flex items-center gap-1">
@@ -212,39 +479,75 @@ function AgencyPerformanceReportContent({
           </div>
         </div>
 
-        {/* Monthly Trend Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-          <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-            Monthly Production Trend
-          </div>
-          <TrendLineChart
-            data={trendData}
-            lines={[
-              {
-                dataKey: "premium",
-                name: "New Premium",
-                color: "#3b82f6",
-                format: "currency",
-              },
-              {
-                dataKey: "commissions",
-                name: "Commissions",
-                color: "#10b981",
-                format: "currency",
-              },
-            ]}
-            height={200}
-          />
+        {/* Policy Activity Bar Chart */}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Policy Activity ({viewMode === "monthly" ? "Monthly" : "Weekly"})
+          </span>
+          {chartData.length > 0 ? (
+            <div className="h-[120px] mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#e5e7eb"
+                    opacity={0.5}
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: "#71717a", fontSize: 9 }}
+                    stroke="#e5e7eb"
+                    tickLine={false}
+                    interval={viewMode === "weekly" ? 1 : 0}
+                  />
+                  <YAxis
+                    tick={{ fill: "#71717a", fontSize: 9 }}
+                    stroke="#e5e7eb"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "10px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="policies"
+                    name="New"
+                    fill="#3b82f6"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="lapsed"
+                    name="Lapsed"
+                    fill="#ef4444"
+                    radius={[2, 2, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[120px] flex items-center justify-center">
+              <p className="text-[11px] text-zinc-400">No data</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Agent Production */}
+      {/* Agent Production Table */}
       {agentProduction && agentProduction.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              Agent Production
-            </div>
+            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Agent Production & AP Breakdown
+            </span>
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
               {agentProduction.length} agents
             </span>
@@ -254,7 +557,7 @@ function AgencyPerformanceReportContent({
             <Table>
               <TableHeader>
                 <TableRow className="border-zinc-200 dark:border-zinc-800">
-                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto w-12">
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto w-10">
                     #
                   </TableHead>
                   <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto">
@@ -266,11 +569,23 @@ function AgencyPerformanceReportContent({
                   <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
                     Premium
                   </TableHead>
-                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
-                    Commissions
+                  <TableHead className="text-[10px] py-1.5 h-auto text-right">
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      Total AP
+                    </span>
+                  </TableHead>
+                  <TableHead className="text-[10px] py-1.5 h-auto text-right">
+                    <span className="text-blue-600 dark:text-blue-400">
+                      Earned
+                    </span>
+                  </TableHead>
+                  <TableHead className="text-[10px] py-1.5 h-auto text-right">
+                    <span className="text-amber-600 dark:text-amber-400">
+                      Pending
+                    </span>
                   </TableHead>
                   <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
-                    % Share
+                    Share
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -312,8 +627,14 @@ function AgencyPerformanceReportContent({
                     <TableCell className="text-[11px] py-1.5 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
                       {formatCurrency(agent.total_annual_premium)}
                     </TableCell>
-                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(agent.commissions_ytd)}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-blue-600 dark:text-blue-400">
+                      {formatCurrency(agent.earned_ytd)}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-amber-600 dark:text-amber-400">
+                      {formatCurrency(agent.unearned_amount)}
                     </TableCell>
                     <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
                       {agent.pct_of_agency_production}%
@@ -326,18 +647,18 @@ function AgencyPerformanceReportContent({
         </div>
       )}
 
-      {/* Monthly Breakdown */}
+      {/* Detailed Breakdown Table */}
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-          Monthly Breakdown
-        </div>
+        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          {viewMode === "monthly" ? "Monthly" : "Weekly"} Breakdown
+        </span>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto mt-2">
           <Table>
             <TableHeader>
               <TableRow className="border-zinc-200 dark:border-zinc-800">
                 <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto">
-                  Month
+                  {viewMode === "monthly" ? "Month" : "Week"}
                 </TableHead>
                 <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
                   Policies
@@ -346,51 +667,66 @@ function AgencyPerformanceReportContent({
                   Premium
                 </TableHead>
                 <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
-                  Commissions
-                </TableHead>
-                <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
                   Lapsed
                 </TableHead>
                 <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
                   Net Change
                 </TableHead>
+                <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                  Running Total
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {performanceReport.months.map((month) => (
-                <TableRow
-                  key={month.month_start}
-                  className="border-zinc-200 dark:border-zinc-800"
-                >
-                  <TableCell className="text-[11px] py-1.5 font-medium text-zinc-900 dark:text-zinc-100">
-                    {month.month_label}
-                  </TableCell>
-                  <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
-                    {month.new_policies}
-                  </TableCell>
-                  <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
-                    {formatCurrency(month.new_premium)}
-                  </TableCell>
-                  <TableCell className="text-[11px] py-1.5 text-right font-mono text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(month.commissions_earned)}
-                  </TableCell>
-                  <TableCell className="text-[11px] py-1.5 text-right font-mono text-red-600 dark:text-red-400">
-                    {month.policies_lapsed}
-                  </TableCell>
-                  <TableCell className="text-[11px] py-1.5 text-right font-mono">
-                    <span
-                      className={cn(
-                        month.net_premium_change >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-600 dark:text-red-400",
-                      )}
-                    >
-                      {month.net_premium_change >= 0 ? "+" : ""}
-                      {formatCurrency(month.net_premium_change)}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {(viewMode === "monthly"
+                ? performanceReport.months
+                : weeklyReport?.weeks || []
+              ).map((row) => {
+                const label =
+                  viewMode === "monthly"
+                    ? (row as (typeof performanceReport.months)[0]).month_label
+                    : (row as NonNullable<typeof weeklyReport>["weeks"][0])
+                        .week_label;
+                const key =
+                  viewMode === "monthly"
+                    ? (row as (typeof performanceReport.months)[0]).month_start
+                    : (row as NonNullable<typeof weeklyReport>["weeks"][0])
+                        .week_start;
+                return (
+                  <TableRow
+                    key={key}
+                    className="border-zinc-200 dark:border-zinc-800"
+                  >
+                    <TableCell className="text-[11px] py-1.5 font-medium text-zinc-900 dark:text-zinc-100">
+                      {label}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                      {row.new_policies}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(row.new_premium)}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-red-600 dark:text-red-400">
+                      {row.policies_lapsed}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono">
+                      <span
+                        className={cn(
+                          row.net_premium_change >= 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-red-600 dark:text-red-400",
+                        )}
+                      >
+                        {row.net_premium_change >= 0 ? "+" : ""}
+                        {formatCurrency(row.net_premium_change)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(row.running_total_premium)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

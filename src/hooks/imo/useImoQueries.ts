@@ -97,6 +97,13 @@ export const agencyKeys = {
       id,
       serializeDateRange(dateRange),
     ] as const,
+  weeklyProduction: (id?: string, dateRange?: ReportDateRange) =>
+    [
+      ...agencyKeys.all,
+      "weeklyProduction",
+      id,
+      serializeDateRange(dateRange),
+    ] as const,
   // Override summary keys (Phase 7) - now with dateRange support
   overrideSummary: (id?: string, dateRange?: ReportDateRange) =>
     [
@@ -543,6 +550,25 @@ export function useAgencyPerformanceReport(
   return useQuery({
     queryKey: agencyKeys.performanceReport(agencyId, dateRange),
     queryFn: () => agencyService.getPerformanceReport(agencyId, dateRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get agency weekly production report
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * @param dateRange - Optional date range. Defaults to last 12 weeks.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyWeeklyProduction(
+  agencyId?: string,
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: agencyKeys.weeklyProduction(agencyId, dateRange),
+    queryFn: () => agencyService.getWeeklyProduction(agencyId, dateRange),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: options?.enabled ?? true,
   });

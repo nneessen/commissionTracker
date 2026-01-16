@@ -138,25 +138,29 @@ export class DrillDownService {
 
   /**
    * Fetch clients in a specific tier (A, B, C, D)
+   * Uses secure RPC that enforces auth.uid() server-side
    */
   static async getClientsByTier(
-    userId: string,
+    _userId: string,
     context: DrillDownContext,
   ): Promise<DrillDownData> {
     const tier = context.clientTier || "A";
-    const { filters: _filters } = context;
 
-    // Query from materialized view mv_client_ltv
-    const query = supabase
-      .from("mv_client_ltv")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("tier", tier);
-
-    const { data, error } = await query.order("total_premium", {
-      ascending: false,
-    });
+    // Query via secure RPC (auth.uid() enforced server-side)
+    const { data: allClients, error } = await supabase.rpc(
+      "get_user_client_ltv",
+    );
     if (error) throw error;
+
+    // Filter by tier and sort by premium
+    const data = (allClients || [])
+      .filter((c: { client_tier: string | null }) => c.client_tier === tier)
+      .sort(
+        (
+          a: { total_premium: number | null },
+          b: { total_premium: number | null },
+        ) => (b.total_premium || 0) - (a.total_premium || 0),
+      );
 
     // Transform to DrillDownRecords
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
@@ -167,7 +171,7 @@ export class DrillDownService {
       amount: c.total_premium || 0,
       status: c.active_policies > 0 ? "Active" : "Inactive",
       clientName: c.client_name || "Unknown",
-      tier: c.tier,
+      tier: c.client_tier,
       annualPremium: c.total_premium,
     }));
 

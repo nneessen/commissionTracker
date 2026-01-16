@@ -11836,6 +11836,26 @@ export type Database = {
           source_agency_id: string;
         }[];
       };
+      get_agency_weekly_production: {
+        Args: {
+          p_agency_id?: string;
+          p_end_date?: string;
+          p_start_date?: string;
+        };
+        Returns: {
+          commissions_earned: number;
+          lapsed_premium: number;
+          net_premium_change: number;
+          new_policies: number;
+          new_premium: number;
+          policies_lapsed: number;
+          running_total_policies: number;
+          running_total_premium: number;
+          week_end: string;
+          week_label: string;
+          week_start: string;
+        }[];
+      };
       get_agent_contract_summary: {
         Args: { p_agent_id: string };
         Returns: {
@@ -12918,6 +12938,122 @@ export type Database = {
           id: string;
         }[];
       };
+      get_user_carrier_performance: {
+        Args: never;
+        Returns: {
+          active_policies: number | null;
+          avg_commission_amount: number | null;
+          avg_commission_rate_pct: number | null;
+          avg_premium: number | null;
+          cancelled_policies: number | null;
+          carrier_id: string | null;
+          carrier_name: string | null;
+          commission_count: number | null;
+          lapsed_policies: number | null;
+          persistency_rate: number | null;
+          total_commission_amount: number | null;
+          total_policies: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_carrier_performance";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_user_client_ltv: {
+        Args: never;
+        Returns: {
+          active_policies: number | null;
+          active_premium: number | null;
+          avg_commission_per_policy: number | null;
+          avg_policy_age_months: number | null;
+          avg_premium_per_policy: number | null;
+          cancelled_policies: number | null;
+          client_id: string | null;
+          client_name: string | null;
+          client_tier: string | null;
+          cross_sell_opportunity: boolean | null;
+          email: string | null;
+          first_policy_date: string | null;
+          lapsed_policies: number | null;
+          latest_policy_date: string | null;
+          paid_commission: number | null;
+          total_commission: number | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_client_ltv";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_user_cohort_retention: {
+        Args: never;
+        Returns: {
+          active_premium: number | null;
+          cancelled_count: number | null;
+          cohort_month: string | null;
+          cohort_size: number | null;
+          lapsed_count: number | null;
+          months_since_issue: number | null;
+          retention_rate: number | null;
+          still_active: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_cohort_retention";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_user_commission_aging: {
+        Args: never;
+        Returns: {
+          aging_bucket: string | null;
+          avg_at_risk: number | null;
+          bucket_order: number | null;
+          commission_count: number | null;
+          policy_count: number | null;
+          risk_level: string | null;
+          total_at_risk: number | null;
+          total_commission: number | null;
+          total_earned: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_commission_aging";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_user_commission_chargeback_summary: {
+        Args: never;
+        Returns: {
+          at_risk_amount: number | null;
+          chargeback_rate_percentage: number | null;
+          charged_back_count: number | null;
+          high_risk_count: number | null;
+          total_advances: number | null;
+          total_chargeback_amount: number | null;
+          total_chargebacks: number | null;
+          total_earned: number | null;
+          user_id: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "commission_chargeback_summary";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       get_user_commission_profile: {
         Args: { p_lookback_months?: number; p_user_id: string };
         Returns: {
@@ -12929,11 +13065,98 @@ export type Database = {
           weighted_avg_rate: number;
         }[];
       };
+      get_user_daily_production: {
+        Args: { p_end_date?: string; p_start_date?: string };
+        Returns: {
+          active_policies: number | null;
+          avg_premium: number | null;
+          cancelled_policies: number | null;
+          lapsed_policies: number | null;
+          max_premium: number | null;
+          min_premium: number | null;
+          production_date: string | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_daily_production";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_user_expense_summary: {
+        Args: never;
+        Returns: {
+          avg_amount: number | null;
+          category: string | null;
+          expense_month: string | null;
+          expense_type: Database["public"]["Enums"]["expense_type"] | null;
+          max_amount: number | null;
+          min_amount: number | null;
+          recurring_amount: number | null;
+          recurring_count: number | null;
+          total_amount: number | null;
+          transaction_count: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_expense_summary";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       get_user_permissions: {
         Args: { target_user_id: string };
         Returns: {
           code: string;
         }[];
+      };
+      get_user_product_performance: {
+        Args: never;
+        Returns: {
+          active_policies: number | null;
+          avg_commission: number | null;
+          avg_commission_rate_pct: number | null;
+          avg_premium: number | null;
+          lapsed_policies: number | null;
+          persistency_rate: number | null;
+          product_id: string | null;
+          product_name: string | null;
+          product_type: Database["public"]["Enums"]["product_type"] | null;
+          total_commission: number | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_product_performance";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_user_production_velocity: {
+        Args: { p_limit?: number };
+        Returns: {
+          month_start: string | null;
+          monthly_avg_premium: number | null;
+          monthly_policies: number | null;
+          monthly_premium: number | null;
+          user_id: string | null;
+          week_start: string | null;
+          weekly_avg_premium: number | null;
+          weekly_policies: number | null;
+          weekly_premium: number | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "mv_production_velocity";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       get_user_profile: {
         Args: { user_id: string };

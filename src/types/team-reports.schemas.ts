@@ -24,6 +24,25 @@ export const MonthlyPerformanceRowSchema = z.object({
 export type MonthlyPerformanceRow = z.infer<typeof MonthlyPerformanceRowSchema>;
 
 /**
+ * Schema for weekly performance report row (Agency)
+ */
+export const WeeklyPerformanceRowSchema = z.object({
+  week_start: z.string(), // ISO date string
+  week_end: z.string(), // ISO date string
+  week_label: z.string(),
+  new_policies: z.coerce.number().int().nonnegative(),
+  new_premium: z.coerce.number().nonnegative(),
+  commissions_earned: z.coerce.number().nonnegative(),
+  policies_lapsed: z.coerce.number().int().nonnegative(),
+  lapsed_premium: z.coerce.number().nonnegative(),
+  net_premium_change: z.coerce.number(),
+  running_total_policies: z.coerce.number().int().nonnegative(),
+  running_total_premium: z.coerce.number().nonnegative(),
+});
+
+export type WeeklyPerformanceRow = z.infer<typeof WeeklyPerformanceRowSchema>;
+
+/**
  * Schema for team comparison report row (agency rankings)
  */
 export const TeamComparisonRowSchema = z.object({
@@ -105,6 +124,16 @@ export function parseTopPerformersReport(data: unknown[]): TopPerformerRow[] {
 }
 
 /**
+ * Parse and validate agency weekly production response
+ * @throws ZodError if validation fails
+ */
+export function parseAgencyWeeklyProduction(
+  data: unknown[],
+): WeeklyPerformanceRow[] {
+  return z.array(WeeklyPerformanceRowSchema).parse(data);
+}
+
+/**
  * TypeScript interfaces for service layer return types
  */
 export interface ImoPerformanceReport {
@@ -127,6 +156,18 @@ export interface AgencyPerformanceReport {
     total_new_premium: number;
     total_commissions: number;
     total_new_agents: number;
+    total_lapsed: number;
+    net_growth: number;
+  };
+}
+
+export interface AgencyWeeklyReport {
+  agency_id: string;
+  weeks: WeeklyPerformanceRow[];
+  summary: {
+    total_new_policies: number;
+    total_new_premium: number;
+    total_commissions: number;
     total_lapsed: number;
     net_growth: number;
   };

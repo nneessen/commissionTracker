@@ -3,12 +3,14 @@
 ## Interactive Script - Term Life
 
 **How it works:**
+
 1. Fetches a sample quote to see available carriers
 2. Shows you a numbered list of carriers in the console
 3. You type a number to select the carrier
 4. Script fetches ALL rates for that carrier only
 
 **What it fetches:**
+
 - Ages: 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85
 - Genders: Male, Female
 - Tobacco: None, Tobacco
@@ -16,6 +18,7 @@
 - Face Amounts: $50k, $75k, $100k, $125k, $150k, $250k, $500k, $1M
 
 **Stats:**
+
 - 1,920 API requests (12 ages × 2 genders × 2 tobacco × 5 terms × 8 faces)
 - ~20-25 minutes with conservative rate limiting (500ms delays + pauses)
 
@@ -103,7 +106,6 @@ const discoverCarriers = async () => {
     console.log("👉 To select a carrier, type:");
     console.log("   selectCarrier(1)  // Replace 1 with your carrier number");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-
   } catch (e) {
     console.error("❌ Error fetching sample:", e.message);
   }
@@ -118,7 +120,9 @@ window.selectCarrier = (number) => {
 
   const index = number - 1;
   if (index < 0 || index >= AVAILABLE_CARRIERS.length) {
-    console.error(`❌ Invalid number. Please choose 1-${AVAILABLE_CARRIERS.length}`);
+    console.error(
+      `❌ Invalid number. Please choose 1-${AVAILABLE_CARRIERS.length}`,
+    );
     return;
   }
 
@@ -145,7 +149,7 @@ const fetchAllRates = async () => {
 
   const CONFIG = {
     state: "IL",
-    faceAmounts: [50000, 75000, 100000, 125000, 150000, 250000, 500000, 1000000],
+    faceAmounts: [60000, 70000, 80000, 90000, 110000, 120000, 130000, 140000],
     ages: [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85],
     genders: ["Male", "Female"],
     tobaccos: ["None", "Tobacco"],
@@ -163,7 +167,7 @@ const fetchAllRates = async () => {
   console.log(`🎯 Carrier: ${SELECTED_CARRIER}`);
   console.log(`📍 State: ${CONFIG.state}`);
   console.log(`📈 Total Requests: ${total.toLocaleString()}`);
-  console.log(`⏱️  Estimated Time: ~${Math.ceil(total * 0.2 / 60)} minutes`);
+  console.log(`⏱️  Estimated Time: ~${Math.ceil((total * 0.2) / 60)} minutes`);
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   const allQuotes = [];
@@ -205,17 +209,23 @@ const fetchAllRates = async () => {
               if (!res.ok) {
                 if (res.status === 400) {
                   // 400 = Invalid combination for this carrier, skip silently
-                  skippedCombos.push(`${sex}/${tobacco}/${term}yr/age${age}/$${faceAmount.toLocaleString()}`);
+                  skippedCombos.push(
+                    `${sex}/${tobacco}/${term}yr/age${age}/$${faceAmount.toLocaleString()}`,
+                  );
                   // Don't increment error count for expected 400s
                 } else if (res.status === 429) {
                   // Rate limited - pause longer
-                  console.warn(`⚠️  Rate limited at request ${current}, pausing 10 seconds...`);
+                  console.warn(
+                    `⚠️  Rate limited at request ${current}, pausing 10 seconds...`,
+                  );
                   await new Promise((r) => setTimeout(r, 10000));
                   errorCount++;
 
                   // If we hit rate limit multiple times, slow down even more
                   if (errorCount > 3) {
-                    console.warn(`⚠️  Repeated rate limiting, pausing 30 seconds...`);
+                    console.warn(
+                      `⚠️  Repeated rate limiting, pausing 30 seconds...`,
+                    );
                     await new Promise((r) => setTimeout(r, 30000));
                     errorCount = 0;
                   }
@@ -223,7 +233,9 @@ const fetchAllRates = async () => {
                   // Other HTTP errors
                   errorCount++;
                   if (errorCount > 10) {
-                    console.error(`❌ Too many errors (${errorCount}), pausing 15 seconds...`);
+                    console.error(
+                      `❌ Too many errors (${errorCount}), pausing 15 seconds...`,
+                    );
                     await new Promise((r) => setTimeout(r, 15000));
                     errorCount = 0;
                   }
@@ -276,8 +288,8 @@ const fetchAllRates = async () => {
                 const remaining = (total - current) / rate;
                 console.log(
                   `Progress: ${current}/${total} (${Math.round((current / total) * 100)}%) | ` +
-                  `Collected: ${allQuotes.length} quotes | Skipped: ${skippedCombos.length} | ` +
-                  `ETA: ${Math.ceil(remaining / 60)}m ${Math.ceil(remaining % 60)}s`
+                    `Collected: ${allQuotes.length} quotes | Skipped: ${skippedCombos.length} | ` +
+                    `ETA: ${Math.ceil(remaining / 60)}m ${Math.ceil(remaining % 60)}s`,
                 );
               }
 
@@ -289,11 +301,10 @@ const fetchAllRates = async () => {
                 console.log(`⏸️  Pausing 3 seconds at request ${current}...`);
                 await new Promise((r) => setTimeout(r, 3000));
               }
-
             } catch (e) {
               console.error(
                 `❌ Exception at ${sex}/${tobacco}/${term}yr/age${age}/$${faceAmount.toLocaleString()}:`,
-                e.message
+                e.message,
               );
               errorCount++;
             }
@@ -302,7 +313,7 @@ const fetchAllRates = async () => {
 
         // Pause between term lengths
         console.log(
-          `✓ Completed: ${sex} ${tobacco} ${term}yr - ${allQuotes.length} quotes collected, ${skippedCombos.length} skipped`
+          `✓ Completed: ${sex} ${tobacco} ${term}yr - ${allQuotes.length} quotes collected, ${skippedCombos.length} skipped`,
         );
         await new Promise((r) => setTimeout(r, 2000));
       }
@@ -310,9 +321,13 @@ const fetchAllRates = async () => {
   }
 
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log(`✅ Done! ${allQuotes.length} rates fetched for ${SELECTED_CARRIER}`);
+  console.log(
+    `✅ Done! ${allQuotes.length} rates fetched for ${SELECTED_CARRIER}`,
+  );
   if (skippedCombos.length > 0) {
-    console.log(`⚠️  Skipped ${skippedCombos.length} invalid combinations (age/face amount not offered by carrier)`);
+    console.log(
+      `⚠️  Skipped ${skippedCombos.length} invalid combinations (age/face amount not offered by carrier)`,
+    );
   }
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
@@ -331,7 +346,7 @@ const fetchAllRates = async () => {
             const val = String(row[h] ?? "");
             return val.includes(",") ? `"${val}"` : val;
           })
-          .join(",")
+          .join(","),
       ),
     ].join("\n");
 
@@ -386,8 +401,9 @@ After pasting the script, you'll see:
 ```
 
 Then you type in the console:
+
 ```javascript
-selectCarrier(3)  // Picks Transamerica
+selectCarrier(3); // Picks Transamerica
 ```
 
 And it starts fetching!
@@ -395,14 +411,17 @@ And it starts fetching!
 ## Troubleshooting
 
 **Carrier list doesn't appear:**
+
 - Refresh page and try again
 - Check you're logged into Insurance Toolkits
 
 **Can't find selectCarrier function:**
+
 - Make sure you pasted the ENTIRE script
 - Try typing `window.selectCarrier(1)` instead
 
 **Want to start over with different carrier:**
+
 - Refresh the page
 - Paste script again
 - Pick new carrier
