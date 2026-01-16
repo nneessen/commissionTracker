@@ -1,13 +1,9 @@
 // src/features/policies/components/PolicyDialog.tsx
 
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { FileText, X } from "lucide-react";
 import { PolicyForm } from "../PolicyForm";
 import type { NewPolicyForm, Policy } from "../../../types/policy.types";
 
@@ -22,7 +18,7 @@ interface PolicyDialogProps {
 
 /**
  * PolicyDialog - Wraps PolicyForm in a shadcn/ui Dialog component
- * Matches the styling pattern of ExpenseDialog for consistency
+ * Matches the styling pattern of ManageLeadPurchaseDialog for consistency
  */
 export function PolicyDialog({
   open,
@@ -36,19 +32,34 @@ export function PolicyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-card border-border">
-        <DialogHeader className="pb-2 border-b border-border">
-          <DialogTitle className="text-sm font-semibold text-foreground">
-            {policyId ? "Edit Policy" : "New Policy"}
-          </DialogTitle>
-          <DialogDescription className="text-[11px] text-muted-foreground mt-1">
-            {policyId
-              ? "Update the policy details below"
-              : "Fill in the details to add a new policy"}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="p-0 gap-0 overflow-hidden bg-background border-0 shadow-2xl ring-0 outline-none max-w-3xl"
+        hideCloseButton
+      >
+        <DialogTitle className="sr-only">
+          {policyId ? "Edit Policy" : "New Policy"}
+        </DialogTitle>
 
-        <div className="mt-1">
+        <div className="flex flex-col max-h-[85vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-semibold">
+                {policyId ? "Edit Policy" : "New Policy"}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={handleClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Content */}
           {isLoadingPolicy && policyId ? (
             <div className="flex items-center justify-center p-8 text-muted-foreground text-[11px]">
               Loading policy data...

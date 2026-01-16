@@ -45,9 +45,14 @@ window.addEventListener("vite:preloadError", () => {
         initialVersion = currentVersion;
         sessionStorage.setItem("app-version", currentVersion);
 
-        // Dispatch custom event for React to handle
+        // Dispatch custom event with release notes for React to handle
         // The VersionUpdateDialog component listens for this event
-        window.dispatchEvent(new CustomEvent("version-update-available"));
+        const changes = data.changes || [];
+        window.dispatchEvent(
+          new CustomEvent("version-update-available", {
+            detail: { changes },
+          }),
+        );
       }
     } catch (_e) {
       // Silently ignore - version.json might not exist in dev

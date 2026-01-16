@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-16 18:36:14
+
+### Changed Files
+- `release-notes.json`
+- `src/components/shared/VersionUpdateDialog.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/components/PolicyDialog.tsx`
+- `src/index.tsx`
+- `vite.config.ts`
+
+### Statistics
+```
+ 6 files changed, 179 insertions(+), 97 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-16 18:20:27
 
 ### Changed Files

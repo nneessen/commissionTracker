@@ -8,15 +8,33 @@ function versionPlugin(): Plugin {
   return {
     name: "version-plugin",
     closeBundle() {
+      // Read release notes if they exist
+      let changes: string[] = [];
+      const releaseNotesPath = path.resolve(__dirname, "release-notes.json");
+      if (fs.existsSync(releaseNotesPath)) {
+        try {
+          const releaseNotes = JSON.parse(
+            fs.readFileSync(releaseNotesPath, "utf-8"),
+          );
+          changes = releaseNotes.changes || [];
+        } catch (e) {
+          console.warn("Could not parse release-notes.json:", e);
+        }
+      }
+
       const version = {
         v: Date.now().toString(),
         buildTime: new Date().toISOString(),
+        changes,
       };
       fs.writeFileSync(
         path.resolve(__dirname, "build/version.json"),
         JSON.stringify(version),
       );
       console.log("Generated version.json:", version.v);
+      if (changes.length > 0) {
+        console.log("Included release notes:", changes.length, "changes");
+      }
     },
   };
 }
