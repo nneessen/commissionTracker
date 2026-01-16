@@ -44,6 +44,7 @@ import {
 } from "./premiumMatrixService";
 import { calculateDataCompleteness } from "./conditionMatcher";
 import { calculateApprovalV2 } from "./ruleEngineV2Adapter";
+import pLimit from "p-limit";
 
 // Re-export for convenience
 export type { GenderType, AcceptanceDecision };
@@ -186,6 +187,52 @@ export interface DecisionEngineResult {
     ineligible: number;
   };
   processingTime: number;
+}
+
+/** Internal type for evaluated products during recommendation processing */
+interface EvaluatedProduct {
+  product: ProductCandidate;
+  eligibility: EligibilityResult;
+  approval: Awaited<ReturnType<typeof _calculateApproval>>;
+  premium: number | null;
+  /** Normalized health class requested for premium lookup */
+  healthClassRequested?: RateableHealthClass;
+  /** Actual health class used in premium lookup (if fallback occurred) */
+  healthClassUsed?: RateableHealthClass;
+  /** True if health class fallback was used */
+  wasFallback?: boolean;
+  /** Term length in years used for premium lookup (null for permanent products) */
+  termYears?: number | null;
+  /** Available term lengths for this product */
+  availableTerms?: number[];
+  /** Alternative quotes at different face amounts */
+  alternativeQuotes?: AlternativeQuote[];
+  maxCoverage: number;
+  scoreComponents: ScoreComponents;
+  finalScore: number;
+}
+
+/** Context needed for evaluating a single product */
+interface ProductEvaluationContext {
+  client: ClientProfile;
+  coverage: CoverageRequest;
+  imoId: string;
+  inputTermYears?: number | null;
+  criteriaMap: Map<string, ExtractedCriteria>;
+  /** Pre-fetched premium matrices by productId (batch optimization) */
+  premiumMatrixMap: Map<string, PremiumMatrix[]>;
+}
+
+/** Result from evaluating a single product */
+interface ProductEvaluationResult {
+  evaluated: EvaluatedProduct | null;
+  stats: {
+    passedEligibility: boolean;
+    unknownEligibility: boolean;
+    passedAcceptance: boolean;
+    withPremium: boolean;
+    ineligible: boolean;
+  };
 }
 
 // ============================================================================
@@ -748,6 +795,84 @@ async function getExtractedCriteriaMap(
 }
 
 /**
+ * Batch fetch premium matrices for all products in a single query.
+ * This is a major performance optimization - instead of N queries (one per product),
+ * we fetch all matrices with a single query using an IN clause.
+ */
+async function batchFetchPremiumMatrices(
+  productIds: string[],
+  imoId: string,
+): Promise<Map<string, PremiumMatrix[]>> {
+  const matrixMap = new Map<string, PremiumMatrix[]>();
+  if (productIds.length === 0) return matrixMap;
+
+  const PAGE_SIZE = 10000; // High limit to get all matrices in one query
+
+  // Fetch all premium matrices for all products in one query
+  // CRITICAL: Must use .limit() to avoid Supabase default 1000 row truncation
+  const { data, error, count } = await supabase
+    .from("premium_matrix")
+    .select(
+      `
+      *,
+      product:products(id, name, product_type, carrier_id)
+    `,
+      { count: "exact" },
+    )
+    .in("product_id", productIds)
+    .eq("imo_id", imoId)
+    .order("product_id", { ascending: true })
+    .order("age", { ascending: true })
+    .order("face_amount", { ascending: true })
+    .limit(PAGE_SIZE);
+
+  if (error) {
+    console.error("Error batch fetching premium matrices:", error);
+    // Return empty map - individual fetches will happen as fallback
+    return matrixMap;
+  }
+
+  // Log diagnostic info
+  const rowsFetched = data?.length ?? 0;
+  console.log(
+    `[BatchFetch] Fetched ${rowsFetched} rows for ${productIds.length} products (total in DB: ${count ?? "unknown"})`,
+  );
+
+  // Check for potential truncation
+  if (count && count > PAGE_SIZE) {
+    console.warn(
+      `[BatchFetch] WARNING: Results may be truncated! DB has ${count} rows but limit is ${PAGE_SIZE}`,
+    );
+  }
+
+  // Group by productId
+  for (const row of data || []) {
+    const pid = row.product_id;
+    if (!matrixMap.has(pid)) {
+      matrixMap.set(pid, []);
+    }
+    matrixMap.get(pid)!.push(row as PremiumMatrix);
+  }
+
+  // Log which products got data
+  const productsWithData = [...matrixMap.keys()];
+  const productsMissing = productIds.filter((pid) => !matrixMap.has(pid));
+  console.log(
+    `[BatchFetch] Products with matrix data: ${productsWithData.length}/${productIds.length}`,
+  );
+  if (productsMissing.length > 0) {
+    console.log(
+      `[BatchFetch] Products WITHOUT matrix data: ${productsMissing.length}`,
+    );
+  }
+
+  // NOTE: Do NOT initialize empty arrays for missing products
+  // This allows the fallback in evaluateSingleProduct to trigger correctly
+
+  return matrixMap;
+}
+
+/**
  * Calculate composite score for ranking.
  * Applies derived confidence penalty for unknown eligibility products.
  *
@@ -792,9 +917,384 @@ function calculateScore(
   };
 }
 
+// Concurrency limit for parallel product evaluation (10 concurrent products)
+const PARALLEL_PRODUCT_LIMIT = 10;
+
+/**
+ * Evaluates a single product for recommendations.
+ * This function is designed to be called in parallel for multiple products.
+ *
+ * @param product - The product candidate to evaluate
+ * @param ctx - Evaluation context (client, coverage, imoId, etc.)
+ * @returns Evaluation result with the evaluated product or null if ineligible
+ */
+async function evaluateSingleProduct(
+  product: ProductCandidate,
+  ctx: ProductEvaluationContext,
+): Promise<ProductEvaluationResult> {
+  const {
+    client,
+    coverage,
+    imoId,
+    inputTermYears,
+    criteriaMap,
+    premiumMatrixMap,
+  } = ctx;
+
+  // Initialize stats for this product
+  const stats = {
+    passedEligibility: false,
+    unknownEligibility: false,
+    passedAcceptance: false,
+    withPremium: false,
+    ineligible: false,
+  };
+
+  // ==========================================================================
+  // FIX 3: DETERMINE TERM BEFORE ELIGIBILITY
+  // We must determine the effective term FIRST, then use it consistently for
+  // both eligibility checking AND premium lookup. This prevents the bug where
+  // eligibility passes with undefined term (using base limits) but pricing
+  // uses a specific term with stricter limits.
+  // ==========================================================================
+
+  // OPTIMIZATION: Use pre-fetched matrix from batch query (eliminates N+1 queries)
+  // Falls back to individual fetch if product not in cache
+  const prefetchedMatrix = premiumMatrixMap.get(product.productId);
+  const matrix =
+    prefetchedMatrix !== undefined && prefetchedMatrix.length > 0
+      ? prefetchedMatrix
+      : await getPremiumMatrixForProduct(product.productId, imoId);
+  const availableTerms = getAvailableTermsForAge(matrix, client.age);
+  const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
+
+  // Check if this is a permanent product (all matrix rows have term_years === null)
+  const isPermanentProduct =
+    matrix.length > 0 && matrix.every((row) => row.term_years === null);
+
+  // Skip product if no terms are available for this age (only for term products)
+  if (availableTerms.length === 0 && matrix.length > 0 && !isPermanentProduct) {
+    if (DEBUG_DECISION_ENGINE) {
+      console.log(
+        `[DecisionEngine] Skipping ${product.productName}: No terms available for age ${client.age}`,
+      );
+    }
+    stats.ineligible = true;
+    return { evaluated: null, stats };
+  }
+
+  // Determine effective term for BOTH eligibility AND pricing:
+  // 1. For permanent products, use null (no term)
+  // 2. If input.termYears is specified and available, use it
+  // 3. Otherwise fall back to longest available term
+  let effectiveTermYears: TermYears | null = isPermanentProduct
+    ? null
+    : longestTerm;
+
+  if (
+    !isPermanentProduct &&
+    inputTermYears !== undefined &&
+    inputTermYears !== null
+  ) {
+    if (availableTerms.includes(inputTermYears)) {
+      effectiveTermYears = inputTermYears as TermYears;
+    } else {
+      // Requested term not available for this age - skip this product
+      if (DEBUG_DECISION_ENGINE) {
+        console.log(
+          `[DecisionEngine] Skipping ${product.productName}: Requested term ${inputTermYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
+        );
+      }
+      stats.ineligible = true;
+      return { evaluated: null, stats };
+    }
+  }
+
+  // Debug: Log term determination
+  if (DEBUG_DECISION_ENGINE) {
+    console.log(
+      `[DecisionEngine] Term determined for ${product.productName}:`,
+      {
+        inputTermYears,
+        effectiveTermYears,
+        availableTerms,
+        isPermanentProduct,
+        maxFaceAmount: product.maxFaceAmount,
+        ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
+      },
+    );
+  }
+
+  // Stage 1: Eligibility (tri-state)
+  // CRITICAL: Pass effectiveTermYears (not input.termYears) to enforce
+  // term-specific face amount restrictions consistently
+  const criteria = criteriaMap.get(product.productId);
+  const eligibility = checkEligibility(
+    product,
+    client,
+    coverage,
+    criteria,
+    undefined, // requiredFieldsByCondition
+    effectiveTermYears, // Use same term for eligibility AND pricing
+  );
+
+  // Handle tri-state eligibility
+  if (eligibility.status === "ineligible") {
+    stats.ineligible = true;
+    return { evaluated: null, stats };
+  }
+
+  if (eligibility.status === "unknown") {
+    stats.unknownEligibility = true;
+  } else {
+    stats.passedEligibility = true;
+  }
+
+  // Stage 2: Approval (uses rule engine v2 with compound predicates)
+  const approval = await calculateApprovalV2({
+    carrierId: product.carrierId,
+    productId: product.productId,
+    imoId,
+    healthConditions: client.healthConditions,
+    client: {
+      age: client.age,
+      gender: client.gender as "male" | "female",
+      state: client.state,
+      bmi: client.bmi,
+      tobacco: client.tobacco,
+      healthConditions: client.healthConditions,
+      conditionResponses: client.conditionResponses,
+    },
+  });
+
+  // For unknown eligibility, we don't skip on low likelihood
+  // For eligible products, skip if likelihood is 0 (declined)
+  if (eligibility.status === "eligible" && approval.likelihood === 0) {
+    stats.ineligible = true;
+    return { evaluated: null, stats };
+  }
+  stats.passedAcceptance = true;
+
+  // Stage 3: Premium & Alternative Quotes
+  // Use the same effectiveTermYears determined above
+  const premiumLookupParams = {
+    productId: product.productId,
+    productName: product.productName,
+    age: client.age,
+    gender: client.gender,
+    tobaccoClass: client.tobacco ? "tobacco" : "non_tobacco",
+    healthClass: approval.healthClass,
+    faceAmount: coverage.faceAmount,
+    imoId,
+    termYears: effectiveTermYears,
+  };
+  if (DEBUG_DECISION_ENGINE) {
+    console.log(
+      `[DecisionEngine Stage 3] Attempting premium lookup:`,
+      premiumLookupParams,
+    );
+  }
+
+  // termForQuotes is now effectiveTermYears (already determined above)
+  const termForQuotes = effectiveTermYears;
+
+  // Debug: Log product metadata to verify age-tiered constraints
+  if (DEBUG_DECISION_ENGINE) {
+    console.log(
+      `[DecisionEngine Stage 3] Product metadata for ${product.productName}:`,
+      {
+        maxFaceAmount: product.maxFaceAmount,
+        ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
+        hasMetadata: !!product.metadata,
+        availableTermsForAge: availableTerms,
+        isPermanentProduct,
+        effectiveTermYears,
+      },
+    );
+  }
+
+  const premiumResult = await getPremium(
+    product.productId,
+    client.age,
+    client.gender,
+    client.tobacco,
+    approval.healthClass,
+    coverage.faceAmount,
+    imoId,
+    termForQuotes, // Use effectiveTermYears for both eligibility and pricing
+    matrix, // Pass pre-fetched matrix to avoid duplicate DB query
+  );
+
+  // Extract premium and health class metadata from result
+  const premium = premiumResult.premium;
+  const healthClassRequested =
+    premiumResult.premium !== null ? premiumResult.requested : undefined;
+  const healthClassUsed =
+    premiumResult.premium !== null ? premiumResult.used : undefined;
+  const wasFallback =
+    premiumResult.premium !== null ? !premiumResult.wasExact : undefined;
+  const termYearsUsed =
+    premiumResult.premium !== null ? premiumResult.termYears : undefined;
+
+  // Debug: Log premium lookup result
+  if (DEBUG_DECISION_ENGINE) {
+    const matrixHealthClasses = [...new Set(matrix.map((m) => m.health_class))];
+    console.log(
+      `[DecisionEngine Stage 3] Premium result for ${product.productName}:`,
+      {
+        requestedTerm: inputTermYears,
+        termUsed: termForQuotes,
+        availableTerms,
+        requestedHealthClass: approval.healthClass,
+        healthClassUsed,
+        wasFallback,
+        premium,
+        matrixRowCount: matrix.length,
+        matrixFaceAmounts: [...new Set(matrix.map((m) => m.face_amount))].sort(
+          (a, b) => a - b,
+        ),
+        // Show actual health class values in the matrix
+        matrixHealthClasses,
+        matrixHealthClassesRaw: matrixHealthClasses.join(", "),
+      },
+    );
+  }
+
+  // Calculate alternative quotes at different face amounts
+  let alternativeQuotes: AlternativeQuote[] = [];
+  if (premium !== null && healthClassUsed) {
+    // Calculate age AND term adjusted max face amount using helper
+    const ageTermAdjustedMaxFace = getMaxFaceAmountForAgeTerm(
+      product.metadata,
+      product.maxFaceAmount,
+      client.age,
+      termForQuotes,
+    );
+
+    // Use user-provided faceAmounts if available, otherwise generate comparison amounts
+    let comparisonFaceAmounts: number[];
+    if (coverage.faceAmounts && coverage.faceAmounts.length > 0) {
+      // Filter user's amounts to be within product limits
+      const minFace = product.minFaceAmount ?? 0;
+      const maxFace = ageTermAdjustedMaxFace;
+      comparisonFaceAmounts = coverage.faceAmounts
+        .filter((amt) => amt >= minFace && amt <= maxFace)
+        .sort((a, b) => a - b);
+      // If no amounts fit within limits, use the closest valid amount
+      if (comparisonFaceAmounts.length === 0) {
+        comparisonFaceAmounts = [
+          Math.min(Math.max(coverage.faceAmount, minFace), maxFace),
+        ];
+      }
+    } else {
+      comparisonFaceAmounts = getComparisonFaceAmounts(
+        coverage.faceAmount,
+        product.minFaceAmount,
+        ageTermAdjustedMaxFace,
+      );
+    }
+
+    // Diagnostic logging for alternative quotes calculation
+    if (DEBUG_DECISION_ENGINE) {
+      console.log(
+        `[AlternativeQuotes] ${product.productName} - Age ${client.age}, Term ${termForQuotes ?? "N/A"}yr`,
+      );
+      console.log(
+        `  Global max: $${product.maxFaceAmount?.toLocaleString() ?? "unlimited"}`,
+      );
+      console.log(
+        `  Age+Term adjusted max: $${ageTermAdjustedMaxFace === Number.MAX_SAFE_INTEGER ? "unlimited" : ageTermAdjustedMaxFace.toLocaleString()}`,
+      );
+      console.log(
+        `  Face amounts (${coverage.faceAmounts ? "user-provided" : "auto"}): ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
+      );
+    }
+
+    const tobaccoClass: TobaccoClass = client.tobacco
+      ? "tobacco"
+      : "non_tobacco";
+    alternativeQuotes = calculateAlternativeQuotes(
+      matrix,
+      comparisonFaceAmounts,
+      client.age,
+      client.gender,
+      tobaccoClass,
+      healthClassUsed,
+      termYearsUsed ?? null,
+    );
+  }
+
+  if (DEBUG_DECISION_ENGINE) {
+    if (premium === null) {
+      const reason =
+        premiumResult.reason === "NON_RATEABLE_CLASS"
+          ? "Health class is non-rateable (decline/refer)"
+          : premiumResult.reason === "NO_MATRIX"
+            ? "No premium matrix data"
+            : "No matching rates after fallback";
+      console.warn(
+        `[DecisionEngine Stage 3] NO PREMIUM FOUND for ${product.productName}: ${reason}`,
+        {
+          ...premiumLookupParams,
+          reason: premiumResult.reason,
+        },
+      );
+    } else {
+      const fallbackInfo = wasFallback
+        ? ` (fallback: ${healthClassRequested} → ${healthClassUsed})`
+        : "";
+      console.log(
+        `[DecisionEngine Stage 3] Premium found for ${product.productName}: $${premium}/month${fallbackInfo}`,
+        { alternativeQuotes: alternativeQuotes.length },
+      );
+    }
+  }
+
+  // For unknown eligibility, premium can be null (we still keep the product)
+  if (premium !== null) {
+    stats.withPremium = true;
+  }
+
+  const maxCoverage = product.maxFaceAmount
+    ? Math.min(product.maxFaceAmount, coverage.faceAmount)
+    : coverage.faceAmount;
+
+  // Calculate score with confidence penalty for unknown eligibility
+  const scoreComponents = calculateScore(
+    approval.likelihood,
+    premium,
+    0, // Will recalculate maxPremium later
+    eligibility.status,
+    eligibility.confidence,
+  );
+
+  // Calculate raw score for now (will be adjusted with maxPremium)
+  const rawScore = approval.likelihood * 0.4 + scoreComponents.priceScore * 0.6;
+  const finalScore = rawScore * scoreComponents.confidenceMultiplier;
+
+  const evaluated: EvaluatedProduct = {
+    product,
+    eligibility,
+    approval,
+    premium,
+    healthClassRequested,
+    healthClassUsed,
+    wasFallback,
+    termYears: termYearsUsed,
+    availableTerms,
+    alternativeQuotes,
+    maxCoverage,
+    scoreComponents,
+    finalScore,
+  };
+
+  return { evaluated, stats };
+}
+
 /**
  * Main entry point: Get product recommendations.
  * Now supports tri-state eligibility and keeps unknown products in results.
+ * Uses parallel product evaluation for improved performance.
  */
 export async function getRecommendations(
   input: DecisionEngineInput,
@@ -835,388 +1335,52 @@ export async function getRecommendations(
 
   const products = await getProducts(input);
   stats.totalProducts = products.length;
-  const criteriaMap = await getExtractedCriteriaMap(
-    products.map((p) => p.productId),
+  const productIds = products.map((p) => p.productId);
+
+  // OPTIMIZATION: Fetch criteria and premium matrices in parallel
+  // This reduces startup time by ~100-200ms
+  const [criteriaMap, premiumMatrixMap] = await Promise.all([
+    getExtractedCriteriaMap(productIds),
+    batchFetchPremiumMatrices(productIds, imoId),
+  ]);
+
+  // Build evaluation context (shared across all product evaluations)
+  const evaluationContext: ProductEvaluationContext = {
+    client,
+    coverage,
+    imoId,
+    inputTermYears: input.termYears,
+    criteriaMap,
+    premiumMatrixMap,
+  };
+
+  // PARALLEL PRODUCT EVALUATION
+  // Use p-limit to evaluate products concurrently (10 at a time)
+  const limit = pLimit(PARALLEL_PRODUCT_LIMIT);
+  const evaluationPromises = products.map((product) =>
+    limit(() => evaluateSingleProduct(product, evaluationContext)),
   );
+  const evaluationResults = await Promise.all(evaluationPromises);
 
-  // Internal type for evaluated products
-  interface EvaluatedProduct {
-    product: ProductCandidate;
-    eligibility: EligibilityResult;
-    approval: Awaited<ReturnType<typeof _calculateApproval>>;
-    premium: number | null;
-    /** Normalized health class requested for premium lookup */
-    healthClassRequested?: RateableHealthClass;
-    /** Actual health class used in premium lookup (if fallback occurred) */
-    healthClassUsed?: RateableHealthClass;
-    /** True if health class fallback was used */
-    wasFallback?: boolean;
-    /** Term length in years used for premium lookup (null for permanent products) */
-    termYears?: number | null;
-    /** Available term lengths for this product */
-    availableTerms?: number[];
-    /** Alternative quotes at different face amounts */
-    alternativeQuotes?: {
-      faceAmount: number;
-      monthlyPremium: number;
-      costPerThousand: number;
-    }[];
-    maxCoverage: number;
-    scoreComponents: ScoreComponents;
-    finalScore: number;
-  }
-
+  // Aggregate results and stats
   const eligibleProducts: EvaluatedProduct[] = [];
   const unknownProducts: EvaluatedProduct[] = [];
 
-  for (const product of products) {
-    // ==========================================================================
-    // FIX 3: DETERMINE TERM BEFORE ELIGIBILITY
-    // We must determine the effective term FIRST, then use it consistently for
-    // both eligibility checking AND premium lookup. This prevents the bug where
-    // eligibility passes with undefined term (using base limits) but pricing
-    // uses a specific term with stricter limits.
-    // ==========================================================================
+  for (const result of evaluationResults) {
+    // Aggregate stats
+    if (result.stats.passedEligibility) stats.passedEligibility++;
+    if (result.stats.unknownEligibility) stats.unknownEligibility++;
+    if (result.stats.passedAcceptance) stats.passedAcceptance++;
+    if (result.stats.withPremium) stats.withPremiums++;
+    if (result.stats.ineligible) stats.ineligible++;
 
-    // OPTIMIZATION: Start matrix fetch in parallel with other work
-    const matrixPromise = getPremiumMatrixForProduct(product.productId, imoId);
-
-    // Get the premium matrix FIRST to determine available terms
-    const matrix = await matrixPromise;
-    const availableTerms = getAvailableTermsForAge(matrix, client.age);
-    const longestTerm = getLongestAvailableTermForAge(matrix, client.age);
-
-    // Check if this is a permanent product (all matrix rows have term_years === null)
-    const isPermanentProduct =
-      matrix.length > 0 && matrix.every((row) => row.term_years === null);
-
-    // Skip product if no terms are available for this age (only for term products)
-    if (
-      availableTerms.length === 0 &&
-      matrix.length > 0 &&
-      !isPermanentProduct
-    ) {
-      if (DEBUG_DECISION_ENGINE) {
-        console.log(
-          `[DecisionEngine] Skipping ${product.productName}: No terms available for age ${client.age}`,
-        );
-      }
-      stats.ineligible++;
-      continue;
-    }
-
-    // Determine effective term for BOTH eligibility AND pricing:
-    // 1. For permanent products, use null (no term)
-    // 2. If input.termYears is specified and available, use it
-    // 3. Otherwise fall back to longest available term
-    let effectiveTermYears: TermYears | null = isPermanentProduct
-      ? null
-      : longestTerm;
-
-    if (
-      !isPermanentProduct &&
-      input.termYears !== undefined &&
-      input.termYears !== null
-    ) {
-      if (availableTerms.includes(input.termYears)) {
-        effectiveTermYears = input.termYears as TermYears;
+    // Categorize evaluated products
+    if (result.evaluated) {
+      if (result.evaluated.eligibility.status === "eligible") {
+        eligibleProducts.push(result.evaluated);
       } else {
-        // Requested term not available for this age - skip this product
-        if (DEBUG_DECISION_ENGINE) {
-          console.log(
-            `[DecisionEngine] Skipping ${product.productName}: Requested term ${input.termYears}yr not available for age ${client.age}. Available: [${availableTerms.join(", ")}]`,
-          );
-        }
-        stats.ineligible++;
-        continue;
+        unknownProducts.push(result.evaluated);
       }
-    }
-
-    // Debug: Log term determination
-    if (DEBUG_DECISION_ENGINE) {
-      console.log(
-        `[DecisionEngine] Term determined for ${product.productName}:`,
-        {
-          inputTermYears: input.termYears,
-          effectiveTermYears,
-          availableTerms,
-          isPermanentProduct,
-          maxFaceAmount: product.maxFaceAmount,
-          ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
-        },
-      );
-    }
-
-    // Stage 1: Eligibility (tri-state)
-    // CRITICAL: Pass effectiveTermYears (not input.termYears) to enforce
-    // term-specific face amount restrictions consistently
-    const criteria = criteriaMap.get(product.productId);
-    const eligibility = checkEligibility(
-      product,
-      client,
-      coverage,
-      criteria,
-      undefined, // requiredFieldsByCondition
-      effectiveTermYears, // Use same term for eligibility AND pricing
-    );
-
-    // Handle tri-state eligibility
-    if (eligibility.status === "ineligible") {
-      stats.ineligible++;
-      continue; // Skip ineligible products entirely
-    }
-
-    if (eligibility.status === "unknown") {
-      stats.unknownEligibility++;
-    } else {
-      stats.passedEligibility++;
-    }
-
-    // Stage 2: Approval (uses rule engine v2 with compound predicates)
-    const approval = await calculateApprovalV2({
-      carrierId: product.carrierId,
-      productId: product.productId,
-      imoId,
-      healthConditions: client.healthConditions,
-      client: {
-        age: client.age,
-        gender: client.gender as "male" | "female",
-        state: client.state,
-        bmi: client.bmi,
-        tobacco: client.tobacco,
-        healthConditions: client.healthConditions,
-        conditionResponses: client.conditionResponses,
-      },
-    });
-
-    // For unknown eligibility, we don't skip on low likelihood
-    // For eligible products, skip if likelihood is 0 (declined)
-    if (eligibility.status === "eligible" && approval.likelihood === 0) {
-      stats.ineligible++;
-      continue;
-    }
-    stats.passedAcceptance++;
-
-    // Stage 3: Premium & Alternative Quotes
-    // Use the same effectiveTermYears determined above
-    const premiumLookupParams = {
-      productId: product.productId,
-      productName: product.productName,
-      age: client.age,
-      gender: client.gender,
-      tobaccoClass: client.tobacco ? "tobacco" : "non_tobacco",
-      healthClass: approval.healthClass,
-      faceAmount: coverage.faceAmount,
-      imoId,
-      termYears: effectiveTermYears,
-    };
-    if (DEBUG_DECISION_ENGINE) {
-      console.log(
-        `[DecisionEngine Stage 3] Attempting premium lookup:`,
-        premiumLookupParams,
-      );
-    }
-
-    // termForQuotes is now effectiveTermYears (already determined above)
-    const termForQuotes = effectiveTermYears;
-
-    // Debug: Log product metadata to verify age-tiered constraints
-    if (DEBUG_DECISION_ENGINE) {
-      console.log(
-        `[DecisionEngine Stage 3] Product metadata for ${product.productName}:`,
-        {
-          maxFaceAmount: product.maxFaceAmount,
-          ageTieredFaceAmounts: product.metadata?.ageTieredFaceAmounts,
-          hasMetadata: !!product.metadata,
-          availableTermsForAge: availableTerms,
-          isPermanentProduct,
-          effectiveTermYears,
-        },
-      );
-    }
-
-    const premiumResult = await getPremium(
-      product.productId,
-      client.age,
-      client.gender,
-      client.tobacco,
-      approval.healthClass,
-      coverage.faceAmount,
-      imoId,
-      termForQuotes, // Use effectiveTermYears for both eligibility and pricing
-      matrix, // Pass pre-fetched matrix to avoid duplicate DB query
-    );
-
-    // Extract premium and health class metadata from result
-    const premium = premiumResult.premium;
-    const healthClassRequested =
-      premiumResult.premium !== null ? premiumResult.requested : undefined;
-    const healthClassUsed =
-      premiumResult.premium !== null ? premiumResult.used : undefined;
-    const wasFallback =
-      premiumResult.premium !== null ? !premiumResult.wasExact : undefined;
-    const termYearsUsed =
-      premiumResult.premium !== null ? premiumResult.termYears : undefined;
-
-    // Debug: Log premium lookup result
-    if (DEBUG_DECISION_ENGINE) {
-      const matrixHealthClasses = [
-        ...new Set(matrix.map((m) => m.health_class)),
-      ];
-      console.log(
-        `[DecisionEngine Stage 3] Premium result for ${product.productName}:`,
-        {
-          requestedTerm: input.termYears,
-          termUsed: termForQuotes,
-          availableTerms,
-          requestedHealthClass: approval.healthClass,
-          healthClassUsed,
-          wasFallback,
-          premium,
-          matrixRowCount: matrix.length,
-          matrixFaceAmounts: [
-            ...new Set(matrix.map((m) => m.face_amount)),
-          ].sort((a, b) => a - b),
-          // Show actual health class values in the matrix
-          matrixHealthClasses,
-          matrixHealthClassesRaw: matrixHealthClasses.join(", "),
-        },
-      );
-    }
-
-    // Calculate alternative quotes at different face amounts
-    let alternativeQuotes: AlternativeQuote[] = [];
-    if (premium !== null && healthClassUsed) {
-      // Calculate age AND term adjusted max face amount using helper
-      const ageTermAdjustedMaxFace = getMaxFaceAmountForAgeTerm(
-        product.metadata,
-        product.maxFaceAmount,
-        client.age,
-        termForQuotes,
-      );
-
-      // Use user-provided faceAmounts if available, otherwise generate comparison amounts
-      let comparisonFaceAmounts: number[];
-      if (coverage.faceAmounts && coverage.faceAmounts.length > 0) {
-        // Filter user's amounts to be within product limits
-        const minFace = product.minFaceAmount ?? 0;
-        const maxFace = ageTermAdjustedMaxFace;
-        comparisonFaceAmounts = coverage.faceAmounts
-          .filter((amt) => amt >= minFace && amt <= maxFace)
-          .sort((a, b) => a - b);
-        // If no amounts fit within limits, use the closest valid amount
-        if (comparisonFaceAmounts.length === 0) {
-          comparisonFaceAmounts = [
-            Math.min(Math.max(coverage.faceAmount, minFace), maxFace),
-          ];
-        }
-      } else {
-        comparisonFaceAmounts = getComparisonFaceAmounts(
-          coverage.faceAmount,
-          product.minFaceAmount,
-          ageTermAdjustedMaxFace,
-        );
-      }
-
-      // Diagnostic logging for alternative quotes calculation
-      if (DEBUG_DECISION_ENGINE) {
-        console.log(
-          `[AlternativeQuotes] ${product.productName} - Age ${client.age}, Term ${termForQuotes ?? "N/A"}yr`,
-        );
-        console.log(
-          `  Global max: $${product.maxFaceAmount?.toLocaleString() ?? "unlimited"}`,
-        );
-        console.log(
-          `  Age+Term adjusted max: $${ageTermAdjustedMaxFace === Number.MAX_SAFE_INTEGER ? "unlimited" : ageTermAdjustedMaxFace.toLocaleString()}`,
-        );
-        console.log(
-          `  Face amounts (${coverage.faceAmounts ? "user-provided" : "auto"}): ${comparisonFaceAmounts.map((f) => `$${f.toLocaleString()}`).join(", ")}`,
-        );
-      }
-
-      const tobaccoClass: TobaccoClass = client.tobacco
-        ? "tobacco"
-        : "non_tobacco";
-      alternativeQuotes = calculateAlternativeQuotes(
-        matrix,
-        comparisonFaceAmounts,
-        client.age,
-        client.gender,
-        tobaccoClass,
-        healthClassUsed,
-        termYearsUsed ?? null,
-      );
-    }
-
-    if (DEBUG_DECISION_ENGINE) {
-      if (premium === null) {
-        const reason =
-          premiumResult.reason === "NON_RATEABLE_CLASS"
-            ? "Health class is non-rateable (decline/refer)"
-            : premiumResult.reason === "NO_MATRIX"
-              ? "No premium matrix data"
-              : "No matching rates after fallback";
-        console.warn(
-          `[DecisionEngine Stage 3] NO PREMIUM FOUND for ${product.productName}: ${reason}`,
-          {
-            ...premiumLookupParams,
-            reason: premiumResult.reason,
-          },
-        );
-      } else {
-        const fallbackInfo = wasFallback
-          ? ` (fallback: ${healthClassRequested} → ${healthClassUsed})`
-          : "";
-        console.log(
-          `[DecisionEngine Stage 3] Premium found for ${product.productName}: $${premium}/month${fallbackInfo}`,
-          { alternativeQuotes: alternativeQuotes.length },
-        );
-      }
-    }
-
-    // For unknown eligibility, premium can be null (we still keep the product)
-    if (premium !== null) {
-      stats.withPremiums++;
-    }
-
-    const maxCoverage = product.maxFaceAmount
-      ? Math.min(product.maxFaceAmount, coverage.faceAmount)
-      : coverage.faceAmount;
-
-    // Calculate score with confidence penalty for unknown eligibility
-    const scoreComponents = calculateScore(
-      approval.likelihood,
-      premium,
-      0, // Will recalculate maxPremium later
-      eligibility.status,
-      eligibility.confidence,
-    );
-
-    // Calculate raw score for now (will be adjusted with maxPremium)
-    const rawScore =
-      approval.likelihood * 0.4 + scoreComponents.priceScore * 0.6;
-    const finalScore = rawScore * scoreComponents.confidenceMultiplier;
-
-    const evaluated: EvaluatedProduct = {
-      product,
-      eligibility,
-      approval,
-      premium,
-      healthClassRequested,
-      healthClassUsed,
-      wasFallback,
-      termYears: termYearsUsed,
-      availableTerms,
-      alternativeQuotes,
-      maxCoverage,
-      scoreComponents,
-      finalScore,
-    };
-
-    if (eligibility.status === "eligible") {
-      eligibleProducts.push(evaluated);
-    } else {
-      unknownProducts.push(evaluated);
     }
   }
 

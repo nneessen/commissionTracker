@@ -399,7 +399,36 @@ export async function getPremiumMatrixForProduct(
 ): Promise<PremiumMatrix[]> {
   const PAGE_SIZE = 1000;
 
-  // Step 1: Get total count to determine if pagination is needed
+  // OPTIMIZATION: Skip count query - fetch data directly and check if pagination needed
+  // This eliminates one DB round-trip per product (~30-50ms savings each)
+  const { data, error } = await supabase
+    .from("premium_matrix")
+    .select(
+      `
+      *,
+      product:products(id, name, product_type, carrier_id)
+    `,
+    )
+    .eq("product_id", productId)
+    .eq("imo_id", imoId)
+    .order("age", { ascending: true })
+    .order("face_amount", { ascending: true })
+    .limit(PAGE_SIZE);
+
+  if (error) {
+    console.error("Error fetching premium matrix:", error);
+    throw new Error(`Failed to fetch premium matrix: ${error.message}`);
+  }
+
+  // If we got fewer than PAGE_SIZE rows, we have all the data
+  if (!data || data.length < PAGE_SIZE) {
+    const result = (data || []) as PremiumMatrix[];
+    logPremiumMatrixDebug(result, productId, imoId);
+    return result;
+  }
+
+  // If we hit the limit, we need to paginate - fetch remaining pages in parallel
+  // First, get the actual count to know how many pages we need
   const { count, error: countError } = await supabase
     .from("premium_matrix")
     .select("*", { count: "exact", head: true })
@@ -408,39 +437,17 @@ export async function getPremiumMatrixForProduct(
 
   if (countError) {
     console.error("Error counting premium matrix:", countError);
-    throw new Error(`Failed to count premium matrix: ${countError.message}`);
-  }
-
-  const totalRows = count || 0;
-
-  // Step 2: Single fetch for small datasets (optimization)
-  if (totalRows <= PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("premium_matrix")
-      .select(
-        `
-        *,
-        product:products(id, name, product_type, carrier_id)
-      `,
-      )
-      .eq("product_id", productId)
-      .eq("imo_id", imoId)
-      .order("age", { ascending: true })
-      .order("face_amount", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching premium matrix:", error);
-      throw new Error(`Failed to fetch premium matrix: ${error.message}`);
-    }
-
-    const result = (data || []) as PremiumMatrix[];
+    // Fall back to returning what we have
+    const result = data as PremiumMatrix[];
     logPremiumMatrixDebug(result, productId, imoId);
     return result;
   }
 
-  // Step 3: Parallel pagination for large datasets
+  const totalRows = count || data.length;
   const totalPages = Math.ceil(totalRows / PAGE_SIZE);
-  const pagePromises = Array.from({ length: totalPages }, (_, pageIndex) =>
+
+  // We already have page 0, fetch the rest in parallel
+  const remainingPagePromises = Array.from({ length: totalPages - 1 }, (_, i) =>
     supabase
       .from("premium_matrix")
       .select(
@@ -453,26 +460,29 @@ export async function getPremiumMatrixForProduct(
       .eq("imo_id", imoId)
       .order("age", { ascending: true })
       .order("face_amount", { ascending: true })
-      .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1),
+      .range((i + 1) * PAGE_SIZE, (i + 2) * PAGE_SIZE - 1),
   );
 
-  const results = await Promise.all(pagePromises);
+  const remainingResults = await Promise.all(remainingPagePromises);
 
   // Check for errors in any page
-  for (let i = 0; i < results.length; i++) {
-    if (results[i].error) {
+  for (let i = 0; i < remainingResults.length; i++) {
+    if (remainingResults[i].error) {
       console.error(
-        `Error fetching premium matrix page ${i}:`,
-        results[i].error,
+        `Error fetching premium matrix page ${i + 1}:`,
+        remainingResults[i].error,
       );
       throw new Error(
-        `Failed to fetch premium matrix: ${results[i].error!.message}`,
+        `Failed to fetch premium matrix: ${remainingResults[i].error!.message}`,
       );
     }
   }
 
-  // Combine all pages
-  const allData = results.flatMap((result) => result.data || []);
+  // Combine first page with remaining pages
+  const allData = [
+    ...data,
+    ...remainingResults.flatMap((result) => result.data || []),
+  ];
   const result = allData as PremiumMatrix[];
 
   logPremiumMatrixDebug(result, productId, imoId);
