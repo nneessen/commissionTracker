@@ -461,6 +461,12 @@ class UserService {
       }
     }
 
+    // Keep recruiter_id in sync with upline_id during migration
+    // This ensures recruits always have both fields set consistently
+    if (updates.upline_id !== undefined) {
+      dbData.recruiter_id = updates.upline_id;
+    }
+
     try {
       return await this.repository.update(id, dbData);
     } catch (error) {

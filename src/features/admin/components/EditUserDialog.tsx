@@ -60,6 +60,7 @@ import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
 import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import { useImo } from "@/contexts/ImoContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   useAllActiveImos,
   useAgenciesByImo,
@@ -109,6 +110,9 @@ export default function EditUserDialog({
   const queryClient = useQueryClient();
   const { data: roles } = useAllRolesWithPermissions();
   const deleteUserMutation = useDeleteUser();
+
+  // Auth hook for activity logging
+  const { user: currentUser } = useAuth();
 
   // IMO/Agency hooks
   const { isSuperAdmin, isImoAdmin } = useImo();
@@ -232,12 +236,30 @@ export default function EditUserDialog({
   }, [user, open]);
 
   const handleRoleToggle = (roleName: RoleName) => {
-    setFormData((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(roleName)
+    setFormData((prev) => {
+      let newRoles = prev.roles.includes(roleName)
         ? prev.roles.filter((r) => r !== roleName)
-        : [...prev.roles, roleName],
-    }));
+        : [...prev.roles, roleName];
+
+      // Mutual exclusivity: recruit vs agent/active_agent
+      // Selecting recruit removes agent roles; selecting agent removes recruit
+      // Note: Cast to string for comparison since DB may contain values not in RoleName type
+      const roleStr = roleName as string;
+      if (roleStr === "recruit" && newRoles.includes("recruit")) {
+        // Adding recruit role - remove agent roles
+        newRoles = newRoles.filter(
+          (r) => (r as string) !== "agent" && (r as string) !== "active_agent",
+        );
+      } else if (
+        (roleStr === "agent" || roleStr === "active_agent") &&
+        newRoles.includes(roleName)
+      ) {
+        // Adding agent role - remove recruit role
+        newRoles = newRoles.filter((r) => (r as string) !== "recruit");
+      }
+
+      return { ...prev, roles: newRoles };
+    });
   };
 
   // Check if organization (IMO/Agency) is changing
@@ -283,6 +305,26 @@ export default function EditUserDialog({
       }
       if (JSON.stringify(formData.roles) !== JSON.stringify(user.roles || []))
         updates.roles = formData.roles;
+
+      // Handle switching TO recruit role: sync recruiter_id with upline_id
+      const wasRecruit = user.roles?.includes("recruit");
+      const isNowRecruit = formData.roles.includes("recruit");
+      const switchingToRecruit = !wasRecruit && isNowRecruit;
+
+      if (switchingToRecruit) {
+        // Ensure recruiter_id is set using upline_id as the source
+        const recruiterId = formData.upline_id || user.upline_id;
+        if (recruiterId) {
+          updates.recruiter_id = recruiterId;
+        }
+
+        // Reset onboarding fields if user was previously a completed agent
+        if (user.onboarding_status === "completed") {
+          updates.onboarding_status = "prospect";
+          updates.current_onboarding_phase = "prospect";
+        }
+      }
+
       if (formData.approval_status !== user.approval_status)
         updates.approval_status = formData.approval_status;
       if (formData.agent_status !== user.agent_status)
@@ -380,9 +422,28 @@ export default function EditUserDialog({
         }
       }
 
+      // Log activity if demoting to recruit
+      if (switchingToRecruit) {
+        await supabase.from("user_activity_log").insert({
+          user_id: user.id,
+          action: "demoted_to_recruit",
+          description: "Demoted from agent to recruit",
+          metadata: {
+            previous_roles: user.roles,
+            new_roles: formData.roles,
+            recruiter_id: updates.recruiter_id || null,
+            demoted_by: currentUser?.id,
+          },
+        });
+      }
+
       toast.success("User updated successfully");
       queryClient.invalidateQueries({ queryKey: ["userApproval"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      // Invalidate recruits when switching to recruit role or recruiter_id changes
+      if (switchingToRecruit || updates.recruiter_id !== undefined) {
+        queryClient.invalidateQueries({ queryKey: ["recruits"] });
+      }
       // HIGH-3 fix: Invalidate IMO/Agency queries so Sidebar updates for affected user
       if (imoChanged || agencyChanged) {
         queryClient.invalidateQueries({ queryKey: imoKeys.all });
@@ -809,6 +870,10 @@ export default function EditUserDialog({
                       </div>
                     ))}
                   </div>
+                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-1.5 italic">
+                    Note: Agent/Active Agent and Recruit roles are mutually
+                    exclusive.
+                  </p>
                 </div>
               </TabsContent>
 
