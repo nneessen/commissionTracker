@@ -47,7 +47,8 @@ export interface CreateCommissionData {
   monthlyPremium?: number;
 
   // ADVANCE (upfront payment)
-  advanceAmount?: number;
+  amount?: number; // Canonical field name for commission amount
+  advanceAmount?: number; // @deprecated Use 'amount' instead
   advanceMonths?: number;
 
   // CAPPED ADVANCE (when carrier has advance cap)
@@ -215,13 +216,11 @@ class CommissionCRUDService {
     }
 
     try {
-      // NOTE: Do NOT call transformToDB here! The repository.create() calls its own
-      // transformToDB internally. Calling it here would double-transform the data.
-      // Cast is needed because service's CreateCommissionData differs from types file
-      // but repository's transformToDB handles both formats
+      // NOTE: Do NOT call transformToDB or transformFromDB here!
+      // The repository.create() calls its own transforms internally.
+      // repository.create() returns a Commission object already transformed.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
-      const created = await this.repository.create(data as any);
-      const commission = this.transformFromDB(created);
+      const commission = await this.repository.create(data as any);
 
       // Emit commission earned event if this is an earned commission
       if (
@@ -261,14 +260,15 @@ class CommissionCRUDService {
       // Verify commission exists first
       await this.getById(id);
 
-      // NOTE: Do NOT call transformToDB here! The repository.update() calls its own
-      // transformToDB internally. Calling it here would double-transform the data.
-      // Cast is needed because service's CreateCommissionData differs from types file
+      // NOTE: Do NOT call transformToDB or transformFromDB here!
+      // The repository.update() calls its own transforms internally.
+      // repository.update() returns a Commission object already transformed via
+      // CommissionRepository.transformFromDB - calling this.transformFromDB again
+      // would cause a double-transform bug (expecting DB field names on a Commission object)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
       const updated = await this.repository.update(id, data as any);
-      const commission = this.transformFromDB(updated);
 
-      return commission;
+      return updated;
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;

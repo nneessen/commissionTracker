@@ -154,8 +154,17 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   ).length;
 
   const { data: carriers = [] } = useCarriers();
-  const { data: commissions = [] } = useCommissions();
+  const { data: commissions = [], dataUpdatedAt } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
+
+  // DEBUG: Log when commission data changes
+  console.log("[PolicyList] Render - commissions:", {
+    count: commissions.length,
+    dataUpdatedAt,
+    firstFew: commissions
+      .slice(0, 3)
+      .map((c) => ({ id: c.id, policyId: c.policyId, amount: c.amount })),
+  });
   const { mutate: updatePolicy } = useUpdatePolicy();
   const { mutate: deletePolicy } = useDeletePolicy();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
@@ -167,15 +176,49 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const [policyToLink, setPolicyToLink] = useState<Policy | null>(null);
 
   // Create a map of policy_id -> commission for quick lookup
+  // Priority: active/earned/pending commissions over cancelled ones
+  // If multiple active commissions exist, keep the one with the highest amount
   const commissionsByPolicy = commissions.reduce(
     (acc, commission) => {
-      if (commission.policyId) {
+      if (!commission.policyId) return acc;
+
+      const existing = acc[commission.policyId];
+      const isActiveStatus = (status: string) =>
+        status !== "cancelled" && status !== "chargedback";
+
+      if (!existing) {
+        // No commission for this policy yet, add it
         acc[commission.policyId] = commission;
+      } else {
+        // Compare: prefer active over cancelled, then prefer higher amount
+        const existingIsActive = isActiveStatus(existing.status);
+        const currentIsActive = isActiveStatus(commission.status);
+
+        if (currentIsActive && !existingIsActive) {
+          // Current is active, existing is cancelled - use current
+          acc[commission.policyId] = commission;
+        } else if (currentIsActive && existingIsActive) {
+          // Both active - use the one with higher amount
+          if ((commission.amount || 0) > (existing.amount || 0)) {
+            acc[commission.policyId] = commission;
+          }
+        }
+        // If existing is active and current is cancelled, keep existing (do nothing)
       }
       return acc;
     },
     {} as Record<string, (typeof commissions)[0]>,
   );
+
+  // DEBUG: Log the commission for the specific policy being tested
+  const testPolicyId = "6e5729e7-0df4-4663-8e1a-7f36d52ff5a0";
+  const testCommission = commissionsByPolicy[testPolicyId];
+  console.log("[PolicyList] Commission for test policy:", {
+    policyId: testPolicyId,
+    amount: testCommission?.amount,
+    commissionId: testCommission?.id,
+    found: !!testCommission,
+  });
 
   // Get commissions for current page policies to calculate commission metrics
   const policyIds = new Set(policies.map((p) => p.id));

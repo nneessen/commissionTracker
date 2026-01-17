@@ -113,11 +113,13 @@ class CommissionService {
     policyId: string,
     newAnnualPremium: number,
     newMonthlyPremium?: number,
+    fullRecalculate?: boolean,
   ): Promise<Commission | null> {
     return commissionCalculationService.recalculateCommissionByPolicyId(
       policyId,
       newAnnualPremium,
       newMonthlyPremium,
+      fullRecalculate,
     );
   }
 

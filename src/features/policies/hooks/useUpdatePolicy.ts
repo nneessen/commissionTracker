@@ -6,6 +6,7 @@ import { policyService } from "@/services/policies/policyService";
 import { commissionService } from "@/services/commissions/commissionService";
 import { policyKeys } from "../queries";
 import type { CreatePolicyData, Policy } from "@/types/policy.types";
+import type { Commission } from "@/types/commission.types";
 
 // Basic update params
 interface BasicUpdateParams {
@@ -70,9 +71,31 @@ function isBasicUpdateParams(
   return "updates" in params;
 }
 
-function hasPremiumChanges(updates: Partial<CreatePolicyData>): boolean {
+/**
+ * Checks if any fields that affect commission calculation have changed
+ * This triggers commission recalculation when premium, carrier, or product changes
+ */
+function requiresCommissionRecalc(updates: Partial<CreatePolicyData>): boolean {
   return (
-    updates.annualPremium !== undefined || updates.monthlyPremium !== undefined
+    updates.annualPremium !== undefined ||
+    updates.monthlyPremium !== undefined ||
+    updates.carrierId !== undefined ||
+    updates.productId !== undefined ||
+    updates.product !== undefined
+  );
+}
+
+/**
+ * Checks if carrier or product changed - requires full recalculation from comp_guide
+ * because commission rate may be different
+ */
+function hasCarrierOrProductChange(
+  updates: Partial<CreatePolicyData>,
+): boolean {
+  return (
+    updates.carrierId !== undefined ||
+    updates.productId !== undefined ||
+    updates.product !== undefined
   );
 }
 
@@ -139,36 +162,132 @@ export function useUpdatePolicy() {
         updatedPolicy,
       );
 
-      // If premium fields were updated, recalculate the commission
-      if (isBasicUpdateParams(params) && hasPremiumChanges(params.updates)) {
+      // If premium, carrier, or product changed, recalculate the commission
+      console.log("[useUpdatePolicy] Checking if commission recalc needed:", {
+        isBasicUpdate: isBasicUpdateParams(params),
+        updates: isBasicUpdateParams(params) ? params.updates : null,
+        requiresRecalc: isBasicUpdateParams(params)
+          ? requiresCommissionRecalc(params.updates)
+          : false,
+      });
+
+      if (
+        isBasicUpdateParams(params) &&
+        requiresCommissionRecalc(params.updates)
+      ) {
         try {
           const newAnnualPremium =
             params.updates.annualPremium ?? updatedPolicy.annualPremium;
           const newMonthlyPremium =
             params.updates.monthlyPremium ?? updatedPolicy.monthlyPremium;
 
-          // Recalculate commission with new premium values
-          await commissionService.recalculateCommissionByPolicyId(
-            updatedPolicy.id,
-            newAnnualPremium,
-            newMonthlyPremium,
-          );
+          // Determine if we need full recalculation (carrier/product changed)
+          // This will re-fetch rate from comp_guide instead of using stored rate
+          const fullRecalculate = hasCarrierOrProductChange(params.updates);
 
           console.log(
-            `Commission recalculated for policy ${updatedPolicy.id} after premium update`,
+            "[useUpdatePolicy] Calling recalculateCommissionByPolicyId:",
+            {
+              policyId: updatedPolicy.id,
+              newAnnualPremium,
+              newMonthlyPremium,
+              fullRecalculate,
+            },
           );
+
+          // Recalculate commission with new values
+          const result =
+            await commissionService.recalculateCommissionByPolicyId(
+              updatedPolicy.id,
+              newAnnualPremium,
+              newMonthlyPremium,
+              fullRecalculate,
+            );
+
+          console.log("[useUpdatePolicy] Commission recalculation result:", {
+            policyId: updatedPolicy.id,
+            result,
+            newAmount: result?.amount,
+          });
+
+          // DIRECTLY update the cache with the new commission data
+          if (result) {
+            const userId = updatedPolicy.userId;
+            const targetQueryKey = ["commissions", userId];
+
+            // DEBUG: Log the result object to see if policyId is correct
+            console.log("[useUpdatePolicy] Commission result from service:", {
+              id: result.id,
+              policyId: result.policyId,
+              amount: result.amount,
+              userId: result.userId,
+              fullResult: JSON.stringify(result),
+            });
+
+            // DEBUG: Show all commission-related queries in cache
+            const allQueries = queryClient.getQueriesData({
+              queryKey: ["commissions"],
+            });
+            console.log(
+              "[useUpdatePolicy] All commission queries in cache:",
+              allQueries.map(([key, data]) => ({
+                key,
+                dataLength: Array.isArray(data) ? data.length : "not array",
+              })),
+            );
+
+            console.log("[useUpdatePolicy] Target query key:", targetQueryKey);
+
+            // Update ALL commission queries that match, not just the exact key
+            allQueries.forEach(([queryKey, existingData]) => {
+              if (Array.isArray(existingData)) {
+                console.log(
+                  "[useUpdatePolicy] Updating cache for key:",
+                  queryKey,
+                );
+
+                queryClient.setQueryData<Commission[]>(queryKey, (oldData) => {
+                  if (!oldData) return [result];
+
+                  const updatedData = oldData.map((commission) =>
+                    commission.id === result.id ? result : commission,
+                  );
+
+                  const updatedCommission = updatedData.find(
+                    (c) => c.id === result.id,
+                  );
+                  console.log(
+                    "[useUpdatePolicy] Cache update for key",
+                    queryKey,
+                    {
+                      oldLength: oldData.length,
+                      newLength: updatedData.length,
+                      updatedAmount: updatedCommission?.amount,
+                      updatedPolicyId: updatedCommission?.policyId,
+                    },
+                  );
+
+                  return updatedData;
+                });
+              }
+            });
+          }
         } catch (error) {
           console.error(
-            "Failed to recalculate commission after premium update:",
+            "[useUpdatePolicy] Failed to recalculate commission:",
             error,
           );
           // Don't throw - we don't want to fail the policy update if commission recalculation fails
         }
+      } else {
+        console.log("[useUpdatePolicy] Commission recalc NOT needed");
       }
 
-      // ALWAYS refetch commissions cache to ensure UI updates immediately
-      // This covers both status changes (chargebacks) and premium updates (recalculations)
-      await queryClient.refetchQueries({ queryKey: ["commissions"] });
+      // Force a hard reset of commission queries to ensure UI updates
+      // resetQueries clears the cache and triggers an immediate refetch for active queries
+      await queryClient.resetQueries({ queryKey: ["commissions"] });
+      // Also invalidate commission metrics which may be affected
+      queryClient.invalidateQueries({ queryKey: ["commission-metrics"] });
 
       // Also invalidate chargeback summary for status changes
       if (

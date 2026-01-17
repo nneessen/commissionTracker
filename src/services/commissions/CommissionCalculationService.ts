@@ -418,27 +418,28 @@ class CommissionCalculationService {
   }
 
   /**
-   * Recalculates commission for a policy when its premium changes
+   * Recalculates commission for a policy when its premium, carrier, or product changes
    *
    * @param policyId - The ID of the policy whose commission needs recalculation
    * @param newAnnualPremium - The updated annual premium amount
    * @param newMonthlyPremium - The updated monthly premium amount (optional)
+   * @param fullRecalculate - When true, re-fetches rate from comp_guide (for carrier/product changes)
    * @returns Updated commission or null if no commission found
    *
    * @example
    * ```ts
-   * // After updating a policy's premium
-   * const updatedCommission = await recalculateCommissionByPolicyId(
-   *   'policy-123',
-   *   2400, // new annual premium
-   *   200   // new monthly premium
-   * );
+   * // After updating a policy's premium only
+   * await recalculateCommissionByPolicyId('policy-123', 2400, 200, false);
+   *
+   * // After updating a policy's carrier or product
+   * await recalculateCommissionByPolicyId('policy-123', 2400, 200, true);
    * ```
    */
   async recalculateCommissionByPolicyId(
     policyId: string,
     newAnnualPremium: number,
     newMonthlyPremium?: number,
+    fullRecalculate?: boolean,
   ): Promise<Commission | null> {
     try {
       // Get all commissions for this policy (should typically be one)
@@ -453,8 +454,20 @@ class CommissionCalculationService {
         return null;
       }
 
-      // Get the most recent commission (in case there are multiple)
-      const commission = commissions[0];
+      // Get the active commission (not cancelled/chargedback) - prioritize by status then amount
+      const isActiveStatus = (status: string) =>
+        status !== "cancelled" && status !== "chargedback";
+
+      // Sort: active statuses first, then by amount descending
+      const sortedCommissions = [...commissions].sort((a, b) => {
+        const aActive = isActiveStatus(a.status);
+        const bActive = isActiveStatus(b.status);
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+        return (b.amount || 0) - (a.amount || 0);
+      });
+
+      const commission = sortedCommissions[0];
       const advanceMonths = commission.advanceMonths || 9;
 
       // IMPORTANT: The commission DB table doesn't store carrier_id, product, commission_rate
@@ -467,11 +480,80 @@ class CommissionCalculationService {
         throw new Error(`Policy not found: ${policyId}`);
       }
 
-      // Calculate new advance using policy's commission_percentage
-      // commission_percentage is stored as decimal (e.g., 1.1 = 110%)
       const monthlyPremium = newMonthlyPremium || newAnnualPremium / 12;
-      const commissionRate = policy.commissionPercentage; // Already a decimal like 1.1 for 110%
-      const newAdvanceAmount = monthlyPremium * advanceMonths * commissionRate;
+
+      // Variables to hold calculated values
+      let advanceAmount: number;
+      let commissionRate: number;
+      let originalAdvance: number | null = null;
+      let overageAmount: number | null = null;
+      let overageStartMonth: number | null = null;
+
+      if (fullRecalculate) {
+        // Full recalculation: re-fetch rate from comp_guide
+        // This is used when carrier or product changes
+        logger.info(
+          "CommissionCalculation",
+          "Full recalculation - fetching rate from comp_guide",
+          JSON.stringify({
+            policyId,
+            carrierId: policy.carrierId,
+            product: policy.product,
+          }),
+        );
+
+        const calculation = await this.calculateCommissionWithCompGuide({
+          carrierId: policy.carrierId,
+          productId: policy.productId,
+          product: policy.product,
+          monthlyPremium,
+          userId: policy.userId,
+          advanceMonths,
+        });
+
+        if (calculation) {
+          advanceAmount = calculation.advanceAmount;
+          commissionRate = calculation.commissionRate;
+          originalAdvance = calculation.originalAdvance ?? null;
+          overageAmount = calculation.overageAmount ?? null;
+          overageStartMonth = calculation.overageStartMonth ?? null;
+        } else {
+          throw new CalculationError(
+            "Commission",
+            "No comp_guide entry found for carrier/product/contract_level combination during recalculation",
+            {
+              policyId,
+              carrierId: policy.carrierId,
+              product: policy.product,
+            },
+          );
+        }
+      } else {
+        // Simple premium change - use existing rate from policy with carrier cap
+        commissionRate = policy.commissionPercentage;
+
+        // Get carrier to check for advance cap
+        const { carrierService } = await import("../index");
+        const carrierResult = await carrierService.getById(policy.carrierId);
+        const advanceCap = carrierResult.success
+          ? carrierResult.data?.advance_cap
+          : undefined;
+
+        // Apply carrier cap if applicable
+        const cappedResult = commissionLifecycleService.calculateCappedAdvance({
+          monthlyPremium,
+          advanceMonths,
+          commissionRate,
+          advanceCap: advanceCap ?? undefined,
+        });
+
+        advanceAmount = cappedResult.advanceAmount;
+        if (cappedResult.isCapped) {
+          originalAdvance = cappedResult.originalAdvance;
+          overageAmount = cappedResult.overageAmount;
+          overageStartMonth = cappedResult.overageStartMonth;
+        }
+      }
 
       logger.info(
         "CommissionCalculation",
@@ -483,16 +565,46 @@ class CommissionCalculationService {
           advanceMonths,
           commissionRate,
           oldAmount: commission.advanceAmount,
-          newAmount: newAdvanceAmount,
+          newAmount: advanceAmount,
+          fullRecalculate,
+          isCapped: originalAdvance !== null,
         }),
       );
 
       // Update the commission with new calculated values
-      // Note: We only update 'amount' field since that's what the DB has
+      // Note: Use 'amount' (the canonical field) instead of deprecated 'advanceAmount'
+      // Note: commissionRate is stored on the policy, not the commission, so we don't update it here
+      console.log(
+        "[CommissionCalculationService] About to update commission:",
+        {
+          commissionId: commission.id,
+          oldAmount: commission.amount,
+          newAmount: advanceAmount,
+          updateData: {
+            amount: advanceAmount,
+            originalAdvance,
+            overageAmount,
+            overageStartMonth,
+          },
+        },
+      );
+
       const updatedCommission = await commissionCRUDService.update(
         commission.id,
         {
-          advanceAmount: newAdvanceAmount,
+          amount: advanceAmount, // Use canonical field name
+          originalAdvance,
+          overageAmount,
+          overageStartMonth,
+        },
+      );
+
+      console.log(
+        "[CommissionCalculationService] Commission updated, result:",
+        {
+          commissionId: updatedCommission.id,
+          returnedAmount: updatedCommission.amount,
+          fullObject: updatedCommission,
         },
       );
 
@@ -502,8 +614,9 @@ class CommissionCalculationService {
         JSON.stringify({
           policyId,
           commissionId: commission.id,
-          oldAmount: commission.advanceAmount,
-          newAmount: updatedCommission.advanceAmount,
+          oldAmount: commission.amount,
+          newAmount: updatedCommission.amount,
+          fullRecalculate,
         }),
       );
 

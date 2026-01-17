@@ -490,6 +490,8 @@ export class CommissionRepository extends BaseRepository<
     // rate, month_earned, year_earned, quarter_earned, expected_date, actual_date, paid_date
     const dbData: Record<string, unknown> = {};
 
+    console.log("[CommissionRepository.transformToDB] Input data:", data);
+
     // Core fields that exist in the table
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
     if (data.userId !== undefined) dbData.user_id = data.userId;
@@ -501,6 +503,8 @@ export class CommissionRepository extends BaseRepository<
     if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount; // Backward compat
     if (data.advanceMonths !== undefined)
       dbData.advance_months = data.advanceMonths;
+
+    console.log("[CommissionRepository.transformToDB] Output dbData:", dbData);
 
     // CAPPED ADVANCE (when carrier has advance_cap)
     if (data.originalAdvance !== undefined)
