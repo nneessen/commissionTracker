@@ -450,13 +450,12 @@ class CommissionStatusService {
    * @param userId - User ID to get summary for
    * @returns Chargeback summary metrics
    */
-  async getChargebackSummary(userId: string): Promise<ChargebackSummary> {
+  async getChargebackSummary(_userId: string): Promise<ChargebackSummary> {
     try {
-      const { data, error } = await supabase
-        .from("commission_chargeback_summary")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+      // Use RPC function - direct SELECT on view is revoked for security
+      const { data, error } = await supabase.rpc(
+        "get_user_commission_chargeback_summary",
+      );
 
       if (error) {
         throw new DatabaseError("getChargebackSummary", error);

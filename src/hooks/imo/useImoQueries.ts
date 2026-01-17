@@ -504,21 +504,8 @@ export function useImoPerformanceReport(
   });
 }
 
-/**
- * Get team comparison report (agency rankings)
- * Only returns data if user is IMO admin, IMO owner, or super admin
- */
-export function useTeamComparisonReport(
-  dateRange?: ReportDateRange,
-  options?: { enabled?: boolean },
-) {
-  return useQuery({
-    queryKey: imoKeys.teamComparison(dateRange),
-    queryFn: () => imoService.getTeamComparisonReport(dateRange),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: options?.enabled ?? true,
-  });
-}
+// NOTE: useTeamComparisonReport was removed - use useImoProductionByAgency instead
+// The useImoProductionByAgency hook now returns all fields needed for agency comparison.
 
 /**
  * Get top performers report (agent rankings)

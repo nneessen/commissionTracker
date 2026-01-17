@@ -1,7 +1,7 @@
 // src/types/imo.types.ts
 // Types for Multi-IMO / Multi-Agency architecture
 
-import type { Database, Json } from './database.types';
+import type { Database, Json } from "./database.types";
 
 // =============================================================================
 // IMO ROLE CONSTANTS - MEDIUM-1 fix: Centralize role names to avoid magic strings
@@ -11,8 +11,8 @@ import type { Database, Json } from './database.types';
  * IMO-related role names - use these constants instead of hardcoded strings
  */
 export const IMO_ROLES = {
-  IMO_OWNER: 'imo_owner',
-  IMO_ADMIN: 'imo_admin',
+  IMO_OWNER: "imo_owner",
+  IMO_ADMIN: "imo_admin",
 } as const;
 
 export type ImoRoleName = (typeof IMO_ROLES)[keyof typeof IMO_ROLES];
@@ -22,7 +22,9 @@ export type ImoRoleName = (typeof IMO_ROLES)[keyof typeof IMO_ROLES];
  */
 export function hasImoAdminRole(roles: string[] | null | undefined): boolean {
   if (!roles) return false;
-  return roles.includes(IMO_ROLES.IMO_OWNER) || roles.includes(IMO_ROLES.IMO_ADMIN);
+  return (
+    roles.includes(IMO_ROLES.IMO_OWNER) || roles.includes(IMO_ROLES.IMO_ADMIN)
+  );
 }
 
 /**
@@ -37,16 +39,16 @@ export function hasImoOwnerRole(roles: string[] | null | undefined): boolean {
 // DATABASE ROW TYPES - Imported from generated database.types.ts
 // =============================================================================
 
-export type ImoRow = Database['public']['Tables']['imos']['Row'];
-export type ImoInsert = Database['public']['Tables']['imos']['Insert'];
-export type ImoUpdate = Database['public']['Tables']['imos']['Update'];
+export type ImoRow = Database["public"]["Tables"]["imos"]["Row"];
+export type ImoInsert = Database["public"]["Tables"]["imos"]["Insert"];
+export type ImoUpdate = Database["public"]["Tables"]["imos"]["Update"];
 
 // Alias for backward compatibility
 export type UpdateImoData = ImoUpdate;
 
-export type AgencyRow = Database['public']['Tables']['agencies']['Row'];
-export type AgencyInsert = Database['public']['Tables']['agencies']['Insert'];
-export type AgencyUpdate = Database['public']['Tables']['agencies']['Update'];
+export type AgencyRow = Database["public"]["Tables"]["agencies"]["Row"];
+export type AgencyInsert = Database["public"]["Tables"]["agencies"]["Insert"];
+export type AgencyUpdate = Database["public"]["Tables"]["agencies"]["Update"];
 
 // Alias for backward compatibility
 export type UpdateAgencyData = AgencyUpdate;
@@ -85,11 +87,11 @@ export interface Agency extends AgencyRow {
  * Roles specific to IMO/Agency hierarchy
  */
 export type ImoRole =
-  | 'imo_owner' // Full control over IMO
-  | 'imo_admin' // Manage agencies/agents within IMO
-  | 'agency_owner' // Manage their agency and downlines
-  | 'trainer' // Training access
-  | 'agent'; // Regular agent
+  | "imo_owner" // Full control over IMO
+  | "imo_admin" // Manage agencies/agents within IMO
+  | "agency_owner" // Manage their agency and downlines
+  | "trainer" // Training access
+  | "agent"; // Regular agent
 
 /**
  * Check if user has a specific IMO role
@@ -102,7 +104,7 @@ export function hasImoRole(roles: string[] | null, role: ImoRole): boolean {
  * Check if user is an IMO admin (owner or admin)
  */
 export function isImoAdmin(roles: string[] | null): boolean {
-  return hasImoRole(roles, 'imo_owner') || hasImoRole(roles, 'imo_admin');
+  return hasImoRole(roles, "imo_owner") || hasImoRole(roles, "imo_admin");
 }
 
 /**
@@ -273,18 +275,28 @@ export interface AgencyDashboardMetrics {
 
 /**
  * IMO Production by Agency - breakdown for IMO admins
+ * This is the SINGLE SOURCE OF TRUTH for agency production metrics.
+ * Used by both dashboard and reports.
  */
 export interface ImoProductionByAgency {
   agency_id: string;
   agency_name: string;
   agency_code: string;
   owner_name: string;
-  active_policies: number;
-  total_annual_premium: number;
-  commissions_ytd: number;
+  // Policy metrics
+  new_policies: number;
+  policies_lapsed: number;
+  retention_rate: number;
+  // Financial metrics
+  new_premium: number;
+  commissions_earned: number;
+  // Agent metrics
   agent_count: number;
-  avg_production: number;
-  pct_of_imo_production: number;
+  avg_premium_per_agent: number;
+  // Rankings
+  rank_by_premium: number;
+  rank_by_policies: number;
+  pct_of_imo_premium: number;
 }
 
 /**

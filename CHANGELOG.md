@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-17 08:32:48
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/continuation-mtd-alignment.md`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/OrgMetricsSection.tsx`
+- `src/features/dashboard/components/TimePeriodSwitcher.tsx`
+- `src/features/reports/components/ImoPerformanceReport.tsx`
+- `src/hooks/imo/index.ts`
+- `src/hooks/imo/useImoQueries.ts`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/imo/ImoService.ts`
+- `src/types/dashboard-metrics.schemas.ts`
+- `src/types/database.types.ts`
+- `src/types/imo.types.ts`
+- `src/utils/dateRange.ts`
+- `supabase/migrations/20260117_002_fix_team_comparison_hierarchy.sql`
+- `supabase/migrations/20260117_003_extend_imo_production_by_agency.sql`
+
+### Statistics
+```
+ 17 files changed, 12763 insertions(+), 12283 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-17 08:32:27
+
+### Changed Files
+- `plans/active/continuation-mtd-alignment.md`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/OrgMetricsSection.tsx`
+- `src/features/dashboard/components/TimePeriodSwitcher.tsx`
+- `src/features/reports/components/ImoPerformanceReport.tsx`
+- `src/hooks/imo/index.ts`
+- `src/hooks/imo/useImoQueries.ts`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/imo/ImoService.ts`
+- `src/types/dashboard-metrics.schemas.ts`
+- `src/types/database.types.ts`
+- `src/types/imo.types.ts`
+- `src/utils/dateRange.ts`
+- `supabase/migrations/20260117_002_fix_team_comparison_hierarchy.sql`
+- `supabase/migrations/20260117_003_extend_imo_production_by_agency.sql`
+
+### Statistics
+```
+ 15 files changed, 12733 insertions(+), 12277 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-16 18:36:14
 
 ### Changed Files

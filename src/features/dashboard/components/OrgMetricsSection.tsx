@@ -609,10 +609,10 @@ const ProductionBreakdownPanel: React.FC<PanelProps> = ({ dateRange }) => {
             </div>
             <div className="text-right">
               <div className="text-[11px] font-mono font-semibold text-foreground">
-                {formatCurrency(agency.total_annual_premium)}
+                {formatCurrency(agency.new_premium)}
               </div>
               <div className="text-[9px] text-muted-foreground/70">
-                {agency.pct_of_imo_production.toFixed(1)}%
+                {agency.pct_of_imo_premium.toFixed(1)}%
               </div>
             </div>
           </div>

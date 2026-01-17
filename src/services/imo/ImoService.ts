@@ -30,13 +30,11 @@ import {
 } from "../../types/dashboard-metrics.schemas";
 import {
   parseImoPerformanceReport,
-  parseTeamComparisonReport,
   parseTopPerformersReport,
   formatDateForQuery,
   validateReportDateRange,
   buildDateRangeParams,
   type ImoPerformanceReport,
-  type TeamComparisonReport,
   type TopPerformersReport,
   type ReportDateRange,
 } from "../../types/team-reports.schemas";
@@ -390,12 +388,20 @@ class ImoService {
         agency_name: row.agency_name,
         agency_code: row.agency_code,
         owner_name: row.owner_name,
-        active_policies: row.active_policies,
-        total_annual_premium: row.total_annual_premium,
-        commissions_ytd: row.commissions_ytd,
+        // Policy metrics
+        new_policies: row.new_policies,
+        policies_lapsed: row.policies_lapsed,
+        retention_rate: row.retention_rate,
+        // Financial metrics
+        new_premium: row.new_premium,
+        commissions_earned: row.commissions_earned,
+        // Agent metrics
         agent_count: row.agent_count,
-        avg_production: row.avg_production,
-        pct_of_imo_production: row.pct_of_imo_production,
+        avg_premium_per_agent: row.avg_premium_per_agent,
+        // Rankings
+        rank_by_premium: row.rank_by_premium,
+        rank_by_policies: row.rank_by_policies,
+        pct_of_imo_premium: row.pct_of_imo_premium,
       }));
     } catch (error) {
       logger.error(
@@ -508,104 +514,9 @@ class ImoService {
     }
   }
 
-  /**
-   * Get team comparison report (agency rankings)
-   * Uses RPC function for efficient single-query execution
-   * @throws DateRangeValidationError if date range exceeds 24 months
-   */
-  async getTeamComparisonReport(
-    dateRange?: ReportDateRange,
-  ): Promise<TeamComparisonReport | null> {
-    try {
-      // Validate date range to prevent abuse (max 24 months)
-      validateReportDateRange(dateRange);
-
-      // Always provide dates - use defaults if no range specified
-      const now = new Date();
-      const twelveMonthsAgo = new Date();
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-      const params = {
-        p_start_date: dateRange
-          ? formatDateForQuery(dateRange.startDate)
-          : formatDateForQuery(twelveMonthsAgo),
-        p_end_date: dateRange
-          ? formatDateForQuery(dateRange.endDate)
-          : formatDateForQuery(now),
-      };
-
-      const { data, error } = await supabase.rpc(
-        "get_team_comparison_report",
-        params,
-      );
-
-      if (error) {
-        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn(
-            "Access denied or invalid params for team comparison report",
-            { code: error.code },
-            "ImoService",
-          );
-          return null;
-        }
-        if (isFunctionNotFoundError(error)) {
-          logger.warn(
-            "Team comparison report function not found - migration may be pending",
-            { code: error.code },
-            "ImoService",
-          );
-          return null;
-        }
-        throw error;
-      }
-
-      if (!data || data.length === 0) {
-        return {
-          agencies: [],
-          summary: {
-            total_agencies: 0,
-            total_agents: 0,
-            total_new_premium: 0,
-            avg_retention_rate: 0,
-          },
-        };
-      }
-
-      const validated = parseTeamComparisonReport(data);
-
-      // Calculate summary
-      const totalAgents = validated.reduce(
-        (acc, row) => acc + row.agent_count,
-        0,
-      );
-      const totalPremium = validated.reduce(
-        (acc, row) => acc + row.new_premium,
-        0,
-      );
-      const avgRetention =
-        validated.length > 0
-          ? validated.reduce((acc, row) => acc + row.retention_rate, 0) /
-            validated.length
-          : 0;
-
-      return {
-        agencies: validated,
-        summary: {
-          total_agencies: validated.length,
-          total_agents: totalAgents,
-          total_new_premium: totalPremium,
-          avg_retention_rate: Math.round(avgRetention * 10) / 10,
-        },
-      };
-    } catch (error) {
-      logger.error(
-        "Failed to get team comparison report",
-        error instanceof Error ? error : new Error(String(error)),
-        "ImoService",
-      );
-      throw error;
-    }
-  }
+  // NOTE: getTeamComparisonReport was removed - use getProductionByAgency instead
+  // The getProductionByAgency method now returns all fields needed for agency comparison,
+  // including retention_rate, rank_by_premium, rank_by_policies, etc.
 
   /**
    * Get top performers report (agent rankings)

@@ -1,6 +1,6 @@
 // src/hooks/imo/index.ts
 
-export { useImo, ImoProvider, withImo } from './useImo';
+export { useImo, ImoProvider, withImo } from "./useImo";
 export {
   // Query keys
   imoKeys,
@@ -35,7 +35,7 @@ export {
   useAgencyProductionByAgent,
   // Team performance report hooks (Phase 6)
   useImoPerformanceReport,
-  useTeamComparisonReport,
+  // NOTE: useTeamComparisonReport removed - use useImoProductionByAgency instead
   useTopPerformersReport,
   useAgencyPerformanceReport,
   // Override summary hooks (Phase 7)
@@ -48,4 +48,4 @@ export {
   useImoRecruitingByAgency,
   useAgencyRecruitingSummary,
   useAgencyRecruitingByRecruiter,
-} from './useImoQueries';
+} from "./useImoQueries";

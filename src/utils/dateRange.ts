@@ -2,7 +2,7 @@
 
 import { parseLocalDate } from "../lib/date";
 
-export type TimePeriod = "daily" | "weekly" | "monthly" | "yearly";
+export type TimePeriod = "daily" | "weekly" | "monthly" | "MTD" | "yearly";
 
 export interface DateRange {
   startDate: Date;
@@ -75,6 +75,44 @@ export function getDateRange(
       );
       break;
 
+    case "MTD":
+      // Month-to-date: 1st of month at 00:00:00 to end of today at 23:59:59
+      // For past months (offset < 0), returns full month like "monthly"
+      referenceDate.setMonth(referenceDate.getMonth() + offset);
+      startDate = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        1,
+        0,
+        0,
+        0,
+        0,
+      );
+      if (offset === 0) {
+        // Current month: end at today
+        endDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
+      } else {
+        // Past/future months: return full month
+        endDate = new Date(
+          referenceDate.getFullYear(),
+          referenceDate.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
+      }
+      break;
+
     case "yearly":
       // Adjust reference date by offset years
       referenceDate.setFullYear(referenceDate.getFullYear() + offset);
@@ -137,6 +175,13 @@ export function getPeriodDescriptor(
 
     case "monthly":
       if (offset === 0) return `This Month - ${monthYear}`;
+      if (offset === -1) return `Last Month - ${monthYear}`;
+      if (offset === 1) return `Next Month - ${monthYear}`;
+      if (offset < 0) return `${Math.abs(offset)} Months Ago - ${monthYear}`;
+      return `In ${offset} Months - ${monthYear}`;
+
+    case "MTD":
+      if (offset === 0) return `MTD - ${monthYear}`;
       if (offset === -1) return `Last Month - ${monthYear}`;
       if (offset === 1) return `Next Month - ${monthYear}`;
       if (offset < 0) return `${Math.abs(offset)} Months Ago - ${monthYear}`;
@@ -241,6 +286,7 @@ export function getTimeRemaining(period: TimePeriod): {
       break;
 
     case "monthly":
+    case "MTD":
       // End of current month
       endOfPeriod = new Date(
         now.getFullYear(),
@@ -295,6 +341,8 @@ export function getPeriodLabel(period: TimePeriod): string {
       return "Weekly";
     case "monthly":
       return "Monthly";
+    case "MTD":
+      return "Month to Date";
     case "yearly":
       return "Yearly";
     default:
@@ -342,6 +390,7 @@ export const DAYS_PER_PERIOD: Record<TimePeriod, number> = {
   daily: 1,
   weekly: 7,
   monthly: 30.44, // Average month length (365.25 / 12)
+  MTD: 30.44, // Same as monthly for scaling purposes
   yearly: 365.25, // Account for leap years
 };
 

@@ -55,12 +55,20 @@ export const ImoProductionByAgencyRowSchema = z.object({
   agency_name: z.string(),
   agency_code: z.string(),
   owner_name: z.string(),
-  active_policies: z.coerce.number().int().nonnegative(),
-  total_annual_premium: z.coerce.number().nonnegative(),
-  commissions_ytd: z.coerce.number().nonnegative(),
+  // Policy metrics
+  new_policies: z.coerce.number().int().nonnegative(),
+  policies_lapsed: z.coerce.number().int().nonnegative(),
+  retention_rate: z.coerce.number().nonnegative(),
+  // Financial metrics
+  new_premium: z.coerce.number().nonnegative(),
+  commissions_earned: z.coerce.number().nonnegative(),
+  // Agent metrics
   agent_count: z.coerce.number().int().nonnegative(),
-  avg_production: z.coerce.number().nonnegative(),
-  pct_of_imo_production: z.coerce.number().nonnegative(),
+  avg_premium_per_agent: z.coerce.number().nonnegative(),
+  // Rankings
+  rank_by_premium: z.coerce.number().int().positive(),
+  rank_by_policies: z.coerce.number().int().positive(),
+  pct_of_imo_premium: z.coerce.number().nonnegative(),
 });
 
 export type ImoProductionByAgencyRow = z.infer<

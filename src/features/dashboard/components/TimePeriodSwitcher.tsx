@@ -13,7 +13,7 @@ export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
   timePeriod,
   onTimePeriodChange,
 }) => {
-  const periods: TimePeriod[] = ["daily", "weekly", "monthly", "yearly"];
+  const periods: TimePeriod[] = ["daily", "weekly", "MTD", "monthly", "yearly"];
 
   return (
     <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">

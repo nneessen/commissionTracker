@@ -12346,16 +12346,20 @@ export type Database = {
       get_imo_production_by_agency: {
         Args: { p_end_date?: string; p_start_date?: string };
         Returns: {
-          active_policies: number;
           agency_code: string;
           agency_id: string;
           agency_name: string;
           agent_count: number;
-          avg_production: number;
-          commissions_ytd: number;
+          avg_premium_per_agent: number;
+          commissions_earned: number;
+          new_policies: number;
+          new_premium: number;
           owner_name: string;
-          pct_of_imo_production: number;
-          total_annual_premium: number;
+          pct_of_imo_premium: number;
+          policies_lapsed: number;
+          rank_by_policies: number;
+          rank_by_premium: number;
+          retention_rate: number;
         }[];
       };
       get_imo_recruiting_summary: { Args: { p_imo_id: string }; Returns: Json };
@@ -13404,6 +13408,10 @@ export type Database = {
       rank_to_health_class: {
         Args: { rank: number };
         Returns: Database["public"]["Enums"]["health_class"];
+      };
+      recalculate_lead_purchase_roi: {
+        Args: { p_lead_purchase_id: string };
+        Returns: undefined;
       };
       record_alert_evaluation: {
         Args: {

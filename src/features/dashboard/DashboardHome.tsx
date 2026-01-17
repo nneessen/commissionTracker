@@ -58,7 +58,7 @@ export const DashboardHome: React.FC = () => {
   const { user } = useAuth();
   const { data: constants } = useConstants();
   const dashboardFeatures = useDashboardFeatures();
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("MTD");
   const [periodOffset, setPeriodOffset] = useState<number>(0);
   const [activeDialog, setActiveDialog] = useState<"policy" | "expense" | null>(
     null,

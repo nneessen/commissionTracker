@@ -15,7 +15,7 @@ import {
 import { TrendLineChart } from "./charts/TrendLineChart";
 import {
   useImoPerformanceReport,
-  useTeamComparisonReport,
+  useImoProductionByAgency,
   useTopPerformersReport,
   imoKeys,
 } from "../../../hooks/imo/useImoQueries";
@@ -41,10 +41,41 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
   } = useImoPerformanceReport(dateRange);
 
   const {
-    data: teamComparison,
-    isLoading: isLoadingTeam,
-    error: errorTeam,
-  } = useTeamComparisonReport(dateRange);
+    data: agencyProduction,
+    isLoading: isLoadingAgencies,
+    error: errorAgencies,
+  } = useImoProductionByAgency(dateRange);
+
+  // Calculate agency comparison summary from production data
+  const agencyComparison = useMemo(() => {
+    if (!agencyProduction || agencyProduction.length === 0) {
+      return null;
+    }
+
+    const totalAgents = agencyProduction.reduce(
+      (acc, row) => acc + row.agent_count,
+      0,
+    );
+    const totalPremium = agencyProduction.reduce(
+      (acc, row) => acc + row.new_premium,
+      0,
+    );
+    const avgRetention =
+      agencyProduction.length > 0
+        ? agencyProduction.reduce((acc, row) => acc + row.retention_rate, 0) /
+          agencyProduction.length
+        : 0;
+
+    return {
+      agencies: agencyProduction,
+      summary: {
+        total_agencies: agencyProduction.length,
+        total_agents: totalAgents,
+        total_new_premium: totalPremium,
+        avg_retention_rate: Math.round(avgRetention * 10) / 10,
+      },
+    };
+  }, [agencyProduction]);
 
   const {
     data: topPerformers,
@@ -52,12 +83,12 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
     error: errorTop,
   } = useTopPerformersReport(10, dateRange);
 
-  const isLoading = isLoadingPerformance || isLoadingTeam || isLoadingTop;
+  const isLoading = isLoadingPerformance || isLoadingAgencies || isLoadingTop;
 
   const hasCriticalError = errorPerformance !== null;
 
   const secondaryErrors = [
-    { name: "Team Comparison", error: errorTeam },
+    { name: "Agency Comparison", error: errorAgencies },
     { name: "Top Performers", error: errorTop },
   ].filter((e) => e.error !== null);
 
@@ -243,15 +274,15 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
       </div>
 
       {/* Agency Comparison */}
-      {teamComparison && teamComparison.agencies.length > 0 && (
+      {agencyComparison && agencyComparison.agencies.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
           <div className="flex items-center justify-between mb-2">
             <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               Agency Comparison
             </div>
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-              {teamComparison.summary.total_agencies} agencies •{" "}
-              {teamComparison.summary.total_agents} agents
+              {agencyComparison.summary.total_agencies} agencies •{" "}
+              {agencyComparison.summary.total_agents} agents
             </span>
           </div>
 
@@ -283,7 +314,7 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teamComparison.agencies.slice(0, 10).map((agency, index) => (
+                {agencyComparison.agencies.slice(0, 10).map((agency, index) => (
                   <TableRow
                     key={agency.agency_id}
                     className="border-zinc-200 dark:border-zinc-800"
