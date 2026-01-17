@@ -572,39 +572,13 @@ class CommissionCalculationService {
       );
 
       // Update the commission with new calculated values
-      // Note: Use 'amount' (the canonical field) instead of deprecated 'advanceAmount'
-      // Note: commissionRate is stored on the policy, not the commission, so we don't update it here
-      console.log(
-        "[CommissionCalculationService] About to update commission:",
-        {
-          commissionId: commission.id,
-          oldAmount: commission.amount,
-          newAmount: advanceAmount,
-          updateData: {
-            amount: advanceAmount,
-            originalAdvance,
-            overageAmount,
-            overageStartMonth,
-          },
-        },
-      );
-
       const updatedCommission = await commissionCRUDService.update(
         commission.id,
         {
-          amount: advanceAmount, // Use canonical field name
+          amount: advanceAmount,
           originalAdvance,
           overageAmount,
           overageStartMonth,
-        },
-      );
-
-      console.log(
-        "[CommissionCalculationService] Commission updated, result:",
-        {
-          commissionId: updatedCommission.id,
-          returnedAmount: updatedCommission.amount,
-          fullObject: updatedCommission,
         },
       );
 

@@ -163,14 +163,6 @@ export function useUpdatePolicy() {
       );
 
       // If premium, carrier, or product changed, recalculate the commission
-      console.log("[useUpdatePolicy] Checking if commission recalc needed:", {
-        isBasicUpdate: isBasicUpdateParams(params),
-        updates: isBasicUpdateParams(params) ? params.updates : null,
-        requiresRecalc: isBasicUpdateParams(params)
-          ? requiresCommissionRecalc(params.updates)
-          : false,
-      });
-
       if (
         isBasicUpdateParams(params) &&
         requiresCommissionRecalc(params.updates)
@@ -182,18 +174,7 @@ export function useUpdatePolicy() {
             params.updates.monthlyPremium ?? updatedPolicy.monthlyPremium;
 
           // Determine if we need full recalculation (carrier/product changed)
-          // This will re-fetch rate from comp_guide instead of using stored rate
           const fullRecalculate = hasCarrierOrProductChange(params.updates);
-
-          console.log(
-            "[useUpdatePolicy] Calling recalculateCommissionByPolicyId:",
-            {
-              policyId: updatedPolicy.id,
-              newAnnualPremium,
-              newMonthlyPremium,
-              fullRecalculate,
-            },
-          );
 
           // Recalculate commission with new values
           const result =
@@ -204,83 +185,27 @@ export function useUpdatePolicy() {
               fullRecalculate,
             );
 
-          console.log("[useUpdatePolicy] Commission recalculation result:", {
-            policyId: updatedPolicy.id,
-            result,
-            newAmount: result?.amount,
-          });
-
-          // DIRECTLY update the cache with the new commission data
+          // Update cache with new commission data
           if (result) {
-            const userId = updatedPolicy.userId;
-            const targetQueryKey = ["commissions", userId];
-
-            // DEBUG: Log the result object to see if policyId is correct
-            console.log("[useUpdatePolicy] Commission result from service:", {
-              id: result.id,
-              policyId: result.policyId,
-              amount: result.amount,
-              userId: result.userId,
-              fullResult: JSON.stringify(result),
-            });
-
-            // DEBUG: Show all commission-related queries in cache
             const allQueries = queryClient.getQueriesData({
               queryKey: ["commissions"],
             });
-            console.log(
-              "[useUpdatePolicy] All commission queries in cache:",
-              allQueries.map(([key, data]) => ({
-                key,
-                dataLength: Array.isArray(data) ? data.length : "not array",
-              })),
-            );
 
-            console.log("[useUpdatePolicy] Target query key:", targetQueryKey);
-
-            // Update ALL commission queries that match, not just the exact key
+            // Update ALL commission queries that match
             allQueries.forEach(([queryKey, existingData]) => {
               if (Array.isArray(existingData)) {
-                console.log(
-                  "[useUpdatePolicy] Updating cache for key:",
-                  queryKey,
-                );
-
                 queryClient.setQueryData<Commission[]>(queryKey, (oldData) => {
                   if (!oldData) return [result];
-
-                  const updatedData = oldData.map((commission) =>
+                  return oldData.map((commission) =>
                     commission.id === result.id ? result : commission,
                   );
-
-                  const updatedCommission = updatedData.find(
-                    (c) => c.id === result.id,
-                  );
-                  console.log(
-                    "[useUpdatePolicy] Cache update for key",
-                    queryKey,
-                    {
-                      oldLength: oldData.length,
-                      newLength: updatedData.length,
-                      updatedAmount: updatedCommission?.amount,
-                      updatedPolicyId: updatedCommission?.policyId,
-                    },
-                  );
-
-                  return updatedData;
                 });
               }
             });
           }
-        } catch (error) {
-          console.error(
-            "[useUpdatePolicy] Failed to recalculate commission:",
-            error,
-          );
+        } catch {
           // Don't throw - we don't want to fail the policy update if commission recalculation fails
         }
-      } else {
-        console.log("[useUpdatePolicy] Commission recalc NOT needed");
       }
 
       // Force a hard reset of commission queries to ensure UI updates

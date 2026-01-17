@@ -154,17 +154,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   ).length;
 
   const { data: carriers = [] } = useCarriers();
-  const { data: commissions = [], dataUpdatedAt } = useCommissions();
+  const { data: commissions = [] } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
-
-  // DEBUG: Log when commission data changes
-  console.log("[PolicyList] Render - commissions:", {
-    count: commissions.length,
-    dataUpdatedAt,
-    firstFew: commissions
-      .slice(0, 3)
-      .map((c) => ({ id: c.id, policyId: c.policyId, amount: c.amount })),
-  });
   const { mutate: updatePolicy } = useUpdatePolicy();
   const { mutate: deletePolicy } = useDeletePolicy();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
@@ -209,16 +200,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     },
     {} as Record<string, (typeof commissions)[0]>,
   );
-
-  // DEBUG: Log the commission for the specific policy being tested
-  const testPolicyId = "6e5729e7-0df4-4663-8e1a-7f36d52ff5a0";
-  const testCommission = commissionsByPolicy[testPolicyId];
-  console.log("[PolicyList] Commission for test policy:", {
-    policyId: testPolicyId,
-    amount: testCommission?.amount,
-    commissionId: testCommission?.id,
-    found: !!testCommission,
-  });
 
   // Get commissions for current page policies to calculate commission metrics
   const policyIds = new Set(policies.map((p) => p.id));
