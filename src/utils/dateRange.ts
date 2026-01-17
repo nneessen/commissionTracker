@@ -49,6 +49,7 @@ export function getDateRange(
       startDate.setDate(startDate.getDate() - 7);
       startDate.setHours(0, 0, 0, 0);
       endDate = new Date(referenceDate);
+      endDate.setHours(23, 59, 59, 999);
       break;
 
     case "monthly":

@@ -50,10 +50,15 @@ export function HierarchyDashboardCompact() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
   const [periodOffset, setPeriodOffset] = useState<number>(0);
 
-  // Calculate date range from timeframe
-  const dateRange = getDateRange(timePeriod, periodOffset);
-  const startDate = dateRange.startDate.toISOString();
-  const endDate = dateRange.endDate.toISOString();
+  // Calculate date range from timeframe (memoized to ensure stable query keys)
+  const { dateRange, startDate, endDate } = useMemo(() => {
+    const range = getDateRange(timePeriod, periodOffset);
+    return {
+      dateRange: range,
+      startDate: range.startDate.toISOString(),
+      endDate: range.endDate.toISOString(),
+    };
+  }, [timePeriod, periodOffset]);
 
   // Handler for changing time period (resets offset)
   const handleTimePeriodChange = (newPeriod: TimePeriod) => {
@@ -62,7 +67,12 @@ export function HierarchyDashboardCompact() {
   };
 
   // Fetch stats with date range
-  const { data: stats, isLoading: statsLoading } = useMyHierarchyStats({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    refetch: refetchStats,
+  } = useMyHierarchyStats({
     startDate,
     endDate,
   });
@@ -163,6 +173,7 @@ export function HierarchyDashboardCompact() {
   };
 
   const isLoading = downlinesLoading || statsLoading;
+  const hasError = statsError;
 
   return (
     <>
@@ -242,6 +253,9 @@ export function HierarchyDashboardCompact() {
             stats={stats}
             agentCount={downlines.length}
             isLoading={isLoading}
+            isError={hasError}
+            onRetry={refetchStats}
+            timePeriod={timePeriod}
           />
 
           {/* Search and Filters Bar */}

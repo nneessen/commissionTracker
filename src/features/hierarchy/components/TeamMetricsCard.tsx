@@ -1,20 +1,68 @@
 // src/features/hierarchy/components/TeamMetricsCard.tsx
 
+import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { HierarchyStats } from "@/types/hierarchy.types";
+import type { TimePeriod } from "@/utils/dateRange";
+
+// Helper to get short period suffix for labels
+function getPeriodSuffix(period: TimePeriod): string {
+  switch (period) {
+    case "daily":
+      return "(D)";
+    case "weekly":
+      return "(W)";
+    case "MTD":
+      return "(MTD)";
+    case "monthly":
+      return "(M)";
+    case "yearly":
+      return "(Y)";
+    default:
+      return "(M)";
+  }
+}
 
 interface TeamMetricsCardProps {
   stats: HierarchyStats | null | undefined;
   agentCount: number;
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
+  timePeriod?: TimePeriod;
 }
 
 export function TeamMetricsCard({
   stats,
   agentCount,
   isLoading,
+  isError,
+  onRetry,
+  timePeriod = "monthly",
 }: TeamMetricsCardProps) {
+  const periodSuffix = getPeriodSuffix(timePeriod);
+  if (isError) {
+    return (
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="p-3">
+          <div className="flex items-center justify-center gap-2 text-[11px] text-red-500 dark:text-red-400 py-4">
+            <AlertCircle className="h-4 w-4" />
+            <span>Failed to load team metrics.</span>
+            {onRetry && (
+              <button
+                onClick={() => onRetry()}
+                className="underline hover:text-red-700 dark:hover:text-red-300"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -107,7 +155,7 @@ export function TeamMetricsCard({
               </div>
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  Active This Month
+                  Active {periodSuffix}
                 </span>
                 <span
                   className={cn(
@@ -123,7 +171,7 @@ export function TeamMetricsCard({
               <div className="h-px bg-zinc-200 dark:bg-zinc-700 my-1" />
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  Growth MTD
+                  Growth {periodSuffix}
                 </span>
                 <span
                   className={cn(
@@ -147,7 +195,7 @@ export function TeamMetricsCard({
             <div className="space-y-1">
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  MTD Override
+                  Override {periodSuffix}
                 </span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(mtdOverride)}
@@ -212,7 +260,7 @@ export function TeamMetricsCard({
               </div>
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  Policies MTD
+                  Policies {periodSuffix}
                 </span>
                 <span className="font-mono text-zinc-700 dark:text-zinc-300">
                   {teamPoliciesMTD}
