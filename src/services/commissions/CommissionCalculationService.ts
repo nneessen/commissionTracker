@@ -13,6 +13,8 @@ import {
   getErrorMessage,
 } from "../../errors/ServiceErrors";
 import { withRetry } from "../../utils/retry";
+import { getTermModifier, applyTermModifier } from "./termModifierUtils";
+import type { ProductMetadata } from "../../types/product.types";
 
 export interface CalculationResult {
   advanceAmount: number; // Changed from commissionAmount for clarity
@@ -100,6 +102,7 @@ class CommissionCalculationService {
     userId?: string;
     contractCompLevel?: number;
     advanceMonths?: number;
+    termLength?: number; // Term length for term_life products (affects commission rate)
   }): Promise<CalculationResult | null> {
     // Validation
     if (!data.carrierId) {
@@ -204,7 +207,41 @@ class CommissionCalculationService {
       const advanceMonths = data.advanceMonths || 9; // Industry standard
       // IMPORTANT: comp_guide stores rates as decimals (e.g., 0.95 = 95%, 1.1 = 110%)
       // Do NOT divide by 100 - the rate is already in the correct format
-      const commissionRate = rateResult.data;
+      let commissionRate = rateResult.data;
+
+      // Apply term-based commission modifier for term_life products
+      // Short-term policies (10, 15 years) may have reduced commission rates
+      if (data.product === "term_life" && data.termLength && data.productId) {
+        const { productService } = await import("../index");
+        const productResponse = await productService.getById(data.productId);
+
+        if (productResponse.success && productResponse.data?.metadata) {
+          const metadata = productResponse.data.metadata as ProductMetadata;
+          if (metadata.termCommissionModifiers) {
+            const modifier = getTermModifier(
+              metadata.termCommissionModifiers,
+              data.termLength,
+            );
+
+            if (modifier !== 0) {
+              const originalRate = commissionRate;
+              commissionRate = applyTermModifier(commissionRate, modifier);
+
+              logger.info(
+                "CommissionCalculation",
+                "Applied term commission modifier",
+                JSON.stringify({
+                  termLength: data.termLength,
+                  modifier,
+                  originalRate,
+                  adjustedRate: commissionRate,
+                  productId: data.productId,
+                }),
+              );
+            }
+          }
+        }
+      }
 
       // Use capped advance calculation (handles carrier advance caps)
       const cappedResult = commissionLifecycleService.calculateCappedAdvance({
@@ -313,6 +350,7 @@ class CommissionCalculationService {
           userId: commissionData.userId,
           contractCompLevel: commissionData.contractCompLevel,
           advanceMonths: commissionData.advanceMonths,
+          termLength: commissionData.termLength, // For term_life commission modifiers
         });
 
         if (calculation) {
@@ -509,6 +547,7 @@ class CommissionCalculationService {
           monthlyPremium,
           userId: policy.userId,
           advanceMonths,
+          termLength: policy.termLength ?? undefined, // For term_life commission modifiers
         });
 
         if (calculation) {

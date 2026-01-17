@@ -50,6 +50,11 @@ import { useAllActiveImos } from "@/hooks/imo";
 import { UnderwritingConstraintsEditor } from "./UnderwritingConstraintsEditor";
 import { ProductBuildChartSelector } from "./ProductBuildTableEditor";
 import type { ProductUnderwritingConstraints } from "@/features/underwriting/types/product-constraints.types";
+import {
+  VALID_TERM_LENGTHS,
+  type TermCommissionModifiers,
+  type ProductMetadata,
+} from "@/types/product.types";
 
 type ProductType = Database["public"]["Enums"]["product_type"];
 
@@ -111,6 +116,8 @@ export function ProductForm({
   const [carrierSearchOpen, setCarrierSearchOpen] = useState(false);
   const [underwritingConstraints, setUnderwritingConstraints] =
     useState<ProductUnderwritingConstraints | null>(null);
+  const [termModifiers, setTermModifiers] =
+    useState<TermCommissionModifiers | null>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -128,9 +135,21 @@ export function ProductForm({
   // Reset form when product changes or dialog opens/closes
   useEffect(() => {
     if (product) {
-      const existingConstraints =
-        product.metadata as ProductUnderwritingConstraints | null;
-      setUnderwritingConstraints(existingConstraints);
+      const existingMetadata = product.metadata as ProductMetadata | null;
+      // Extract underwriting constraints (everything except termCommissionModifiers)
+      const existingConstraints = existingMetadata
+        ? {
+            ageTieredFaceAmounts: existingMetadata.ageTieredFaceAmounts,
+            knockoutConditions: existingMetadata.knockoutConditions,
+            fullUnderwritingThreshold:
+              existingMetadata.fullUnderwritingThreshold,
+          }
+        : null;
+      setUnderwritingConstraints(
+        existingConstraints as ProductUnderwritingConstraints | null,
+      );
+      // Extract term commission modifiers
+      setTermModifiers(existingMetadata?.termCommissionModifiers || null);
       form.reset({
         carrier_id: product.carrier_id || "",
         name: product.name || "",
@@ -142,6 +161,7 @@ export function ProductForm({
       });
     } else {
       setUnderwritingConstraints(null);
+      setTermModifiers(null);
       form.reset({
         carrier_id: "",
         name: "",
@@ -156,10 +176,31 @@ export function ProductForm({
   }, [product, open, form, imo?.id]);
 
   const handleSubmit = (data: ProductFormValues) => {
-    // Merge underwriting constraints into metadata
-    const metadata = underwritingConstraints
-      ? { ...underwritingConstraints }
-      : null;
+    // Merge underwriting constraints and term modifiers into metadata
+    const hasConstraints =
+      underwritingConstraints &&
+      (underwritingConstraints.ageTieredFaceAmounts ||
+        underwritingConstraints.knockoutConditions ||
+        underwritingConstraints.fullUnderwritingThreshold);
+    const hasTermModifiers =
+      termModifiers &&
+      Object.values(termModifiers).some((v) => v !== undefined && v !== 0);
+
+    // Build metadata object with both constraints and term modifiers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let metadata: Record<string, any> | null = null;
+
+    if (hasConstraints || hasTermModifiers) {
+      metadata = {};
+      if (hasConstraints && underwritingConstraints) {
+        // Copy underwriting constraints directly
+        Object.assign(metadata, underwritingConstraints);
+      }
+      if (hasTermModifiers && termModifiers) {
+        metadata.termCommissionModifiers = termModifiers;
+      }
+    }
+
     onSubmit({ ...data, metadata });
   };
 
@@ -402,6 +443,60 @@ export function ProductForm({
                 onChange={setUnderwritingConstraints}
                 disabled={isSubmitting}
               />
+
+              {/* Term Commission Modifiers - Only show for term_life products */}
+              {form.watch("product_type") === "term_life" && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                          Term Commission Modifiers
+                        </h4>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                          Adjust commission rates based on term length (e.g.,
+                          -0.10 for 10% reduction)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-2 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                      {VALID_TERM_LENGTHS.map((term) => (
+                        <div key={term} className="flex flex-col gap-1">
+                          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 text-center">
+                            {term} yr
+                          </label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="-1"
+                            max="1"
+                            placeholder="0"
+                            disabled={isSubmitting}
+                            className="h-7 text-[11px] text-center bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                            value={termModifiers?.[term] ?? ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const numValue =
+                                value === "" ? undefined : parseFloat(value);
+                              setTermModifiers((prev) => ({
+                                ...prev,
+                                [term]: numValue,
+                              }));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[10px] text-zinc-400 italic">
+                      Formula: Final Rate = Comp Guide Rate × (1 + modifier).
+                      Example: -0.10 modifier with 95% rate = 85.5%
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <DialogFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-3">

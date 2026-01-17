@@ -88,6 +88,55 @@ export interface ProductFilters {
   search?: string; // Search by name or code
 }
 
+// ============================================================================
+// Term Commission Modifier Types
+// ============================================================================
+
+/** Valid term lengths for term_life products */
+export const VALID_TERM_LENGTHS = [10, 15, 20, 25, 30] as const;
+
+/** Term length type derived from valid term lengths */
+export type TermLength = (typeof VALID_TERM_LENGTHS)[number];
+
+/**
+ * Term-based commission modifiers for term_life products.
+ * Modifiers are applied multiplicatively: finalRate = compGuideRate * (1 + modifier)
+ *
+ * Example: -0.10 modifier means 10% reduction
+ *   - 95% comp_guide rate with -0.10 modifier = 95% * 0.90 = 85.5%
+ */
+export interface TermCommissionModifiers {
+  /** Modifier for 10-year term (typically negative, e.g., -0.10) */
+  10?: number;
+  /** Modifier for 15-year term (typically negative, e.g., -0.10) */
+  15?: number;
+  /** Modifier for 20-year term (typically 0 or positive) */
+  20?: number;
+  /** Modifier for 25-year term (typically 0 or positive) */
+  25?: number;
+  /** Modifier for 30-year term (typically 0 or positive) */
+  30?: number;
+}
+
+/**
+ * Extended product metadata including term commission modifiers.
+ * Used in products.metadata JSONB field.
+ */
+export interface ProductMetadata {
+  /** Term-based commission modifiers for term_life products */
+  termCommissionModifiers?: TermCommissionModifiers;
+  /** Age-tiered face amount limits */
+  ageTieredFaceAmounts?: {
+    tiers: Array<{ minAge: number; maxAge: number; maxFaceAmount: number }>;
+  };
+  /** Knockout conditions that disqualify applicants */
+  knockoutConditions?: {
+    conditionCodes: string[];
+  };
+  /** Threshold above which full underwriting is required */
+  fullUnderwritingThreshold?: number;
+}
+
 // Product selection item for forms
 export interface ProductOption {
   value: string; // product id

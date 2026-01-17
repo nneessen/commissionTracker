@@ -13,6 +13,12 @@ import {
   Policy,
 } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
+import {
+  VALID_TERM_LENGTHS,
+  type TermCommissionModifiers,
+  type TermLength,
+  type ProductMetadata,
+} from "../../types/product.types";
 import { US_STATES } from "@/constants/states";
 import { formatDateForDB } from "../../lib/date";
 import { Button } from "@/components/ui/button";
@@ -135,6 +141,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     Record<string, number>
   >({});
 
+  // State for term commission modifiers (for term_life products)
+  const [termModifiers, setTermModifiers] =
+    useState<TermCommissionModifiers | null>(null);
+
   // Track initial productId to detect user-initiated changes in edit mode
   // This allows commission updates when user explicitly changes product
   // Initialize with policy's productId if editing
@@ -154,6 +164,53 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     formData.productId || "",
     userContractLevel,
   );
+
+  // Update term modifiers when product changes (for term_life products)
+  useEffect(() => {
+    const selectedProduct = products.find((p) => p.id === formData.productId);
+
+    if (
+      selectedProduct?.product_type === "term_life" &&
+      selectedProduct.metadata
+    ) {
+      const metadata = selectedProduct.metadata as ProductMetadata;
+      if (metadata.termCommissionModifiers) {
+        setTermModifiers(metadata.termCommissionModifiers);
+      } else {
+        setTermModifiers(null);
+      }
+    } else {
+      setTermModifiers(null);
+      // Clear term length if product is not term_life
+      if (
+        selectedProduct &&
+        selectedProduct.product_type !== "term_life" &&
+        formData.termLength
+      ) {
+        setFormData((prev) => ({ ...prev, termLength: undefined }));
+      }
+    }
+  }, [formData.productId, products]);
+
+  // Recalculate commission when term length changes (applies term modifier)
+  useEffect(() => {
+    if (!formData.termLength || !termModifiers || !compGuideData) {
+      return;
+    }
+
+    const modifier = termModifiers[formData.termLength as TermLength] ?? 0;
+    const baseRate = compGuideData.commission_percentage;
+    const adjustedRate = baseRate * (1 + modifier);
+
+    // Only update if rate actually changed (to prevent infinite loops)
+    const newPercentage = adjustedRate * 100;
+    if (Math.abs(formData.commissionPercentage - newPercentage) > 0.001) {
+      setFormData((prev) => ({
+        ...prev,
+        commissionPercentage: newPercentage,
+      }));
+    }
+  }, [formData.termLength, termModifiers, compGuideData]);
 
   // Populate form when editing an existing policy
   // Note: We populate immediately when policy is available, regardless of carriers loading state
@@ -334,7 +391,19 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         ...prev,
         productId: value,
         product: selectedProduct?.product_type || ("term_life" as ProductType),
+        // Reset termLength when product changes (new product may have different term options)
+        termLength:
+          selectedProduct?.product_type === "term_life"
+            ? prev.termLength
+            : undefined,
         // Don't reset commission here - let the useEffect handle it based on comp_guide data
+      }));
+    }
+    // Handle term length change
+    else if (name === "termLength") {
+      setFormData((prev) => ({
+        ...prev,
+        termLength: value ? parseInt(value, 10) : undefined,
       }));
     }
     // Handle other select fields
@@ -371,6 +440,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
     if (!formData.carrierId) newErrors.carrierId = "Carrier is required";
     if (!formData.productId) newErrors.productId = "Product is required";
+
+    // Validate term length is required for term_life products
+    const selectedProduct = products.find((p) => p.id === formData.productId);
+    if (selectedProduct?.product_type === "term_life" && !formData.termLength) {
+      newErrors.termLength = "Term length is required for term life products";
+    }
+
     // policyNumber is optional - validation removed
     if (!formData.submitDate) newErrors.submitDate = "Submit date is required";
     if (!formData.effectiveDate)
@@ -624,6 +700,52 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   </span>
                 )}
             </div>
+
+            {/* Term Length Selector - only show for term_life products */}
+            {formData.productId &&
+              products.find((p) => p.id === formData.productId)
+                ?.product_type === "term_life" && (
+                <div className="flex flex-col gap-1">
+                  <Label
+                    htmlFor="termLength"
+                    className="text-[11px] text-muted-foreground"
+                  >
+                    Term Length *
+                  </Label>
+                  <Select
+                    value={formData.termLength?.toString() ?? ""}
+                    onValueChange={(value) =>
+                      handleSelectChange("termLength", value)
+                    }
+                  >
+                    <SelectTrigger
+                      id="termLength"
+                      className={`h-8 text-[11px] ${errors.termLength ? "border-destructive" : "border-input"}`}
+                    >
+                      <SelectValue placeholder="Select term length" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VALID_TERM_LENGTHS.map((term) => {
+                        const modifier = termModifiers?.[term] ?? 0;
+                        const modifierText =
+                          modifier !== 0
+                            ? ` (${modifier > 0 ? "+" : ""}${(modifier * 100).toFixed(0)}%)`
+                            : "";
+                        return (
+                          <SelectItem key={term} value={term.toString()}>
+                            {term} Years{modifierText}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {errors.termLength && (
+                    <span className="text-[10px] text-destructive">
+                      {errors.termLength}
+                    </span>
+                  )}
+                </div>
+              )}
 
             <div className="flex flex-col gap-1">
               <Label

@@ -40,6 +40,7 @@ export interface CreateCommissionData {
   carrierId: string;
   productId?: string; // Specific product ID for accurate comp_guide lookup
   product: string;
+  termLength?: number; // Term length for term_life products (affects commission rate)
   type: string;
   status: string;
   calculationBasis: string;

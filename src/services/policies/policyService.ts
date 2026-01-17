@@ -143,6 +143,7 @@ class PolicyService {
         carrierId: policy.carrierId,
         productId: policy.productId, // CRITICAL: Pass productId for accurate comp_guide lookup
         product: policy.product,
+        termLength: policy.termLength ?? undefined, // For term_life commission modifiers
         client: clientInfo,
         calculationBasis: "annual_premium",
         annualPremium: policy.annualPremium,
