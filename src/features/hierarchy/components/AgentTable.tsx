@@ -63,6 +63,7 @@ interface DateRangeFilter {
 
 interface AgentTableProps {
   agents: UserProfile[];
+  owner?: UserProfile | null;
   isLoading?: boolean;
   onRefresh?: () => void;
   dateRange?: DateRangeFilter;
@@ -176,6 +177,7 @@ function AgentRow({
   uplineContractLevel,
   onRemove,
   metrics,
+  isOwner,
 }: {
   agent: AgentWithMetrics;
   depth: number;
@@ -185,6 +187,7 @@ function AgentRow({
   uplineContractLevel: number | null;
   onRemove: (agent: AgentWithMetrics) => void;
   metrics?: AgentMetrics;
+  isOwner?: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -296,6 +299,11 @@ function AgentRow({
               ? `${agent.first_name} ${agent.last_name}`
               : agent.email}
           </span>
+          {isOwner && (
+            <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] font-semibold bg-blue-500/20 text-blue-700 dark:text-blue-300 ml-1">
+              You
+            </span>
+          )}
           {agent.approval_status === "approved" && (
             <UserCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
           )}
@@ -430,6 +438,7 @@ function AgentRow({
 
 export function AgentTable({
   agents,
+  owner,
   isLoading,
   onRefresh,
   dateRange,
@@ -453,8 +462,10 @@ export function AgentTable({
   const viewerContractLevel = currentUserProfile?.contract_level ?? null;
   const viewerId = currentUserProfile?.id;
 
-  // Agent IDs for batch fetching
-  const agentIds = agents.map((a) => a.id);
+  // Agent IDs for batch fetching (include owner if present)
+  const agentIds = owner
+    ? [owner.id, ...agents.map((a) => a.id)]
+    : agents.map((a) => a.id);
   const agentIdsKey = [...agentIds].sort().join(",");
 
   // BATCH FETCH: Fetch metrics for ALL agents in 2 queries (not N+1)
@@ -585,6 +596,7 @@ export function AgentTable({
           uplineContractLevel={agent.upline_contract_level || null}
           onRemove={setAgentToRemove}
           metrics={metricsMap.get(agent.id)}
+          isOwner={agent.id === viewerId}
         />,
       );
 
@@ -643,7 +655,7 @@ export function AgentTable({
                     </div>
                   </td>
                 </tr>
-              ) : agentsToDisplay.length === 0 ? (
+              ) : agentsToDisplay.length === 0 && !owner ? (
                 <tr>
                   <td colSpan={9} className="text-center py-8">
                     <div className="flex flex-col items-center gap-1">
@@ -658,7 +670,25 @@ export function AgentTable({
                   </td>
                 </tr>
               ) : (
-                renderAgentRows(paginatedRootAgents as AgentWithMetrics[])
+                <>
+                  {/* Owner row (current user) - always first */}
+                  {owner && (
+                    <AgentRow
+                      key={owner.id}
+                      agent={owner as AgentWithMetrics}
+                      depth={0}
+                      isExpanded={false}
+                      onToggle={() => {}}
+                      hasChildren={false}
+                      uplineContractLevel={null}
+                      onRemove={() => {}}
+                      metrics={metricsMap.get(owner.id)}
+                      isOwner={true}
+                    />
+                  )}
+                  {/* Team hierarchy */}
+                  {renderAgentRows(paginatedRootAgents as AgentWithMetrics[])}
+                </>
               )}
             </tbody>
           </table>

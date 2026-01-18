@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyDownlines, useMyHierarchyStats } from "@/hooks";
+import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SendInvitationModal } from "./components/SendInvitationModal";
 import { TeamMetricsCard } from "./components/TeamMetricsCard";
@@ -45,6 +46,7 @@ export function HierarchyDashboardCompact() {
   const { user } = useAuth();
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
     useMyDownlines();
+  const { data: currentUserProfile } = useCurrentUserProfile();
 
   // Timeframe state
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
@@ -86,6 +88,18 @@ export function HierarchyDashboardCompact() {
     is_active: profile.approval_status === "approved",
     parent_agent_id: profile.upline_id,
   }));
+
+  // Transform current user (owner) to Agent type for display in table
+  const owner: Agent | null = currentUserProfile
+    ? {
+        ...currentUserProfile,
+        name:
+          `${currentUserProfile.first_name || ""} ${currentUserProfile.last_name || ""}`.trim() ||
+          currentUserProfile.email,
+        is_active: currentUserProfile.approval_status === "approved",
+        parent_agent_id: currentUserProfile.upline_id,
+      }
+    : null;
 
   const [sendInvitationModalOpen, setSendInvitationModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -337,6 +351,7 @@ export function HierarchyDashboardCompact() {
           {/* Agent Table */}
           <AgentTable
             agents={filteredAgents}
+            owner={owner}
             isLoading={isLoading}
             dateRange={{ start: startDate, end: endDate }}
           />
