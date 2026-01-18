@@ -36,6 +36,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
 import { useDeleteUser } from "@/hooks/admin/useUserApproval";
+import { useToggleUserUWAccess } from "@/hooks/admin/useToggleUserUWAccess";
 import {
   userApprovalService,
   VALID_CONTRACT_LEVELS,
@@ -55,6 +56,7 @@ import {
   AlertTriangle,
   Loader2,
   Building2,
+  ShieldCheck,
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
@@ -99,6 +101,7 @@ interface EditableUserData {
   instagram_url: string;
   imo_id: string | null;
   agency_id: string | null;
+  uw_wizard_enabled: boolean;
 }
 
 export default function EditUserDialog({
@@ -110,6 +113,7 @@ export default function EditUserDialog({
   const queryClient = useQueryClient();
   const { data: roles } = useAllRolesWithPermissions();
   const deleteUserMutation = useDeleteUser();
+  const toggleUWAccessMutation = useToggleUserUWAccess();
 
   // Auth hook for activity logging
   const { user: currentUser } = useAuth();
@@ -151,6 +155,7 @@ export default function EditUserDialog({
     instagram_url: "",
     imo_id: null,
     agency_id: null,
+    uw_wizard_enabled: false,
   });
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -229,6 +234,7 @@ export default function EditUserDialog({
         instagram_url: user.instagram_url || "",
         imo_id: user.imo_id || null,
         agency_id: user.agency_id || null,
+        uw_wizard_enabled: user.uw_wizard_enabled || false,
       });
       // Set selected IMO for agency dropdown
       setSelectedImoId(user.imo_id || null);
@@ -361,9 +367,19 @@ export default function EditUserDialog({
       // Check if IMO changed (for super admin IMO-only assignment)
       const imoChanged = formData.imo_id !== user.imo_id;
 
+      // Check if UW wizard access changed (super admin only)
+      const uwWizardChanged =
+        isSuperAdmin &&
+        formData.uw_wizard_enabled !== (user.uw_wizard_enabled || false);
+
       const hasProfileUpdates = Object.keys(updates).length > 0;
 
-      if (!hasProfileUpdates && !agencyChanged && !imoChanged) {
+      if (
+        !hasProfileUpdates &&
+        !agencyChanged &&
+        !imoChanged &&
+        !uwWizardChanged
+      ) {
         toast.success("No changes to save");
         setIsSaving(false);
         return;
@@ -420,6 +436,14 @@ export default function EditUserDialog({
           setIsSaving(false);
           return;
         }
+      }
+
+      // Handle UW wizard access toggle (super admin only)
+      if (uwWizardChanged) {
+        await toggleUWAccessMutation.mutateAsync({
+          userId: user.id,
+          enabled: formData.uw_wizard_enabled,
+        });
       }
 
       // Log activity if demoting to recruit
@@ -1171,6 +1195,43 @@ export default function EditUserDialog({
                     />
                   </div>
                 </div>
+
+                {isSuperAdmin && (
+                  <>
+                    <div className="border-t border-zinc-200 dark:border-zinc-700 my-3" />
+
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                        Premium Features
+                      </Label>
+
+                      <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50 rounded p-2 border border-zinc-200 dark:border-zinc-700">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-blue-500" />
+                          <div>
+                            <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                              Underwriting Wizard
+                            </div>
+                            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                              Access to UW decision engine and quick quote tools
+                            </div>
+                          </div>
+                        </div>
+
+                        <Checkbox
+                          checked={formData.uw_wizard_enabled}
+                          onCheckedChange={(checked) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              uw_wizard_enabled: checked === true,
+                            }));
+                          }}
+                          className="h-4 w-4"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="actions" className="space-y-3 mt-0">

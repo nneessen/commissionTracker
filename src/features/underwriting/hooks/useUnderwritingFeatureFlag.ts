@@ -1,54 +1,28 @@
 // src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { underwritingQueryKeys } from "./useHealthConditions";
-
-interface ImoSettings {
-  underwriting_wizard_enabled?: boolean;
-  [key: string]: unknown;
-}
-
-async function checkFeatureEnabled(imoId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("imos")
-    .select("settings")
-    .eq("id", imoId)
-    .single();
-
-  if (error) {
-    console.error("Failed to check underwriting wizard feature flag:", error);
-    return false;
-  }
-
-  const settings = (data?.settings as ImoSettings) || {};
-  return settings.underwriting_wizard_enabled === true;
-}
 
 /**
- * Hook to check if the underwriting wizard feature is enabled for the current user's IMO
+ * Hook to check if the underwriting wizard feature is enabled for the current user.
+ * Access is granted if:
+ * 1. User is a super admin (always has access), OR
+ * 2. User has uw_wizard_enabled = true (manual override), OR
+ * 3. Future: User's subscription plan includes UW wizard feature
  */
 export function useUnderwritingFeatureFlag() {
   const { user, loading: userLoading } = useAuth();
-  const imoId = user?.imo_id;
-
-  const query = useQuery({
-    queryKey: underwritingQueryKeys.featureEnabled(imoId || ""),
-    queryFn: () => checkFeatureEnabled(imoId!),
-    enabled: !!imoId && !userLoading,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
 
   // Super admins always have access
   const isSuperAdmin = user?.is_super_admin === true;
 
+  // User-level flag (manual override or future subscription-based)
+  const isEnabled = isSuperAdmin || user?.uw_wizard_enabled === true;
+
   return {
-    isEnabled: isSuperAdmin || query.data === true,
-    isLoading: userLoading || query.isLoading,
-    error: query.error,
-    // For super admins, we want to show the feature even if the query fails
-    canAccess: isSuperAdmin || query.data === true,
+    isEnabled,
+    isLoading: userLoading,
+    error: null,
+    canAccess: isEnabled,
   };
 }
 

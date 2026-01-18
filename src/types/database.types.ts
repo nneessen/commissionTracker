@@ -7635,6 +7635,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      sync_hierarchy_root: {
+        Row: {
+          description: string | null;
+          email: string;
+          id: string;
+        };
+        Insert: {
+          description?: string | null;
+          email: string;
+          id: string;
+        };
+        Update: {
+          description?: string | null;
+          email?: string;
+          id?: string;
+        };
+        Relationships: [];
+      };
       system_audit_log: {
         Row: {
           action: string;
@@ -9220,6 +9238,7 @@ export type Database = {
           subscription_tier: string;
           updated_at: string | null;
           upline_id: string | null;
+          uw_wizard_enabled: boolean;
           zip: string | null;
         };
         Insert: {
@@ -9276,6 +9295,7 @@ export type Database = {
           subscription_tier?: string;
           updated_at?: string | null;
           upline_id?: string | null;
+          uw_wizard_enabled?: boolean;
           zip?: string | null;
         };
         Update: {
@@ -9332,6 +9352,7 @@ export type Database = {
           subscription_tier?: string;
           updated_at?: string | null;
           upline_id?: string | null;
+          uw_wizard_enabled?: boolean;
           zip?: string | null;
         };
         Relationships: [
@@ -12883,6 +12904,7 @@ export type Database = {
           recruit_id: string;
         }[];
       };
+      get_sync_webhook_secret: { Args: never; Returns: string };
       get_team_comparison_report: {
         Args: { p_end_date?: string; p_start_date?: string };
         Returns: {

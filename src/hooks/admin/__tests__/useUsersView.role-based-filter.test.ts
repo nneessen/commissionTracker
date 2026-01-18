@@ -71,6 +71,7 @@ describe("useUsersView role-based filtering logic", () => {
     zip: null,
     agency_id: null,
     imo_id: null,
+    uw_wizard_enabled: false,
 
     // Apply overrides
     ...overrides,

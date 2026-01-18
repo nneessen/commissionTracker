@@ -5,16 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   History,
   FileText,
-  Settings,
-  Loader2,
   ClipboardCheck,
   DollarSign,
   Shield,
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useCanManageUnderwriting } from "../hooks/useUnderwritingFeatureFlag";
-import { useUnderwritingToggle } from "../hooks/useUnderwritingToggle";
 import { SessionHistoryList } from "./SessionHistory/SessionHistoryList";
 import { GuideList } from "./GuideManager";
 import { CriteriaReviewDashboard } from "./CriteriaReview";
@@ -96,13 +91,6 @@ export function UnderwritingSettingsTab() {
             <History className="h-3 w-3 shrink-0" />
             <span>History</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="settings"
-            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-          >
-            <Settings className="h-3 w-3 shrink-0" />
-            <span>Settings</span>
-          </TabsTrigger>
         </TabsList>
 
         <div className="p-3">
@@ -125,79 +113,8 @@ export function UnderwritingSettingsTab() {
           <TabsContent value="sessions" className="mt-0">
             <SessionHistoryList />
           </TabsContent>
-
-          <TabsContent value="settings" className="mt-0">
-            <FeatureSettingsPanel />
-          </TabsContent>
         </div>
       </Tabs>
-    </div>
-  );
-}
-
-function FeatureSettingsPanel() {
-  const { isEnabled, isLoading, toggleEnabled } = useUnderwritingToggle();
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 mb-3">
-          Feature Settings
-        </h3>
-
-        <div className="space-y-4">
-          {/* Underwriting Wizard Toggle */}
-          <div className="flex items-start justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700">
-            <div className="space-y-0.5">
-              <Label
-                htmlFor="wizard-toggle"
-                className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 cursor-pointer"
-              >
-                AI Underwriting Wizard
-              </Label>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Enable the AI-powered underwriting wizard for your agency. When
-                enabled, agents can access the wizard from the Policies page to
-                get instant underwriting assessments and carrier
-                recommendations.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {isLoading && (
-                <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
-              )}
-              <Switch
-                id="wizard-toggle"
-                checked={isEnabled}
-                onCheckedChange={toggleEnabled}
-                disabled={isLoading}
-                className="data-[state=checked]:bg-green-600"
-              />
-            </div>
-          </div>
-
-          {/* Info Section */}
-          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 space-y-2">
-            <p>
-              <strong className="text-zinc-700 dark:text-zinc-300">
-                How it works:
-              </strong>{" "}
-              The wizard collects client health information and uses the
-              recommendation engine to filter products by eligibility, score
-              approval likelihood using carrier acceptance rules, and calculate
-              premiums from your rate data.
-            </p>
-            <p>
-              <strong className="text-zinc-700 dark:text-zinc-300">
-                Requirements:
-              </strong>{" "}
-              For best results, enter premium rates in the Rates tab and
-              configure carrier acceptance rules in the Acceptance tab. Upload
-              carrier underwriting guides for AI-assisted criteria extraction.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

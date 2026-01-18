@@ -2,14 +2,8 @@
 import { BaseRepository, type BaseEntity } from "../../base/BaseRepository";
 import type { Carrier, CarrierRow } from "@/types/carrier.types";
 
-// Type assertion to satisfy BaseEntity constraint while using string dates
-
 type CarrierBaseEntity = Carrier & BaseEntity;
 
-/**
- * Repository for carrier database operations
- * Extends BaseRepository for standard CRUD
- */
 export class CarrierRepository extends BaseRepository<
   CarrierBaseEntity,
   Omit<CarrierRow, "id" | "created_at" | "updated_at">,
@@ -32,7 +26,6 @@ export class CarrierRepository extends BaseRepository<
       is_active: dbRecord.is_active as boolean | null,
       imo_id: dbRecord.imo_id as string | null,
       advance_cap: dbRecord.advance_cap as number | null,
-      // Keep dates as strings for backward compatibility
       created_at: (dbRecord.created_at as string) || null,
       updated_at: (dbRecord.updated_at as string) || null,
     } as CarrierBaseEntity;

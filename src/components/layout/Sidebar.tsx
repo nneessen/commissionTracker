@@ -235,15 +235,6 @@ export default function Sidebar({
   const isSuperAdmin =
     supabaseUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 
-  // UW Wizard access - restricted to specific users only
-  const UW_WIZARD_ALLOWED_EMAILS = [
-    "nickneessen@thestandardhq.com",
-    "kerryglass.ffl@gmail.com",
-  ];
-  const isUWWizardAllowed =
-    supabaseUser?.email &&
-    UW_WIZARD_ALLOWED_EMAILS.includes(supabaseUser.email.toLowerCase());
-
   // Check if a subscription feature is available
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
     if (!feature) return true; // No feature required
@@ -762,36 +753,31 @@ export default function Sidebar({
         {/* Footer */}
         <div className="p-2 border-t border-border bg-card/80">
           {/* Underwriting Tools */}
-          {!isUnderwritingLoading &&
-            isUnderwritingEnabled &&
-            isUWWizardAllowed && (
-              <div className="space-y-1 mb-2">
-                <Button
-                  variant="outline"
-                  className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
-                  onClick={() => setIsUnderwritingWizardOpen(true)}
-                  title={isCollapsed ? "Underwriting Wizard" : ""}
-                >
-                  <ShieldCheck
-                    size={16}
-                    className={isCollapsed ? "" : "mr-2.5"}
-                  />
-                  {!isCollapsed && <span className="text-sm">UW Wizard</span>}
-                </Button>
-                <Button
-                  variant="outline"
-                  className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30`}
-                  onClick={() => setIsQuickQuoteOpen(true)}
-                  title={isCollapsed ? "Quick Quote" : ""}
-                >
-                  <Calculator
-                    size={16}
-                    className={isCollapsed ? "" : "mr-2.5"}
-                  />
-                  {!isCollapsed && <span className="text-sm">Quick Quote</span>}
-                </Button>
-              </div>
-            )}
+          {!isUnderwritingLoading && isUnderwritingEnabled && (
+            <div className="space-y-1 mb-2">
+              <Button
+                variant="outline"
+                className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
+                onClick={() => setIsUnderwritingWizardOpen(true)}
+                title={isCollapsed ? "Underwriting Wizard" : ""}
+              >
+                <ShieldCheck
+                  size={16}
+                  className={isCollapsed ? "" : "mr-2.5"}
+                />
+                {!isCollapsed && <span className="text-sm">UW Wizard</span>}
+              </Button>
+              <Button
+                variant="outline"
+                className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30`}
+                onClick={() => setIsQuickQuoteOpen(true)}
+                title={isCollapsed ? "Quick Quote" : ""}
+              >
+                <Calculator size={16} className={isCollapsed ? "" : "mr-2.5"} />
+                {!isCollapsed && <span className="text-sm">Quick Quote</span>}
+              </Button>
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
             {!isCollapsed && (
