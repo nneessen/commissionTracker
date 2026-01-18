@@ -113,7 +113,13 @@ DEVELOPMENT STANDARDS
 
 Only one directory: supabase/migrations/
 
-File format: YYYYMMDD_NNN_description.sql
+File format: YYYYMMDDHHMMSS_description.sql (timestamp to the second for uniqueness)
+
+CRITICAL: Supabase tracks migrations by the numeric prefix ONLY. The old format
+YYYYMMDD_NNN_description.sql was WRONG - migrations like 20260102_001 and 20260102_002
+are seen as the SAME version. Use full timestamps: 20260102143022_description.sql
+
+To generate correct timestamp: date +%Y%m%d%H%M%S
 
 After migration:
 
@@ -122,6 +128,8 @@ Regenerate database.types.ts
 Fix type errors
 
 Run npm run build
+
+Verify migration applied: npx supabase migration list
 
 No CHECK constraints on enums; enforce via TypeScript.
 
