@@ -1,6 +1,6 @@
 // src/features/hierarchy/components/AgentTable.tsx
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronRight,
@@ -68,14 +68,21 @@ interface AgentTableProps {
   dateRange?: DateRangeFilter;
 }
 
-// Statuses that count toward MTD AP (active and issued)
-const AP_COUNTABLE_STATUSES = ["active", "issued"];
+// Statuses for AP calculations
+const ACTIVE_AP_STATUSES = ["active"]; // Policies that are active/in-force
+const ISSUED_AP_STATUSES = ["issued"]; // Policies that are issued (IP)
+const PENDING_AP_STATUSES = ["pending", "submitted", "underwriting"]; // Pending policies
 
 // Metrics for a single agent
 interface AgentMetrics {
-  mtd_ap: number;
+  mtd_ap: number; // Active/Issued AP (for backward compatibility)
   mtd_policies: number;
   override_amount: number;
+  // New detailed AP metrics
+  total_ip: number; // Issued Premium (issued status)
+  pending_ap: number; // Pending AP (pending/submitted/underwriting)
+  active_ap: number; // Active AP (active status)
+  total_ap: number; // Total = active + issued + pending
 }
 
 /**
@@ -127,15 +134,33 @@ async function fetchAllAgentMetrics(
       return createdDate >= startOfMonth && createdDate <= endOfMonth;
     });
 
-    // Calculate MTD AP (only for active/issued policies)
-    const mtd_ap = mtdPolicies
-      .filter((p) => AP_COUNTABLE_STATUSES.includes(p.status || ""))
+    // Calculate detailed AP metrics
+    const active_ap = mtdPolicies
+      .filter((p) => ACTIVE_AP_STATUSES.includes(p.status || ""))
       .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
+
+    const total_ip = mtdPolicies
+      .filter((p) => ISSUED_AP_STATUSES.includes(p.status || ""))
+      .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
+
+    const pending_ap = mtdPolicies
+      .filter((p) => PENDING_AP_STATUSES.includes(p.status || ""))
+      .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
+
+    // Total AP = Active + Issued + Pending
+    const total_ap = active_ap + total_ip + pending_ap;
+
+    // MTD AP for backward compatibility (active + issued)
+    const mtd_ap = active_ap + total_ip;
 
     metricsMap.set(agentId, {
       mtd_ap,
       mtd_policies: mtdPolicies.length,
       override_amount: overridesByAgent.get(agentId) || 0,
+      total_ip,
+      pending_ap,
+      active_ap,
+      total_ap,
     });
   }
 
@@ -164,11 +189,16 @@ function AgentRow({
   const navigate = useNavigate();
 
   // Use metrics passed from parent (batch-fetched), with defaults
-  const { mtd_ap, mtd_policies, override_amount } = metrics || {
-    mtd_ap: 0,
-    mtd_policies: 0,
-    override_amount: 0,
-  };
+  const { mtd_policies, override_amount, total_ip, pending_ap, total_ap } =
+    metrics || {
+      mtd_ap: 0,
+      mtd_policies: 0,
+      override_amount: 0,
+      total_ip: 0,
+      pending_ap: 0,
+      active_ap: 0,
+      total_ap: 0,
+    };
 
   // Calculate real override spread
   // If viewing from upline's perspective: spread = upline level - agent level
@@ -177,12 +207,11 @@ function AgentRow({
 
   // Only calculate override if we have the viewer's contract level
   // If uplineContractLevel is null/undefined, we can't calculate a valid override
-  const overrideSpread = useMemo(() => {
-    if (!uplineContractLevel) return 0; // No viewer level yet, show 0
-    return uplineContractLevel > agentContractLevel
+  const overrideSpread = !uplineContractLevel
+    ? 0
+    : uplineContractLevel > agentContractLevel
       ? uplineContractLevel - agentContractLevel
       : 0;
-  }, [uplineContractLevel, agentContractLevel]);
 
   // Determine status display based on actual fields
   const getStatusDisplay = () => {
@@ -285,11 +314,33 @@ function AgentRow({
         </span>
       </td>
 
-      {/* MTD AP */}
+      {/* Total IP (Issued Premium) */}
       <td className="px-2 py-1.5 text-right text-[11px] font-mono">
-        {mtd_ap > 0 ? (
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-            {formatCurrency(mtd_ap)}
+        {total_ip > 0 ? (
+          <span className="font-semibold text-blue-600 dark:text-blue-400">
+            {formatCurrency(total_ip)}
+          </span>
+        ) : (
+          <span className="text-zinc-400 dark:text-zinc-500">$0</span>
+        )}
+      </td>
+
+      {/* Pending AP */}
+      <td className="px-2 py-1.5 text-right text-[11px] font-mono">
+        {pending_ap > 0 ? (
+          <span className="font-semibold text-amber-600 dark:text-amber-400">
+            {formatCurrency(pending_ap)}
+          </span>
+        ) : (
+          <span className="text-zinc-400 dark:text-zinc-500">$0</span>
+        )}
+      </td>
+
+      {/* Total AP (Active + Issued + Pending) */}
+      <td className="px-2 py-1.5 text-right text-[11px] font-mono">
+        {total_ap > 0 ? (
+          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+            {formatCurrency(total_ap)}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">$0</span>
@@ -383,7 +434,7 @@ export function AgentTable({
   onRefresh,
   dateRange,
 }: AgentTableProps) {
-  const _navigate = useNavigate();
+  // Navigate is available if needed for future use
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [agentToRemove, setAgentToRemove] = useState<AgentWithMetrics | null>(
     null,
@@ -402,9 +453,9 @@ export function AgentTable({
   const viewerContractLevel = currentUserProfile?.contract_level ?? null;
   const viewerId = currentUserProfile?.id;
 
-  // Memoize agent IDs with stable serialization for dependency tracking
-  const agentIds = useMemo(() => agents.map((a) => a.id), [agents]);
-  const agentIdsKey = useMemo(() => [...agentIds].sort().join(","), [agentIds]);
+  // Agent IDs for batch fetching
+  const agentIds = agents.map((a) => a.id);
+  const agentIdsKey = [...agentIds].sort().join(",");
 
   // BATCH FETCH: Fetch metrics for ALL agents in 2 queries (not N+1)
   useEffect(() => {
@@ -425,24 +476,22 @@ export function AgentTable({
         setMetricsMap(new Map());
       })
       .finally(() => setMetricsLoading(false));
-  }, [agentIds, agentIdsKey, viewerId, dateRange]);
+  }, [agentIdsKey, viewerId, dateRange]);
 
   // Enrich ALL visible agents with viewer's contract level for override calculation
   // The override % shows what the VIEWER earns from each agent, regardless of hierarchy depth
-  const agentsWithUplines = useMemo(() => {
-    if (!viewerContractLevel) return agents;
-
-    return agents.map((agent) => ({
-      ...agent,
-      upline_contract_level: viewerContractLevel,
-    }));
-  }, [agents, viewerContractLevel]);
+  const agentsWithUplines = !viewerContractLevel
+    ? agents
+    : agents.map((agent) => ({
+        ...agent,
+        upline_contract_level: viewerContractLevel,
+      }));
 
   const agentsToDisplay = agentsWithUplines;
 
   // Build hierarchy structure
   const agentMap = new Map(agentsToDisplay.map((a) => [a.id, a]));
-  const rootAgents = agentsToDisplay.filter(
+  const rootAgentsUnsorted = agentsToDisplay.filter(
     (a) => !a.upline_id || !agentMap.has(a.upline_id),
   );
   const childrenMap = new Map<string, AgentWithMetrics[]>();
@@ -453,6 +502,15 @@ export function AgentTable({
       children.push(agent as AgentWithMetrics);
       childrenMap.set(agent.upline_id, children);
     }
+  });
+
+  // Sort root agents by Total AP (highest first)
+  const rootAgents = [...rootAgentsUnsorted].sort((a, b) => {
+    const aMetrics = metricsMap.get(a.id);
+    const bMetrics = metricsMap.get(b.id);
+    const aTotal = aMetrics?.total_ap || 0;
+    const bTotal = bMetrics?.total_ap || 0;
+    return bTotal - aTotal; // Descending order (highest first)
   });
 
   const toggleExpanded = (agentId: string) => {
@@ -552,16 +610,24 @@ export function AgentTable({
                   Status
                 </th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                  MTD AP
+                  <span className="text-blue-600 dark:text-blue-400">IP</span>
+                </th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                  <span className="text-amber-600 dark:text-amber-400">
+                    Pending
+                  </span>
+                </th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                  Total AP
                 </th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Policies
                 </th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                  Override %
+                  Spread
                 </th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                  Override $
+                  Override
                 </th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Actions
@@ -571,7 +637,7 @@ export function AgentTable({
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8">
+                  <td colSpan={9} className="text-center py-8">
                     <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                       Loading team members...
                     </div>
@@ -579,7 +645,7 @@ export function AgentTable({
                 </tr>
               ) : agentsToDisplay.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8">
+                  <td colSpan={9} className="text-center py-8">
                     <div className="flex flex-col items-center gap-1">
                       <UserX className="h-6 w-6 text-zinc-300 dark:text-zinc-600" />
                       <span className="text-[11px] text-zinc-500 dark:text-zinc-400">

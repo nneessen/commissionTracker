@@ -329,7 +329,7 @@ class OverrideService {
    */
   async recalculateOverridesForPolicy(policyId: string): Promise<void> {
     try {
-      // Delete existing overrides for this policy
+      // Delete existing overrides for this policy first
       const { error: deleteError } = await supabase
         .from("override_commissions")
         .delete()
@@ -342,37 +342,20 @@ class OverrideService {
         );
       }
 
-      // Get the policy to trigger recalculation
-      const { data: _policy, error: policyError } = await supabase
-        .from("policies")
-        .select("*")
-        .eq("id", policyId)
-        .single();
+      // Call the database function to regenerate overrides
+      // This function properly walks the hierarchy and creates override records
+      const { data: createdCount, error: rpcError } = await supabase.rpc(
+        "regenerate_override_commissions",
+        { p_policy_id: policyId },
+      );
 
-      if (policyError) {
-        throw new DatabaseError(
-          "recalculateOverridesForPolicy.getPolicy",
-          policyError,
-        );
-      }
-
-      // Update policy to trigger the override calculation trigger
-      // We'll just update the updated_at field to trigger the recalculation
-      const { error: updateError } = await supabase
-        .from("policies")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", policyId);
-
-      if (updateError) {
-        throw new DatabaseError(
-          "recalculateOverridesForPolicy.update",
-          updateError,
-        );
+      if (rpcError) {
+        throw new DatabaseError("recalculateOverridesForPolicy.rpc", rpcError);
       }
 
       logger.info(
         "Override recalculated for policy",
-        { policyId },
+        { policyId, createdCount },
         "OverrideService",
       );
     } catch (error) {
