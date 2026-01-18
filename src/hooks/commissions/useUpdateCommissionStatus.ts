@@ -142,6 +142,12 @@ export const useUpdateCommissionStatus = () => {
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       queryClient.invalidateQueries({ queryKey: ["commission-metrics"] });
       queryClient.invalidateQueries({ queryKey: ["chargeback-summary"] });
+      // Invalidate override-related queries (commission status changes trigger override status sync)
+      queryClient.invalidateQueries({ queryKey: ["overrides"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-overrides"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-details"] });
+      queryClient.invalidateQueries({ queryKey: ["hierarchy", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["team-comparison"] });
     },
   });
 };
