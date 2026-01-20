@@ -51,7 +51,7 @@ function StatBlock({
 
       {/* Massive number */}
       <div
-        className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter leading-[0.85] break-all"
+        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-none whitespace-nowrap"
         style={{
           color: primaryColor,
           fontFamily: "'Plus Jakarta Sans', sans-serif",
