@@ -88,15 +88,15 @@ export const AuthCallback: React.FC = () => {
           if (window.opener && !window.opener.closed) {
             setTimeout(() => {
               try {
-                window.opener.location.href = "/";
+                window.opener.location.href = "/dashboard";
                 window.close();
               } catch (_e) {
-                navigate({ to: "/" });
+                navigate({ to: "/dashboard" });
               }
             }, 2000);
           } else {
             setTimeout(() => {
-              navigate({ to: "/" });
+              navigate({ to: "/dashboard" });
             }, 2000);
           }
         } else {

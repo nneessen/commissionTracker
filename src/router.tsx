@@ -88,7 +88,7 @@ const dashboardRoute = createRoute({
 function LoginComponent() {
   const navigate = useNavigate();
   const handleLoginSuccess = () => {
-    navigate({ to: "/" });
+    navigate({ to: "/dashboard" });
   };
   return <Login onSuccess={handleLoginSuccess} />;
 }

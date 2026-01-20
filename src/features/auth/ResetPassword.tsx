@@ -104,7 +104,7 @@ export const ResetPassword: React.FC = () => {
 
       // Redirect to dashboard after a brief delay
       setTimeout(() => {
-        navigate({ to: "/" });
+        navigate({ to: "/dashboard" });
       }, 2000);
     } catch (err) {
       const errorMessage =

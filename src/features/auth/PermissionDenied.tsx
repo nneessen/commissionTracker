@@ -21,7 +21,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
   const navigate = useNavigate();
 
   const handleBackToDashboard = () => {
-    navigate({ to: "/" });
+    navigate({ to: "/dashboard" });
   };
 
   return (

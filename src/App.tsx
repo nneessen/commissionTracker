@@ -50,6 +50,7 @@ function App() {
     "/join/",
     "/register/",
     "/test-register/",
+    "/landing",
   ];
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),
@@ -66,11 +67,12 @@ function App() {
     );
   }
 
-  // Primary domain at root path should show public landing page
+  // Primary domain landing page paths
   const isOnPrimaryDomain =
     PRIMARY_DOMAINS.includes(hostname) || isVercelPreview(hostname);
 
-  if (isOnPrimaryDomain && location.pathname === "/") {
+  // Show landing page at "/" or "/landing" on primary domain (before auth check)
+  if (isOnPrimaryDomain && (location.pathname === "/" || location.pathname === "/landing")) {
     return (
       <>
         <Toaster />

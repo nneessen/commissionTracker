@@ -16,6 +16,7 @@ import {
   History,
   Link2,
   Stethoscope,
+  Globe,
 } from "lucide-react";
 import { UserProfile } from "./components/UserProfile";
 import { CarriersManagement } from "./carriers/CarriersManagement";
@@ -31,6 +32,7 @@ import { NotificationsSettingsPage } from "./notifications";
 import { IntegrationsTab } from "./integrations";
 import { AuditTrailPage } from "@/features/audit";
 import { UnderwritingSettingsTab } from "@/features/underwriting/components/UnderwritingSettingsTab";
+import { LandingPageSettingsTab } from "./landing-page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { usePermissionCheck } from "@/hooks/permissions";
@@ -98,6 +100,7 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
     "rates",
     "constants",
     "underwriting",
+    "landing-page",
     "agents",
     "integrations",
     "agency-request",
@@ -204,6 +207,15 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
                   <span className="truncate">Underwriting</span>
                 </TabsTrigger>
               </>
+            )}
+            {(isImoAdmin || isSuperAdmin) && (
+              <TabsTrigger
+                value="landing-page"
+                className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <Globe className="h-3 w-3 shrink-0" />
+                <span className="truncate">Landing</span>
+              </TabsTrigger>
             )}
             <TabsTrigger
               value="agents"
@@ -314,6 +326,12 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
                   <UnderwritingSettingsTab />
                 </TabsContent>
               </>
+            )}
+
+            {(isImoAdmin || isSuperAdmin) && (
+              <TabsContent value="landing-page" className="mt-0 h-full">
+                <LandingPageSettingsTab />
+              </TabsContent>
             )}
 
             <TabsContent value="agents" className="mt-0">

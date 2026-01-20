@@ -56,7 +56,7 @@ export const useEmailVerification = () => {
     if (session) {
       logger.auth("User already verified, redirecting to dashboard");
       sessionStorage.removeItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL);
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     }
   }, [session, navigate]);
 
