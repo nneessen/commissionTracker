@@ -14,14 +14,15 @@ export function CultureGallery({ theme }: CultureGalleryProps) {
     triggerOnce: true,
   });
 
+  // Filter out images with empty URLs
+  const validGalleryImages = theme.gallery_images?.filter(img => img.url && img.url.trim() !== '') || [];
+
   const hasImages =
     theme.gallery_featured_url ||
-    (theme.gallery_images && theme.gallery_images.length > 0);
+    validGalleryImages.length > 0;
 
-  const gridImages =
-    theme.gallery_images && theme.gallery_images.length > 0
-      ? theme.gallery_images.slice(0, 6)
-      : [];
+  const gridImages = validGalleryImages.slice(0, 6);
+
 
   return (
     <section ref={ref} className="relative py-32 md:py-48 overflow-hidden bg-[#050505]">
@@ -132,7 +133,7 @@ export function CultureGallery({ theme }: CultureGalleryProps) {
             {/* Grid images */}
             {gridImages.map((image, index) => (
               <div
-                key={image.url}
+                key={`gallery-${index}-${image.url.slice(-20)}`}
                 className="transition-all duration-500"
                 style={{
                   opacity: isVisible ? 1 : 0,

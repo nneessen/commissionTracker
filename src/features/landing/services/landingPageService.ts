@@ -39,31 +39,50 @@ const DEFAULT_SECONDARY_COLOR = '#6366f1'; // indigo-500
 
 /**
  * Get landing page settings for public display
- * FAST: Single RPC call with timeout and immediate fallbacks
+ * Uses direct fetch with timeout to avoid React Query issues
  */
 export async function getPublicLandingPageSettings(
   imoId?: string
 ): Promise<LandingPageTheme> {
-  // Add timeout to prevent hanging
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-
   try {
-    const { data, error } = await supabase.rpc('get_public_landing_page_settings', {
-      p_imo_id: imoId || null,
-    }).abortSignal(controller.signal);
+    // Add manual timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('RPC call timed out')), 10000);
+    });
 
-    clearTimeout(timeoutId);
+    const rpcPromise = supabase.rpc('get_public_landing_page_settings', {
+      p_imo_id: imoId || null,
+    });
+
+    // Race between RPC and timeout
+    const { data, error } = await Promise.race([
+      rpcPromise,
+      timeoutPromise,
+    ]) as Awaited<typeof rpcPromise>;
 
     if (error) {
-      logger.error('Failed to fetch public landing page settings', error);
-      // Return defaults on error instead of throwing
+      logger.error('Failed to fetch public landing page settings', error, 'LandingPage');
       return merge(null);
     }
 
-    let settings = (data as Partial<LandingPageSettingsRow> | null) || {};
+    // Handle the response
+    let settings: Partial<LandingPageSettingsRow> | null = null;
 
-    // ALWAYS ensure logo and colors have values - use hardcoded defaults
+    if (data && typeof data === 'object') {
+      settings = data as Partial<LandingPageSettingsRow>;
+    } else if (data && typeof data === 'string') {
+      try {
+        settings = JSON.parse(data);
+      } catch {
+        return merge(null);
+      }
+    }
+
+    if (!settings) {
+      return merge(null);
+    }
+
+    // Apply logo defaults if not set
     if (!settings.logo_light_url && !settings.logo_dark_url) {
       settings.logo_light_url = DEFAULT_LOGO;
       settings.logo_dark_url = DEFAULT_LOGO;
@@ -77,13 +96,7 @@ export async function getPublicLandingPageSettings(
 
     return merge(settings);
   } catch (err) {
-    clearTimeout(timeoutId);
-    // Log but return defaults - never let page get stuck
-    if (err instanceof Error && err.name === 'AbortError') {
-      logger.error('Landing page settings fetch timed out');
-    } else {
-      logger.error('Exception fetching public landing page settings', err instanceof Error ? err : String(err));
-    }
+    logger.error('Exception fetching landing page settings', err instanceof Error ? err : String(err), 'LandingPage');
     return merge(null);
   }
 }

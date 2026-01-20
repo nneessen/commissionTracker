@@ -25,20 +25,23 @@ export const landingPageKeys = {
 
 /**
  * Hook to fetch public landing page settings (for the public landing page)
+ * Note: PublicLandingPage uses direct fetch instead due to React Query context issues
  */
 export function usePublicLandingPageSettings(imoId?: string) {
-  return useQuery<LandingPageTheme>({
+  const query = useQuery<LandingPageTheme>({
     queryKey: landingPageKeys.publicByImo(imoId),
     queryFn: () => landingPageService.getPublicSettings(imoId),
-    staleTime: 0, // Always refetch on mount
-    gcTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,
     retryDelay: 1000,
-    // Show default theme immediately while loading - prevents blank screen
-    placeholderData: DEFAULT_LANDING_PAGE_THEME,
-    // If all retries fail, still return the placeholder
-    networkMode: 'offlineFirst',
   });
+
+  // Return with fallback to defaults if no data yet
+  return {
+    ...query,
+    data: query.data ?? DEFAULT_LANDING_PAGE_THEME,
+  };
 }
 
 // ===== ADMIN HOOKS (Auth Required) =====

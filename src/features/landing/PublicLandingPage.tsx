@@ -1,8 +1,7 @@
 // src/features/landing/PublicLandingPage.tsx
 // Main public landing page component
 
-import { useEffect } from 'react';
-import { usePublicLandingPageSettings } from './hooks';
+import { useEffect, useState } from 'react';
 import { HeroSection } from './components/HeroSection';
 import { StatsBar } from './components/StatsBar';
 import { AboutSection } from './components/AboutSection';
@@ -15,7 +14,9 @@ import { FaqAccordion } from './components/FaqAccordion';
 import { FinalCta } from './components/FinalCta';
 import { LandingFooter } from './components/LandingFooter';
 import { ScrollProgress } from './components/ScrollProgress';
+import * as landingPageService from './services/landingPageService';
 import type { LandingPageTheme, SectionId } from './types';
+import { DEFAULT_LANDING_PAGE_THEME } from './types';
 
 
 // Section component map
@@ -50,7 +51,28 @@ const SECTION_ENABLED_MAP: Record<SectionId, keyof LandingPageTheme> = {
 };
 
 export function PublicLandingPage() {
-  const { data: theme, isError, isPlaceholderData, isFetching } = usePublicLandingPageSettings();
+  // Direct state management for landing page settings
+  const [theme, setTheme] = useState<LandingPageTheme>(DEFAULT_LANDING_PAGE_THEME);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSettings() {
+      try {
+        const result = await landingPageService.getPublicLandingPageSettings();
+        if (mounted) {
+          setTheme(result);
+        }
+      } catch {
+        // On error, defaults are already set - no action needed
+      }
+    }
+
+    loadSettings();
+
+    return () => { mounted = false; };
+  }, []);
+
 
   // Update document title and meta tags
   useEffect(() => {
