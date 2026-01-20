@@ -63,7 +63,7 @@ import {
   useUnenrollFromPipeline,
 } from "../hooks/useRecruitProgress";
 import { useTemplate, useActiveTemplate } from "../hooks/usePipeline";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { useRecruitEmails } from "../hooks/useRecruitEmails";
 import { useRecruitActivityLog } from "../hooks/useRecruitActivity";

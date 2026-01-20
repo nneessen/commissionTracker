@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { UserPlus, Edit, GraduationCap } from "lucide-react";
-import type { UserProfile } from "@/services/users/userService";
+import type { UserProfile } from "@/types/user.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

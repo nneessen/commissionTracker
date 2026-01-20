@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { useCreateRole } from "@/hooks/permissions/usePermissions";
-import type { CreateRoleInput } from "@/services/permissions/permissionService";
+import { useCreateRole, type CreateRoleInput } from "@/hooks/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

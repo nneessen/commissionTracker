@@ -2,3 +2,4 @@
 export * from './useUserApproval';
 export * from './useUsersView';
 export * from './useMigration';
+export * from './useToggleUserUWAccess';

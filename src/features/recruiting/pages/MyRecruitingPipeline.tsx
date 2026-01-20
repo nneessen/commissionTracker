@@ -92,7 +92,7 @@ export function MyRecruitingPipeline() {
     !authLoading && !profileLoading && !!user?.id && !!profile?.id;
 
   // Fetch upline/trainer info
-  const { data: upline } = useUplineProfile(profile?.upline_id, {
+  const { data: upline } = useUplineProfile(profile?.upline_id ?? undefined, {
     enabled: isReady && !!profile?.upline_id,
   });
 

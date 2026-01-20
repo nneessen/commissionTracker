@@ -2,7 +2,7 @@
 // TanStack Query hooks for Slack webhooks (multi-workspace notifications)
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 import { webhookService } from "@/services/slack/webhookService";
 import { slackKeys } from "@/types/slack.types";
 import type { SlackWebhook } from "@/types/slack.types";

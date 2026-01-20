@@ -6,7 +6,7 @@ import { Settings2, ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { PipelineTemplatesList } from "./PipelineTemplatesList";
 import { PipelineTemplateEditor } from "./PipelineTemplateEditor";
-import { useIsAdmin } from "@/hooks/permissions/usePermissions";
+import { useIsAdmin } from "@/hooks/permissions";
 
 export function PipelineAdminPage() {
   const navigate = useNavigate();

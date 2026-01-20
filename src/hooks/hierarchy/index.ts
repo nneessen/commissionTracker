@@ -6,6 +6,8 @@ export { useMyDownlines } from "./useMyDownlines";
 export { useDownlinePerformance } from "./useDownlinePerformance";
 export { useAllDownlinePerformance } from "./useAllDownlinePerformance";
 export { useMyHierarchyStats } from "./useMyHierarchyStats";
+export { hierarchyKeys } from "./hierarchyKeys";
+export { invalidateHierarchyForNode } from "./invalidation";
 
 // Phase 12A: Org chart visualization
 export {

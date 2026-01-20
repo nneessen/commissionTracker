@@ -4,7 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 import { instagramService } from "@/services/instagram";
 import { instagramKeys } from "@/types/instagram.types";
 import { toast } from "sonner";

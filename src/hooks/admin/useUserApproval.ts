@@ -115,6 +115,38 @@ export function useApproveUser() {
 }
 
 /**
+ * Hook to create a user (admin only)
+ */
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      input: Parameters<typeof userApprovalService.createUser>[0],
+    ) => {
+      try {
+        return await userApprovalService.createUser(input);
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Failed to create user",
+        };
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.all });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["recruits"] });
+    },
+  });
+}
+
+/**
  * Hook to deny a user (admin only)
  */
 export function useDenyUser() {
@@ -166,6 +198,23 @@ export function useApprovalStatus() {
     queryKey: [...userApprovalKeys.currentProfile(), "status"],
     queryFn: () => userApprovalService.getCurrentUserStatus(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Hook to graduate a recruit to agent (admin only)
+ */
+export function useGraduateRecruit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      input: Parameters<typeof userApprovalService.graduateRecruit>[0],
+    ) => userApprovalService.graduateRecruit(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["recruits"] });
+    },
   });
 }
 
@@ -261,7 +310,7 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: (userId: string) => userApprovalService.delete(userId),
-    onSuccess: () => {
+    onSuccess: (_data, deletedUserId) => {
       // Invalidate ALL user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.all });
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
@@ -273,7 +322,7 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
 
       // CRITICAL: Invalidate hierarchy/team queries so deleted user disappears from lists
-      invalidateHierarchyForNode(queryClient, userId);
+      invalidateHierarchyForNode(queryClient, deletedUserId);
     },
   });
 }

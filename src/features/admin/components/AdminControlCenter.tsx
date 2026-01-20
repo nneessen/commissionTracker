@@ -11,27 +11,26 @@ import {
   XCircle,
   UserPlus,
 } from "lucide-react";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAllUsers, useCreateUser } from "@/hooks/admin";
 import {
   useAllRolesWithPermissions,
   useIsAdmin,
   useAllPermissions,
-} from "@/hooks/permissions/usePermissions";
+} from "@/hooks/permissions";
 import { useAuth } from "@/contexts/AuthContext";
-import { userApprovalService } from "@/services/users/userService";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
 import EditUserDialog from "./EditUserDialog";
 import { Badge } from "@/components/ui/badge";
 import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/users/userService";
+import type { UserProfile } from "@/types/user.types";
 import { hasStaffRole } from "@/constants/roles";
 import { useImo } from "@/contexts/ImoContext";
 import {
   useActiveTemplate,
   usePhases,
-} from "@/features/recruiting/hooks/usePipeline";
+} from "@/features/recruiting";
 
 // Tab components
 import { UsersAccessTab } from "./UsersAccessTab";
@@ -50,13 +49,16 @@ export default function AdminControlCenter() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
 
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
+
   // Shared data hooks
   const { user: currentUser } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const { data: allUsers, isLoading: usersLoading } = useAllUsers();
   const { data: roles } = useAllRolesWithPermissions();
   const { data: allPermissions } = useAllPermissions();
-  const queryClient = useQueryClient();
+  const createUserMutation = useCreateUser();
   const { isSuperAdmin } = useImo();
 
   // Pipeline phases for graduation eligibility
@@ -131,11 +133,8 @@ export default function AdminControlCenter() {
   };
 
   const handleAddUser = async (userData: NewUserData) => {
-    const result = await userApprovalService.createUser(userData);
+    const result = await createUserMutation.mutateAsync(userData);
     if (result.success) {
-      queryClient.invalidateQueries({ queryKey: ["userApproval"] });
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["recruits"] });
       setIsAddUserDialogOpen(false);
 
       if (result.inviteSent) {

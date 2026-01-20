@@ -10,14 +10,14 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useDeleteUser } from "@/hooks/admin/useUserApproval";
+import { useDeleteUser } from "@/hooks/admin";
 import {
   useAllActiveImos,
   useMyImoAgencies,
   useAllActiveAgencies,
-} from "@/hooks/imo/useImoQueries";
+} from "@/hooks/imo";
 import type { Role, RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/users/userService";
+import type { UserProfile } from "@/types/user.types";
 import { getFullName, getDisplayName } from "@/types/user.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

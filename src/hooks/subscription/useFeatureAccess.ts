@@ -3,7 +3,7 @@
 
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { usePermissionCheck } from "@/hooks/permissions";
 import type { SubscriptionFeatures } from "@/services/subscription/subscriptionService";
 import {
   useOwnerDownlineAccess,

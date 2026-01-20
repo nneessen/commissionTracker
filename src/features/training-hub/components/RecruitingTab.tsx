@@ -4,9 +4,9 @@
 
 import { useState, useMemo } from "react";
 import { UserPlus, Download, ChevronLeft, ChevronRight } from "lucide-react";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import { useAllUsers } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePhases } from "@/features/recruiting/hooks/usePipeline";
+import { usePhases } from "@/features/recruiting";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,7 +34,7 @@ import {
 import { RecruitDetailPanel } from "@/features/recruiting/components/RecruitDetailPanel";
 import { AddRecruitDialog } from "@/features/recruiting/components/AddRecruitDialog";
 import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/users/userService";
+import type { UserProfile } from "@/types/user.types";
 import { hasStaffRole } from "@/constants/roles";
 import { downloadCSV } from "@/utils/exportHelpers";
 import { toast } from "sonner";

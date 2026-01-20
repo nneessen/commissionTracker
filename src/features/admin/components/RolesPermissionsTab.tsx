@@ -6,14 +6,14 @@ import { toast } from "sonner";
 import {
   useAssignPermissionToRole,
   useRemovePermissionFromRole,
-} from "@/hooks/permissions/usePermissions";
+} from "@/hooks/permissions";
 import type {
   Role,
   Permission,
   PermissionWithSource,
   RoleName,
 } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/users/userService";
+import type { UserProfile } from "@/types/user.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

@@ -68,8 +68,8 @@ import {
   useDuplicateEmailTemplate,
   useToggleTemplateActive,
 } from "@/features/email/hooks/useEmailTemplates";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
-import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
+import { usePermissionCheck } from "@/hooks/permissions";
+import { useAuthorizationStatus } from "@/hooks/admin";
 import { EmailBlockBuilder } from "@/features/email/components/block-builder";
 import {
   EMAIL_TEMPLATE_CATEGORIES,

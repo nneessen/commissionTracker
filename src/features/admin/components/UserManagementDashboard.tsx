@@ -45,19 +45,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useUsersView } from "../../../hooks/admin/useUsersView";
 import {
+  useUsersView,
   useApproveUser,
   useDenyUser,
   useSetPendingUser,
   useSetAdminRole,
   useCurrentUserProfile,
   useUpdateContractLevel,
-} from "../../../hooks/admin/useUserApproval";
-import {
-  UserProfile,
-  VALID_CONTRACT_LEVELS,
-} from "@/services/users/userService";
+} from "@/hooks/admin";
+import { VALID_CONTRACT_LEVELS } from "@/lib/constants";
+import type { UserProfile } from "@/types/user.types";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const UserManagementDashboard: React.FC = () => {

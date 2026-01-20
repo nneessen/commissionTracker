@@ -28,8 +28,8 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
-import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
+import { usePermissionCheck, useUserRoles } from "@/hooks/permissions";
+import { useAuthorizationStatus } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useSubscription,
@@ -38,8 +38,6 @@ import {
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
 } from "@/hooks/subscription";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
 import type { PermissionCode } from "@/types/permissions.types";
 import type { RoleName } from "@/types/permissions.types";
 import { NotificationDropdown } from "@/components/notifications";
@@ -210,10 +208,11 @@ export default function Sidebar({
   const [isMobile, setIsMobile] = useState(false);
   const { can, isLoading } = usePermissionCheck();
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
-  const { user, supabaseUser } = useAuth();
+  const { supabaseUser } = useAuth();
   const { subscription, isLoading: subLoading } = useSubscription();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
+  const { data: userRoles } = useUserRoles();
 
   // IMO/Agency context for branding display
   // LOW-4 fix: Also get loading/error states for graceful handling
@@ -262,25 +261,8 @@ export default function Sidebar({
     return false;
   };
 
-  // Fetch user roles from profile
-  // TODO: WHY IS THIS NOT A HOOK, useRoles?
-  const { data: userProfile } = useQuery({
-    queryKey: ["user-profile-roles", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("roles")
-        .eq("id", user.id)
-        .single();
-      if (error) throw error;
-      return data as { roles: RoleName[] };
-    },
-    enabled: !!user?.id,
-  });
-
   const hasRole = (role: RoleName) => {
-    return userProfile?.roles?.includes(role) || false;
+    return userRoles?.includes(role) || false;
   };
 
   const isRecruit = hasRole("recruit" as RoleName);

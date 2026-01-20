@@ -27,7 +27,7 @@ import {
   useConnectInstagram,
   useDisconnectInstagram,
 } from "@/hooks/instagram";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 
 export function InstagramIntegrationCard() {
   const { data: integration, isLoading } = useActiveInstagramIntegration();

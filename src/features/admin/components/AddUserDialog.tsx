@@ -19,8 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
-import { useAllActiveImos, useAgenciesByImo } from "@/hooks/imo/useImoQueries";
+import { useAllRolesWithPermissions } from "@/hooks/permissions";
+import { useAllActiveImos, useAgenciesByImo } from "@/hooks/imo";
 import { useImo } from "@/contexts/ImoContext";
 import { Mail, User, Phone, Building2 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";

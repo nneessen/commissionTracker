@@ -45,7 +45,7 @@ import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 import { policyRepository } from "@/services/policies";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 
 interface AgentWithMetrics extends UserProfile {
   // Real calculated metrics

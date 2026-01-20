@@ -10,12 +10,9 @@ import {
   useRolePermissionsWithInheritance,
   useAssignPermissionToRole,
   useRemovePermissionFromRole,
-} from "@/hooks/permissions/usePermissions";
+} from "@/hooks/permissions";
 import type { Role, Permission } from "@/types/permissions.types";
-import type {
-  CreateRoleInput,
-  UpdateRoleInput,
-} from "@/services/permissions/permissionService";
+import type { CreateRoleInput, UpdateRoleInput } from "@/hooks/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

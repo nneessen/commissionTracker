@@ -36,7 +36,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendEmail, useEmailQuota } from "../../hooks/useSendEmail";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 import { ContactBrowser } from "./ContactBrowser";
 import type { Contact } from "../../services/contactService";
 

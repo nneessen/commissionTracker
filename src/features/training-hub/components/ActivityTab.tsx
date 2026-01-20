@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
+import { useAuthorizationStatus } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PAGE_SIZE = 20;

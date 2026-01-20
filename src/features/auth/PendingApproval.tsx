@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/services/base/supabase";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Clock,
@@ -30,6 +29,7 @@ import {
   useMyPendingJoinRequest,
 } from "@/hooks/join-request";
 import { JoinRequestForm } from "@/features/settings/join-request/components/JoinRequestForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PendingApprovalProps {
   email?: string;
@@ -37,6 +37,7 @@ interface PendingApprovalProps {
 
 export const PendingApproval: React.FC<PendingApprovalProps> = ({ email }) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const { data: eligibility, isLoading: eligibilityLoading } =
     useJoinRequestEligibility();
   const {
@@ -46,7 +47,7 @@ export const PendingApproval: React.FC<PendingApprovalProps> = ({ email }) => {
   } = useMyPendingJoinRequest();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate({ to: "/login" });
   };
 

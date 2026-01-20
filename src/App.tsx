@@ -12,6 +12,7 @@ import { getDisplayName } from "./types/user.types";
 import { SubscriptionAnnouncementDialog } from "./components/subscription";
 import { useSubscriptionAnnouncement } from "./hooks/subscription";
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
+import { PublicLandingPage } from "./features/landing";
 
 // Primary domains (not custom domains)
 const PRIMARY_DOMAINS = [
@@ -61,6 +62,20 @@ function App() {
         <Toaster />
         <CookieConsentBanner />
         <PublicJoinPage />
+      </>
+    );
+  }
+
+  // Primary domain at root path should show public landing page
+  const isOnPrimaryDomain =
+    PRIMARY_DOMAINS.includes(hostname) || isVercelPreview(hostname);
+
+  if (isOnPrimaryDomain && location.pathname === "/") {
+    return (
+      <>
+        <Toaster />
+        <CookieConsentBanner />
+        <PublicLandingPage />
       </>
     );
   }

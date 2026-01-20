@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { appointmentAggregationService } from "@/services/recruiting/appointmentAggregationService";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 
 /**
  * TanStack Query hooks for appointment data

@@ -25,7 +25,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   useActiveTemplate,
   usePhases,
-} from "@/features/recruiting/hooks/usePipeline";
+} from "@/features/recruiting";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { buildStatusOptions } from "@/lib/pipeline";

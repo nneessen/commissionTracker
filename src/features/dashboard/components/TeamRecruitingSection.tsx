@@ -9,7 +9,7 @@ import type { RecruitingStats } from "@/hooks/recruiting/useRecruitingStats";
 import {
   useActiveTemplate,
   usePhases,
-} from "@/features/recruiting/hooks/usePipeline";
+} from "@/features/recruiting";
 import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
 interface TeamRecruitingSectionProps {

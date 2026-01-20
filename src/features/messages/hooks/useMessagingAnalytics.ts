@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 
 export interface EmailAnalytics {
   totalSent: number;

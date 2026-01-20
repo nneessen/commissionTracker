@@ -1,7 +1,7 @@
 // src/features/admin/components/DeleteRoleDialog.tsx
 
 import { toast } from "sonner";
-import { useDeleteRole } from "@/hooks/permissions/usePermissions";
+import { useDeleteRole } from "@/hooks/permissions";
 import type { Role } from "@/types/permissions.types";
 import { Button } from "@/components/ui/button";
 import {

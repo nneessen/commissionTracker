@@ -1,7 +1,7 @@
 // src/components/permissions/PermissionGate.tsx
 
 import React from 'react';
-import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
+import {usePermissionCheck} from '@/hooks/permissions';
 import type {PermissionCode, RoleName} from '@/types/permissions.types';
 
 interface PermissionGateProps {

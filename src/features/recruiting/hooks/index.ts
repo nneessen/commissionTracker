@@ -6,6 +6,7 @@ export * from "./useRecruitDocuments";
 export * from "./useRecruitEmails";
 export * from "./useRecruitActivity";
 export * from "./usePipeline";
+export * from "./usePipelineAutomations";
 export * from "./useRecruitProgress";
 export * from "./useLeads";
 export * from "./useRecruitInvitations";

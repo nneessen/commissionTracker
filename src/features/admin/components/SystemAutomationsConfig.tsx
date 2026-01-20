@@ -29,8 +29,8 @@ import {
   useSystemAutomations,
   useDeleteAutomation,
   useUpdateAutomation,
-} from "@/features/recruiting/hooks/usePipelineAutomations";
-import { AutomationDialog } from "@/features/recruiting/admin/AutomationDialog";
+  AutomationDialog,
+} from "@/features/recruiting";
 import type { PipelineAutomation } from "@/types/recruiting.types";
 import { TRIGGER_SHORT_LABELS } from "@/types/recruiting.types";
 import { useImo } from "@/contexts/ImoContext";

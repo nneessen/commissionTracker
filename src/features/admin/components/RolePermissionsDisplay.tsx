@@ -5,7 +5,7 @@ import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Skeleton} from '@/components/ui/skeleton';
 import {AlertCircle, Edit, Info} from 'lucide-react';
-import {useRolePermissionsWithInheritance} from '@/hooks/permissions/usePermissions';
+import {useRolePermissionsWithInheritance} from '@/hooks/permissions';
 import {groupPermissionsByCategory, deduplicatePermissions} from '../utils/permissionHelpers';
 import {PermissionBadge} from './PermissionBadge';
 import type {Role} from '@/types/permissions.types';

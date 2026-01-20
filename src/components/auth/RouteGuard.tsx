@@ -2,11 +2,11 @@
 
 import React from "react";
 import { Navigate } from "@tanstack/react-router";
-import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { useAuthorizationStatus } from "@/hooks/admin";
+import { usePermissionCheck } from "@/hooks/permissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFeatureAccess, type FeatureKey } from "@/hooks/subscription";
-import { PendingApproval } from "@/features/auth/PendingApproval";
+import { PendingApproval } from "@/features/auth";
 import { PermissionDenied } from "@/features/auth";
 import { UpgradePrompt } from "@/components/subscription";
 import { LogoSpinner } from "@/components/ui/logo-spinner";

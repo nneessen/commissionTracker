@@ -33,7 +33,7 @@ import { AuditTrailPage } from "@/features/audit";
 import { UnderwritingSettingsTab } from "@/features/underwriting/components/UnderwritingSettingsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { usePermissionCheck } from "@/hooks/permissions";
 import { useImo } from "@/hooks/imo";
 import { usePendingAgencyRequestCount } from "@/hooks/agency-request";
 import { usePendingJoinApprovalCount } from "@/hooks/join-request";

@@ -20,14 +20,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { GraduationCap, AlertCircle, CheckCircle2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
-import {
-  VALID_CONTRACT_LEVELS,
-  type UserProfile,
-} from "@/services/users/userService";
+import { VALID_CONTRACT_LEVELS } from "@/lib/constants";
+import type { UserProfile } from "@/types/user.types";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGraduateRecruit } from "@/hooks/admin";
 
 interface GraduateToAgentDialogProps {
   recruit: UserProfile;
@@ -40,68 +37,27 @@ export function GraduateToAgentDialog({
   open,
   onOpenChange,
 }: GraduateToAgentDialogProps) {
-  const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+  const graduateMutation = useGraduateRecruit();
   const [contractLevel, setContractLevel] = useState<string>("80");
   const [notes, setNotes] = useState("");
 
-  const graduateMutation = useMutation({
-    mutationFn: async () => {
-      // Update the user to agent role and mark as completed
-      const { error: updateError } = await supabase
-        .from("user_profiles")
-        .update({
-          roles: ["agent"],
-          onboarding_status: "completed",
-          current_onboarding_phase: "completed",
-          approval_status: "approved",
-          contract_level: parseInt(contractLevel),
-          graduated_at: new Date().toISOString(),
-          graduation_notes: notes || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", recruit.id);
+  const handleGraduate = async () => {
+    const result = await graduateMutation.mutateAsync({
+      recruit,
+      contractLevel: Number.parseInt(contractLevel, 10),
+      notes: notes || undefined,
+      graduatedBy: currentUser?.id ?? null,
+    });
 
-      if (updateError) throw updateError;
+    if (!result.success) {
+      return;
+    }
 
-      // Log the graduation in activity log
-      await supabase.from("user_activity_log").insert({
-        user_id: recruit.id,
-        action: "graduated_to_agent",
-        description: `Graduated to agent with ${contractLevel}% contract level`,
-        metadata: {
-          previous_role: "recruit",
-          new_role: "agent",
-          contract_level: contractLevel,
-          notes: notes,
-          graduated_by: currentUser?.id,
-        },
-      });
-
-      // Send notification to upline if exists
-      if (recruit.upline_id) {
-        await supabase.from("notifications").insert({
-          user_id: recruit.upline_id,
-          type: "recruit_graduated",
-          title: `${recruit.first_name} ${recruit.last_name} Graduated!`,
-          message: `Your recruit ${recruit.first_name} ${recruit.last_name} has successfully completed onboarding and is now an active agent with ${contractLevel}% contract level.`,
-          metadata: {
-            recruit_id: recruit.id,
-            recruit_name: `${recruit.first_name} ${recruit.last_name}`,
-            contract_level: contractLevel,
-            graduated_at: new Date().toISOString(),
-          },
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["recruits"] });
-      onOpenChange(false);
-      setNotes("");
-      setContractLevel("80");
-    },
-  });
+    onOpenChange(false);
+    setNotes("");
+    setContractLevel("80");
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -238,7 +194,7 @@ export function GraduateToAgentDialog({
             Cancel
           </Button>
           <Button
-            onClick={() => graduateMutation.mutate()}
+            onClick={handleGraduate}
             disabled={graduateMutation.isPending}
             size="sm"
             className="h-6 px-2 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white"

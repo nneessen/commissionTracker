@@ -1,19 +1,16 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/services/base/supabase";
+import { useMemo } from "react";
 import {
   useCurrentUserProfile,
   useAuthorizationStatus,
-} from "@/hooks/admin/useUserApproval";
+} from "@/hooks/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/services/base/supabase";
 
 export function AuthDiagnostic() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- auth user type
-  const [authUser, setAuthUser] = useState<any>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- session data type
-  const [sessionData, setSessionData] = useState<any>(null);
+  const { supabaseUser, session, error: authError } = useAuth();
   const {
     data: profile,
     error: profileError,
@@ -21,25 +18,15 @@ export function AuthDiagnostic() {
   } = useCurrentUserProfile();
   const authStatus = useAuthorizationStatus();
 
-  useEffect(() => {
-    // Get current user
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (error) setAuthError(error.message);
-      else setAuthUser(data.user);
-    });
-
-    // Get session
-    supabase.auth.getSession().then(({ data, error: _error }) => {
-      if (data?.session) {
-        setSessionData({
-          expires_at: data.session.expires_at,
-          refresh_token: data.session.refresh_token ? "Present" : "Missing",
-          user_email: data.session.user?.email,
-          user_id: data.session.user?.id,
-        });
-      }
-    });
-  }, []);
+  const sessionData = useMemo(() => {
+    if (!session) return null;
+    return {
+      expires_at: session.expires_at,
+      refresh_token: session.refresh_token ? "Present" : "Missing",
+      user_email: session.user?.email,
+      user_id: session.user?.id,
+    };
+  }, [session]);
 
   const statusIcon = authStatus.isApproved ? (
     <CheckCircle className="h-5 w-5 text-green-500" />
@@ -59,25 +46,27 @@ export function AuthDiagnostic() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Auth User
-              {authUser && <CheckCircle className="h-4 w-4 text-green-500" />}
+              {supabaseUser && (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              )}
               {authError && <XCircle className="h-4 w-4 text-red-500" />}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {authUser ? (
+            {supabaseUser ? (
               <div className="space-y-2 text-sm">
                 <p>
-                  <strong>ID:</strong> {authUser.id}
+                  <strong>ID:</strong> {supabaseUser.id}
                 </p>
                 <p>
-                  <strong>Email:</strong> {authUser.email}
+                  <strong>Email:</strong> {supabaseUser.email}
                 </p>
                 <p>
-                  <strong>Role:</strong> {authUser.role || "N/A"}
+                  <strong>Role:</strong> {supabaseUser.role || "N/A"}
                 </p>
                 <p>
                   <strong>Created:</strong>{" "}
-                  {new Date(authUser.created_at).toLocaleString()}
+                  {new Date(supabaseUser.created_at).toLocaleString()}
                 </p>
                 <details>
                   <summary className="cursor-pointer text-muted-foreground">
@@ -86,8 +75,8 @@ export function AuthDiagnostic() {
                   <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
                     {JSON.stringify(
                       {
-                        app: authUser.app_metadata,
-                        user: authUser.user_metadata,
+                        app: supabaseUser.app_metadata,
+                        user: supabaseUser.user_metadata,
                       },
                       null,
                       2,
@@ -96,7 +85,7 @@ export function AuthDiagnostic() {
                 </details>
               </div>
             ) : authError ? (
-              <p className="text-red-500">Error: {authError}</p>
+              <p className="text-red-500">Error: {authError.message}</p>
             ) : (
               <p className="text-muted-foreground">Loading...</p>
             )}
@@ -119,7 +108,7 @@ export function AuthDiagnostic() {
                 </p>
                 <p>
                   <strong>Expires:</strong>{" "}
-                  {new Date(sessionData.expires_at * 1000).toLocaleString()}
+                  {sessionData.expires_at ? new Date(sessionData.expires_at * 1000).toLocaleString() : 'N/A'}
                 </p>
                 <p>
                   <strong>Refresh Token:</strong> {sessionData.refresh_token}
@@ -251,29 +240,29 @@ export function AuthDiagnostic() {
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              {authUser?.id === profile?.id ? (
+              {supabaseUser?.id === profile?.id ? (
                 <CheckCircle className="h-4 w-4 text-green-500" />
               ) : (
                 <XCircle className="h-4 w-4 text-red-500" />
               )}
               <span>Auth User ID matches Profile ID</span>
-              {authUser?.id !== profile?.id && (
+              {supabaseUser?.id !== profile?.id && (
                 <span className="text-red-500 text-sm ml-2">
-                  (Auth: {authUser?.id}, Profile: {profile?.id})
+                  (Auth: {supabaseUser?.id}, Profile: {profile?.id})
                 </span>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              {authUser?.email === profile?.email ? (
+              {supabaseUser?.email === profile?.email ? (
                 <CheckCircle className="h-4 w-4 text-green-500" />
               ) : (
                 <XCircle className="h-4 w-4 text-red-500" />
               )}
               <span>Auth Email matches Profile Email</span>
-              {authUser?.email !== profile?.email && (
+              {supabaseUser?.email !== profile?.email && (
                 <span className="text-red-500 text-sm ml-2">
-                  (Auth: {authUser?.email}, Profile: {profile?.email})
+                  (Auth: {supabaseUser?.email}, Profile: {profile?.email})
                 </span>
               )}
             </div>

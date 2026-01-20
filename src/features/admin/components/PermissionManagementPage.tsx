@@ -9,7 +9,7 @@ import {
   useDeletePermission,
   type CreatePermissionInput,
   type UpdatePermissionInput,
-} from "@/hooks/permissions/usePermissions";
+} from "@/hooks/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

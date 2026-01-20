@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyDownlines, useMyHierarchyStats } from "@/hooks";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useCurrentUserProfile } from "@/hooks/admin";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SendInvitationModal } from "./components/SendInvitationModal";
 import { TeamMetricsCard } from "./components/TeamMetricsCard";

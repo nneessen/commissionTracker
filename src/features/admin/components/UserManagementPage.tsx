@@ -1,11 +1,11 @@
 // src/features/admin/components/UserManagementPage.tsx
 
 import { useState, useMemo } from "react";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import { useAllUsers } from "@/hooks/admin";
 import {
   useAllRolesWithPermissions,
   useUpdateUserRoles,
-} from "@/hooks/permissions/usePermissions";
+} from "@/hooks/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { RoleName, Permission } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/users/userService";
+import type { UserProfile } from "@/types/user.types";
 import { getFullName, getDisplayName } from "@/types/user.types";
 
 export function UserManagementPage() {

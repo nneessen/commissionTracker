@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { invalidateHierarchyForNode } from "@/hooks/hierarchy/invalidation";
+import { invalidateHierarchyForNode } from "@/hooks/hierarchy";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,13 +35,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
-import { useDeleteUser } from "@/hooks/admin/useUserApproval";
-import { useToggleUserUWAccess } from "@/hooks/admin/useToggleUserUWAccess";
-import {
-  userApprovalService,
-  VALID_CONTRACT_LEVELS,
-} from "@/services/users/userService";
+import { useAllRolesWithPermissions } from "@/hooks/permissions";
+import { useDeleteUser } from "@/hooks/admin";
+import { useToggleUserUWAccess } from "@/hooks/admin";
+import { userApprovalService } from "@/services/users/userService";
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 import {
@@ -60,7 +57,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/users/userService";
+import { VALID_CONTRACT_LEVELS } from "@/lib/constants";
+import type { UserProfile } from "@/types/user.types";
 import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import { useImo } from "@/contexts/ImoContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,7 +69,7 @@ import {
   useAgencyById,
   imoKeys,
   agencyKeys,
-} from "@/hooks/imo/useImoQueries";
+} from "@/hooks/imo";
 
 interface EditUserDialogProps {
   user: UserProfile | null;
@@ -477,7 +475,7 @@ export default function EditUserDialog({
       // Invalidate hierarchy queries so Team page updates when upline changes
       if (uplineChanged) {
         invalidateHierarchyForNode(queryClient, user.id);
-        if (updates.upline_id) {
+        if (updates.upline_id && typeof updates.upline_id === 'string') {
           invalidateHierarchyForNode(queryClient, updates.upline_id);
         }
         // Also invalidate client hierarchy queries

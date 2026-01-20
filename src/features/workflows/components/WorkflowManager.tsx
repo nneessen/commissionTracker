@@ -66,7 +66,7 @@ import { cn } from "@/lib/utils";
 import {
   useCurrentUserProfile,
   useAuthorizationStatus,
-} from "@/hooks/admin/useUserApproval";
+} from "@/hooks/admin";
 
 export default function WorkflowManager() {
   const { user } = useAuth();

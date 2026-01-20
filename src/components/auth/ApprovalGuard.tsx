@@ -1,13 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/components/auth/ApprovalGuard.tsx
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Navigate, useLocation } from "@tanstack/react-router";
-import { useAuthorizationStatus } from "../../hooks/admin/useUserApproval";
-import { PendingApproval } from "../../features/auth/PendingApproval";
-import { DeniedAccess } from "../../features/auth/DeniedAccess";
-import { supabase } from "@/services/base/supabase";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { useAuthorizationStatus } from "@/hooks/admin";
+import { PendingApproval, DeniedAccess } from "@/features/auth";
+import { usePermissionCheck } from "@/hooks/permissions";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ApprovalGuardProps {
   children: React.ReactNode;
@@ -25,13 +24,10 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   const location = useLocation();
   const { isApproved, isPending, isDenied, denialReason, isLoading, profile } =
     useAuthorizationStatus();
+  const { supabaseUser } = useAuth();
 
   const { is, isLoading: permissionsLoading } = usePermissionCheck();
-
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(
-    undefined,
-  );
-  const [authCheckLoading, setAuthCheckLoading] = useState(true);
+  const currentUserEmail = supabaseUser?.email || undefined;
 
   const isRecruit = is("recruit");
   const isAgent = is("agent");
@@ -40,18 +36,8 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   // Admin email - hardcoded for security
   const ADMIN_EMAIL = "nickneessen@thestandardhq.com";
 
-  useEffect(() => {
-    // Get the current auth user email directly
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setCurrentUserEmail(data.user.email || undefined);
-      }
-      setAuthCheckLoading(false);
-    });
-  }, []);
-
   // Show loading state while checking approval status, auth, or permissions
-  if (isLoading || authCheckLoading || permissionsLoading) {
+  if (isLoading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">

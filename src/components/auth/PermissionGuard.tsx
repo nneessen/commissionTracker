@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { usePermissionCheck } from "@/hooks/permissions";
 import type { PermissionCode } from "@/types/permissions.types";
 import { PermissionDenied } from "@/features/auth";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
