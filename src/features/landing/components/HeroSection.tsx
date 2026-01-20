@@ -1,16 +1,43 @@
 // src/features/landing/components/HeroSection.tsx
 // Brutalist hero - raw, bold, gold accent throughout
 
-import { Link } from '@tanstack/react-router';
-import type { LandingPageTheme } from '../types';
+import { Link } from "@tanstack/react-router";
+import type { LandingPageTheme } from "../types";
 
 interface HeroSectionProps {
   theme: LandingPageTheme;
 }
 
 export function HeroSection({ theme }: HeroSectionProps) {
+  const hasBackgroundMedia = theme.hero_video_url || theme.hero_image_url;
+
   return (
     <section className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
+      {/* Background media (video or image) */}
+      {hasBackgroundMedia && (
+        <div className="absolute inset-0 z-0">
+          {theme.hero_video_url ? (
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+            >
+              <source src={theme.hero_video_url} type="video/mp4" />
+            </video>
+          ) : theme.hero_image_url ? (
+            <img
+              src={theme.hero_image_url}
+              alt="Hero background"
+              className="w-full h-full object-cover"
+            />
+          ) : null}
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+      )}
+
       {/* Harsh grid lines */}
       <div
         className="absolute inset-0 opacity-[0.03]"
@@ -19,7 +46,7 @@ export function HeroSection({ theme }: HeroSectionProps) {
             linear-gradient(to right, white 1px, transparent 1px),
             linear-gradient(to bottom, white 1px, transparent 1px)
           `,
-          backgroundSize: '80px 80px',
+          backgroundSize: "80px 80px",
         }}
       />
 
@@ -55,8 +82,12 @@ export function HeroSection({ theme }: HeroSectionProps) {
           to="/login"
           className="text-white/60 text-sm font-mono uppercase tracking-widest hover:text-white transition-colors"
           style={{ borderBottom: `1px solid transparent` }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderBottomColor = theme.primary_color)}
-          onMouseLeave={(e) => (e.currentTarget.style.borderBottomColor = 'transparent')}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.borderBottomColor = theme.primary_color)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.borderBottomColor = "transparent")
+          }
         >
           Agent Login →
         </Link>
@@ -69,7 +100,7 @@ export function HeroSection({ theme }: HeroSectionProps) {
           className="text-[12vw] md:text-[10vw] lg:text-[8vw] font-black leading-[0.85] tracking-tighter text-white uppercase"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          {theme.hero_headline.split(' ').map((word, i) => (
+          {theme.hero_headline.split(" ").map((word, i) => (
             <span key={i} className="block">
               {i === 1 ? (
                 <span style={{ color: theme.primary_color }}>{word}</span>
@@ -92,16 +123,16 @@ export function HeroSection({ theme }: HeroSectionProps) {
             className="group relative px-8 py-4 font-black text-sm uppercase tracking-widest transition-all duration-150 border-2"
             style={{
               background: theme.primary_color,
-              color: '#0a0a0a',
+              color: "#0a0a0a",
               borderColor: theme.primary_color,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.background = "transparent";
               e.currentTarget.style.color = theme.primary_color;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = theme.primary_color;
-              e.currentTarget.style.color = '#0a0a0a';
+              e.currentTarget.style.color = "#0a0a0a";
             }}
           >
             {theme.hero_cta_text}
