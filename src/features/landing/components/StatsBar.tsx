@@ -29,7 +29,7 @@ function StatBlock({
 
   return (
     <div
-      className="relative py-12 md:py-20 min-w-0 px-2 md:px-4"
+      className="relative py-10 md:py-16 min-w-0 overflow-hidden"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
@@ -51,7 +51,7 @@ function StatBlock({
 
       {/* Massive number */}
       <div
-        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-[0.8]"
+        className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter leading-[0.85] break-all"
         style={{
           color: primaryColor,
           fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -108,7 +108,7 @@ export function StatsBar({ theme }: StatsBarProps) {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12">
         {/* Grid layout */}
-        <div className="grid grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {theme.stats_data.map((stat, index) => (
             <StatBlock
               key={stat.label}
