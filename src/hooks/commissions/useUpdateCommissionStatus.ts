@@ -1,6 +1,8 @@
 // src/hooks/commissions/useUpdateCommissionStatus.ts
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { hierarchyKeys } from "../hierarchy/hierarchyKeys";
+import { invalidateHierarchyForNode } from "../hierarchy/invalidation";
 import { supabase } from "../../services/base/supabase";
 
 interface UpdateCommissionStatusParams {
@@ -136,7 +138,7 @@ export const useUpdateCommissionStatus = () => {
 
       return commissionData;
     },
-    onSuccess: () => {
+    onSuccess: (commissionData) => {
       // Invalidate all related queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["commissions"] });
       queryClient.invalidateQueries({ queryKey: ["policies"] });
@@ -144,10 +146,19 @@ export const useUpdateCommissionStatus = () => {
       queryClient.invalidateQueries({ queryKey: ["chargeback-summary"] });
       // Invalidate override-related queries (commission status changes trigger override status sync)
       queryClient.invalidateQueries({ queryKey: ["overrides"] });
-      queryClient.invalidateQueries({ queryKey: ["agent-overrides"] });
-      queryClient.invalidateQueries({ queryKey: ["agent-details"] });
-      queryClient.invalidateQueries({ queryKey: ["hierarchy", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["team-comparison"] });
+      const agentId =
+        commissionData && typeof commissionData === "object"
+          ? (commissionData as { user_id?: string }).user_id
+          : undefined;
+      if (agentId) {
+        invalidateHierarchyForNode(queryClient, agentId);
+      }
+      queryClient.invalidateQueries({
+        queryKey: hierarchyKeys.rollup("me", undefined, "stats"),
+      });
+      queryClient.invalidateQueries({
+        queryKey: hierarchyKeys.rollup("me", undefined, "team-comparison"),
+      });
     },
   });
 };

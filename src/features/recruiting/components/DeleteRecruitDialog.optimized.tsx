@@ -18,6 +18,7 @@ import { enhancedRecruitingService } from "@/services/recruiting/recruitingServi
 import { supabase } from "@/services/base/supabase";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
 import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 
 interface DeleteRecruitDialogProps {
@@ -50,7 +51,11 @@ export function DeleteRecruitDialogOptimized({
 
   // Fetch downlines for reassignment check
   const { data: downlines, isLoading: checkingDownlines } = useQuery({
-    queryKey: ["downlines", recruit?.id],
+    queryKey: hierarchyKeys.downline(
+      recruit?.id ?? "unknown",
+      undefined,
+      "direct",
+    ),
     queryFn: async () => {
       if (!recruit) return [];
       const { data } = await supabase

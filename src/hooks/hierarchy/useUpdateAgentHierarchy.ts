@@ -1,8 +1,9 @@
 // src/hooks/hierarchy/useUpdateAgentHierarchy.ts
 
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {hierarchyService} from '../../services/hierarchy/hierarchyService';
-import {HierarchyChangeRequest} from '../../types/hierarchy.types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { hierarchyService } from "../../services/hierarchy/hierarchyService";
+import { HierarchyChangeRequest } from "../../types/hierarchy.types";
+import { invalidateHierarchyForNode } from "./invalidation";
 
 /**
  * Update agent hierarchy assignment (admin only)
@@ -18,13 +19,15 @@ export const useUpdateAgentHierarchy = () => {
     mutationFn: async (request: HierarchyChangeRequest) => {
       return hierarchyService.updateAgentHierarchy(request);
     },
-    onSuccess: () => {
-      // Invalidate all hierarchy-related queries
-      queryClient.invalidateQueries({ queryKey: ['hierarchy'] });
+    onSuccess: (_data, variables) => {
+      invalidateHierarchyForNode(queryClient, variables.agent_id);
+      if (variables.new_upline_id) {
+        invalidateHierarchyForNode(queryClient, variables.new_upline_id);
+      }
       // Invalidate user profiles in case they need to refresh
-      queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
       // Invalidate overrides since hierarchy changes affect override calculations
-      queryClient.invalidateQueries({ queryKey: ['overrides'] });
+      queryClient.invalidateQueries({ queryKey: ["overrides"] });
     },
   });
 };

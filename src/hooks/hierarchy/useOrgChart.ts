@@ -1,14 +1,15 @@
 // src/hooks/hierarchy/useOrgChart.ts
 // Phase 12A: Hook for fetching org chart visualization data
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services/base/supabase";
 import type {
   OrgChartNode,
   OrgChartScope,
   OrgChartRequest,
   FlatOrgChartNode,
-} from '@/types/hierarchy.types';
+} from "@/types/hierarchy.types";
+import { hierarchyKeys } from "./hierarchyKeys";
 
 export interface UseOrgChartOptions {
   scope?: OrgChartScope;
@@ -23,17 +24,17 @@ export interface UseOrgChartOptions {
  * Fetch org chart data with nested structure
  */
 async function fetchOrgChartData(
-  params: OrgChartRequest
+  params: OrgChartRequest,
 ): Promise<OrgChartNode | null> {
-  const { data, error } = await supabase.rpc('get_org_chart_data', {
-    p_scope: params.scope ?? 'auto',
+  const { data, error } = await supabase.rpc("get_org_chart_data", {
+    p_scope: params.scope ?? "auto",
     p_scope_id: params.scopeId ?? null,
     p_include_metrics: params.includeMetrics ?? true,
     p_max_depth: params.maxDepth ?? 10,
   });
 
   if (error) {
-    console.error('Error fetching org chart data:', error);
+    console.error("Error fetching org chart data:", error);
     throw new Error(error.message);
   }
 
@@ -47,7 +48,7 @@ export function flattenOrgChart(
   node: OrgChartNode,
   parentId?: string,
   depth: number = 0,
-  path: string[] = []
+  path: string[] = [],
 ): FlatOrgChartNode[] {
   const currentPath = [...path, node.id];
   const childCount = countDescendants(node);
@@ -86,7 +87,7 @@ function countDescendants(node: OrgChartNode): number {
  */
 export function findNodeById(
   root: OrgChartNode,
-  id: string
+  id: string,
 ): OrgChartNode | null {
   if (root.id === id) return root;
   for (const child of root.children) {
@@ -102,7 +103,7 @@ export function findNodeById(
 export function getPathToNode(
   root: OrgChartNode,
   targetId: string,
-  path: OrgChartNode[] = []
+  path: OrgChartNode[] = [],
 ): OrgChartNode[] | null {
   const currentPath = [...path, root];
   if (root.id === targetId) return currentPath;
@@ -121,7 +122,7 @@ export function getPathToNode(
  */
 export function useOrgChart(options: UseOrgChartOptions = {}) {
   const {
-    scope = 'auto',
+    scope = "auto",
     scopeId,
     includeMetrics = true,
     maxDepth = 10,
@@ -129,8 +130,12 @@ export function useOrgChart(options: UseOrgChartOptions = {}) {
     staleTime = 5 * 60 * 1000, // 5 minutes
   } = options;
 
+  const rootKey = `${scope}:${scopeId ?? "auto"}:${
+    includeMetrics ? "metrics" : "no-metrics"
+  }`;
+
   return useQuery({
-    queryKey: ['org-chart', scope, scopeId, includeMetrics, maxDepth],
+    queryKey: hierarchyKeys.agencyTree(rootKey, maxDepth),
     queryFn: () =>
       fetchOrgChartData({
         scope,
@@ -138,8 +143,8 @@ export function useOrgChart(options: UseOrgChartOptions = {}) {
         includeMetrics,
         maxDepth,
       }),
-    staleTime,
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: staleTime ?? 60_000,
+    gcTime: 20 * 60_000, // 20 minutes
     enabled,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateHierarchyForNode } from "@/hooks/hierarchy/invalidation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -475,9 +476,10 @@ export default function EditUserDialog({
       }
       // Invalidate hierarchy queries so Team page updates when upline changes
       if (uplineChanged) {
-        queryClient.invalidateQueries({ queryKey: ["hierarchy"] });
-        queryClient.invalidateQueries({ queryKey: ["downlines"] });
-        queryClient.invalidateQueries({ queryKey: ["team-comparison"] });
+        invalidateHierarchyForNode(queryClient, user.id);
+        if (updates.upline_id) {
+          invalidateHierarchyForNode(queryClient, updates.upline_id);
+        }
         // Also invalidate client hierarchy queries
         queryClient.invalidateQueries({ queryKey: ["clients", "hierarchy"] });
       }

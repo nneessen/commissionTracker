@@ -1,7 +1,8 @@
 // src/hooks/hierarchy/useDownlinePerformance.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {hierarchyService} from '../../services/hierarchy/hierarchyService';
+import { useQuery } from "@tanstack/react-query";
+import { hierarchyService } from "../../services/hierarchy/hierarchyService";
+import { hierarchyKeys } from "./hierarchyKeys";
 
 export interface UseDownlinePerformanceOptions {
   enabled?: boolean;
@@ -17,15 +18,18 @@ export interface UseDownlinePerformanceOptions {
  * @param options Optional configuration for query behavior
  * @returns TanStack Query result with downline performance data
  */
-export const useDownlinePerformance = (downlineId: string, options?: UseDownlinePerformanceOptions) => {
+export const useDownlinePerformance = (
+  downlineId: string,
+  options?: UseDownlinePerformanceOptions,
+) => {
   const { enabled = true, staleTime, gcTime } = options || {};
 
   return useQuery({
-    queryKey: ['hierarchy', 'downline', downlineId, 'performance'],
+    queryKey: hierarchyKeys.rollup(downlineId, undefined, "performance"),
     queryFn: () => hierarchyService.getDownlinePerformance(downlineId),
     enabled: enabled && !!downlineId, // Only run if downlineId is provided
-    staleTime: staleTime ?? 3 * 60 * 1000, // 3 minutes - performance metrics change more frequently
-    gcTime: gcTime ?? 10 * 60 * 1000, // 10 minutes garbage collection
+    staleTime: staleTime ?? 60_000,
+    gcTime: gcTime ?? 20 * 60_000,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

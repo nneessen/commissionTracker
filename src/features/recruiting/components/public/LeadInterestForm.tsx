@@ -41,12 +41,7 @@ const leadFormSchema = z.object({
   state: z.string().min(2, "State is required"),
   availability: z.enum(["full_time", "part_time", "exploring"]),
   incomeGoals: z.string().optional(),
-  whyInterested: z
-    .string()
-    .min(
-      50,
-      "Please tell us more about why you're interested (at least 50 characters)",
-    ),
+  whyInterested: z.string().min(1, "Please tell us why you're interested"),
   insuranceExperience: z.enum([
     "none",
     "less_than_1_year",
@@ -627,23 +622,16 @@ export function LeadInterestForm({
             <Textarea
               id="whyInterested"
               placeholder="Tell us a bit about yourself and what draws you to this opportunity..."
-              className="min-h-[70px] text-sm resize-none bg-background border-2 border-zinc-300 dark:border-zinc-700 rounded-lg focus:border-zinc-900 dark:focus:border-zinc-100"
+              className="min-h-[70px] text-sm resize-none bg-background text-foreground border-2 border-zinc-300 dark:border-zinc-700 rounded-lg focus:border-zinc-900 dark:focus:border-zinc-100"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
             />
-            <div className="flex justify-between items-center">
-              {field.state.meta.errors.length > 0 ? (
-                <p className="text-[10px] text-destructive">
-                  {getErrorMessage(field.state.meta.errors)}
-                </p>
-              ) : (
-                <span />
-              )}
-              <span className="text-[10px] text-muted-foreground">
-                {field.state.value.length}/50 min
-              </span>
-            </div>
+            {field.state.meta.errors.length > 0 && (
+              <p className="text-[10px] text-destructive">
+                {getErrorMessage(field.state.meta.errors)}
+              </p>
+            )}
           </div>
         )}
       </form.Field>

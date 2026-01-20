@@ -3,6 +3,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invitationService } from "../../services/hierarchy/invitationService";
+import { invalidateHierarchyForNode } from "./invalidation";
 import type {
   SendInvitationRequest,
   AcceptInvitationRequest,
@@ -116,8 +117,18 @@ export function useAcceptInvitation() {
         // Invalidate all relevant queries
         queryClient.invalidateQueries({ queryKey: invitationKeys.received() });
         queryClient.invalidateQueries({ queryKey: invitationKeys.stats() });
-        queryClient.invalidateQueries({ queryKey: ["hierarchy"] }); // Invalidate hierarchy queries
-        queryClient.invalidateQueries({ queryKey: ["downlines"] }); // Invalidate downlines queries
+        if (response.invitation?.invitee_id) {
+          invalidateHierarchyForNode(
+            queryClient,
+            response.invitation.invitee_id,
+          );
+        }
+        if (response.invitation?.inviter_id) {
+          invalidateHierarchyForNode(
+            queryClient,
+            response.invitation.inviter_id,
+          );
+        }
       } else {
         toast.error("Failed to accept invitation", {
           description: response.error,

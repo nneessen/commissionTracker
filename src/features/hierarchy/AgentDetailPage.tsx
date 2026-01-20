@@ -16,6 +16,13 @@ import {
   Users,
   Edit,
 } from "lucide-react";
+import {
+  useAgentCommissions,
+  useAgentDetails,
+  useAgentOverrides,
+  useAgentPolicies,
+  useTeamComparison,
+} from "@/hooks/hierarchy";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,7 +33,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 import { supabase } from "@/services/base/supabase";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -70,16 +76,12 @@ export function AgentDetailPage() {
   >("policies");
 
   // Fetch comprehensive agent data
-  const { data: agentData, isLoading: loadingAgent } = useQuery({
-    queryKey: ["agent-details", agentId],
-    queryFn: () => hierarchyService.getAgentDetails(agentId),
-  });
-
-  const { data: policies, isLoading: loadingPolicies } = useQuery({
-    queryKey: ["agent-policies", agentId],
-    queryFn: () => hierarchyService.getAgentPolicies(agentId),
-    enabled: !!agentId,
-  });
+  const { data: agentData, isLoading: loadingAgent } = useAgentDetails(
+    agentId,
+    {
+      enabled: !!agentId,
+    },
+  );
 
   // A POLICY OBJECT
   //   {
@@ -95,11 +97,17 @@ export function AgentDetailPage() {
   //     "issueDate": "2026-01-28" is this suppose to be submitDate? are they the same?
   // }
 
-  const { data: commissions, isLoading: loadingCommissions } = useQuery({
-    queryKey: ["agent-commissions", agentId],
-    queryFn: () => hierarchyService.getAgentCommissions(agentId),
-    enabled: !!agentId,
-  });
+  const { data: policies, isLoading: loadingPolicies } = useAgentPolicies(
+    agentId,
+    {
+      enabled: !!agentId,
+    },
+  );
+
+  const { data: commissions, isLoading: loadingCommissions } =
+    useAgentCommissions(agentId, {
+      enabled: !!agentId,
+    });
 
   // Get current user for viewer override calculations
   const { data: currentUser } = useQuery({
@@ -112,15 +120,12 @@ export function AgentDetailPage() {
     },
   });
 
-  const { data: overrides } = useQuery({
-    queryKey: ["agent-overrides", agentId, currentUser?.id],
-    queryFn: () => hierarchyService.getAgentOverrides(agentId, currentUser?.id),
+  const { data: overrides } = useAgentOverrides(agentId, {
     enabled: !!agentId,
+    viewerId: currentUser?.id,
   });
 
-  const { data: teamComparison } = useQuery({
-    queryKey: ["team-comparison", agentId],
-    queryFn: () => hierarchyService.getTeamComparison(agentId),
+  const { data: teamComparison } = useTeamComparison(agentId, {
     enabled: !!agentId,
   });
 

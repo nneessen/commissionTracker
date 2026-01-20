@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { useUplineProfile } from "@/hooks/hierarchy";
 import { supabase } from "@/services/base/supabase";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -91,22 +92,7 @@ export function MyRecruitingPipeline() {
     !authLoading && !profileLoading && !!user?.id && !!profile?.id;
 
   // Fetch upline/trainer info
-  const { data: upline } = useQuery<UserProfile | null>({
-    queryKey: ["upline", profile?.upline_id],
-    queryFn: async () => {
-      if (!profile?.upline_id) return null;
-
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select(
-          "id, first_name, last_name, email, phone, profile_photo_url, roles",
-        )
-        .eq("id", profile.upline_id)
-        .single();
-
-      if (error) throw error;
-      return data as UserProfile;
-    },
+  const { data: upline } = useUplineProfile(profile?.upline_id, {
     enabled: isReady && !!profile?.upline_id,
   });
 

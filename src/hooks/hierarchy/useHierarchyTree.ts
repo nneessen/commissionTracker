@@ -1,7 +1,8 @@
 // src/hooks/hierarchy/useHierarchyTree.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {hierarchyService} from '../../services/hierarchy/hierarchyService';
+import { useQuery } from "@tanstack/react-query";
+import { hierarchyService } from "../../services/hierarchy/hierarchyService";
+import { hierarchyKeys } from "./hierarchyKeys";
 
 export interface UseHierarchyTreeOptions {
   enabled?: boolean;
@@ -20,10 +21,10 @@ export const useHierarchyTree = (options?: UseHierarchyTreeOptions) => {
   const { enabled = true, staleTime, gcTime } = options || {};
 
   return useQuery({
-    queryKey: ['hierarchy', 'tree'],
+    queryKey: hierarchyKeys.downline("me", undefined, "tree"),
     queryFn: () => hierarchyService.getMyHierarchyTree(),
-    staleTime: staleTime ?? 5 * 60 * 1000, // 5 minutes default - hierarchy doesn't change often
-    gcTime: gcTime ?? 10 * 60 * 1000, // 10 minutes garbage collection
+    staleTime: staleTime ?? 60_000, // 60 seconds default
+    gcTime: gcTime ?? 20 * 60_000, // 20 minutes garbage collection
     enabled,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

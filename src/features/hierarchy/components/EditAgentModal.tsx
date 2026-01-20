@@ -3,6 +3,8 @@
 import React from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
+import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
+import { invalidateHierarchyForNode } from "@/hooks/hierarchy/invalidation";
 import {
   Dialog,
   DialogContent,
@@ -74,9 +76,9 @@ export function EditAgentModal({
 
         toast.success("Agent profile updated successfully");
         queryClient.invalidateQueries({
-          queryKey: ["agent-details", agent.id],
+          queryKey: hierarchyKeys.rollup(agent.id, undefined, "agent-details"),
         });
-        queryClient.invalidateQueries({ queryKey: ["hierarchy-tree"] });
+        invalidateHierarchyForNode(queryClient, agent.id);
         onClose();
       } catch (error) {
         console.error("Error updating agent:", error);

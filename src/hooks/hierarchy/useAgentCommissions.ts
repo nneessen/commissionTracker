@@ -1,7 +1,8 @@
 // src/hooks/hierarchy/useAgentCommissions.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {hierarchyService} from '@/services/hierarchy/hierarchyService';
+import { useQuery } from "@tanstack/react-query";
+import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
+import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 
 export interface UseAgentCommissionsOptions {
   enabled?: boolean;
@@ -13,11 +14,18 @@ export interface UseAgentCommissionsOptions {
  * Fetch commission data for a specific agent
  * Includes earnings, advances, chargebacks, etc.
  */
-export const useAgentCommissions = (agentId?: string, options?: UseAgentCommissionsOptions) => {
+export const useAgentCommissions = (
+  agentId?: string,
+  options?: UseAgentCommissionsOptions,
+) => {
   const { enabled = true, staleTime, gcTime } = options || {};
 
   return useQuery({
-    queryKey: ['agent-commissions', agentId],
+    queryKey: hierarchyKeys.rollup(
+      agentId ?? "unknown",
+      undefined,
+      "agent-commissions",
+    ),
     queryFn: () => hierarchyService.getAgentCommissions(agentId!),
     staleTime: staleTime ?? 5 * 60 * 1000,
     gcTime: gcTime ?? 10 * 60 * 1000,

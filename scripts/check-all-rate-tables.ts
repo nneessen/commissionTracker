@@ -5,6 +5,29 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const getNameOrUnknown = (value: unknown): string => {
+  if (!isRecord(value)) return "Unknown";
+  const name = value.name;
+  return typeof name === "string" ? name : "Unknown";
+};
+
+const getStringOrUnknown = (value: unknown): string =>
+  typeof value === "string" ? value : "Unknown";
+
+const formatValue = (value: unknown): string => String(value);
+const formatLocale = (value: unknown): string => {
+  if (
+    value &&
+    typeof (value as { toLocaleString?: unknown }).toLocaleString === "function"
+  ) {
+    return String((value as { toLocaleString: () => string }).toLocaleString());
+  }
+  return String(value);
+};
+
 async function checkAllRateTables() {
   console.log("\n=== RATE DATA DIAGNOSTIC ===\n");
 
@@ -32,28 +55,28 @@ async function checkAllRateTables() {
         .limit(10);
 
       console.log("\n--- Sample from product_rate_table ---");
-      for (const row of sample || []) {
-        const prod = row.products as any;
-        console.log(
-          "  " +
-            (prod?.carriers?.name || "Unknown") +
-            " - " +
-            (prod?.name || "Unknown") +
-            ":",
-        );
+      const sampleRows = Array.isArray(sample) ? sample : [];
+      for (const row of sampleRows) {
+        if (!isRecord(row)) continue;
+        const product = isRecord(row.products) ? row.products : null;
+        const carrierName = getNameOrUnknown(product?.carriers);
+        const productName = getStringOrUnknown(product?.name);
+        console.log("  " + carrierName + " - " + productName + ":");
         console.log(
           "    Age " +
-            row.age_band_start +
+            formatValue(row.age_band_start) +
             "-" +
-            row.age_band_end +
+            formatValue(row.age_band_end) +
             ", " +
-            row.gender +
+            formatValue(row.gender) +
             ", " +
-            row.tobacco_class +
+            formatValue(row.tobacco_class) +
             ", " +
-            row.health_class,
+            formatValue(row.health_class),
         );
-        console.log("    Rate: $" + row.rate_per_thousand + "/thousand");
+        console.log(
+          "    Rate: $" + formatValue(row.rate_per_thousand) + "/thousand",
+        );
       }
     }
   }
@@ -77,19 +100,26 @@ async function checkAllRateTables() {
   if (activeProducts && activeProducts.length > 0) {
     console.log("\n--- Active Products ---");
     for (const prod of activeProducts) {
-      const carrier = (prod.carriers as any)?.name || "Unknown";
+      if (!isRecord(prod)) continue;
+      const carrier = getNameOrUnknown(prod.carriers);
       console.log(
-        "  " + carrier + " - " + prod.name + " (" + prod.product_type + ")",
+        "  " +
+          carrier +
+          " - " +
+          getStringOrUnknown(prod.name) +
+          " (" +
+          getStringOrUnknown(prod.product_type) +
+          ")",
       );
       console.log(
         "    Age: " +
-          (prod.min_age || "N/A") +
+          (prod.min_age ? formatValue(prod.min_age) : "N/A") +
           "-" +
-          (prod.max_age || "N/A") +
+          (prod.max_age ? formatValue(prod.max_age) : "N/A") +
           ", Face: $" +
-          (prod.min_face_amount?.toLocaleString() || "N/A") +
+          (prod.min_face_amount ? formatLocale(prod.min_face_amount) : "N/A") +
           "-$" +
-          (prod.max_face_amount?.toLocaleString() || "N/A"),
+          (prod.max_face_amount ? formatLocale(prod.max_face_amount) : "N/A"),
       );
     }
   }

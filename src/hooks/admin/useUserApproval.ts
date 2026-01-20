@@ -1,6 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/admin/useUserApproval.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { invalidateHierarchyForNode } from "../hierarchy/invalidation";
 import { userApprovalService } from "@/services/users/userService";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -100,7 +101,7 @@ export function useApproveUser() {
 
   return useMutation({
     mutationFn: (userId: string) => userApprovalService.approveUser(userId),
-    onSuccess: () => {
+    onSuccess: (_data, _userId) => {
       // Invalidate and refetch all user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
       queryClient.invalidateQueries({
@@ -272,16 +273,7 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
 
       // CRITICAL: Invalidate hierarchy/team queries so deleted user disappears from lists
-      queryClient.invalidateQueries({ queryKey: ["hierarchy"] });
-      queryClient.invalidateQueries({ queryKey: ["hierarchyTree"] });
-      queryClient.invalidateQueries({ queryKey: ["hierarchyStats"] });
-      queryClient.invalidateQueries({ queryKey: ["downlines"] });
-      queryClient.invalidateQueries({ queryKey: ["myDownlines"] });
-      queryClient.invalidateQueries({ queryKey: ["downlinePerformance"] });
-      queryClient.invalidateQueries({ queryKey: ["allDownlinePerformance"] });
-      queryClient.invalidateQueries({ queryKey: ["teamComparison"] });
-      queryClient.invalidateQueries({ queryKey: ["agentDetails"] });
-      queryClient.invalidateQueries({ queryKey: ["agentTeam"] });
+      invalidateHierarchyForNode(queryClient, userId);
     },
   });
 }

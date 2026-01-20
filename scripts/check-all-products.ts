@@ -5,6 +5,23 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const getStringValue = (value: unknown): string => String(value);
+
+const getNameOrUnknown = (value: unknown): string => {
+  if (!isRecord(value)) return "Unknown";
+  const name = value.name;
+  return typeof name === "string" ? name : "Unknown";
+};
+
+const formatAmount = (value: unknown): string => {
+  if (typeof value === "number") return value.toLocaleString();
+  if (typeof value === "string" && value.length > 0) return value;
+  return "N/A";
+};
+
 async function checkProducts() {
   console.log("\n=== PRODUCTS DIAGNOSTIC ===\n");
 
@@ -44,8 +61,10 @@ async function checkProducts() {
   console.log("Inactive products:", inactiveCount);
 
   console.log("\n--- All Products ---");
-  for (const prod of allProducts || []) {
-    const carrier = (prod.carriers as any)?.name || "Unknown";
+  const productRows = Array.isArray(allProducts) ? allProducts : [];
+  for (const prod of productRows) {
+    if (!isRecord(prod)) continue;
+    const carrier = getNameOrUnknown(prod.carriers);
     const status = prod.is_active ? "✓ Active" : "✗ Inactive";
     console.log(
       "  " +
@@ -53,21 +72,27 @@ async function checkProducts() {
         " | " +
         carrier +
         " - " +
-        prod.name +
+        getStringValue(prod.name) +
         " (" +
-        prod.product_type +
+        getStringValue(prod.product_type) +
         ")",
     );
     console.log(
-      "    Age: " + (prod.min_age || "N/A") + "-" + (prod.max_age || "N/A"),
+      "    Age: " +
+        (prod.min_age ? getStringValue(prod.min_age) : "N/A") +
+        "-" +
+        (prod.max_age ? getStringValue(prod.max_age) : "N/A"),
     );
     console.log(
       "    Face: $" +
-        (prod.min_face_amount?.toLocaleString() || "N/A") +
+        formatAmount(prod.min_face_amount) +
         "-$" +
-        (prod.max_face_amount?.toLocaleString() || "N/A"),
+        formatAmount(prod.max_face_amount),
     );
-    console.log("    IMO: " + (prod.imo_id || "NULL (global)"));
+    console.log(
+      "    IMO: " +
+        (prod.imo_id ? getStringValue(prod.imo_id) : "NULL (global)"),
+    );
   }
 
   // Check carriers

@@ -1,6 +1,6 @@
 // src/features/hierarchy/components/AgentTable.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronRight,
@@ -463,19 +463,24 @@ export function AgentTable({
   const viewerId = currentUserProfile?.id;
 
   // Agent IDs for batch fetching (include owner if present)
-  const agentIds = owner
-    ? [owner.id, ...agents.map((a) => a.id)]
-    : agents.map((a) => a.id);
-  const agentIdsKey = [...agentIds].sort().join(",");
+  const ownerId = owner?.id;
+
+  const agentIdsKey = useMemo(() => {
+    const ids = ownerId
+      ? [ownerId, ...agents.map((a) => a.id)]
+      : agents.map((a) => a.id);
+    return ids.sort().join(",");
+  }, [agents, ownerId]);
 
   // BATCH FETCH: Fetch metrics for ALL agents in 2 queries (not N+1)
   useEffect(() => {
-    if (agentIds.length === 0) {
+    if (!agentIdsKey) {
       setMetricsMap(new Map());
       setMetricsLoading(false);
       return;
     }
 
+    const agentIds = agentIdsKey.split(",");
     setMetricsLoading(true);
     fetchAllAgentMetrics(agentIds, viewerId, dateRange)
       .then(setMetricsMap)

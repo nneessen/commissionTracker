@@ -4,7 +4,7 @@ A comprehensive Insurance Sales KPI, Recruiting, and Agency Management System bu
 
 ## Overview
 
-Commission Tracker is a full-featured platform designed specifically for insurance agencies and Independent Marketing Organizations (IMOs). It provides end-to-end management of:
+The Standard HQ is a full-featured platform designed specifically for insurance agencies and Independent Marketing Organizations (IMOs). It provides end-to-end management of:
 
 - **Agent recruiting and onboarding** - Customizable pipelines with checklists, document collection, and automated workflows
 - **Policy and commission tracking** - Complete lifecycle management from policy placement through commission earning
@@ -23,10 +23,10 @@ Commission Tracker is a full-featured platform designed specifically for insuran
 | State/Data | TanStack Query                      |
 | Forms      | TanStack Form, React Hook Form, Zod |
 | Database   | Supabase (PostgreSQL)               |
-| Styling    | Tailwind CSS                        |
+| Styling    | Tailwind CSS v4                     |
 | Components | Radix UI, shadcn/ui                 |
 | Charts     | Recharts, Nivo                      |
-| Email      | React Email                         |
+| Email      | React Email, Mailgun                |
 | Testing    | Vitest, Testing Library             |
 
 ## Features
@@ -38,6 +38,12 @@ Commission Tracker is a full-featured platform designed specifically for insuran
 - **Predictive Analytics** - Forecast future earnings based on current pipeline
 - **Game Plan** - Actionable recommendations to hit monthly targets
 - **Activity Feed** - Real-time updates on team and individual activity
+- **PACE METRICS** - Real-time updates on user projections, and current metrics
+- **Carriers & Products** - Breakdown of the various product types being sold with each carrier
+- **Product Mix** - Displays the % of the types of products being sold
+- **Policy Status** - Active vs Lapsed vs Cancelled Display
+- **Premium By State** - Displays Premium Total by State
+- **Client Segments** - Displays low, medium, and high value client metrics
 
 ### Policy Management
 

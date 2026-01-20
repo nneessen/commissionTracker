@@ -5,6 +5,26 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const getNameOrUnknown = (value: unknown): string => {
+  if (!isRecord(value)) return "Unknown";
+  const name = value.name;
+  return typeof name === "string" ? name : "Unknown";
+};
+
+const formatValue = (value: unknown): string => String(value);
+const formatLocale = (value: unknown): string => {
+  if (
+    value &&
+    typeof (value as { toLocaleString?: unknown }).toLocaleString === "function"
+  ) {
+    return String((value as { toLocaleString: () => string }).toLocaleString());
+  }
+  return String(value);
+};
+
 async function checkPremiumMatrix() {
   console.log("\n=== PREMIUM MATRIX DIAGNOSTIC ===\n");
 
@@ -40,16 +60,18 @@ async function checkPremiumMatrix() {
       string,
       { name: string; carrier: string; count: number }
     >();
-    for (const row of products || []) {
+    const productRows = Array.isArray(products) ? products : [];
+    for (const row of productRows) {
+      if (!isRecord(row)) continue;
       const key = row.product_id;
       const existing = productCounts.get(key);
       if (existing) {
         existing.count++;
       } else {
-        const prod = row.products as any;
+        const product = isRecord(row.products) ? row.products : null;
         productCounts.set(key, {
-          name: prod?.name || "Unknown",
-          carrier: prod?.carriers?.name || "Unknown",
+          name: getNameOrUnknown(product),
+          carrier: getNameOrUnknown(product?.carriers),
           count: 1,
         });
       }
@@ -68,30 +90,48 @@ async function checkPremiumMatrix() {
     .limit(5000);
 
   if (sample && sample.length > 0) {
-    const genders = [...new Set(sample.map((r) => r.gender))];
-    const tobaccoClasses = [...new Set(sample.map((r) => r.tobacco_class))];
-    const healthClasses = [...new Set(sample.map((r) => r.health_class))];
-    const termYears = [...new Set(sample.map((r) => r.term_years))];
-    const ages = [...new Set(sample.map((r) => r.age))].sort((a, b) => a - b);
-    const faceAmounts = [...new Set(sample.map((r) => r.face_amount))].sort(
-      (a, b) => a - b,
+    const sampleRows = Array.isArray(sample) ? sample : [];
+    const genders: unknown[] = [];
+    const tobaccoClasses: unknown[] = [];
+    const healthClasses: unknown[] = [];
+    const termYears: unknown[] = [];
+    const agesRaw: unknown[] = [];
+    const faceAmountsRaw: unknown[] = [];
+
+    for (const row of sampleRows) {
+      if (!isRecord(row)) continue;
+      genders.push(row.gender);
+      tobaccoClasses.push(row.tobacco_class);
+      healthClasses.push(row.health_class);
+      termYears.push(row.term_years);
+      agesRaw.push(row.age);
+      faceAmountsRaw.push(row.face_amount);
+    }
+
+    const gendersUnique = [...new Set(genders)];
+    const tobaccoClassesUnique = [...new Set(tobaccoClasses)];
+    const healthClassesUnique = [...new Set(healthClasses)];
+    const termYearsUnique = [...new Set(termYears)];
+    const ages = [...new Set(agesRaw)].sort((a, b) => Number(a) - Number(b));
+    const faceAmounts = [...new Set(faceAmountsRaw)].sort(
+      (a, b) => Number(a) - Number(b),
     );
 
     console.log("\n--- Available Dimensions ---");
-    console.log("  Genders:", genders);
-    console.log("  Tobacco classes:", tobaccoClasses);
-    console.log("  Health classes:", healthClasses);
-    console.log("  Term years:", termYears);
+    console.log("  Genders:", gendersUnique);
+    console.log("  Tobacco classes:", tobaccoClassesUnique);
+    console.log("  Health classes:", healthClassesUnique);
+    console.log("  Term years:", termYearsUnique);
     console.log(
       "  Age range:",
-      Math.min(...ages),
+      Math.min(...ages.map((age) => Number(age))),
       "-",
-      Math.max(...ages),
+      Math.max(...ages.map((age) => Number(age))),
       `(${ages.length} values)`,
     );
     console.log(
       "  Face amounts:",
-      faceAmounts.map((f) => `$${f.toLocaleString()}`).join(", "),
+      faceAmounts.map((f) => `$${formatLocale(f)}`).join(", "),
     );
   }
 
@@ -102,15 +142,18 @@ async function checkPremiumMatrix() {
     .limit(100);
 
   if (imos && imos.length > 0) {
-    const imoSet = new Map<string, string>();
-    for (const row of imos) {
+    const imoSet = new Map<unknown, string>();
+    const imoRows = Array.isArray(imos) ? imos : [];
+    for (const row of imoRows) {
+      if (!isRecord(row)) continue;
       if (!imoSet.has(row.imo_id)) {
-        imoSet.set(row.imo_id, (row.imos as any)?.name || "Unknown");
+        const imoRecord = isRecord(row.imos) ? row.imos : null;
+        imoSet.set(row.imo_id, getNameOrUnknown(imoRecord));
       }
     }
     console.log("\n--- IMOs with rate data ---");
     for (const [id, name] of imoSet) {
-      console.log(`  ${name} (${id})`);
+      console.log(`  ${name} (${formatValue(id)})`);
     }
   }
 

@@ -190,7 +190,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         setFormData((prev) => ({ ...prev, termLength: undefined }));
       }
     }
-  }, [formData.productId, products]);
+  }, [formData.productId, formData.termLength, products]);
 
   // Recalculate commission when term length changes (applies term modifier)
   useEffect(() => {
@@ -210,7 +210,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         commissionPercentage: newPercentage,
       }));
     }
-  }, [formData.termLength, termModifiers, compGuideData]);
+  }, [
+    formData.commissionPercentage,
+    formData.termLength,
+    termModifiers,
+    compGuideData,
+  ]);
 
   // Populate form when editing an existing policy
   // Note: We populate immediately when policy is available, regardless of carriers loading state

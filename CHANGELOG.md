@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-20 15:18:21
+
+### Changed Files
+- `README.md`
+- `architecture-ddd-enforcement.skill`
+- `hierarchy-performance.skill`
+- `react-tanstack-dataflow.skill`
+- `scripts/check-all-products.ts`
+- `scripts/check-all-rate-tables.ts`
+- `scripts/check-premium-matrix.ts`
+- `security-baseline.skill`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/EditAgentModal.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.optimized.tsx`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/hooks/admin/useUserApproval.ts`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/hooks/hierarchy/__tests__/hierarchyKeys.test.ts`
+- `src/hooks/hierarchy/hierarchyKeys.ts`
+- `src/hooks/hierarchy/index.ts`
+- `src/hooks/hierarchy/invalidation.ts`
+- `src/hooks/hierarchy/useAgentCommissions.ts`
+- `src/hooks/hierarchy/useAgentDetails.ts`
+- `src/hooks/hierarchy/useAgentOverrides.ts`
+- `src/hooks/hierarchy/useAgentPolicies.ts`
+- `src/hooks/hierarchy/useAllDownlinePerformance.ts`
+- `src/hooks/hierarchy/useDownlinePerformance.ts`
+- `src/hooks/hierarchy/useHierarchyTree.ts`
+- `src/hooks/hierarchy/useInvitations.ts`
+- `src/hooks/hierarchy/useMyDownlines.ts`
+- `src/hooks/hierarchy/useMyHierarchyStats.ts`
+- `src/hooks/hierarchy/useOrgChart.ts`
+- `src/hooks/hierarchy/useTeamComparison.ts`
+- `src/hooks/hierarchy/useUpdateAgentHierarchy.ts`
+- `src/hooks/hierarchy/useUplineProfile.ts`
+- `src/hooks/overrides/useUpdateOverrideStatus.ts`
+- `supabase-rls-rpc-hardening.skill`
+
+### Statistics
+```
+ 38 files changed, 458 insertions(+), 184 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-17 17:55:59
 
 ### Changed Files
