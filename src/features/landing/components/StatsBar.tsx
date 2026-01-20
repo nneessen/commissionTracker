@@ -29,7 +29,7 @@ function StatBlock({
 
   return (
     <div
-      className="relative py-16 md:py-24"
+      className="relative py-12 md:py-20 min-w-0 px-2 md:px-4"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
@@ -51,7 +51,7 @@ function StatBlock({
 
       {/* Massive number */}
       <div
-        className="text-[15vw] sm:text-[10vw] md:text-[8vw] lg:text-[6vw] font-black tracking-tighter leading-[0.8]"
+        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-[0.8]"
         style={{
           color: primaryColor,
           fontFamily: "'Plus Jakarta Sans', sans-serif",
