@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-21 18:53:55
+
+### Changed Files
+- `scripts/seed-fe-express-wl-rules-v2.js`
+- `supabase/migrations/20260121200000_fix_transamerica_fe_express_predicates.sql`
+- `supabase/migrations/20260121210000_fix_baltimore_life_condition_codes_case.sql`
+- `supabase/migrations/20260121220000_migrate_baltimore_life_v1_to_v2.sql`
+
+### Statistics
+```
+ 4 files changed, 1023 insertions(+)
+```
+
 ## [Checkpoint] - 2026-01-21 17:12:47
 
 ### Changed Files
