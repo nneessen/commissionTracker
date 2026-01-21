@@ -91,7 +91,7 @@ async function fixInsulinRules() {
       all: [
         {
           type: 'boolean',
-          field: 'diabetes.uses_insulin',
+          field: 'diabetes.insulin_use',  // FIXED: matches conditionResponseTransformer output
           operator: 'eq',
           value: true,
           treatNullAs: 'unknown'

@@ -125,7 +125,7 @@ async function seedInsulinRules() {
         all: [
           {
             type: 'boolean',
-            field: 'diabetes.uses_insulin',
+            field: 'diabetes.insulin_use',  // FIXED: matches conditionResponseTransformer output
             operator: 'eq',
             value: true,
             treatNullAs: 'unknown'  // If we don't know, refer for review
