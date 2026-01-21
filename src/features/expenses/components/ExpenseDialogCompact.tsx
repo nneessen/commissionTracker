@@ -276,11 +276,14 @@ export function ExpenseDialogCompact({
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.amount}
+                      value={formData.amount || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          amount: parseFloat(e.target.value) || 0,
+                          amount:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value),
                         })
                       }
                       required

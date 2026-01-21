@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-21 14:02:09
+
+### Changed Files
+- `src/features/expenses/components/ExpenseDialog.tsx`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+
+### Statistics
+```
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-21 14:00:20
 
 ### Changed Files
