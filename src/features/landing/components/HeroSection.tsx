@@ -139,19 +139,18 @@ export function HeroSection({ theme }: HeroSectionProps) {
           </Link>
 
           {/* Raw stat */}
-          <div className="hidden md:block font-mono text-xs">
-            <span
-              className="text-4xl font-black"
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                color: theme.primary_color,
-              }}
-            >
-              100+
-            </span>
-            <br />
-            <span className="text-white/30">AGENTS NATIONWIDE</span>
-          </div>
+
+          {/*     className="text-4xl font-black" */}
+          {/*     style={{ */}
+          {/*       fontFamily: "'Plus Jakarta Sans', sans-serif", */}
+          {/*       color: theme.primary_color, */}
+          {/*     }} */}
+          {/*   > */}
+          {/*     100+ */}
+          {/*   </span> */}
+          {/*   <br /> */}
+          {/*   <span className="text-white/30">AGENTS NATIONWIDE</span> */}
+          {/* </div> */}
         </div>
       </div>
 
