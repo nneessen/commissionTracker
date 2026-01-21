@@ -7,3 +7,4 @@ export {
   useInvalidateClientHierarchy,
   clientHierarchyKeys,
 } from "./useDownlineClients";
+export { useCreateOrFindClient } from "./useCreateOrFindClient";

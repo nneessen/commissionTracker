@@ -4060,7 +4060,6 @@ export type Database = {
           created_by: string;
           id: string;
           imo_id: string;
-          is_active: boolean;
           name: string;
           notes: string | null;
           updated_at: string;
@@ -4074,7 +4073,6 @@ export type Database = {
           created_by: string;
           id?: string;
           imo_id: string;
-          is_active?: boolean;
           name: string;
           notes?: string | null;
           updated_at?: string;
@@ -4088,7 +4086,6 @@ export type Database = {
           created_by?: string;
           id?: string;
           imo_id?: string;
-          is_active?: boolean;
           name?: string;
           notes?: string | null;
           updated_at?: string;
@@ -13437,14 +13434,13 @@ export type Database = {
         Returns: string[];
       };
       get_vendors_with_stats: {
-        Args: { p_imo_id?: string; p_include_inactive?: boolean };
+        Args: { p_imo_id: string; p_include_inactive?: boolean };
         Returns: {
           contact_email: string;
           contact_name: string;
           contact_phone: string;
           created_at: string;
           created_by: string;
-          is_active: boolean;
           total_purchases: number;
           total_spent: number;
           unique_users: number;
@@ -13589,10 +13585,7 @@ export type Database = {
       mark_thread_read: { Args: { p_thread_id: string }; Returns: undefined };
       merge_vendors: {
         Args: { p_keep_vendor_id: string; p_merge_vendor_ids: string[] };
-        Returns: {
-          merged_vendor_count: number;
-          reassigned_count: number;
-        }[];
+        Returns: Json;
       };
       normalize_email_subject: { Args: { subject: string }; Returns: string };
       process_lemon_subscription_event: {
@@ -13791,6 +13784,15 @@ export type Database = {
       set_leaderboard_title: {
         Args: { p_log_id: string; p_title: string };
         Returns: boolean;
+      };
+      setup_baltimore_life_apriority_rules: {
+        Args: { p_carrier_id: string; p_imo_id: string; p_user_id: string };
+        Returns: {
+          inserted_count: number;
+          part_a_count: number;
+          part_b_count: number;
+          part_c_count: number;
+        }[];
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };

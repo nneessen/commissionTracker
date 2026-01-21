@@ -7,13 +7,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search,
   Edit,
-  Power,
+  Trash2,
   Merge,
   Loader2,
   Building2,
@@ -22,12 +32,11 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import {
   useLeadVendorsWithStats,
   useUpdateLeadVendor,
-  useToggleVendorActive,
+  useDeleteLeadVendor,
 } from "@/hooks/lead-purchases";
 import type {
   VendorWithStats,
@@ -45,7 +54,6 @@ export function VendorManagementDialog({
   open,
   onOpenChange,
 }: VendorManagementDialogProps) {
-  const [showInactive, setShowInactive] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [editingVendor, setEditingVendor] = useState<VendorWithStats | null>(
@@ -53,11 +61,13 @@ export function VendorManagementDialog({
   );
   const [editForm, setEditForm] = useState({ name: "", contactEmail: "" });
   const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<VendorWithStats | null>(
+    null,
+  );
 
-  const { data: vendors = [], isLoading } =
-    useLeadVendorsWithStats(showInactive);
+  const { data: vendors = [], isLoading } = useLeadVendorsWithStats();
   const updateVendor = useUpdateLeadVendor();
-  const toggleActive = useToggleVendorActive();
+  const deleteVendor = useDeleteLeadVendor();
 
   // Filter vendors by search term
   const filteredVendors = vendors.filter(
@@ -120,20 +130,16 @@ export function VendorManagementDialog({
     }
   };
 
-  const handleToggleActive = async (vendor: VendorWithStats) => {
+  const handleDeleteVendor = async () => {
+    if (!vendorToDelete) return;
+
     try {
-      await toggleActive.mutateAsync({
-        id: vendor.id,
-        isActive: !vendor.isActive,
-      });
-      toast.success(
-        vendor.isActive ? "Vendor deactivated" : "Vendor activated",
-      );
+      await deleteVendor.mutateAsync(vendorToDelete.id);
+      toast.success("Vendor deleted successfully");
+      setVendorToDelete(null);
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update vendor status",
+        error instanceof Error ? error.message : "Failed to delete vendor",
       );
     }
   };
@@ -179,18 +185,6 @@ export function VendorManagementDialog({
                   className="h-7 w-48 pl-7 text-xs"
                 />
               </div>
-
-              {/* Show inactive toggle */}
-              <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
-                <Checkbox
-                  checked={showInactive}
-                  onCheckedChange={(checked) =>
-                    setShowInactive(checked === true)
-                  }
-                  className="h-3 w-3"
-                />
-                Show inactive
-              </label>
             </div>
 
             <div className="flex items-center gap-2">
@@ -264,9 +258,6 @@ export function VendorManagementDialog({
                         Total Spent
                       </div>
                     </th>
-                    <th className="text-center px-2 py-1.5 font-medium text-muted-foreground">
-                      Status
-                    </th>
                     <th className="w-10 px-2 py-1.5"></th>
                   </tr>
                 </thead>
@@ -274,10 +265,7 @@ export function VendorManagementDialog({
                   {filteredVendors.map((vendor) => (
                     <tr
                       key={vendor.id}
-                      className={cn(
-                        "hover:bg-zinc-50 dark:hover:bg-zinc-800/30",
-                        !vendor.isActive && "opacity-50",
-                      )}
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30"
                     >
                       <td className="px-2 py-2">
                         <Checkbox
@@ -335,18 +323,6 @@ export function VendorManagementDialog({
                       <td className="px-2 py-2 text-right font-mono">
                         {formatCurrency(vendor.totalSpent)}
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <span
-                          className={cn(
-                            "text-[9px] px-1.5 py-0.5 rounded font-medium",
-                            vendor.isActive
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              : "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
-                          )}
-                        >
-                          {vendor.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
                       <td className="px-2 py-2">
                         {editingVendor?.id === vendor.id ? (
                           <div className="flex items-center gap-1">
@@ -386,18 +362,11 @@ export function VendorManagementDialog({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className={cn(
-                                "h-6 w-6 p-0",
-                                vendor.isActive
-                                  ? "text-amber-500 hover:text-amber-600"
-                                  : "text-emerald-500 hover:text-emerald-600",
-                              )}
-                              onClick={() => handleToggleActive(vendor)}
-                              title={
-                                vendor.isActive ? "Deactivate" : "Activate"
-                              }
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                              onClick={() => setVendorToDelete(vendor)}
+                              title="Delete vendor"
                             >
-                              <Power className="h-3 w-3" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         )}
@@ -433,6 +402,41 @@ export function VendorManagementDialog({
         vendors={selectedVendorObjects}
         onMergeComplete={handleMergeComplete}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!vendorToDelete}
+        onOpenChange={(open) => !open && setVendorToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{vendorToDelete?.name}"? This
+              action cannot be undone.
+              {vendorToDelete && vendorToDelete.totalPurchases > 0 && (
+                <span className="block mt-2 text-amber-600 dark:text-amber-400">
+                  Note: This vendor has {vendorToDelete.totalPurchases}{" "}
+                  purchase(s). You must merge it into another vendor first.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteVendor}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={deleteVendor.isPending}
+            >
+              {deleteVendor.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

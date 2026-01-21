@@ -38,7 +38,6 @@ export interface LeadVendor {
   contactPhone: string | null;
   website: string | null;
   notes: string | null;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,7 +58,6 @@ export interface UpdateLeadVendorData {
   contactPhone?: string | null;
   website?: string | null;
   notes?: string | null;
-  isActive?: boolean;
 }
 
 // =============================================================================
@@ -148,7 +146,6 @@ export interface VendorWithStats {
   contactEmail: string | null;
   contactPhone: string | null;
   website: string | null;
-  isActive: boolean;
   createdAt: string;
   createdBy: string;
   totalPurchases: number;
@@ -213,7 +210,6 @@ export function transformLeadVendorFromDB(row: LeadVendorRow): LeadVendor {
     contactPhone: row.contact_phone,
     website: row.website,
     notes: row.notes,
-    isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -230,8 +226,6 @@ export function transformLeadVendorToDB(
   if ("contactPhone" in data) result.contact_phone = data.contactPhone;
   if ("website" in data) result.website = data.website;
   if ("notes" in data) result.notes = data.notes;
-  if ("isActive" in data && data.isActive !== undefined)
-    result.is_active = data.isActive;
 
   return result;
 }

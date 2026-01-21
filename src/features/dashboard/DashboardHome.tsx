@@ -31,7 +31,7 @@ import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { QuickActionsPanel } from "./components/QuickActionsPanel";
 import { KPIGridHeatmap } from "./components/KPIGridHeatmap";
-import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
+import { ExpenseDialogCompact as ExpenseDialog } from "../expenses/components/ExpenseDialogCompact";
 import { PolicyDialog } from "../policies/components/PolicyDialog";
 import { OrgMetricsSection } from "./components/OrgMetricsSection";
 
@@ -51,7 +51,7 @@ import {
   getPoliciesNeededDisplay,
   getPeriodSuffix,
 } from "../../utils/dashboardCalculations";
-import { clientService } from "@/services/clients";
+import { useCreateOrFindClient } from "@/hooks/clients";
 
 export const DashboardHome: React.FC = () => {
   const navigate = useNavigate();
@@ -87,6 +87,7 @@ export const DashboardHome: React.FC = () => {
 
   const createExpense = useCreateExpense();
   const createPolicy = useCreatePolicy();
+  const createOrFindClient = useCreateOrFindClient();
   const { data: chargebackSummary } = useChargebackSummary();
 
   // Feature access for premium sections
@@ -224,20 +225,15 @@ export const DashboardHome: React.FC = () => {
         throw new Error("You must be logged in to create a policy");
       }
 
-      const clientResult = await clientService.createOrFind(
-        {
+      const client = await createOrFindClient.mutateAsync({
+        clientData: {
           name: formData.clientName,
           email: formData.clientEmail || undefined,
           phone: formData.clientPhone || undefined,
           address: formData.clientState || undefined,
         },
-        user.id,
-      );
-
-      if (!clientResult.success || !clientResult.data) {
-        throw clientResult.error || new Error("Failed to create/find client");
-      }
-      const client = clientResult.data;
+        userId: user.id,
+      });
 
       const monthlyPremium =
         formData.paymentFrequency === "annual"
@@ -369,7 +365,9 @@ export const DashboardHome: React.FC = () => {
       {/* Dialogs */}
       <ExpenseDialog
         open={activeDialog === "expense"}
-        onOpenChange={(open) => setActiveDialog(open ? "expense" : null)}
+        onOpenChange={(open: boolean) =>
+          setActiveDialog(open ? "expense" : null)
+        }
         onSave={handleSaveExpense}
         isSubmitting={createExpense.isPending}
       />

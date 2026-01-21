@@ -67,11 +67,11 @@ export class LeadVendorService extends BaseService<
   }
 
   /**
-   * Get all active vendors for the current user's IMO
+   * Get all vendors for the current user's IMO
    */
-  async getActiveVendors(): Promise<ServiceResponse<LeadVendor[]>> {
+  async getAll(): Promise<ServiceResponse<LeadVendor[]>> {
     try {
-      const vendors = await this.repository.findActiveVendors();
+      const vendors = await this.repository.findAll();
       return { success: true, data: vendors };
     } catch (error) {
       return {
@@ -99,16 +99,31 @@ export class LeadVendorService extends BaseService<
   }
 
   /**
-   * Soft delete a vendor
+   * Delete a vendor (hard delete)
+   * Note: Will fail if vendor has purchases due to FK constraint
    */
-  async softDelete(id: string): Promise<ServiceResponse<void>> {
+  async delete(id: string): Promise<ServiceResponse<void>> {
     try {
-      await this.repository.softDelete(id);
+      await this.repository.delete(id);
       return { success: true };
     } catch (error) {
+      // Check for FK constraint violation
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes("violates foreign key constraint") ||
+        errorMessage.includes("23503")
+      ) {
+        return {
+          success: false,
+          error: new Error(
+            "Cannot delete vendor with existing purchases. Merge into another vendor first.",
+          ),
+        };
+      }
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
+        error: error instanceof Error ? error : new Error(errorMessage),
       };
     }
   }
@@ -136,11 +151,9 @@ export class LeadVendorService extends BaseService<
   /**
    * Get all vendors with purchase stats (for management UI)
    */
-  async getAllWithStats(
-    includeInactive = false,
-  ): Promise<ServiceResponse<VendorWithStats[]>> {
+  async getAllWithStats(): Promise<ServiceResponse<VendorWithStats[]>> {
     try {
-      const vendors = await this.repository.findAllWithStats(includeInactive);
+      const vendors = await this.repository.findAllWithStats();
       return { success: true, data: vendors };
     } catch (error) {
       return {
@@ -184,24 +197,6 @@ export class LeadVendorService extends BaseService<
         mergeVendorIds,
       );
       return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-    }
-  }
-
-  /**
-   * Toggle vendor active status
-   */
-  async toggleActive(
-    id: string,
-    isActive: boolean,
-  ): Promise<ServiceResponse<LeadVendor>> {
-    try {
-      const vendor = await this.repository.toggleActive(id, isActive);
-      return { success: true, data: vendor };
     } catch (error) {
       return {
         success: false,

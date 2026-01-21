@@ -6,6 +6,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-21 14:00:20
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/REFACTOR.md`
+- `docs/hierarchy-and-ap-calculation-fix.md`
+- `docs/hierarchy-and-ap-calculation-guide.md`
+- `docs/hierarchy-review-prompt.md`
+- `docs/ig-reel-script.md`
+- `instagram-review-25-files.zip`
+- `integrations-notifications.skill`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/expenses/components/ExpenseDialog.tsx`
+- `src/features/expenses/components/index.ts`
+- `src/features/expenses/leads/VendorManagementDialog.tsx`
+- `src/hooks/clients/index.ts`
+- `src/hooks/clients/useCreateOrFindClient.ts`
+- `src/hooks/lead-purchases/useLeadVendors.ts`
+- `src/services/lead-purchases/LeadVendorRepository.ts`
+- `src/services/lead-purchases/LeadVendorService.ts`
+- `src/types/database.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `supabase/migrations/20260121134419_vendor_hard_delete.sql`
+- `supabase/migrations/20260121180000_baltimore_life_apriority_acceptance_rules.sql`
+
+### Statistics
+```
+ 22 files changed, 13714 insertions(+), 13798 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-21 13:58:07
+
+### Changed Files
+- `docs/REFACTOR.md`
+- `docs/hierarchy-and-ap-calculation-fix.md`
+- `docs/hierarchy-and-ap-calculation-guide.md`
+- `docs/hierarchy-review-prompt.md`
+- `docs/ig-reel-script.md`
+- `instagram-review-25-files.zip`
+- `integrations-notifications.skill`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/expenses/components/index.ts`
+- `src/features/expenses/leads/VendorManagementDialog.tsx`
+- `src/hooks/lead-purchases/useLeadVendors.ts`
+- `src/services/lead-purchases/LeadVendorRepository.ts`
+- `src/services/lead-purchases/LeadVendorService.ts`
+- `src/types/database.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `supabase/migrations/20260121134419_vendor_hard_delete.sql`
+- `supabase/migrations/20260121180000_baltimore_life_apriority_acceptance_rules.sql`
+
+### Statistics
+```
+ 17 files changed, 13637 insertions(+), 13776 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-20 18:32:33
 
 ### Changed Files

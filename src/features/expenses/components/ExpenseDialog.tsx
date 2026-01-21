@@ -172,8 +172,7 @@ export function ExpenseDialog({
                 id="amount"
                 type="number"
                 step="0.01"
-                min="0"
-                value={formData.amount}
+                value={formData.amount ? formData.amount : ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
