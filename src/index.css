@@ -159,6 +159,58 @@
   background-clip: text;
 }
 
+/* Recruiting grid pattern backgrounds */
+.bg-recruiting-grid-light {
+  background-image: linear-gradient(
+      to right,
+      rgb(0 0 0 / 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.bg-recruiting-grid-dark {
+  background-image: linear-gradient(
+      to right,
+      rgb(255 255 255 / 0.02) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Stagger fade-in animation for recruiting page */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-fade-in {
+  animation: staggerFadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+/* Step indicator pulse animation */
+@keyframes stepPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--recruiting-primary);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+  }
+}
+
+.animate-step-pulse {
+  animation: stepPulse 2s ease-in-out infinite;
+}
+
 /* Accessibility: Reduced motion support for logo spinner */
 @media (prefers-reduced-motion: reduce) {
   .animate-logo-spin {
@@ -279,4 +331,287 @@
 
 .lead-form-dark .text-foreground {
   @apply text-white;
+}
+
+/* ==================== RECRUITING ONBOARDING BRUTALIST THEME ==================== */
+/* Forces dark mode styling on the recruit onboarding page regardless of system theme */
+
+:root {
+  /* RGB version for rgba() usage */
+  --recruiting-primary-rgb: 14, 165, 233; /* sky-500 */
+
+  /* Brutalist dark background */
+  --recruiting-bg: #0a0a0a;
+  --recruiting-bg-elevated: #111111;
+
+  /* Text hierarchy */
+  --recruiting-text: #ffffff;
+  --recruiting-text-muted: rgba(255, 255, 255, 0.4);
+  --recruiting-text-subtle: rgba(255, 255, 255, 0.2);
+
+  /* Borders */
+  --recruiting-border: rgba(255, 255, 255, 0.1);
+  --recruiting-border-accent: rgba(255, 255, 255, 0.05);
+}
+
+/* Brutalist grid pattern utility classes */
+.recruiting-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.recruiting-grid-bg-subtle {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Brutalist section base */
+.recruiting-section {
+  @apply relative overflow-hidden rounded-lg;
+  background-color: var(--recruiting-bg);
+}
+
+.recruiting-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* Accent line utilities */
+.recruiting-accent-top {
+  position: relative;
+}
+.recruiting-accent-top::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--recruiting-primary);
+  opacity: 0.4;
+}
+
+.recruiting-accent-left {
+  position: relative;
+}
+.recruiting-accent-left::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--recruiting-primary);
+}
+
+/* Index marker style */
+.recruiting-index {
+  @apply font-mono text-[10px] tracking-[0.3em] uppercase;
+  color: var(--recruiting-text-subtle);
+}
+
+/* Massive number typography */
+.recruiting-number {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 900;
+  line-height: 0.7;
+  letter-spacing: -0.02em;
+  color: var(--recruiting-primary);
+}
+
+/* Brutalist button */
+.recruiting-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.2em] border-2 transition-all duration-150;
+  border-color: var(--recruiting-primary);
+}
+
+.recruiting-btn-filled {
+  background: var(--recruiting-primary);
+  color: var(--recruiting-bg);
+}
+
+.recruiting-btn-outline {
+  background: transparent;
+  color: var(--recruiting-primary);
+}
+
+.recruiting-btn:hover {
+  opacity: 0.9;
+}
+
+/* Stagger fade-in animation for lists */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-fade-in > * {
+  animation: staggerFadeIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-stagger-fade-in > *:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger-fade-in > *:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger-fade-in > *:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger-fade-in > *:nth-child(4) { animation-delay: 150ms; }
+.animate-stagger-fade-in > *:nth-child(5) { animation-delay: 200ms; }
+.animate-stagger-fade-in > *:nth-child(6) { animation-delay: 250ms; }
+.animate-stagger-fade-in > *:nth-child(7) { animation-delay: 300ms; }
+.animate-stagger-fade-in > *:nth-child(8) { animation-delay: 350ms; }
+
+/* Step pulse animation for active items */
+@keyframes stepPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--recruiting-primary-rgb), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(var(--recruiting-primary-rgb), 0);
+  }
+}
+
+.animate-step-pulse {
+  animation: stepPulse 2s ease-in-out infinite;
+}
+
+/* Recruiting page specific overrides for nested components */
+.recruiting-docs-wrapper .bg-white,
+.recruiting-docs-wrapper .dark\:bg-zinc-900 {
+  background: transparent !important;
+}
+
+.recruiting-docs-wrapper .border-zinc-200,
+.recruiting-docs-wrapper .dark\:border-zinc-800 {
+  border-color: var(--recruiting-border) !important;
+}
+
+.recruiting-docs-wrapper .text-zinc-900,
+.recruiting-docs-wrapper .dark\:text-zinc-100 {
+  color: var(--recruiting-text) !important;
+}
+
+.recruiting-docs-wrapper .text-zinc-500,
+.recruiting-docs-wrapper .dark\:text-zinc-400 {
+  color: var(--recruiting-text-muted) !important;
+}
+
+.recruiting-docs-wrapper .bg-zinc-50,
+.recruiting-docs-wrapper .dark\:bg-zinc-800\/50 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.recruiting-docs-wrapper .hover\:bg-zinc-50:hover,
+.recruiting-docs-wrapper .dark\:hover\:bg-zinc-800:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Communication panel dark theme overrides */
+.recruiting-comm-wrapper .bg-white,
+.recruiting-comm-wrapper .dark\:bg-zinc-900 {
+  background: transparent !important;
+}
+
+.recruiting-comm-wrapper .border-zinc-200,
+.recruiting-comm-wrapper .dark\:border-zinc-800 {
+  border-color: var(--recruiting-border) !important;
+}
+
+.recruiting-comm-wrapper .text-zinc-900,
+.recruiting-comm-wrapper .dark\:text-zinc-100 {
+  color: var(--recruiting-text) !important;
+}
+
+.recruiting-comm-wrapper .text-zinc-500,
+.recruiting-comm-wrapper .dark\:text-zinc-400 {
+  color: var(--recruiting-text-muted) !important;
+}
+
+.recruiting-comm-wrapper .bg-zinc-50,
+.recruiting-comm-wrapper .dark\:bg-zinc-800 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Checklist items dark theme overrides */
+.recruiting-checklist-wrapper .bg-white,
+.recruiting-checklist-wrapper .dark\:bg-zinc-900 {
+  background: transparent !important;
+}
+
+.recruiting-checklist-wrapper .border-zinc-200,
+.recruiting-checklist-wrapper .dark\:border-zinc-800 {
+  border-color: var(--recruiting-border) !important;
+}
+
+.recruiting-checklist-wrapper .border-zinc-100,
+.recruiting-checklist-wrapper .dark\:border-zinc-700 {
+  border-color: var(--recruiting-border) !important;
+}
+
+.recruiting-checklist-wrapper .text-zinc-900,
+.recruiting-checklist-wrapper .dark\:text-zinc-100 {
+  color: var(--recruiting-text) !important;
+}
+
+.recruiting-checklist-wrapper .text-zinc-700,
+.recruiting-checklist-wrapper .dark\:text-zinc-200 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.recruiting-checklist-wrapper .text-zinc-600,
+.recruiting-checklist-wrapper .dark\:text-zinc-300 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.recruiting-checklist-wrapper .text-zinc-500,
+.recruiting-checklist-wrapper .dark\:text-zinc-400 {
+  color: var(--recruiting-text-muted) !important;
+}
+
+.recruiting-checklist-wrapper .bg-zinc-50,
+.recruiting-checklist-wrapper .dark\:bg-zinc-800,
+.recruiting-checklist-wrapper .dark\:bg-zinc-800\/50 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.recruiting-checklist-wrapper .hover\:bg-zinc-50:hover,
+.recruiting-checklist-wrapper .dark\:hover\:bg-zinc-800:hover,
+.recruiting-checklist-wrapper .dark\:hover\:bg-zinc-800\/50:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Checkbox accent color */
+.recruiting-checklist-wrapper [data-state="checked"] {
+  background-color: var(--recruiting-primary) !important;
+  border-color: var(--recruiting-primary) !important;
+}
+
+/* Badge styling in checklist */
+.recruiting-checklist-wrapper .badge,
+.recruiting-checklist-wrapper [class*="Badge"] {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Button styling in checklist */
+.recruiting-checklist-wrapper button[class*="variant-outline"] {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--recruiting-text) !important;
+}
+
+.recruiting-checklist-wrapper button[class*="variant-outline"]:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }

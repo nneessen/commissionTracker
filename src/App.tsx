@@ -13,6 +13,7 @@ import { SubscriptionAnnouncementDialog } from "./components/subscription";
 import { useSubscriptionAnnouncement } from "./hooks/subscription";
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
 import { PublicLandingPage } from "./features/landing";
+import { RecruitHeader } from "./components/layout/RecruitHeader";
 
 // Primary domains (not custom domains)
 const PRIMARY_DOMAINS = [
@@ -72,7 +73,10 @@ function App() {
     PRIMARY_DOMAINS.includes(hostname) || isVercelPreview(hostname);
 
   // Show landing page at "/" or "/landing" on primary domain (before auth check)
-  if (isOnPrimaryDomain && (location.pathname === "/" || location.pathname === "/landing")) {
+  if (
+    isOnPrimaryDomain &&
+    (location.pathname === "/" || location.pathname === "/landing")
+  ) {
     return (
       <>
         <Toaster />
@@ -158,6 +162,38 @@ function AuthenticatedApp() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Redirecting to login...</div>
       </div>
+    );
+  }
+
+  // Check if we're on the recruit pipeline page (no sidebar)
+  const isRecruitPipeline = location.pathname === "/recruiting/my-pipeline";
+
+  // Render recruit-only layout without sidebar
+  if (isRecruitPipeline) {
+    return (
+      <>
+        <Toaster />
+        <CookieConsentBanner />
+        <ImoProvider>
+          <div className="min-h-screen bg-[#0a0a0a]">
+            <RecruitHeader
+              userName={
+                user.first_name && user.last_name
+                  ? getDisplayName({
+                      first_name: user.first_name,
+                      last_name: user.last_name,
+                      email: user.email || "",
+                    })
+                  : user.email?.split("@")[0] || "User"
+              }
+              onLogout={handleLogout}
+            />
+            <ApprovalGuard>
+              <Outlet />
+            </ApprovalGuard>
+          </div>
+        </ImoProvider>
+      </>
     );
   }
 
