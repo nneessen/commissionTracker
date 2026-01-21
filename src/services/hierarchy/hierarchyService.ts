@@ -126,6 +126,7 @@ class HierarchyService {
     }
   }
 
+
   /**
    * Get upline chain for current user (path from root to current user)
    */

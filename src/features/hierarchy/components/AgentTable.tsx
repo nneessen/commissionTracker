@@ -218,6 +218,14 @@ function AgentRow({
 
   // Determine status display based on actual fields
   const getStatusDisplay = () => {
+    // Approved agents always show their contract level, regardless of onboarding phase
+    if (agent.approval_status === "approved") {
+      return {
+        label: `Level ${agent.contract_level || 100}`,
+        className: "bg-emerald-500/10 text-emerald-600",
+      };
+    }
+    // Non-approved: show onboarding phase if available
     if (agent.current_onboarding_phase) {
       return {
         label: agent.current_onboarding_phase,
@@ -225,11 +233,6 @@ function AgentRow({
       };
     }
     switch (agent.approval_status) {
-      case "approved":
-        return {
-          label: `Level ${agent.contract_level || 100}`,
-          className: "bg-emerald-500/10 text-emerald-600",
-        };
       case "pending":
         return {
           label: "Pending Approval",
@@ -506,18 +509,40 @@ export function AgentTable({
   const agentsToDisplay = agentsWithUplines;
 
   // Build hierarchy structure
+  // Use hierarchy_path to derive parent relationship (more reliable than upline_id)
+  // hierarchy_path format: "root-id.parent-id.child-id" - parent is second-to-last segment
+  const getParentIdFromPath = (
+    path: string | null | undefined,
+    selfId: string,
+  ): string | null => {
+    if (!path) return null;
+    const segments = path.split(".");
+    const selfIndex = segments.indexOf(selfId);
+    if (selfIndex <= 0) return null; // No parent in path or is root
+    return segments[selfIndex - 1];
+  };
+
   const agentMap = new Map(agentsToDisplay.map((a) => [a.id, a]));
-  const rootAgentsUnsorted = agentsToDisplay.filter(
-    (a) => !a.upline_id || !agentMap.has(a.upline_id),
-  );
   const childrenMap = new Map<string, AgentWithMetrics[]>();
 
+  // Build parent-child relationships from hierarchy_path
   agentsToDisplay.forEach((agent) => {
-    if (agent.upline_id && agentMap.has(agent.upline_id)) {
-      const children = childrenMap.get(agent.upline_id) || [];
+    // Try hierarchy_path first (most reliable), fall back to upline_id
+    const parentId =
+      getParentIdFromPath(agent.hierarchy_path, agent.id) || agent.upline_id;
+
+    if (parentId && agentMap.has(parentId)) {
+      const children = childrenMap.get(parentId) || [];
       children.push(agent as AgentWithMetrics);
-      childrenMap.set(agent.upline_id, children);
+      childrenMap.set(parentId, children);
     }
+  });
+
+  // Root agents are those whose parent is NOT in the agents list (i.e., their parent is the current viewer)
+  const rootAgentsUnsorted = agentsToDisplay.filter((a) => {
+    const parentId =
+      getParentIdFromPath(a.hierarchy_path, a.id) || a.upline_id;
+    return !parentId || !agentMap.has(parentId);
   });
 
   // Sort root agents by Total AP (highest first)

@@ -1,17 +1,8 @@
 // src/features/hierarchy/HierarchyDashboardCompact.tsx
 
-import { useState, useEffect, useMemo } from "react";
-import { Download, UserPlus, Search, Filter, AlertCircle } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Download, UserPlus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useAuth } from "@/contexts/AuthContext";
 import { useMyDownlines, useMyHierarchyStats } from "@/hooks";
 import { useCurrentUserProfile } from "@/hooks/admin";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -36,14 +27,8 @@ interface Agent extends UserProfile {
   parent_agent_id?: string | null;
 }
 
-interface TeamFilters {
-  status: "all" | "active" | "inactive" | "pending";
-  directOnly: boolean;
-  searchTerm: string;
-}
 
 export function HierarchyDashboardCompact() {
-  const { user } = useAuth();
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
     useMyDownlines();
   const { data: currentUserProfile } = useCurrentUserProfile();
@@ -102,74 +87,10 @@ export function HierarchyDashboardCompact() {
     : null;
 
   const [sendInvitationModalOpen, setSendInvitationModalOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState<TeamFilters>({
-    status: "active",
-    directOnly: false,
-    searchTerm: "",
-  });
-
-  // Update filters when search changes (with debounce)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setFilters((prev) => ({ ...prev, searchTerm }));
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Calculate filter count (excluding default "active" status)
-  const filterCount =
-    (filters.status !== "active" ? 1 : 0) +
-    (filters.directOnly ? 1 : 0) +
-    (filters.searchTerm ? 1 : 0);
-
-  const clearFilters = () => {
-    setFilters({
-      status: "active",
-      directOnly: false,
-      searchTerm: "",
-    });
-    setSearchTerm("");
-  };
-
-  // Filter agents based on criteria
-  const filteredAgents = useMemo(() => {
-    let agents = [...downlines];
-
-    // Apply search filter
-    if (filters.searchTerm) {
-      agents = agents.filter(
-        (agent) =>
-          agent.name
-            ?.toLowerCase()
-            .includes(filters.searchTerm.toLowerCase()) ||
-          agent.email?.toLowerCase().includes(filters.searchTerm.toLowerCase()),
-      );
-    }
-
-    // Apply status filter
-    if (filters.status !== "all") {
-      agents = agents.filter((agent) => {
-        if (filters.status === "active") return agent.is_active;
-        if (filters.status === "inactive") return !agent.is_active;
-        if (filters.status === "pending")
-          return agent.approval_status === "pending";
-        return true;
-      });
-    }
-
-    // Apply direct only filter
-    if (filters.directOnly) {
-      agents = agents.filter((agent) => agent.parent_agent_id === user?.id);
-    }
-
-    return agents;
-  }, [downlines, filters, user?.id]);
 
   const handleExportCSV = () => {
     try {
-      const exportData = filteredAgents.map((agent) => ({
+      const exportData = downlines.map((agent) => ({
         Name: agent.name || "N/A",
         Email: agent.email || "N/A",
         "Contract Level": agent.contract_level || 100,
@@ -272,85 +193,9 @@ export function HierarchyDashboardCompact() {
             timePeriod={timePeriod}
           />
 
-          {/* Search and Filters Bar */}
-          <div className="flex gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
-            <div className="flex-1 relative flex items-center">
-              <Search
-                size={14}
-                className="absolute left-2 text-zinc-400 dark:text-zinc-500"
-              />
-              <Input
-                type="text"
-                placeholder="Search agents by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-6 pl-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
-            <Button
-              onClick={() => setShowFilters(!showFilters)}
-              variant={showFilters ? "default" : "outline"}
-              size="sm"
-              className="h-6 px-2 text-[10px]"
-            >
-              <Filter size={12} className="mr-1" />
-              Filters {filterCount > 0 && `(${filterCount})`}
-            </Button>
-            {filterCount > 0 && (
-              <Button
-                onClick={clearFilters}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400"
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-
-          {/* Collapsible Filter Panel */}
-          {showFilters && (
-            <div className="flex gap-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
-              <Select
-                value={filters.status}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    status: value as TeamFilters["status"],
-                  }))
-                }
-              >
-                <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <label className="flex items-center gap-1.5 text-[10px] text-zinc-600 dark:text-zinc-400">
-                <input
-                  type="checkbox"
-                  checked={filters.directOnly}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      directOnly: e.target.checked,
-                    }))
-                  }
-                  className="h-3 w-3"
-                />
-                Direct Only
-              </label>
-            </div>
-          )}
-
-          {/* Agent Table */}
+          {/* Agent Table - Full hierarchy (no filtering to preserve tree structure) */}
           <AgentTable
-            agents={filteredAgents}
+            agents={downlines}
             owner={owner}
             isLoading={isLoading}
             dateRange={{ start: startDate, end: endDate }}
@@ -359,7 +204,7 @@ export function HierarchyDashboardCompact() {
           {/* Bottom Grid: Invitations and Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             <InvitationsList />
-            <TeamActivityFeed agents={filteredAgents} />
+            <TeamActivityFeed agents={downlines} />
           </div>
 
           {/* Performance Insights */}

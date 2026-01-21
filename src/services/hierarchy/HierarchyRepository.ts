@@ -88,11 +88,20 @@ export class HierarchyRepository extends BaseRepository<
     hierarchyPath: string,
     options?: QueryOptions,
     agencyId?: string,
+    approvedOnly: boolean = true,
   ): Promise<HierarchyBaseEntity[]> {
     let query = this.client
       .from(this.tableName)
       .select("*")
       .like("hierarchy_path", `${hierarchyPath}.%`);
+
+    // Only return approved agents (not recruits still in pipeline)
+    if (approvedOnly) {
+      query = query
+        .eq("approval_status", "approved")
+        // Exclude users with 'recruit' role - they're in the recruiting pipeline
+        .not("roles", "cs", '{"recruit"}');
+    }
 
     // Filter by agency if provided (multi-agency support)
     if (agencyId) {
