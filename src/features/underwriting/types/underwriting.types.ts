@@ -684,12 +684,55 @@ export interface ExtractedCriteria {
     nicotineTestRequired: boolean;
   };
   medicationRestrictions?: {
+    // Cardiovascular
     insulin?: { allowed: boolean; ratingImpact?: string };
     bloodThinners?: { allowed: boolean };
-    opioids?: { allowed: boolean; timeSinceUse?: number };
     bpMedications?: { maxCount: number };
+    heartMeds?: { allowed: boolean };
+
+    // Cholesterol
     cholesterolMedications?: { maxCount: number };
+
+    // Diabetes
+    oralDiabetesMeds?: { allowed: boolean };
+
+    // Mental Health
     antidepressants?: { allowed: boolean };
+    antianxiety?: { allowed: boolean };
+    antipsychotics?: { allowed: boolean };
+    moodStabilizers?: { allowed: boolean };
+
+    // Sleep
+    sleepAids?: { allowed: boolean };
+
+    // Pain
+    opioids?: { allowed: boolean; timeSinceUse?: number };
+
+    // Neurological
+    seizureMeds?: { allowed: boolean };
+    migraineMeds?: { allowed: boolean };
+
+    // Respiratory
+    inhalers?: { allowed: boolean };
+    copdMeds?: { allowed: boolean };
+
+    // Thyroid & Hormonal
+    thyroidMeds?: { allowed: boolean };
+    hormonalTherapy?: { allowed: boolean };
+    steroids?: { allowed: boolean };
+
+    // Immune & Autoimmune
+    immunosuppressants?: { allowed: boolean };
+    biologics?: { allowed: boolean };
+    dmards?: { allowed: boolean };
+
+    // Specialty/High-risk
+    cancerTreatment?: { allowed: boolean };
+    antivirals?: { allowed: boolean };
+    adhdMeds?: { allowed: boolean };
+    osteoporosisMeds?: { allowed: boolean };
+    kidneyMeds?: { allowed: boolean };
+    liverMeds?: { allowed: boolean };
   };
   stateAvailability?: {
     availableStates: string[];

@@ -15,6 +15,7 @@ import {
   FileText,
   Trash2,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ import {
 } from "../../hooks/useExtractCriteria";
 import { useCanManageUnderwriting } from "../../hooks/useUnderwritingFeatureFlag";
 import { CriteriaEditor } from "./CriteriaEditor";
+import { CreateCriteriaDialog } from "./CreateCriteriaDialog";
 import type {
   CriteriaWithRelations,
   ExtractedCriteria,
@@ -95,6 +97,9 @@ export function CriteriaReviewDashboard() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [criteriaToDelete, setCriteriaToDelete] =
     useState<CriteriaWithRelations | null>(null);
+
+  // Create dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Get unique carriers for filter dropdown
   const uniqueCarriers = useMemo(() => {
@@ -260,11 +265,23 @@ export function CriteriaReviewDashboard() {
             Review and approve AI-extracted underwriting criteria
           </p>
         </div>
-        {criteriaList && (
-          <Badge variant="secondary" className="text-[10px]">
-            {filteredAndSortedData.length} of {criteriaList.length} records
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {canManage && (
+            <Button
+              size="sm"
+              className="h-7 text-[10px]"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Create Criteria
+            </Button>
+          )}
+          {criteriaList && (
+            <Badge variant="secondary" className="text-[10px]">
+              {filteredAndSortedData.length} of {criteriaList.length} records
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -564,6 +581,13 @@ export function CriteriaReviewDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create Criteria Dialog */}
+      <CreateCriteriaDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }
