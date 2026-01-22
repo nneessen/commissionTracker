@@ -149,12 +149,12 @@ export function SubscriptionAnnouncementDialog({
                     </span>
                     <br />
                     <span className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 bg-clip-text text-transparent">
-                      Through January
+                      Through February
                     </span>
                   </h1>
                   <p className="text-white/80 dark:text-black/70 text-sm max-w-sm leading-relaxed">
                     Enjoy complete access to all features* this month. Starting
-                    February 1, 2026, subscription tiers will be enabled with
+                    February 28, 2026, subscription tiers will be enabled with
                     flexible plans for every stage of your business.
                   </p>
                   <p className="text-white/50 dark:text-black/40 text-[10px] mt-2">
