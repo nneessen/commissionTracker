@@ -173,7 +173,7 @@ export function SubscriptionAnnouncementDialog({
                         Subscription Tiers Launch
                       </p>
                       <p className="text-white/60 dark:text-black/60 text-xs">
-                        February 1, 2026
+                        March 1, 2026
                       </p>
                     </div>
                   </div>
@@ -229,7 +229,7 @@ export function SubscriptionAnnouncementDialog({
                   Choose Your Plan
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Starting February 1, 2026 • Pricing coming soon
+                  Starting March 1, 2026 • Pricing coming soon
                 </p>
               </div>
 
