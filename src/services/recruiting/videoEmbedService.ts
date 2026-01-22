@@ -55,11 +55,18 @@ export const videoEmbedService = {
 
       switch (platform) {
         case "youtube": {
-          // Handle youtube.com/watch?v=... and youtu.be/...
+          // Handle youtube.com/watch?v=..., youtu.be/..., and youtube.com/shorts/...
           if (parsed.hostname.includes("youtu.be")) {
             // youtu.be/VIDEO_ID
             const id = parsed.pathname.slice(1); // Remove leading /
             return id || null;
+          }
+          // youtube.com/shorts/VIDEO_ID
+          const shortsMatch = parsed.pathname.match(
+            /\/shorts\/([a-zA-Z0-9_-]+)/,
+          );
+          if (shortsMatch) {
+            return shortsMatch[1];
           }
           // youtube.com/watch?v=VIDEO_ID
           return parsed.searchParams.get("v");

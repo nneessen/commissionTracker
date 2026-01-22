@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-21 18:53:55
+Last Updated: 2026-01-22 09:00:14
 
 ## Metrics
 - Total Files: 29638
-- Total Lines of Code: 530239
-- Total Commits: 807
+- Total Lines of Code: 530246
+- Total Commits: 810
 
 ## Recent Activity
+e0a93ed chore: update Feb to March
+8d34ec7 chore: extend subscription free tier until end of Feb
+fff9435 docs: multiple changes in .,scripts,supabase/migrations
 bf326a0 docs: multiple changes in .,scripts,src/services/underwriting
 9e23a71 docs: multiple changes in .,src/features/expenses/components
-1a9f2e8 docs: multiple changes in .,docs,src/features/dashboard
-e8fb646 fix(hierarchy): exclude recruits from team table and fix hierarchy display
-7ffd458 chore: regenerate database types from Supabase

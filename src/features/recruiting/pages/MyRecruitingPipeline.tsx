@@ -13,7 +13,7 @@ import {
   useCurrentPhase,
   useChecklistProgress,
 } from "../hooks/useRecruitProgress";
-import { useActiveTemplate } from "../hooks/usePipeline";
+import { useTemplate } from "../hooks/usePipeline";
 import { PhaseChecklist } from "../components/PhaseChecklist";
 import { CommunicationPanel } from "../components/CommunicationPanel";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
@@ -117,7 +117,11 @@ export function MyRecruitingPipeline() {
   // Fetch phase progress
   const { data: phaseProgress } = useRecruitPhaseProgress(profile?.id);
   const { data: currentPhase } = useCurrentPhase(profile?.id);
-  const { data: template } = useActiveTemplate();
+  // Use the user's enrolled template, NOT the global default
+  // This fixes "Unknown Phase" bug when user is in a non-default pipeline
+  const { data: template } = useTemplate(
+    profile?.pipeline_template_id ?? undefined,
+  );
   const { data: documents } = useRecruitDocuments(profile?.id);
 
   // Fetch all checklist progress for all phases
