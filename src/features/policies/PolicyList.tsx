@@ -21,6 +21,7 @@ import {
   FileText,
   Link2Off,
   Link2,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateForDB, parseLocalDate } from "@/lib/date";
@@ -68,6 +69,15 @@ import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { LeadPurchaseLinkDialog } from "./components/LeadPurchaseLinkDialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { policyQueries } from "./queries";
+import { toast } from "sonner";
+import {
+  flattenPoliciesForExport,
+  exportPoliciesToCSV,
+  exportPoliciesToExcel,
+} from "./utils/policyExport";
+import type { Commission } from "@/types/commission.types";
 
 interface PolicyListProps {
   onEditPolicy: (policyId: string) => void;
@@ -153,6 +163,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     ([_, value]) => value !== undefined && value !== null && value !== "",
   ).length;
 
+  const queryClient = useQueryClient();
   const { data: carriers = [] } = useCarriers();
   const { data: commissions = [] } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
@@ -165,6 +176,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [policyToLink, setPolicyToLink] = useState<Policy | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   // Create a map of policy_id -> commission for quick lookup
   // Priority: active/earned/pending commissions over cancelled ones
@@ -326,6 +338,41 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     );
   };
 
+  const handleExport = async (format: "csv" | "excel") => {
+    setExporting(true);
+    try {
+      const allPolicies = await queryClient.fetchQuery(
+        policyQueries.list(filters),
+      );
+      const carrierMap: Record<string, string> = Object.fromEntries(
+        carriers.map((c) => [c.id, c.name]),
+      );
+      const commissionMap: Record<string, Commission> = {};
+      for (const c of commissions) {
+        if (c.policyId && !commissionMap[c.policyId]) {
+          commissionMap[c.policyId] = c;
+        }
+      }
+      const rows = flattenPoliciesForExport(
+        allPolicies,
+        carrierMap,
+        commissionMap,
+      );
+      if (format === "csv") {
+        exportPoliciesToCSV(rows);
+      } else {
+        await exportPoliciesToExcel(rows);
+      }
+      toast.success(`Exported ${rows.length} policies`);
+    } catch (err) {
+      toast.error(
+        `Export failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
       {/* Header with Title and Metrics Bar */}
@@ -338,6 +385,33 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           </h1>
         </div>
         <div className="flex items-center gap-1.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] px-2"
+                disabled={exporting}
+              >
+                <Download className="h-3 w-3 mr-1" />
+                {exporting ? "Exporting..." : "Export"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => handleExport("csv")}
+                className="text-[11px]"
+              >
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleExport("excel")}
+                className="text-[11px]"
+              >
+                Export as Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={onNewPolicy}
             size="sm"
