@@ -230,7 +230,12 @@ export const DashboardHome: React.FC = () => {
           name: formData.clientName,
           email: formData.clientEmail || undefined,
           phone: formData.clientPhone || undefined,
-          address: formData.clientState || undefined,
+          address: JSON.stringify({
+            state: formData.clientState,
+            street: formData.clientStreet || undefined,
+            city: formData.clientCity || undefined,
+            zipCode: formData.clientZipCode || undefined,
+          }),
         },
         userId: user.id,
       });

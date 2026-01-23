@@ -257,6 +257,9 @@ export const PolicyDashboard: React.FC = () => {
                 phone: formData.clientPhone || undefined,
                 address: JSON.stringify({
                   state: formData.clientState,
+                  street: formData.clientStreet || undefined,
+                  city: formData.clientCity || undefined,
+                  zipCode: formData.clientZipCode || undefined,
                 }),
                 date_of_birth: formData.clientDOB,
               },

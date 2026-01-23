@@ -41,7 +41,13 @@ import {
   validatePremium,
   validateCommissionPercentage,
 } from "../../utils/policyCalculations";
-import { User, FileText } from "lucide-react";
+import { User, FileText, ChevronDown } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { formatPhoneNumber } from "../../types/client.types";
 
 interface PolicyFormProps {
   policyId?: string;
@@ -96,6 +102,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         clientDOB: policy.client?.dateOfBirth || "",
         clientEmail: policy.client?.email || "",
         clientPhone: policy.client?.phone || "",
+        clientStreet: policy.client?.street || "",
+        clientCity: policy.client?.city || "",
+        clientZipCode: policy.client?.zipCode || "",
         carrierId: policy.carrierId || "",
         productId: policy.productId || "",
         product: policy.product,
@@ -117,6 +126,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       clientName: "",
       clientState: "",
       clientDOB: "",
+      clientEmail: "",
+      clientPhone: "",
+      clientStreet: "",
+      clientCity: "",
+      clientZipCode: "",
       carrierId: "",
       productId: "",
       product: "term_life" as ProductType,
@@ -137,6 +151,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showContactDetails, setShowContactDetails] = useState(
+    !!(policyId && policy && (policy.client?.email || policy.client?.phone || policy.client?.street || policy.client?.city || policy.client?.zipCode))
+  );
   const [productCommissionRates, setProductCommissionRates] = useState<
     Record<string, number>
   >({});
@@ -616,6 +633,97 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 )}
               </div>
             </div>
+
+            <Collapsible open={showContactDetails} onOpenChange={setShowContactDetails}>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronDown className={`h-3 w-3 transition-transform ${showContactDetails ? "rotate-180" : ""}`} />
+                  Additional Client Details
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 pt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="clientEmail" className="text-[10px] text-muted-foreground">
+                      Email
+                    </Label>
+                    <Input
+                      id="clientEmail"
+                      type="email"
+                      name="clientEmail"
+                      value={formData.clientEmail || ""}
+                      onChange={handleInputChange}
+                      className="h-8 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                      placeholder="client@email.com"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="clientPhone" className="text-[10px] text-muted-foreground">
+                      Phone
+                    </Label>
+                    <Input
+                      id="clientPhone"
+                      type="tel"
+                      name="clientPhone"
+                      value={formData.clientPhone || ""}
+                      onChange={(e) => {
+                        const formatted = formatPhoneNumber(e.target.value);
+                        setFormData((prev) => ({ ...prev, clientPhone: formatted }));
+                      }}
+                      className="h-8 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="clientStreet" className="text-[10px] text-muted-foreground">
+                    Street Address
+                  </Label>
+                  <Input
+                    id="clientStreet"
+                    type="text"
+                    name="clientStreet"
+                    value={formData.clientStreet || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                    placeholder="123 Main St"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="clientCity" className="text-[10px] text-muted-foreground">
+                      City
+                    </Label>
+                    <Input
+                      id="clientCity"
+                      type="text"
+                      name="clientCity"
+                      value={formData.clientCity || ""}
+                      onChange={handleInputChange}
+                      className="h-8 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                      placeholder="Anytown"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="clientZipCode" className="text-[10px] text-muted-foreground">
+                      Zip Code
+                    </Label>
+                    <Input
+                      id="clientZipCode"
+                      type="text"
+                      name="clientZipCode"
+                      value={formData.clientZipCode || ""}
+                      onChange={handleInputChange}
+                      className="h-8 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                      placeholder="12345"
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <div className="flex flex-col gap-1">
               <Label

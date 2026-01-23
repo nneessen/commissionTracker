@@ -49,6 +49,9 @@ export interface PolicyClientBase {
   dateOfBirth?: string; // ISO date string (YYYY-MM-DD)
   email?: string;
   phone?: string;
+  street?: string;
+  city?: string;
+  zipCode?: string;
 }
 
 // Legacy client interface (same as base for backward compatibility)
@@ -122,6 +125,9 @@ export interface NewPolicyForm {
   clientDOB: string; // ISO date string (YYYY-MM-DD)
   clientEmail?: string;
   clientPhone?: string;
+  clientStreet?: string;
+  clientCity?: string;
+  clientZipCode?: string;
 
   // Policy fields
   carrierId: string;
