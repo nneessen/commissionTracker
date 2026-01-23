@@ -1003,6 +1003,9 @@ export class PolicyRepository extends BaseRepository<
         dateOfBirth: dbRecord.clients.date_of_birth || undefined,
         email: dbRecord.clients.email,
         phone: dbRecord.clients.phone,
+        street: address.street || undefined,
+        city: address.city || undefined,
+        zipCode: address.zipCode || undefined,
       };
     } else if (dbRecord.client) {
       // Fallback to JSONB client field for backward compatibility

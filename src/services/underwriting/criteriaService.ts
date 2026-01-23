@@ -4,6 +4,7 @@
 import { supabase } from "@/services/base/supabase";
 import type {
   CriteriaWithRelations,
+  ExtractedCriteria,
   ExtractionResponse,
   ReviewStatus,
 } from "@/features/underwriting/types/underwriting.types";
@@ -194,6 +195,57 @@ export async function updateCriteriaContent(
   return data as CriteriaWithRelations;
 }
 
+export interface CreateCriteriaInput {
+  imoId: string;
+  carrierId: string;
+  productId?: string;
+  criteria: ExtractedCriteria;
+  notes?: string;
+}
+
+/**
+ * Create a manual criteria record (not from AI extraction)
+ */
+export async function createCriteria(
+  input: CreateCriteriaInput,
+): Promise<CriteriaWithRelations> {
+  // Validate criteria structure before saving
+  const validatedCriteria = validateCriteriaForSave(
+    input.criteria as unknown as Record<string, unknown>,
+  );
+
+  const { data, error } = await supabase
+    .from("carrier_underwriting_criteria")
+    .insert({
+      imo_id: input.imoId,
+      carrier_id: input.carrierId,
+      product_id: input.productId || null,
+      criteria: validatedCriteria,
+      is_active: true,
+      review_status: "approved",
+      extraction_status: "completed",
+      extraction_confidence: 1.0, // Manual = 100% confidence
+      extracted_at: new Date().toISOString(),
+      review_notes: input.notes || "Manually created criteria",
+      reviewed_at: new Date().toISOString(),
+    })
+    .select(
+      `
+      *,
+      carrier:carriers(id, name),
+      guide:underwriting_guides(id, name),
+      product:products(id, name)
+    `,
+    )
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create criteria: ${error.message}`);
+  }
+
+  return data as CriteriaWithRelations;
+}
+
 export const criteriaService = {
   triggerExtraction,
   getCriteriaByGuide,
@@ -201,4 +253,5 @@ export const criteriaService = {
   updateCriteriaReviewStatus,
   deleteCriteria,
   updateCriteriaContent,
+  createCriteria,
 };

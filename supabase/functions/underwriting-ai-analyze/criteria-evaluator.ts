@@ -63,12 +63,55 @@ export interface ExtractedCriteria {
     nicotineTestRequired: boolean;
   };
   medicationRestrictions?: {
+    // Cardiovascular
     insulin?: { allowed: boolean; ratingImpact?: string };
     bloodThinners?: { allowed: boolean };
-    opioids?: { allowed: boolean; timeSinceUse?: number };
     bpMedications?: { maxCount: number };
+    heartMeds?: { allowed: boolean };
+
+    // Cholesterol
     cholesterolMedications?: { maxCount: number };
+
+    // Diabetes
+    oralDiabetesMeds?: { allowed: boolean };
+
+    // Mental Health
     antidepressants?: { allowed: boolean };
+    antianxiety?: { allowed: boolean };
+    antipsychotics?: { allowed: boolean };
+    moodStabilizers?: { allowed: boolean };
+
+    // Sleep
+    sleepAids?: { allowed: boolean };
+
+    // Pain
+    opioids?: { allowed: boolean; timeSinceUse?: number };
+
+    // Neurological
+    seizureMeds?: { allowed: boolean };
+    migraineMeds?: { allowed: boolean };
+
+    // Respiratory
+    inhalers?: { allowed: boolean };
+    copdMeds?: { allowed: boolean };
+
+    // Thyroid & Hormonal
+    thyroidMeds?: { allowed: boolean };
+    hormonalTherapy?: { allowed: boolean };
+    steroids?: { allowed: boolean };
+
+    // Immune & Autoimmune
+    immunosuppressants?: { allowed: boolean };
+    biologics?: { allowed: boolean };
+    dmards?: { allowed: boolean };
+
+    // Specialty/High-risk
+    cancerTreatment?: { allowed: boolean };
+    antivirals?: { allowed: boolean };
+    adhdMeds?: { allowed: boolean };
+    osteoporosisMeds?: { allowed: boolean };
+    kidneyMeds?: { allowed: boolean };
+    liverMeds?: { allowed: boolean };
   };
   stateAvailability?: {
     availableStates: string[];
@@ -118,12 +161,55 @@ export interface HealthProfile {
     type?: string;
   };
   medications?: {
+    // Cardiovascular
     bpMedCount?: number;
-    cholesterolMedCount?: number;
-    insulinUse?: boolean;
     bloodThinners?: boolean;
+    heartMeds?: boolean;
+
+    // Cholesterol
+    cholesterolMedCount?: number;
+
+    // Diabetes
+    insulinUse?: boolean;
+    oralDiabetesMeds?: boolean;
+
+    // Mental Health
     antidepressants?: boolean;
+    antianxiety?: boolean;
+    antipsychotics?: boolean;
+    moodStabilizers?: boolean;
+
+    // Sleep
+    sleepAids?: boolean;
+
+    // Pain
     painMedications?: string;
+
+    // Neurological
+    seizureMeds?: boolean;
+    migraineMeds?: boolean;
+
+    // Respiratory
+    inhalers?: boolean;
+    copdMeds?: boolean;
+
+    // Thyroid & Hormonal
+    thyroidMeds?: boolean;
+    hormonalTherapy?: boolean;
+    steroids?: boolean;
+
+    // Immune & Autoimmune
+    immunosuppressants?: boolean;
+    biologics?: boolean;
+    dmards?: boolean;
+
+    // Specialty/High-risk
+    cancerTreatment?: boolean;
+    antivirals?: boolean;
+    adhdMeds?: boolean;
+    osteoporosisMeds?: boolean;
+    kidneyMeds?: boolean;
+    liverMeds?: boolean;
   };
 }
 
@@ -393,7 +479,25 @@ export function evaluateCriteria(
     const meds = health.medications;
     const restrictions = criteria.medicationRestrictions;
 
-    // Insulin check
+    // Helper to check boolean medication restrictions
+    const checkBooleanMed = (
+      restriction: { allowed: boolean } | undefined,
+      medValue: boolean | undefined,
+      medName: string,
+      isHardBlock: boolean = true,
+    ) => {
+      if (restriction && !restriction.allowed && medValue) {
+        if (isHardBlock) {
+          reasons.push(`${medName} not allowed`);
+          eligible = false;
+        } else {
+          medicationWarnings.push(`${medName} may affect rating`);
+        }
+      }
+    };
+
+    // === CARDIOVASCULAR ===
+    // Insulin check (special - has ratingImpact)
     if (
       restrictions.insulin &&
       !restrictions.insulin.allowed &&
@@ -411,15 +515,8 @@ export function evaluateCriteria(
       );
     }
 
-    // Blood thinners check
-    if (
-      restrictions.bloodThinners &&
-      !restrictions.bloodThinners.allowed &&
-      meds.bloodThinners
-    ) {
-      reasons.push("Blood thinner use not allowed");
-      eligible = false;
-    }
+    checkBooleanMed(restrictions.bloodThinners, meds.bloodThinners, "Blood thinner use");
+    checkBooleanMed(restrictions.heartMeds, meds.heartMeds, "Heart medication use");
 
     // BP medication count check
     if (
@@ -427,23 +524,37 @@ export function evaluateCriteria(
       meds.bpMedCount !== undefined &&
       meds.bpMedCount > restrictions.bpMedications.maxCount
     ) {
-      medicationWarnings.push(
+      reasons.push(
         `BP medication count (${meds.bpMedCount}) exceeds maximum (${restrictions.bpMedications.maxCount})`,
       );
+      eligible = false;
     }
 
-    // Cholesterol medication count check
+    // === CHOLESTEROL ===
     if (
       restrictions.cholesterolMedications?.maxCount !== undefined &&
       meds.cholesterolMedCount !== undefined &&
       meds.cholesterolMedCount > restrictions.cholesterolMedications.maxCount
     ) {
-      medicationWarnings.push(
+      reasons.push(
         `Cholesterol medication count (${meds.cholesterolMedCount}) exceeds maximum (${restrictions.cholesterolMedications.maxCount})`,
       );
+      eligible = false;
     }
 
-    // Opioids check
+    // === DIABETES ===
+    checkBooleanMed(restrictions.oralDiabetesMeds, meds.oralDiabetesMeds, "Oral diabetes medication use");
+
+    // === MENTAL HEALTH ===
+    checkBooleanMed(restrictions.antidepressants, meds.antidepressants, "Antidepressant use", false);
+    checkBooleanMed(restrictions.antianxiety, meds.antianxiety, "Anti-anxiety medication use", false);
+    checkBooleanMed(restrictions.antipsychotics, meds.antipsychotics, "Antipsychotic medication use");
+    checkBooleanMed(restrictions.moodStabilizers, meds.moodStabilizers, "Mood stabilizer use");
+
+    // === SLEEP ===
+    checkBooleanMed(restrictions.sleepAids, meds.sleepAids, "Sleep aid use", false);
+
+    // === PAIN ===
     if (
       restrictions.opioids &&
       !restrictions.opioids.allowed &&
@@ -453,14 +564,31 @@ export function evaluateCriteria(
       eligible = false;
     }
 
-    // Antidepressants check
-    if (
-      restrictions.antidepressants &&
-      !restrictions.antidepressants.allowed &&
-      meds.antidepressants
-    ) {
-      medicationWarnings.push("Antidepressant use may affect rating");
-    }
+    // === NEUROLOGICAL ===
+    checkBooleanMed(restrictions.seizureMeds, meds.seizureMeds, "Seizure medication use");
+    checkBooleanMed(restrictions.migraineMeds, meds.migraineMeds, "Migraine medication use", false);
+
+    // === RESPIRATORY ===
+    checkBooleanMed(restrictions.inhalers, meds.inhalers, "Inhaler use", false);
+    checkBooleanMed(restrictions.copdMeds, meds.copdMeds, "COPD medication use");
+
+    // === THYROID & HORMONAL ===
+    checkBooleanMed(restrictions.thyroidMeds, meds.thyroidMeds, "Thyroid medication use", false);
+    checkBooleanMed(restrictions.hormonalTherapy, meds.hormonalTherapy, "Hormonal therapy use", false);
+    checkBooleanMed(restrictions.steroids, meds.steroids, "Steroid use");
+
+    // === IMMUNE & AUTOIMMUNE ===
+    checkBooleanMed(restrictions.immunosuppressants, meds.immunosuppressants, "Immunosuppressant use");
+    checkBooleanMed(restrictions.biologics, meds.biologics, "Biologic medication use");
+    checkBooleanMed(restrictions.dmards, meds.dmards, "DMARD use");
+
+    // === SPECIALTY/HIGH-RISK ===
+    checkBooleanMed(restrictions.cancerTreatment, meds.cancerTreatment, "Cancer treatment");
+    checkBooleanMed(restrictions.antivirals, meds.antivirals, "Antiviral medication use");
+    checkBooleanMed(restrictions.adhdMeds, meds.adhdMeds, "ADHD medication use", false);
+    checkBooleanMed(restrictions.osteoporosisMeds, meds.osteoporosisMeds, "Osteoporosis medication use", false);
+    checkBooleanMed(restrictions.kidneyMeds, meds.kidneyMeds, "Kidney medication use");
+    checkBooleanMed(restrictions.liverMeds, meds.liverMeds, "Liver medication use");
   }
 
   return {
