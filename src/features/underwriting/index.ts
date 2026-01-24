@@ -86,3 +86,50 @@ export {
   safeParseJsonArray,
   safeParseJsonObject,
 } from "./utils/formatters";
+
+// Build Table Types & Utilities
+export type {
+  BuildTableData,
+  BuildTableRow,
+  BuildTableWeightRanges,
+  BmiTableData,
+  BmiRange,
+  WeightRange,
+  BuildTableType,
+  BuildChartDisplay,
+  BuildChartOption,
+  RatingClassKey,
+  BuildRatingClass,
+} from "./types/build-table.types";
+
+export {
+  ALL_RATING_CLASSES,
+  BUILD_TABLE_TYPE_LABELS,
+  BUILD_RATING_CLASS_LABELS,
+  generateHeightOptions,
+  createEmptyBuildTable,
+  createEmptyBmiTable,
+  getActiveRatingClasses,
+  getActiveBmiClasses,
+} from "./types/build-table.types";
+
+export {
+  parseBuildTableCsv,
+  exportBuildTableToCsv,
+  generateCsvTemplate,
+  downloadCsv,
+} from "./utils/buildTableCsvParser";
+
+export { lookupBuildRatingUnified } from "./utils/buildTableLookup";
+
+// Additional underwriting types used by services
+export type {
+  ExtractedCriteria,
+  EligibilityStatus,
+  EligibilityResult,
+  MissingFieldInfo,
+  ScoreComponents,
+  DraftRuleInfo,
+  RuleProvenance,
+  AcceptanceDecision as UWAcceptanceDecision,
+} from "./types/underwriting.types";

@@ -9,7 +9,7 @@
 const DEBUG_DECISION_ENGINE =
   import.meta.env.DEV && import.meta.env.VITE_DEBUG_DECISION_ENGINE === "true";
 
-import { supabase } from "@/services/base/supabase";
+import { supabase } from "@/services/base";
 import type { Database } from "@/types/database.types";
 import type {
   ExtractedCriteria,
@@ -18,9 +18,9 @@ import type {
   MissingFieldInfo,
   ScoreComponents,
   DraftRuleInfo,
-  AcceptanceDecision as TypesAcceptanceDecision,
   RuleProvenance,
-} from "@/features/underwriting/types/underwriting.types";
+  UWAcceptanceDecision as TypesAcceptanceDecision,
+} from "@/features/underwriting";
 import {
   lookupAcceptance,
   getDraftRulesForConditions,
@@ -44,6 +44,13 @@ import {
 } from "./premiumMatrixService";
 import { calculateDataCompleteness } from "./conditionMatcher";
 import { calculateApprovalV2 } from "./ruleEngineV2Adapter";
+import {
+  lookupBuildRatingUnified,
+  type BuildTableData,
+  type BmiTableData,
+  type BuildTableType,
+  type BuildRatingClass,
+} from "@/features/underwriting";
 import pLimit from "p-limit";
 
 // Re-export for convenience
@@ -60,6 +67,9 @@ export interface ClientProfile {
   gender: GenderType;
   state?: string;
   bmi?: number;
+  heightFeet?: number;
+  heightInches?: number;
+  weight?: number;
   tobacco: boolean;
   healthConditions: string[]; // condition codes
   /** Per-condition follow-up responses (for data completeness assessment) */
@@ -110,6 +120,7 @@ export interface ProductCandidate {
   minFaceAmount: number | null;
   maxFaceAmount: number | null;
   metadata: ProductMetadata | null;
+  buildChartId: string | null;
 }
 
 interface ConditionDecision {
@@ -170,6 +181,8 @@ export interface Recommendation {
   scoreComponents: ScoreComponents;
   /** Draft rules shown for FYI only (not used in scoring) */
   draftRulesFyi: DraftRuleInfo[];
+  /** Build chart rating class for this product (if applicable) */
+  buildRating?: BuildRatingClass;
 }
 
 export interface DecisionEngineResult {
@@ -210,6 +223,66 @@ interface EvaluatedProduct {
   maxCoverage: number;
   scoreComponents: ScoreComponents;
   finalScore: number;
+  /** Build chart rating class (if build chart exists for product) */
+  buildRating?: BuildRatingClass;
+}
+
+/** Build chart data resolved for a product */
+interface BuildChartInfo {
+  tableType: BuildTableType;
+  buildData: BuildTableData | null;
+  bmiData: BmiTableData | null;
+}
+
+/** Severity ranking for health/build classes (higher = worse) */
+const HEALTH_CLASS_SEVERITY: Record<string, number> = {
+  preferred_plus: 0,
+  preferred: 1,
+  standard_plus: 2,
+  standard: 3,
+  // All table ratings (A-P) map to table_rated for premium lookup
+  table_a: 4,
+  table_b: 4,
+  table_c: 4,
+  table_d: 4,
+  table_e: 4,
+  table_f: 4,
+  table_g: 4,
+  table_h: 4,
+  table_i: 4,
+  table_j: 4,
+  table_k: 4,
+  table_l: 4,
+  table_m: 4,
+  table_n: 4,
+  table_o: 4,
+  table_p: 4,
+  table_rated: 4,
+};
+
+/**
+ * Returns the WORSE of the rule engine health class and build chart rating.
+ * Acts as a floor: build chart cannot improve the health class, only worsen it.
+ * All substandard table ratings (A-P) map to table_rated HealthClass for premium lookup.
+ */
+function applyBuildConstraint(
+  ruleEngineClass: HealthClass,
+  buildRating: BuildRatingClass,
+): HealthClass {
+  const reSeverity = HEALTH_CLASS_SEVERITY[ruleEngineClass] ?? 3;
+  const buildSeverity = HEALTH_CLASS_SEVERITY[buildRating] ?? 3;
+  if (buildSeverity > reSeverity) {
+    // Build chart is worse — map to the appropriate HealthClass
+    // Standard classes map directly; table ratings map to table_rated
+    const standardClassMap: Record<string, HealthClass> = {
+      preferred_plus: "preferred_plus",
+      preferred: "preferred",
+      standard_plus: "standard_plus",
+      standard: "standard",
+    };
+    return standardClassMap[buildRating] ?? "table_rated";
+  }
+  return ruleEngineClass;
 }
 
 /** Context needed for evaluating a single product */
@@ -221,6 +294,8 @@ interface ProductEvaluationContext {
   criteriaMap: Map<string, ExtractedCriteria>;
   /** Pre-fetched premium matrices by productId (batch optimization) */
   premiumMatrixMap: Map<string, PremiumMatrix[]>;
+  /** Pre-fetched build charts by productId (for build rating constraint) */
+  buildChartMap: Map<string, BuildChartInfo>;
 }
 
 /** Result from evaluating a single product */
@@ -723,6 +798,7 @@ async function getProducts(
       `
       id, name, product_type, min_age, max_age,
       min_face_amount, max_face_amount, carrier_id, metadata,
+      build_chart_id,
       carriers!inner(id, name)
     `,
     )
@@ -756,6 +832,7 @@ async function getProducts(
       minFaceAmount: p.min_face_amount,
       maxFaceAmount: p.max_face_amount,
       metadata: (p.metadata as ProductMetadata) || null,
+      buildChartId: p.build_chart_id ?? null,
     };
   });
 }
@@ -870,6 +947,119 @@ async function batchFetchPremiumMatrices(
   // This allows the fallback in evaluateSingleProduct to trigger correctly
 
   return matrixMap;
+}
+
+/**
+ * Batch-fetch build charts for all products.
+ * Resolves product-specific charts (via build_chart_id) and carrier defaults.
+ * Returns Map<productId, BuildChartInfo> for O(1) lookup during evaluation.
+ */
+async function batchFetchBuildCharts(
+  products: ProductCandidate[],
+  imoId: string,
+): Promise<Map<string, BuildChartInfo>> {
+  const chartMap = new Map<string, BuildChartInfo>();
+  if (products.length === 0) return chartMap;
+
+  // Collect product-specific chart IDs and carrier IDs needing defaults
+  const specificChartIds: string[] = [];
+  const carriersNeedingDefault: string[] = [];
+  const productsByChartId = new Map<string, string[]>(); // chartId → productIds
+  const productsByCarrier = new Map<string, string[]>(); // carrierId → productIds (without specific chart)
+
+  for (const p of products) {
+    if (p.buildChartId) {
+      specificChartIds.push(p.buildChartId);
+      const existing = productsByChartId.get(p.buildChartId) ?? [];
+      existing.push(p.productId);
+      productsByChartId.set(p.buildChartId, existing);
+    } else {
+      if (!carriersNeedingDefault.includes(p.carrierId)) {
+        carriersNeedingDefault.push(p.carrierId);
+      }
+      const existing = productsByCarrier.get(p.carrierId) ?? [];
+      existing.push(p.productId);
+      productsByCarrier.set(p.carrierId, existing);
+    }
+  }
+
+  // Fetch product-specific charts and carrier defaults in parallel
+  const [specificCharts, defaultCharts] = await Promise.all([
+    specificChartIds.length > 0
+      ? supabase
+          .from("carrier_build_charts")
+          .select("id, table_type, build_data, bmi_data")
+          .in("id", specificChartIds)
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("Error fetching specific build charts:", error);
+              return [];
+            }
+            return data || [];
+          })
+      : Promise.resolve([]),
+    carriersNeedingDefault.length > 0
+      ? supabase
+          .from("carrier_build_charts")
+          .select(
+            "id, carrier_id, table_type, build_data, bmi_data, is_default, created_at",
+          )
+          .in("carrier_id", carriersNeedingDefault)
+          .eq("imo_id", imoId)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: true })
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("Error fetching default build charts:", error);
+              return [];
+            }
+            return data || [];
+          })
+      : Promise.resolve([]),
+  ]);
+
+  // Map specific charts to their products
+  for (const chart of specificCharts) {
+    const info: BuildChartInfo = {
+      tableType: chart.table_type as BuildTableType,
+      buildData: chart.build_data as unknown as BuildTableData | null,
+      bmiData: chart.bmi_data as unknown as BmiTableData | null,
+    };
+    const productIds = productsByChartId.get(chart.id) ?? [];
+    for (const pid of productIds) {
+      chartMap.set(pid, info);
+    }
+  }
+
+  // Map carrier defaults to products without specific charts
+  // Group by carrier and take the first (default or oldest)
+  const carrierDefaults = new Map<string, BuildChartInfo>();
+  for (const chart of defaultCharts) {
+    if (!carrierDefaults.has(chart.carrier_id)) {
+      carrierDefaults.set(chart.carrier_id, {
+        tableType: chart.table_type as BuildTableType,
+        buildData: chart.build_data as unknown as BuildTableData | null,
+        bmiData: chart.bmi_data as unknown as BmiTableData | null,
+      });
+    }
+  }
+
+  for (const [carrierId, info] of carrierDefaults) {
+    const productIds = productsByCarrier.get(carrierId) ?? [];
+    for (const pid of productIds) {
+      if (!chartMap.has(pid)) {
+        chartMap.set(pid, info);
+      }
+    }
+  }
+
+  if (DEBUG_DECISION_ENGINE) {
+    console.log(
+      `[BatchFetchBuildCharts] Resolved ${chartMap.size}/${products.length} products with build charts`,
+    );
+  }
+
+  return chartMap;
 }
 
 /**
@@ -1075,6 +1265,50 @@ async function evaluateSingleProduct(
   }
   stats.passedAcceptance = true;
 
+  // Stage 2.5: Build Chart Constraint
+  // Apply carrier build chart as a floor on health class
+  let effectiveHealthClass: HealthClass = approval.healthClass;
+  let buildRating: BuildRatingClass | undefined;
+
+  const buildChart = ctx.buildChartMap.get(product.productId);
+  if (
+    buildChart &&
+    client.heightFeet !== undefined &&
+    client.heightInches !== undefined &&
+    client.weight !== undefined
+  ) {
+    const buildResult = lookupBuildRatingUnified(
+      client.heightFeet,
+      client.heightInches,
+      client.weight,
+      buildChart.tableType,
+      buildChart.buildData,
+      buildChart.bmiData,
+    );
+
+    if (buildResult.ratingClass !== "unknown") {
+      buildRating = buildResult.ratingClass;
+      effectiveHealthClass = applyBuildConstraint(
+        approval.healthClass,
+        buildResult.ratingClass,
+      );
+
+      if (
+        DEBUG_DECISION_ENGINE &&
+        effectiveHealthClass !== approval.healthClass
+      ) {
+        console.log(
+          `[DecisionEngine Stage 2.5] Build chart constraint applied for ${product.productName}:`,
+          {
+            ruleEngineClass: approval.healthClass,
+            buildRating: buildResult.ratingClass,
+            effectiveClass: effectiveHealthClass,
+          },
+        );
+      }
+    }
+  }
+
   // Stage 3: Premium & Alternative Quotes
   // Use the same effectiveTermYears determined above
   const premiumLookupParams = {
@@ -1083,7 +1317,7 @@ async function evaluateSingleProduct(
     age: client.age,
     gender: client.gender,
     tobaccoClass: client.tobacco ? "tobacco" : "non_tobacco",
-    healthClass: approval.healthClass,
+    healthClass: effectiveHealthClass,
     faceAmount: coverage.faceAmount,
     imoId,
     termYears: effectiveTermYears,
@@ -1118,7 +1352,7 @@ async function evaluateSingleProduct(
     client.age,
     client.gender,
     client.tobacco,
-    approval.healthClass,
+    effectiveHealthClass,
     coverage.faceAmount,
     imoId,
     termForQuotes, // Use effectiveTermYears for both eligibility and pricing
@@ -1286,6 +1520,7 @@ async function evaluateSingleProduct(
     maxCoverage,
     scoreComponents,
     finalScore,
+    buildRating,
   };
 
   return { evaluated, stats };
@@ -1337,11 +1572,11 @@ export async function getRecommendations(
   stats.totalProducts = products.length;
   const productIds = products.map((p) => p.productId);
 
-  // OPTIMIZATION: Fetch criteria and premium matrices in parallel
-  // This reduces startup time by ~100-200ms
-  const [criteriaMap, premiumMatrixMap] = await Promise.all([
+  // OPTIMIZATION: Fetch criteria, premium matrices, and build charts in parallel
+  const [criteriaMap, premiumMatrixMap, buildChartMap] = await Promise.all([
     getExtractedCriteriaMap(productIds),
     batchFetchPremiumMatrices(productIds, imoId),
+    batchFetchBuildCharts(products, imoId),
   ]);
 
   // Build evaluation context (shared across all product evaluations)
@@ -1352,6 +1587,7 @@ export async function getRecommendations(
     inputTermYears: input.termYears,
     criteriaMap,
     premiumMatrixMap,
+    buildChartMap,
   };
 
   // PARALLEL PRODUCT EVALUATION
@@ -1445,6 +1681,7 @@ export async function getRecommendations(
     confidence: e.eligibility.confidence,
     scoreComponents: e.scoreComponents,
     draftRulesFyi: e.approval.draftRules,
+    buildRating: e.buildRating,
   });
 
   // Build recommendations from eligible products (only those with premiums)

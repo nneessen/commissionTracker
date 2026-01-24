@@ -50,29 +50,27 @@ import { useUpdateBuildChart } from "../hooks/useUpdateBuildChart";
 import { useDeleteBuildChart } from "../hooks/useDeleteBuildChart";
 import { useSetDefaultBuildChart } from "../hooks/useSetDefaultBuildChart";
 import {
-  BuildTableData,
-  BuildTableRow,
-  BuildTableWeightRanges,
-  BmiTableData,
-  BmiRange,
-  WeightRange,
-  BuildTableType,
-  BuildChartDisplay,
+  type BuildTableData,
+  type BuildTableRow,
+  type BuildTableWeightRanges,
+  type BmiTableData,
+  type BmiRange,
+  type WeightRange,
+  type BuildTableType,
+  type BuildChartDisplay,
+  type RatingClassKey,
   generateHeightOptions,
   createEmptyBuildTable,
   createEmptyBmiTable,
   BUILD_TABLE_TYPE_LABELS,
   ALL_RATING_CLASSES,
-  RatingClassKey,
   getActiveRatingClasses,
   getActiveBmiClasses,
-} from "@/features/underwriting/types/build-table.types";
-import {
   parseBuildTableCsv,
   exportBuildTableToCsv,
   generateCsvTemplate,
   downloadCsv,
-} from "@/features/underwriting/utils/buildTableCsvParser";
+} from "@/features/underwriting";
 import type { Carrier } from "../hooks/useCarriers";
 
 interface BuildChartsManagerProps {
@@ -140,6 +138,13 @@ export function BuildChartsManager({
     setIsCreating(false);
   };
 
+  // Reset editor when carrier changes or sheet closes
+  useEffect(() => {
+    if (!open) {
+      resetEditor();
+    }
+  }, [open, carrier?.id]);
+
   // Load chart data when editing
   useEffect(() => {
     if (editingChart) {
@@ -171,7 +176,7 @@ export function BuildChartsManager({
     field: "min" | "max",
     value: string,
   ) => {
-    const numValue = value === "" ? undefined : parseInt(value, 10);
+    const numValue = value === "" ? undefined : parseFloat(value);
 
     setBuildData((prev) =>
       prev.map((row) => {
@@ -654,7 +659,7 @@ export function BuildChartsManager({
               Rating Classes
             </Label>
             <div className="flex flex-wrap gap-4">
-              {ALL_RATING_CLASSES.map((rc) => (
+              {ALL_RATING_CLASSES.slice(0, 4).map((rc) => (
                 <label
                   key={rc.key}
                   className="flex items-center gap-1.5 cursor-pointer"
@@ -669,6 +674,29 @@ export function BuildChartsManager({
                   />
                   <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                     {rc.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800 mt-1">
+              <span className="text-[10px] text-zinc-400 self-center">
+                Substandard:
+              </span>
+              {ALL_RATING_CLASSES.slice(4).map((rc) => (
+                <label
+                  key={rc.key}
+                  className="flex items-center gap-1 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedClasses.has(rc.key)}
+                    onChange={(e) =>
+                      handleClassToggle(rc.key, e.target.checked)
+                    }
+                    className="h-3 w-3 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                    {rc.shortLabel}
                   </span>
                 </label>
               ))}
@@ -870,6 +898,7 @@ export function BuildChartsManager({
                                 <td className="px-1 py-0.5 border-l border-zinc-200 dark:border-zinc-700">
                                   <Input
                                     type="number"
+                                    step="any"
                                     value={getWeightValue(row, rc.key, "min")}
                                     onChange={(e) =>
                                       handleWeightChange(
@@ -888,6 +917,7 @@ export function BuildChartsManager({
                                 <td className="px-1 py-0.5">
                                   <Input
                                     type="number"
+                                    step="any"
                                     value={getWeightValue(row, rc.key, "max")}
                                     onChange={(e) =>
                                       handleWeightChange(

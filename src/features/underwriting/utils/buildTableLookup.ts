@@ -135,12 +135,66 @@ function getRatingFromRow(
     }
   }
 
-  // Weight exceeds all standard thresholds = table rated
+  // Check table ratings A through P (substandard)
+  const tableRatingKeys = [
+    "tableA",
+    "tableB",
+    "tableC",
+    "tableD",
+    "tableE",
+    "tableF",
+    "tableG",
+    "tableH",
+    "tableI",
+    "tableJ",
+    "tableK",
+    "tableL",
+    "tableM",
+    "tableN",
+    "tableO",
+    "tableP",
+  ] as const;
+  const tableRatingClasses: Record<string, BuildRatingClass> = {
+    tableA: "table_a",
+    tableB: "table_b",
+    tableC: "table_c",
+    tableD: "table_d",
+    tableE: "table_e",
+    tableF: "table_f",
+    tableG: "table_g",
+    tableH: "table_h",
+    tableI: "table_i",
+    tableJ: "table_j",
+    tableK: "table_k",
+    tableL: "table_l",
+    tableM: "table_m",
+    tableN: "table_n",
+    tableO: "table_o",
+    tableP: "table_p",
+  };
+
+  let prevClass: BuildRatingClass = "standard";
+  for (const key of tableRatingKeys) {
+    const range = weightRanges[key];
+    if (range) {
+      if (isInWeightRange(weightLbs, range)) {
+        return {
+          ratingClass: tableRatingClasses[key],
+          hasTable: true,
+          thresholdExceeded: weightRanges.standard?.max,
+          thresholdClass: prevClass,
+        };
+      }
+      prevClass = tableRatingClasses[key];
+    }
+  }
+
+  // Weight exceeds all defined thresholds = generic table rated
   return {
     ratingClass: "table_rated",
     hasTable: true,
     thresholdExceeded: weightRanges.standard?.max,
-    thresholdClass: "standard",
+    thresholdClass: prevClass,
   };
 }
 
@@ -441,7 +495,23 @@ export function lookupBmiRating(
     bmiTable.preferredPlus !== undefined ||
     bmiTable.preferred !== undefined ||
     bmiTable.standardPlus !== undefined ||
-    bmiTable.standard !== undefined;
+    bmiTable.standard !== undefined ||
+    bmiTable.tableA !== undefined ||
+    bmiTable.tableB !== undefined ||
+    bmiTable.tableC !== undefined ||
+    bmiTable.tableD !== undefined ||
+    bmiTable.tableE !== undefined ||
+    bmiTable.tableF !== undefined ||
+    bmiTable.tableG !== undefined ||
+    bmiTable.tableH !== undefined ||
+    bmiTable.tableI !== undefined ||
+    bmiTable.tableJ !== undefined ||
+    bmiTable.tableK !== undefined ||
+    bmiTable.tableL !== undefined ||
+    bmiTable.tableM !== undefined ||
+    bmiTable.tableN !== undefined ||
+    bmiTable.tableO !== undefined ||
+    bmiTable.tableP !== undefined;
 
   if (!hasAnyRanges) {
     return {
@@ -505,12 +575,66 @@ export function lookupBmiRating(
     }
   }
 
-  // BMI exceeds all standard thresholds = table rated
+  // Check table ratings A through P (substandard)
+  const bmiTableKeys = [
+    "tableA",
+    "tableB",
+    "tableC",
+    "tableD",
+    "tableE",
+    "tableF",
+    "tableG",
+    "tableH",
+    "tableI",
+    "tableJ",
+    "tableK",
+    "tableL",
+    "tableM",
+    "tableN",
+    "tableO",
+    "tableP",
+  ] as const;
+  const bmiTableRatingClasses: Record<string, BuildRatingClass> = {
+    tableA: "table_a",
+    tableB: "table_b",
+    tableC: "table_c",
+    tableD: "table_d",
+    tableE: "table_e",
+    tableF: "table_f",
+    tableG: "table_g",
+    tableH: "table_h",
+    tableI: "table_i",
+    tableJ: "table_j",
+    tableK: "table_k",
+    tableL: "table_l",
+    tableM: "table_m",
+    tableN: "table_n",
+    tableO: "table_o",
+    tableP: "table_p",
+  };
+
+  let bmiPrevClass: BuildRatingClass = "standard";
+  for (const key of bmiTableKeys) {
+    const range = bmiTable[key];
+    if (range) {
+      if (isInBmiRange(clientBmi, range)) {
+        return {
+          ratingClass: bmiTableRatingClasses[key],
+          hasTable: true,
+          thresholdExceeded: bmiTable.standard?.max,
+          thresholdClass: bmiPrevClass,
+        };
+      }
+      bmiPrevClass = bmiTableRatingClasses[key];
+    }
+  }
+
+  // BMI exceeds all defined thresholds = generic table rated
   return {
     ratingClass: "table_rated",
     hasTable: true,
     thresholdExceeded: bmiTable.standard?.max,
-    thresholdClass: "standard",
+    thresholdClass: bmiPrevClass,
   };
 }
 

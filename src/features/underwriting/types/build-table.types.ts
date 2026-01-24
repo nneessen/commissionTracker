@@ -45,6 +45,22 @@ export interface BuildTableWeightRanges {
   preferred?: WeightRange;
   standardPlus?: WeightRange;
   standard?: WeightRange;
+  tableA?: WeightRange;
+  tableB?: WeightRange;
+  tableC?: WeightRange;
+  tableD?: WeightRange;
+  tableE?: WeightRange;
+  tableF?: WeightRange;
+  tableG?: WeightRange;
+  tableH?: WeightRange;
+  tableI?: WeightRange;
+  tableJ?: WeightRange;
+  tableK?: WeightRange;
+  tableL?: WeightRange;
+  tableM?: WeightRange;
+  tableN?: WeightRange;
+  tableO?: WeightRange;
+  tableP?: WeightRange;
 }
 
 /**
@@ -63,6 +79,22 @@ export interface BmiTableData {
   preferred?: BmiRange;
   standardPlus?: BmiRange;
   standard?: BmiRange;
+  tableA?: BmiRange;
+  tableB?: BmiRange;
+  tableC?: BmiRange;
+  tableD?: BmiRange;
+  tableE?: BmiRange;
+  tableF?: BmiRange;
+  tableG?: BmiRange;
+  tableH?: BmiRange;
+  tableI?: BmiRange;
+  tableJ?: BmiRange;
+  tableK?: BmiRange;
+  tableL?: BmiRange;
+  tableM?: BmiRange;
+  tableN?: BmiRange;
+  tableO?: BmiRange;
+  tableP?: BmiRange;
 }
 
 /**
@@ -87,6 +119,22 @@ export type BuildRatingClass =
   | "preferred"
   | "standard_plus"
   | "standard"
+  | "table_a"
+  | "table_b"
+  | "table_c"
+  | "table_d"
+  | "table_e"
+  | "table_f"
+  | "table_g"
+  | "table_h"
+  | "table_i"
+  | "table_j"
+  | "table_k"
+  | "table_l"
+  | "table_m"
+  | "table_n"
+  | "table_o"
+  | "table_p"
   | "table_rated"
   | "unknown";
 
@@ -156,6 +204,22 @@ export const BUILD_RATING_CLASS_LABELS: Record<BuildRatingClass, string> = {
   preferred: "Preferred",
   standard_plus: "Standard Plus",
   standard: "Standard",
+  table_a: "Table A",
+  table_b: "Table B",
+  table_c: "Table C",
+  table_d: "Table D",
+  table_e: "Table E",
+  table_f: "Table F",
+  table_g: "Table G",
+  table_h: "Table H",
+  table_i: "Table I",
+  table_j: "Table J",
+  table_k: "Table K",
+  table_l: "Table L",
+  table_m: "Table M",
+  table_n: "Table N",
+  table_o: "Table O",
+  table_p: "Table P",
   table_rated: "Table Rated",
   unknown: "Unknown",
 };
@@ -165,6 +229,22 @@ export const BUILD_RATING_CLASS_ORDER: BuildRatingClass[] = [
   "preferred",
   "standard_plus",
   "standard",
+  "table_a",
+  "table_b",
+  "table_c",
+  "table_d",
+  "table_e",
+  "table_f",
+  "table_g",
+  "table_h",
+  "table_i",
+  "table_j",
+  "table_k",
+  "table_l",
+  "table_m",
+  "table_n",
+  "table_o",
+  "table_p",
   "table_rated",
 ];
 
@@ -182,6 +262,22 @@ export const ALL_RATING_CLASSES = [
   { key: "preferred", label: "Preferred", shortLabel: "Preferred" },
   { key: "standardPlus", label: "Standard Plus", shortLabel: "Std+" },
   { key: "standard", label: "Standard", shortLabel: "Standard" },
+  { key: "tableA", label: "Table A", shortLabel: "Tbl A" },
+  { key: "tableB", label: "Table B", shortLabel: "Tbl B" },
+  { key: "tableC", label: "Table C", shortLabel: "Tbl C" },
+  { key: "tableD", label: "Table D", shortLabel: "Tbl D" },
+  { key: "tableE", label: "Table E", shortLabel: "Tbl E" },
+  { key: "tableF", label: "Table F", shortLabel: "Tbl F" },
+  { key: "tableG", label: "Table G", shortLabel: "Tbl G" },
+  { key: "tableH", label: "Table H", shortLabel: "Tbl H" },
+  { key: "tableI", label: "Table I", shortLabel: "Tbl I" },
+  { key: "tableJ", label: "Table J", shortLabel: "Tbl J" },
+  { key: "tableK", label: "Table K", shortLabel: "Tbl K" },
+  { key: "tableL", label: "Table L", shortLabel: "Tbl L" },
+  { key: "tableM", label: "Table M", shortLabel: "Tbl M" },
+  { key: "tableN", label: "Table N", shortLabel: "Tbl N" },
+  { key: "tableO", label: "Table O", shortLabel: "Tbl O" },
+  { key: "tableP", label: "Table P", shortLabel: "Tbl P" },
 ] as const;
 
 /**

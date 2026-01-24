@@ -2,12 +2,15 @@
 // Hook for integrating the decision engine with the underwriting wizard
 
 import { useMutation } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
 import {
   getRecommendations,
   type DecisionEngineInput,
   type DecisionEngineResult,
   type GenderType,
 } from "@/services/underwriting/decisionEngine";
+// eslint-disable-next-line no-restricted-imports
+import { transformConditionResponses } from "@/services/underwriting/conditionResponseTransformer";
 import type {
   ClientInfo,
   HealthInfo,
@@ -15,7 +18,6 @@ import type {
   ProductType,
 } from "../types/underwriting.types";
 import { calculateBMI } from "../utils/bmiCalculator";
-import { transformConditionResponses } from "@/services/underwriting/conditionResponseTransformer";
 
 // ============================================================================
 // Data Transformation
@@ -82,6 +84,9 @@ export function transformWizardToDecisionEngineInput(
       gender,
       state: clientInfo.state || undefined,
       bmi: bmi > 0 ? bmi : undefined,
+      heightFeet: clientInfo.heightFeet,
+      heightInches: clientInfo.heightInches,
+      weight: clientInfo.weight,
       tobacco: healthInfo.tobacco.currentUse,
       healthConditions,
       conditionResponses,

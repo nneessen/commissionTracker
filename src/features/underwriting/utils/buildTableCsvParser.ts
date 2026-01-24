@@ -91,7 +91,8 @@ function normalizeHeader(header: string): string {
     .replace(/[\s-]+/g, "_")
     .replace(/['"]/g, "")
     .replace(/pref\+|pref_plus|preferredplus/g, "preferred_plus")
-    .replace(/std\+|std_plus|standardplus/g, "standard_plus");
+    .replace(/std\+|std_plus|standardplus/g, "standard_plus")
+    .replace(/tbl_?([a-p])|table_?([a-p])/g, (_, a, b) => `table_${a || b}`);
 }
 
 /**
@@ -197,6 +198,22 @@ export function parseBuildTableCsv(csvContent: string): CsvParseResult {
     preferred: headers.indexOf("preferred"),
     standard_plus: headers.indexOf("standard_plus"),
     standard: headers.indexOf("standard"),
+    table_a: headers.indexOf("table_a"),
+    table_b: headers.indexOf("table_b"),
+    table_c: headers.indexOf("table_c"),
+    table_d: headers.indexOf("table_d"),
+    table_e: headers.indexOf("table_e"),
+    table_f: headers.indexOf("table_f"),
+    table_g: headers.indexOf("table_g"),
+    table_h: headers.indexOf("table_h"),
+    table_i: headers.indexOf("table_i"),
+    table_j: headers.indexOf("table_j"),
+    table_k: headers.indexOf("table_k"),
+    table_l: headers.indexOf("table_l"),
+    table_m: headers.indexOf("table_m"),
+    table_n: headers.indexOf("table_n"),
+    table_o: headers.indexOf("table_o"),
+    table_p: headers.indexOf("table_p"),
   };
 
   // Check if at least one weight column exists
@@ -205,7 +222,7 @@ export function parseBuildTableCsv(csvContent: string): CsvParseResult {
     return {
       success: false,
       errors: [
-        "CSV must have at least one weight column (preferred_plus, preferred, standard_plus, or standard)",
+        "CSV must have at least one weight column (preferred_plus, preferred, standard_plus, standard, or table_a through table_p)",
       ],
     };
   }
@@ -277,12 +294,37 @@ export function parseBuildTableCsv(csvContent: string): CsvParseResult {
       }
     }
 
+    // Parse table rating columns (A through P)
+    const tableRatingCsvKeys = [
+      { csv: "table_a", prop: "tableA" as const },
+      { csv: "table_b", prop: "tableB" as const },
+      { csv: "table_c", prop: "tableC" as const },
+      { csv: "table_d", prop: "tableD" as const },
+      { csv: "table_e", prop: "tableE" as const },
+      { csv: "table_f", prop: "tableF" as const },
+      { csv: "table_g", prop: "tableG" as const },
+      { csv: "table_h", prop: "tableH" as const },
+      { csv: "table_i", prop: "tableI" as const },
+      { csv: "table_j", prop: "tableJ" as const },
+      { csv: "table_k", prop: "tableK" as const },
+      { csv: "table_l", prop: "tableL" as const },
+      { csv: "table_m", prop: "tableM" as const },
+      { csv: "table_n", prop: "tableN" as const },
+      { csv: "table_o", prop: "tableO" as const },
+      { csv: "table_p", prop: "tableP" as const },
+    ];
+    for (const { csv, prop } of tableRatingCsvKeys) {
+      if (columnMap[csv] !== -1) {
+        const val = values[columnMap[csv]] || "";
+        const maxVal = parseWeightValue(val);
+        if (maxVal !== undefined) {
+          weightRanges[prop] = { max: maxVal };
+        }
+      }
+    }
+
     // Only add row if it has at least one weight value
-    const hasAnyWeight =
-      weightRanges.preferredPlus !== undefined ||
-      weightRanges.preferred !== undefined ||
-      weightRanges.standardPlus !== undefined ||
-      weightRanges.standard !== undefined;
+    const hasAnyWeight = Object.keys(weightRanges).length > 0;
 
     if (!hasAnyWeight) {
       warnings.push(
@@ -324,6 +366,22 @@ const CLASS_KEY_TO_CSV: Record<RatingClassKey, string> = {
   preferred: "preferred",
   standardPlus: "standard_plus",
   standard: "standard",
+  tableA: "table_a",
+  tableB: "table_b",
+  tableC: "table_c",
+  tableD: "table_d",
+  tableE: "table_e",
+  tableF: "table_f",
+  tableG: "table_g",
+  tableH: "table_h",
+  tableI: "table_i",
+  tableJ: "table_j",
+  tableK: "table_k",
+  tableL: "table_l",
+  tableM: "table_m",
+  tableN: "table_n",
+  tableO: "table_o",
+  tableP: "table_p",
 };
 
 /**

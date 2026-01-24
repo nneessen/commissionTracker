@@ -32,10 +32,12 @@ import type {
   CoverageRequest,
 } from "../../types/underwriting.types";
 import { getHealthTierLabel } from "../../types/underwriting.types";
+// eslint-disable-next-line no-restricted-imports
 import type {
   DecisionEngineResult,
   Recommendation as DecisionEngineRecommendation,
 } from "@/services/underwriting/decisionEngine";
+// eslint-disable-next-line no-restricted-imports
 import {
   formatRecommendationReason,
   getReasonBadgeColor,
@@ -636,7 +638,7 @@ function _RecommendationCard({
       return "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400";
     if (rating === "standard_plus" || rating === "standard")
       return "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400";
-    if (rating === "table_rated")
+    if (rating === "table_rated" || rating.startsWith("table_"))
       return "text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400";
     return "text-zinc-600 bg-zinc-50";
   })();
@@ -1142,7 +1144,7 @@ function AIRecommendationRow({
       return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300";
     if (rating === "standard_plus" || rating === "standard")
       return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300";
-    if (rating === "table_rated")
+    if (rating === "table_rated" || rating.startsWith("table_"))
       return "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
     return "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400";
   })();
@@ -1755,7 +1757,13 @@ function DecisionEngineRow({
   recommendation,
   isUnknown,
 }: DecisionEngineRowProps) {
-  const healthClassDisplay = recommendation.wasFallback ? (
+  const isTableRated = recommendation.buildRating?.startsWith("table_");
+
+  const healthClassDisplay = isTableRated ? (
+    <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+      {BUILD_RATING_CLASS_LABELS[recommendation.buildRating!] ?? "Table Rated"}
+    </span>
+  ) : recommendation.wasFallback ? (
     <span className="text-xs">
       <span className="line-through opacity-50 mr-0.5">
         {recommendation.healthClassRequested?.slice(0, 4)}
@@ -1812,6 +1820,15 @@ function DecisionEngineRow({
               {formatDECurrency(recommendation.monthlyPremium)}
             </span>
             <span className="text-xs text-zinc-400 ml-0.5">/mo</span>
+          </div>
+        ) : recommendation.buildRating?.startsWith("table_") ? (
+          <div>
+            <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+              Substandard
+            </span>
+            <div className="text-[9px] text-zinc-400 mt-0.5">
+              Call UW for rating
+            </div>
           </div>
         ) : (
           <span className="text-zinc-400 text-sm">TBD</span>
