@@ -23,6 +23,7 @@ import { US_STATES } from "@/constants/states";
 import { formatDateForDB } from "../../lib/date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateOfBirthInput } from "@/components/ui/date-of-birth-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -152,7 +153,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showContactDetails, setShowContactDetails] = useState(
-    !!(policyId && policy && (policy.client?.email || policy.client?.phone || policy.client?.street || policy.client?.city || policy.client?.zipCode))
+    !!(
+      policyId &&
+      policy &&
+      (policy.client?.email ||
+        policy.client?.phone ||
+        policy.client?.street ||
+        policy.client?.city ||
+        policy.client?.zipCode)
+    ),
   );
   const [productCommissionRates, setProductCommissionRates] = useState<
     Record<string, number>
@@ -618,13 +627,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 >
                   Date of Birth *
                 </Label>
-                <Input
+                <DateOfBirthInput
                   id="clientDOB"
-                  type="date"
                   name="clientDOB"
-                  value={formData.clientDOB || ""}
-                  onChange={handleInputChange}
-                  className={`h-8 text-[11px] ${errors.clientDOB ? "border-destructive" : "border-input"}`}
+                  value={formData.clientDOB}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, clientDOB: value }))
+                  }
+                  error={!!errors.clientDOB}
+                  className="h-8 text-[11px]"
                 />
                 {errors.clientDOB && (
                   <span className="text-[10px] text-destructive">
@@ -634,20 +645,28 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               </div>
             </div>
 
-            <Collapsible open={showContactDetails} onOpenChange={setShowContactDetails}>
+            <Collapsible
+              open={showContactDetails}
+              onOpenChange={setShowContactDetails}
+            >
               <CollapsibleTrigger asChild>
                 <button
                   type="button"
                   className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <ChevronDown className={`h-3 w-3 transition-transform ${showContactDetails ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`h-3 w-3 transition-transform ${showContactDetails ? "rotate-180" : ""}`}
+                  />
                   Additional Client Details
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-2 pt-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="clientEmail" className="text-[10px] text-muted-foreground">
+                    <Label
+                      htmlFor="clientEmail"
+                      className="text-[10px] text-muted-foreground"
+                    >
                       Email
                     </Label>
                     <Input
@@ -661,7 +680,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="clientPhone" className="text-[10px] text-muted-foreground">
+                    <Label
+                      htmlFor="clientPhone"
+                      className="text-[10px] text-muted-foreground"
+                    >
                       Phone
                     </Label>
                     <Input
@@ -671,7 +693,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                       value={formData.clientPhone || ""}
                       onChange={(e) => {
                         const formatted = formatPhoneNumber(e.target.value);
-                        setFormData((prev) => ({ ...prev, clientPhone: formatted }));
+                        setFormData((prev) => ({
+                          ...prev,
+                          clientPhone: formatted,
+                        }));
                       }}
                       className="h-8 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                       placeholder="(555) 123-4567"
@@ -679,7 +704,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="clientStreet" className="text-[10px] text-muted-foreground">
+                  <Label
+                    htmlFor="clientStreet"
+                    className="text-[10px] text-muted-foreground"
+                  >
                     Street Address
                   </Label>
                   <Input
@@ -694,7 +722,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="clientCity" className="text-[10px] text-muted-foreground">
+                    <Label
+                      htmlFor="clientCity"
+                      className="text-[10px] text-muted-foreground"
+                    >
                       City
                     </Label>
                     <Input
@@ -708,7 +739,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="clientZipCode" className="text-[10px] text-muted-foreground">
+                    <Label
+                      htmlFor="clientZipCode"
+                      className="text-[10px] text-muted-foreground"
+                    >
                       Zip Code
                     </Label>
                     <Input
