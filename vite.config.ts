@@ -2,12 +2,48 @@ import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import fs from "fs";
+import { execSync } from "child_process";
 
-// Get user-friendly release notes
-// Commit messages are always technical - just use simple, friendly defaults
+// Get user-friendly release notes from recent git commits
 function getUserFriendlyReleaseNotes(): string[] {
-  // Always return friendly, non-technical messages
-  return ["Bug fixes and improvements", "Better overall experience"];
+  try {
+    // Get last 20 commits to find enough user-facing changes
+    const gitLog = execSync('git log --oneline -20 --pretty=format:"%s"', {
+      encoding: "utf-8",
+    });
+
+    const commits = gitLog.split("\n").filter(Boolean);
+    const userFacingChanges: string[] = [];
+
+    for (const commit of commits) {
+      if (userFacingChanges.length >= 5) break;
+
+      // Parse conventional commit format: type(scope): message
+      const match = commit.match(/^(\w+)(?:\([^)]+\))?:\s*(.+)$/);
+      if (!match) continue;
+
+      const [, type, message] = match;
+      const cleanMessage = message.charAt(0).toUpperCase() + message.slice(1);
+
+      // Only include user-facing changes (features and fixes)
+      if (type === "feat") {
+        userFacingChanges.push(`New: ${cleanMessage}`);
+      } else if (type === "fix") {
+        userFacingChanges.push(`Fixed: ${cleanMessage}`);
+      }
+      // Skip: chore, docs, refactor, test, style, ci, build
+    }
+
+    // Fallback if no user-facing commits found
+    if (userFacingChanges.length === 0) {
+      return ["Bug fixes and improvements"];
+    }
+
+    return userFacingChanges;
+  } catch {
+    // Fallback if git command fails
+    return ["Bug fixes and improvements"];
+  }
 }
 
 // Plugin to generate version.json for cache busting detection

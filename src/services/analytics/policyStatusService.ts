@@ -155,8 +155,15 @@ export function getProductRetentionRates(policies: Policy[]): {
   // Sort by retention rate
   const sorted = productRates.sort((a, b) => b.retentionRate - a.retentionRate);
 
-  return {
-    bestPerformers: sorted.slice(0, 5),
-    needsAttention: sorted.slice(-5).reverse(), // Bottom 5, reversed
-  };
+  // Get best performers (top 5)
+  const bestPerformers = sorted.slice(0, 5);
+  const bestPerformerNames = new Set(bestPerformers.map((p) => p.productName));
+
+  // Get needs attention (bottom 5), excluding any that are already best performers
+  const needsAttention = sorted
+    .slice(-5)
+    .reverse()
+    .filter((p) => !bestPerformerNames.has(p.productName));
+
+  return { bestPerformers, needsAttention };
 }
