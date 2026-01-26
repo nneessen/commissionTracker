@@ -1,23 +1,22 @@
 // src/features/landing/PublicLandingPage.tsx
 // Main public landing page component
 
-import { useEffect, useState } from 'react';
-import { HeroSection } from './components/HeroSection';
-import { StatsBar } from './components/StatsBar';
-import { AboutSection } from './components/AboutSection';
-import { CultureGallery } from './components/CultureGallery';
-import { OpportunityPath } from './components/OpportunityPath';
-import { RequirementsSection } from './components/RequirementsSection';
-import { TechShowcase } from './components/TechShowcase';
-import { TestimonialsCarousel } from './components/TestimonialsCarousel';
-import { FaqAccordion } from './components/FaqAccordion';
-import { FinalCta } from './components/FinalCta';
-import { LandingFooter } from './components/LandingFooter';
-import { ScrollProgress } from './components/ScrollProgress';
-import * as landingPageService from './services/landingPageService';
-import type { LandingPageTheme, SectionId } from './types';
-import { DEFAULT_LANDING_PAGE_THEME } from './types';
-
+import { useEffect, useState } from "react";
+import { HeroSection } from "./components/HeroSection";
+import { StatsBar } from "./components/StatsBar";
+import { AboutSection } from "./components/AboutSection";
+import { CultureGallery } from "./components/CultureGallery";
+import { OpportunityPath } from "./components/OpportunityPath";
+import { RequirementsSection } from "./components/RequirementsSection";
+import { TechShowcase } from "./components/TechShowcase";
+import { TestimonialsCarousel } from "./components/TestimonialsCarousel";
+import { FaqAccordion } from "./components/FaqAccordion";
+import { FinalCta } from "./components/FinalCta";
+import { LandingFooter } from "./components/LandingFooter";
+import { ScrollProgress } from "./components/ScrollProgress";
+import * as landingPageService from "./services/landingPageService";
+import type { LandingPageTheme, SectionId } from "./types";
+import { DEFAULT_LANDING_PAGE_THEME } from "./types";
 
 // Section component map
 const SECTION_COMPONENTS: Record<
@@ -38,21 +37,23 @@ const SECTION_COMPONENTS: Record<
 
 // Section enabled check map
 const SECTION_ENABLED_MAP: Record<SectionId, keyof LandingPageTheme> = {
-  hero: 'hero_headline', // Always show hero
-  stats: 'stats_enabled',
-  about: 'about_enabled',
-  gallery: 'gallery_enabled',
-  opportunity: 'opportunity_enabled',
-  requirements: 'requirements_enabled',
-  tech: 'tech_enabled',
-  testimonials: 'testimonials_enabled',
-  faq: 'faq_enabled',
-  final_cta: 'final_cta_enabled',
+  hero: "hero_headline", // Always show hero
+  stats: "stats_enabled",
+  about: "about_enabled",
+  gallery: "gallery_enabled",
+  opportunity: "opportunity_enabled",
+  requirements: "requirements_enabled",
+  tech: "tech_enabled",
+  testimonials: "testimonials_enabled",
+  faq: "faq_enabled",
+  final_cta: "final_cta_enabled",
 };
 
 export function PublicLandingPage() {
   // Direct state management for landing page settings
-  const [theme, setTheme] = useState<LandingPageTheme>(DEFAULT_LANDING_PAGE_THEME);
+  const [theme, setTheme] = useState<LandingPageTheme>(
+    DEFAULT_LANDING_PAGE_THEME,
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -70,9 +71,10 @@ export function PublicLandingPage() {
 
     loadSettings();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
-
 
   // Update document title and meta tags
   useEffect(() => {
@@ -82,10 +84,10 @@ export function PublicLandingPage() {
       // Update meta description
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
-        metaDesc.setAttribute('content', theme.meta_description);
+        metaDesc.setAttribute("content", theme.meta_description);
       } else {
-        const meta = document.createElement('meta');
-        meta.name = 'description';
+        const meta = document.createElement("meta");
+        meta.name = "description";
         meta.content = theme.meta_description;
         document.head.appendChild(meta);
       }
@@ -94,11 +96,11 @@ export function PublicLandingPage() {
       if (theme.og_image_url) {
         let ogImage = document.querySelector('meta[property="og:image"]');
         if (ogImage) {
-          ogImage.setAttribute('content', theme.og_image_url);
+          ogImage.setAttribute("content", theme.og_image_url);
         } else {
-          ogImage = document.createElement('meta');
-          ogImage.setAttribute('property', 'og:image');
-          ogImage.setAttribute('content', theme.og_image_url);
+          ogImage = document.createElement("meta");
+          ogImage.setAttribute("property", "og:image");
+          ogImage.setAttribute("content", theme.og_image_url);
           document.head.appendChild(ogImage);
         }
       }
@@ -124,7 +126,7 @@ export function PublicLandingPage() {
       const enabledKey = SECTION_ENABLED_MAP[sectionId];
 
       // Hero is always shown, others check their enabled flag
-      if (sectionId !== 'hero') {
+      if (sectionId !== "hero") {
         const isEnabled = theme[enabledKey];
         if (!isEnabled) return null;
       }
@@ -138,24 +140,20 @@ export function PublicLandingPage() {
       className="min-h-screen bg-[#030303] text-white"
       style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
     >
-      {/* Scroll progress indicator */}
       <ScrollProgress color={theme.primary_color} />
 
-      {/* Global animated background elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Base gradient */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[1]">
+        <div className="absolute inset-0 bg-black/60" />
         <div
           className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(ellipse 100% 100% at 0% 0%, ${theme.primary_color}08 0%, transparent 50%),
-              radial-gradient(ellipse 80% 80% at 100% 100%, ${theme.accent_color}08 0%, transparent 50%),
-              #030303
+              radial-gradient(ellipse 100% 100% at 0% 0%, ${theme.primary_color}15 0%, transparent 50%),
+              radial-gradient(ellipse 80% 80% at 100% 100%, ${theme.accent_color}15 0%, transparent 50%)
             `,
           }}
         />
 
-        {/* Noise texture */}
         <div
           className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
           style={{

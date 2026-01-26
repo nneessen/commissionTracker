@@ -497,16 +497,9 @@ export function AgentTable({
       .finally(() => setMetricsLoading(false));
   }, [agentIdsKey, viewerId, dateRange]);
 
-  // Enrich ALL visible agents with viewer's contract level for override calculation
-  // The override % shows what the VIEWER earns from each agent, regardless of hierarchy depth
-  const agentsWithUplines = !viewerContractLevel
-    ? agents
-    : agents.map((agent) => ({
-        ...agent,
-        upline_contract_level: viewerContractLevel,
-      }));
-
-  const agentsToDisplay = agentsWithUplines;
+  // Use agents directly - the correct upline contract level will be passed
+  // through the recursive renderAgentRows function based on actual hierarchy
+  const agentsToDisplay = agents;
 
   // Build hierarchy structure
   // Use hierarchy_path to derive parent relationship (more reliable than upline_id)
@@ -605,15 +598,18 @@ export function AgentTable({
   };
 
   // Recursively render agents with their children
+  // Pass parent's contract level through hierarchy for correct spread calculation
   const renderAgentRows = (
     agentList: AgentWithMetrics[],
     depth = 0,
+    parentContractLevel: number | null = viewerContractLevel,
   ): React.ReactElement[] => {
     const rows: React.ReactElement[] = [];
 
     agentList.forEach((agent) => {
       const children = childrenMap.get(agent.id) || [];
       const isExpanded = expandedAgents.has(agent.id);
+      const agentContractLevel = agent.contract_level || 100;
 
       rows.push(
         <AgentRow
@@ -623,7 +619,7 @@ export function AgentTable({
           isExpanded={isExpanded}
           onToggle={() => toggleExpanded(agent.id)}
           hasChildren={children.length > 0}
-          uplineContractLevel={agent.upline_contract_level || null}
+          uplineContractLevel={parentContractLevel}
           onRemove={setAgentToRemove}
           metrics={metricsMap.get(agent.id)}
           isOwner={agent.id === viewerId}
@@ -631,7 +627,8 @@ export function AgentTable({
       );
 
       if (isExpanded && children.length > 0) {
-        rows.push(...renderAgentRows(children, depth + 1));
+        // Pass THIS agent's contract level to their children
+        rows.push(...renderAgentRows(children, depth + 1, agentContractLevel));
       }
     });
 

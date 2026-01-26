@@ -25,10 +25,12 @@ import {
 import type { NewPolicyForm } from "../../types/policy.types";
 import { toast } from "sonner";
 
-// Type for pending first-sale logs
-interface PendingFirstSaleLog {
-  logId: string;
+// Type for unified first-sale group (single dialog for all channels)
+interface PendingFirstSaleGroup {
+  groupId: string;
   agencyName: string;
+  totalChannels: number;
+  channelNames: string[];
 }
 
 // Type for pending lead source attribution
@@ -44,11 +46,9 @@ const FIRST_SELLER_POLL_INTERVAL_MS = 500;
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
-  // Support multiple pending logs for multi-channel naming
-  const [pendingFirstSales, setPendingFirstSales] = useState<
-    PendingFirstSaleLog[]
-  >([]);
-  const [currentFirstSaleIndex, setCurrentFirstSaleIndex] = useState(0);
+  // Unified first sale group - single dialog for all channels
+  const [pendingFirstSaleGroup, setPendingFirstSaleGroup] =
+    useState<PendingFirstSaleGroup | null>(null);
   // Lead source attribution dialog state
   const [pendingLeadSource, setPendingLeadSource] =
     useState<PendingLeadSource | null>(null);
@@ -66,21 +66,6 @@ export const PolicyDashboard: React.FC = () => {
       }
     };
   }, []);
-
-  // Get the current first sale dialog to show (if any)
-  const currentFirstSale = pendingFirstSales[currentFirstSaleIndex];
-
-  // Handle when a naming dialog is completed (move to next or close)
-  const handleFirstSaleComplete = () => {
-    if (currentFirstSaleIndex < pendingFirstSales.length - 1) {
-      // Move to next pending log
-      setCurrentFirstSaleIndex((prev) => prev + 1);
-    } else {
-      // All done, close dialogs
-      setPendingFirstSales([]);
-      setCurrentFirstSaleIndex(0);
-    }
-  };
 
   const checkFirstSeller = async (userId: string) => {
     // Cancel any existing polling before starting new one
@@ -100,8 +85,9 @@ export const PolicyDashboard: React.FC = () => {
       }
 
       try {
+        // Use unified RPC that returns single group with all channel info
         const { data, error } = await supabase.rpc(
-          "check_first_seller_naming",
+          "check_first_seller_naming_unified",
           {
             p_user_id: userId,
           },
@@ -116,19 +102,17 @@ export const PolicyDashboard: React.FC = () => {
           return;
         }
 
-        // RPC now returns ALL pending logs for multi-channel naming
+        // RPC returns a single row with group info (or empty if no pending first sale)
         if (data && data.length > 0) {
-          const pendingLogs = data
-            .filter((log: { needs_naming: boolean }) => log.needs_naming)
-            .map((log: { log_id: string; agency_name: string }) => ({
-              logId: log.log_id,
-              agencyName: log.agency_name,
-            }));
-
-          if (pendingLogs.length > 0) {
-            setPendingFirstSales(pendingLogs);
-            setCurrentFirstSaleIndex(0);
-            return; // Found pending logs, stop polling
+          const groupData = data[0];
+          if (groupData.needs_naming || groupData.has_pending_notification) {
+            setPendingFirstSaleGroup({
+              groupId: groupData.first_sale_group_id,
+              agencyName: groupData.agency_name,
+              totalChannels: groupData.total_channels,
+              channelNames: groupData.channel_names || [],
+            });
+            return; // Found pending group, stop polling
           }
         }
 
@@ -198,7 +182,7 @@ export const PolicyDashboard: React.FC = () => {
 
       {/* Lead Source Dialog - shown after policy creation, before FirstSellerNamingDialog */}
       {/* Only show if no first sale dialog is pending (prevents dialog overlap) */}
-      {pendingLeadSource && !currentFirstSale && (
+      {pendingLeadSource && !pendingFirstSaleGroup && (
         <LeadSourceDialog
           open={true}
           onOpenChange={() => {
@@ -208,28 +192,28 @@ export const PolicyDashboard: React.FC = () => {
           policyNumber={pendingLeadSource.policyNumber}
           onComplete={() => {
             // Lead source recorded or skipped - proceed to first seller check
-            // Only check if no first sale dialogs are already pending
+            // Only check if no first sale dialog is already pending
             setPendingLeadSource(null);
-            if (user?.id && pendingFirstSales.length === 0) {
+            if (user?.id && !pendingFirstSaleGroup) {
               checkFirstSeller(user.id);
             }
           }}
         />
       )}
 
-      {/* First Seller Naming Dialog(s) - supports multi-channel naming */}
-      {currentFirstSale && (
+      {/* First Seller Naming Dialog - unified single dialog for all channels */}
+      {pendingFirstSaleGroup && (
         <FirstSellerNamingDialog
           open={true}
           onOpenChange={(open) => {
             if (!open) {
-              handleFirstSaleComplete();
+              setPendingFirstSaleGroup(null);
             }
           }}
-          logId={currentFirstSale.logId}
-          agencyName={currentFirstSale.agencyName}
-          totalChannels={pendingFirstSales.length}
-          currentChannel={currentFirstSaleIndex + 1}
+          groupId={pendingFirstSaleGroup.groupId}
+          agencyName={pendingFirstSaleGroup.agencyName}
+          totalChannels={pendingFirstSaleGroup.totalChannels}
+          channelNames={pendingFirstSaleGroup.channelNames}
         />
       )}
 

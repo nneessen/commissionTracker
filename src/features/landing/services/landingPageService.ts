@@ -65,6 +65,9 @@ export async function getPublicLandingPageSettings(
       return merge(null);
     }
 
+    // DEBUG: Log raw RPC response
+    console.log('RPC raw response:', data);
+
     // Handle the response
     let settings: Partial<LandingPageSettingsRow> | null = null;
 

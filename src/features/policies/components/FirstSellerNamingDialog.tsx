@@ -41,31 +41,31 @@ const QUICK_EMOJIS = [
 interface FirstSellerNamingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logId: string;
+  groupId: string;
   agencyName: string;
-  totalChannels?: number;
-  currentChannel?: number;
+  totalChannels: number;
+  channelNames: string[];
 }
 
 export function FirstSellerNamingDialog({
   open,
   onOpenChange,
-  logId,
+  groupId,
   agencyName,
-  totalChannels = 1,
-  currentChannel = 1,
+  totalChannels,
+  channelNames,
 }: FirstSellerNamingDialogProps) {
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isHandlingClose, setIsHandlingClose] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset all state when switching to a new channel
+  // Reset all state when switching to a new group
   useEffect(() => {
     setTitle("");
     setIsSubmitting(false);
     setIsHandlingClose(false);
-  }, [logId]);
+  }, [groupId]);
 
   const insertEmoji = (emoji: string) => {
     const input = inputRef.current;
@@ -95,9 +95,9 @@ export function FirstSellerNamingDialog({
 
     setIsSubmitting(true);
     try {
-      // Step 1: Update the title in the database
-      const { error } = await supabase.rpc("set_leaderboard_title", {
-        p_log_id: logId,
+      // Step 1: Update the title for ALL logs in the group
+      const { error } = await supabase.rpc("set_leaderboard_title_batch", {
+        p_first_sale_group_id: groupId,
         p_title: title.trim(),
       });
 
@@ -107,26 +107,31 @@ export function FirstSellerNamingDialog({
         return;
       }
 
-      // Step 2: Complete the first sale - posts to Slack with the new title
+      // Step 2: Complete the first sale batch - posts to ALL channels with the same title
       try {
         const response = await supabase.functions.invoke(
           "slack-policy-notification",
           {
             body: {
-              action: "complete-first-sale",
-              logId: logId,
+              action: "complete-first-sale-batch",
+              firstSaleGroupId: groupId,
+              title: title.trim(),
             },
           },
         );
 
         if (response.error) {
-          console.error("Error completing first sale:", response.error);
+          console.error("Error completing first sale batch:", response.error);
           toast.error("Leaderboard named but failed to post to Slack");
         } else {
-          toast.success(`${agencyName} leaderboard named and posted to Slack!`);
+          const channelText =
+            totalChannels > 1
+              ? `${totalChannels} channels`
+              : channelNames[0] || "Slack";
+          toast.success(`Leaderboard posted to ${channelText}!`);
         }
       } catch (slackErr) {
-        console.error("Error calling complete-first-sale:", slackErr);
+        console.error("Error calling complete-first-sale-batch:", slackErr);
         toast.error("Leaderboard named but failed to post to Slack");
       }
 
@@ -139,26 +144,27 @@ export function FirstSellerNamingDialog({
     }
   };
 
-  // Complete first sale with default title (shared by skip button and dismiss)
-  const completeFirstSaleWithDefault = async (): Promise<boolean> => {
+  // Complete first sale batch with default title (shared by skip button and dismiss)
+  const completeFirstSaleBatchWithDefault = async (): Promise<boolean> => {
     try {
       const response = await supabase.functions.invoke(
         "slack-policy-notification",
         {
           body: {
-            action: "complete-first-sale",
-            logId: logId,
+            action: "complete-first-sale-batch",
+            firstSaleGroupId: groupId,
+            // No title = use default
           },
         },
       );
 
       if (response.error) {
-        console.error("Error completing first sale:", response.error);
+        console.error("Error completing first sale batch:", response.error);
         return false;
       }
       return true;
     } catch (err) {
-      console.error("Error completing first sale:", err);
+      console.error("Error completing first sale batch:", err);
       return false;
     }
   };
@@ -166,9 +172,13 @@ export function FirstSellerNamingDialog({
   const handleSkip = async () => {
     // User skipped naming - post to Slack with default title
     setIsSubmitting(true);
-    const success = await completeFirstSaleWithDefault();
+    const success = await completeFirstSaleBatchWithDefault();
     if (success) {
-      toast.success(`${agencyName} leaderboard posted with default title`);
+      const channelText =
+        totalChannels > 1
+          ? `${totalChannels} channels`
+          : channelNames[0] || "Slack";
+      toast.success(`Leaderboard posted to ${channelText} with default title`);
     }
     setIsSubmitting(false);
     onOpenChange(false);
@@ -190,7 +200,7 @@ export function FirstSellerNamingDialog({
     // Dismissed without completing - complete with default title
     setIsHandlingClose(true);
     setIsSubmitting(true);
-    await completeFirstSaleWithDefault();
+    await completeFirstSaleBatchWithDefault();
     // Don't show toast for dismiss (user didn't explicitly click)
     setIsSubmitting(false);
     setIsHandlingClose(false);
@@ -260,19 +270,21 @@ export function FirstSellerNamingDialog({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Multi-channel progress indicator */}
-            {hasMultipleChannels && (
-              <div className="mt-4 flex items-center gap-2">
-                <span className="text-xs text-white/60 dark:text-black/60">
-                  Channel {currentChannel} of {totalChannels}
+            {/* Show channels that will receive the leaderboard */}
+            {hasMultipleChannels && channelNames.length > 0 && (
+              <div className="mt-4 p-2 bg-white/5 dark:bg-black/5 rounded-lg">
+                <span className="text-xs text-white/60 dark:text-black/60 block mb-1.5">
+                  Your title will be posted to {totalChannels} channels:
                 </span>
-                <div className="flex-1 h-1 bg-white/10 dark:bg-black/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${(currentChannel / totalChannels) * 100}%`,
-                    }}
-                  />
+                <div className="flex flex-wrap gap-1.5">
+                  {channelNames.map((name) => (
+                    <span
+                      key={name}
+                      className="text-xs px-2 py-0.5 bg-white/10 dark:bg-black/10 rounded text-white/80 dark:text-black/70"
+                    >
+                      #{name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -346,11 +358,7 @@ export function FirstSellerNamingDialog({
             disabled={isSubmitting || !title.trim()}
             className="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-black font-medium"
           >
-            {isSubmitting
-              ? "Saving..."
-              : hasMultipleChannels && currentChannel < totalChannels
-                ? "Save & Next"
-                : "Name the Leaderboard"}
+            {isSubmitting ? "Posting..." : "Name the Leaderboard"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,7 +7,7 @@ import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 
 interface PolicyNotificationPayload {
-  action?: "post-policy" | "update-leaderboard";
+  action?: "post-policy" | "update-leaderboard" | "complete-first-sale" | "complete-first-sale-batch";
   policyId?: string;
   policyNumber?: string;
   carrierId?: string;
@@ -19,8 +19,11 @@ interface PolicyNotificationPayload {
   status?: string;
   imoId?: string;
   agencyId?: string;
-  // For update-leaderboard action
+  // For update-leaderboard and complete-first-sale actions
   logId?: string;
+  // For complete-first-sale-batch action
+  firstSaleGroupId?: string;
+  title?: string;
 }
 
 interface DailyProductionEntry {
@@ -324,10 +327,12 @@ function buildLeaderboardText(
 /**
  * Handle complete-first-sale action
  * Posts the pending policy notification and leaderboard after user names (or skips) the leaderboard
+ * @param overrideTitle - Optional title to use instead of the log's title (for batch processing)
  */
 async function handleCompleteFirstSale(
   supabase: ReturnType<typeof createClient>,
   logId: string,
+  overrideTitle?: string,
 ): Promise<{
   ok: boolean;
   error?: string;
@@ -444,11 +449,13 @@ async function handleCompleteFirstSale(
       0,
     );
 
-    // Build leaderboard with the title (use default if not set)
+    // Build leaderboard with the title (use override, then log title, then default)
     // Sanitize user-provided title to prevent Slack injection
-    const title = log.title
-      ? sanitizeSlackTitle(log.title)
-      : getDefaultDailyTitle();
+    const title = overrideTitle
+      ? sanitizeSlackTitle(overrideTitle)
+      : log.title
+        ? sanitizeSlackTitle(log.title)
+        : getDefaultDailyTitle();
     const leaderboardText = buildLeaderboardText(title, production, totalAP);
 
     // Post the leaderboard
@@ -600,6 +607,85 @@ async function handleUpdateLeaderboard(
   return { ok: true, updated: true };
 }
 
+/**
+ * Handle complete-first-sale-batch action
+ * Processes ALL logs in a first_sale_group with the same title
+ */
+async function handleCompleteFirstSaleBatch(
+  supabase: ReturnType<typeof createClient>,
+  firstSaleGroupId: string,
+  title?: string,
+): Promise<{
+  ok: boolean;
+  error?: string;
+  results: Array<{
+    logId: string;
+    channelName?: string;
+    policyOk: boolean;
+    leaderboardOk: boolean;
+    error?: string;
+  }>;
+}> {
+  console.log(
+    "[slack-policy-notification] Completing first sale batch for group:",
+    firstSaleGroupId,
+  );
+
+  // Get all logs in this group using the RPC
+  const { data: groupLogs, error: groupError } = await supabase.rpc(
+    "get_pending_first_sale_logs",
+    { p_first_sale_group_id: firstSaleGroupId },
+  );
+
+  if (groupError) {
+    console.error(
+      "[slack-policy-notification] Error fetching group logs:",
+      groupError,
+    );
+    return { ok: false, error: "Failed to fetch group logs", results: [] };
+  }
+
+  if (!groupLogs || groupLogs.length === 0) {
+    console.log("[slack-policy-notification] No logs found in group");
+    return { ok: true, results: [] };
+  }
+
+  console.log(
+    `[slack-policy-notification] Processing ${groupLogs.length} logs in batch`,
+  );
+
+  const results: Array<{
+    logId: string;
+    channelName?: string;
+    policyOk: boolean;
+    leaderboardOk: boolean;
+    error?: string;
+  }> = [];
+
+  // Process each log with the same title
+  for (const log of groupLogs) {
+    const result = await handleCompleteFirstSale(
+      supabase,
+      log.log_id,
+      title,
+    );
+
+    results.push({
+      logId: log.log_id,
+      policyOk: result.policyOk || false,
+      leaderboardOk: result.leaderboardOk || false,
+      error: result.error,
+    });
+  }
+
+  const allOk = results.every((r) => r.policyOk);
+  console.log(
+    `[slack-policy-notification] Batch complete: ${results.filter((r) => r.policyOk).length}/${results.length} successful`,
+  );
+
+  return { ok: allOk, results };
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -659,6 +745,29 @@ serve(async (req) => {
       }
 
       const result = await handleUpdateLeaderboard(supabase, body.logId);
+      return new Response(JSON.stringify(result), {
+        status: result.ok ? 200 : 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle complete-first-sale-batch action (unified naming - posts to ALL channels with same title)
+    if (body.action === "complete-first-sale-batch") {
+      if (!body.firstSaleGroupId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing required field: firstSaleGroupId" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      const result = await handleCompleteFirstSaleBatch(
+        supabase,
+        body.firstSaleGroupId,
+        body.title,
+      );
       return new Response(JSON.stringify(result), {
         status: result.ok ? 200 : 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -886,6 +995,43 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Pre-check: Determine if ANY channel will be a first sale
+    // Generate a single first_sale_group_id for unified naming
+    // =========================================================================
+    const todayDate = getTodayDateET();
+    let firstSaleGroupId: string | null = null;
+    let hasAnyFirstSale = false;
+
+    // Check each integration to see if it's a first sale
+    for (const integration of hierarchyIntegrations) {
+      const { data: existingLog } = await supabase
+        .from("daily_sales_logs")
+        .select("id, first_seller_id, pending_policy_data")
+        .eq("imo_id", imoId)
+        .eq("slack_integration_id", integration.integration_id)
+        .eq("channel_id", integration.policy_channel_id)
+        .eq("log_date", todayDate)
+        .maybeSingle();
+
+      // Check if this would be a first sale for this channel
+      const isFirstForChannel = !existingLog ||
+        (!existingLog.first_seller_id && !existingLog.pending_policy_data);
+
+      if (isFirstForChannel) {
+        hasAnyFirstSale = true;
+        break; // We found at least one, that's all we need to know
+      }
+    }
+
+    // Generate a single group ID if any channel is a first sale
+    if (hasAnyFirstSale) {
+      firstSaleGroupId = crypto.randomUUID();
+      console.log(
+        `[slack-policy-notification] First sale detected - generated group ID: ${firstSaleGroupId}`,
+      );
+    }
+
+    // =========================================================================
     // Post to each Slack workspace in the hierarchy
     // =========================================================================
     const results: Array<{
@@ -897,6 +1043,7 @@ serve(async (req) => {
       isFirstSale: boolean;
       pendingFirstSale?: boolean;
       logId?: string | null;
+      firstSaleGroupId?: string | null;
       error: string | null;
     }> = [];
 
@@ -1067,6 +1214,7 @@ serve(async (req) => {
                 pending_policy_data: pendingData,
                 leaderboard_message_ts: null, // Clear old message_ts
                 hierarchy_depth: integration.hierarchy_depth, // Track integration level for leaderboard logic
+                first_sale_group_id: firstSaleGroupId, // Group all first sales for unified naming
                 updated_at: new Date().toISOString(),
               })
               .eq("id", existingLog.id);
@@ -1091,6 +1239,7 @@ serve(async (req) => {
                 first_seller_id: agentId,
                 pending_policy_data: pendingData,
                 hierarchy_depth: integration.hierarchy_depth, // Track integration level for leaderboard logic
+                first_sale_group_id: firstSaleGroupId, // Group all first sales for unified naming
               })
               .select("id")
               .single();
@@ -1115,6 +1264,7 @@ serve(async (req) => {
             isFirstSale: true,
             pendingFirstSale: true,
             logId: savedLogId,
+            firstSaleGroupId, // Include group ID for unified naming
             error: null,
           });
 

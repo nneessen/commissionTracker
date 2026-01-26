@@ -9,30 +9,19 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ theme }: HeroSectionProps) {
-  const hasBackgroundMedia = theme.hero_video_url || theme.hero_image_url;
+  // Video is now rendered globally in PublicLandingPage, only show image here if no video
+  const hasImageOnly = !theme.hero_video_url && theme.hero_image_url;
 
   return (
-    <section className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
-      {/* Background media (video or image) */}
-      {hasBackgroundMedia && (
+    <section className="min-h-screen bg-transparent relative overflow-hidden">
+      {/* Background image only (video is handled globally) */}
+      {hasImageOnly && (
         <div className="absolute inset-0 z-0">
-          {theme.hero_video_url ? (
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            >
-              <source src={theme.hero_video_url} type="video/mp4" />
-            </video>
-          ) : theme.hero_image_url ? (
-            <img
-              src={theme.hero_image_url}
-              alt="Hero background"
-              className="w-full h-full object-cover"
-            />
-          ) : null}
+          <img
+            src={theme.hero_image_url!}
+            alt="Hero background"
+            className="w-full h-full object-cover"
+          />
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-black/60" />
         </div>

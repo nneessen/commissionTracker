@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-26 13:03:36
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `package-lock.json`
+- `package.json`
+- `public/videos/background_video.mp4`
+- `public/videos/background_video.mp4:Zone.Identifier`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/landing/PublicLandingPage.tsx`
+- `src/features/landing/components/HeroSection.tsx`
+- `src/features/landing/services/landingPageService.ts`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/components/FirstSellerNamingDialog.tsx`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20260126125128_unified_first_sale.sql`
+
+### Statistics
+```
+ 14 files changed, 528 insertions(+), 186 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-26 11:49:29
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `public/videos/background_video.mp4`
+- `public/videos/background_video.mp4:Zone.Identifier`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/landing/PublicLandingPage.tsx`
+- `src/features/landing/components/HeroSection.tsx`
+- `src/features/landing/services/landingPageService.ts`
+
+### Statistics
+```
+ 8 files changed, 55 insertions(+), 42 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-22 09:00:14
 
 ### Changed Files
