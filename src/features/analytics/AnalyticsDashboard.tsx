@@ -167,7 +167,7 @@ function AnalyticsDashboardContent() {
               </Suspense>
             </AnalyticsSectionGate>
 
-            {/* Starter Tier Sections (+3 = 6 total) */}
+            {/* Pro Tier Sections (all 9 sections) */}
             <AnalyticsSectionGate section="policy_status_breakdown">
               <Suspense fallback={null}>
                 <PolicyStatusBreakdown />

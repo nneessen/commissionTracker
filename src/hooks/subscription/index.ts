@@ -8,7 +8,7 @@ export {
   useFeatureAccess,
   useAnyFeatureAccess,
   useAllFeaturesAccess,
-  FEATURE_PLAN_REQUIREMENTS,
+  getRequiredPlanForFeature,
   FEATURE_DISPLAY_NAMES,
   type FeatureKey,
 } from "./useFeatureAccess";
@@ -27,3 +27,6 @@ export {
   OWNER_DOWNLINE_GRANTED_FEATURES,
   type OwnerDownlineGrantedFeature,
 } from "./useOwnerDownlineAccess";
+
+// Re-export billing utilities for UI components
+export { subscriptionService } from "@/services/subscription";

@@ -7722,6 +7722,51 @@ export type Database = {
           },
         ];
       };
+      subscription_addons: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          display_name: string;
+          id: string;
+          is_active: boolean | null;
+          lemon_variant_id_annual: string | null;
+          lemon_variant_id_monthly: string | null;
+          name: string;
+          price_annual: number;
+          price_monthly: number;
+          sort_order: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          display_name: string;
+          id?: string;
+          is_active?: boolean | null;
+          lemon_variant_id_annual?: string | null;
+          lemon_variant_id_monthly?: string | null;
+          name: string;
+          price_annual?: number;
+          price_monthly?: number;
+          sort_order?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          display_name?: string;
+          id?: string;
+          is_active?: boolean | null;
+          lemon_variant_id_annual?: string | null;
+          lemon_variant_id_monthly?: string | null;
+          name?: string;
+          price_annual?: number;
+          price_monthly?: number;
+          sort_order?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
       subscription_events: {
         Row: {
           created_at: string;
@@ -7890,6 +7935,68 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subscription_plan_changes: {
+        Row: {
+          change_type: string;
+          changed_by: string;
+          created_at: string | null;
+          id: string;
+          new_value: Json | null;
+          notes: string | null;
+          old_value: Json | null;
+          plan_id: string;
+        };
+        Insert: {
+          change_type: string;
+          changed_by: string;
+          created_at?: string | null;
+          id?: string;
+          new_value?: Json | null;
+          notes?: string | null;
+          old_value?: Json | null;
+          plan_id: string;
+        };
+        Update: {
+          change_type?: string;
+          changed_by?: string;
+          created_at?: string | null;
+          id?: string;
+          new_value?: Json | null;
+          notes?: string | null;
+          old_value?: Json | null;
+          plan_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plan_changes_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_plan_changes_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_plan_changes_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_plan_changes_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "subscription_plans";
             referencedColumns: ["id"];
           },
         ];
@@ -9902,6 +10009,104 @@ export type Database = {
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_subscription_addons: {
+        Row: {
+          addon_id: string;
+          billing_interval: string | null;
+          cancelled_at: string | null;
+          created_at: string | null;
+          current_period_end: string | null;
+          current_period_start: string | null;
+          granted_by: string | null;
+          id: string;
+          lemon_order_id: string | null;
+          lemon_subscription_id: string | null;
+          status: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          addon_id: string;
+          billing_interval?: string | null;
+          cancelled_at?: string | null;
+          created_at?: string | null;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          granted_by?: string | null;
+          id?: string;
+          lemon_order_id?: string | null;
+          lemon_subscription_id?: string | null;
+          status?: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          addon_id?: string;
+          billing_interval?: string | null;
+          cancelled_at?: string | null;
+          created_at?: string | null;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          granted_by?: string | null;
+          id?: string;
+          lemon_order_id?: string | null;
+          lemon_subscription_id?: string | null;
+          status?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_subscription_addons_addon_id_fkey";
+            columns: ["addon_id"];
+            isOneToOne: false;
+            referencedRelation: "subscription_addons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_subscription_addons_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_subscription_addons_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_subscription_addons_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_subscription_addons_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_subscription_addons_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_subscription_addons_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -13394,6 +13599,18 @@ export type Database = {
           id: string;
         }[];
       };
+      get_user_addons: {
+        Args: { p_user_id: string };
+        Returns: {
+          addon_display_name: string;
+          addon_id: string;
+          addon_name: string;
+          billing_interval: string;
+          current_period_end: string;
+          granted_by: string;
+          status: string;
+        }[];
+      };
       get_user_carrier_performance: {
         Args: never;
         Returns: {
@@ -14258,6 +14475,10 @@ export type Database = {
         Returns: boolean;
       };
       user_has_linkedin_access: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      user_has_uw_wizard_access: {
         Args: { p_user_id: string };
         Returns: boolean;
       };

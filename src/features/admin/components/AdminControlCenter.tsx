@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   UserPlus,
+  CreditCard,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAllUsers, useCreateUser } from "@/hooks/admin";
@@ -27,21 +28,19 @@ import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/types/user.types";
 import { hasStaffRole } from "@/constants/roles";
 import { useImo } from "@/contexts/ImoContext";
-import {
-  useActiveTemplate,
-  usePhases,
-} from "@/features/recruiting";
+import { useActiveTemplate, usePhases } from "@/features/recruiting";
 
 // Tab components
 import { UsersAccessTab } from "./UsersAccessTab";
 import { RecruitingPipelineTab } from "./RecruitingPipelineTab";
 import { RolesPermissionsTab } from "./RolesPermissionsTab";
 import { SystemSettingsTab } from "./SystemSettingsTab";
+import { SubscriptionPlansTab } from "./SubscriptionPlansTab";
 
 export default function AdminControlCenter() {
   // Tab navigation
   const [activeView, setActiveView] = useState<
-    "users" | "recruits" | "roles" | "system"
+    "users" | "recruits" | "roles" | "system" | "subscriptions"
   >("users");
 
   // Shared dialog state (Edit User is used by both Users and Recruits tabs)
@@ -260,6 +259,19 @@ export default function AdminControlCenter() {
           <Settings className="h-3.5 w-3.5" />
           System Settings
         </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => setActiveView("subscriptions")}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
+              activeView === "subscriptions"
+                ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            <CreditCard className="h-3.5 w-3.5" />
+            Subscription Plans
+          </button>
+        )}
       </div>
 
       {/* Content area - Tab components */}
@@ -296,6 +308,10 @@ export default function AdminControlCenter() {
         )}
 
         {activeView === "system" && <SystemSettingsTab />}
+
+        {activeView === "subscriptions" && isSuperAdmin && (
+          <SubscriptionPlansTab />
+        )}
       </div>
 
       {/* Shared dialogs */}

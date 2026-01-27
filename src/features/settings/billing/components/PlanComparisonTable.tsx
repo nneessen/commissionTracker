@@ -12,8 +12,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSubscriptionPlans, useSubscription } from "@/hooks/subscription";
-import { subscriptionService } from "@/services/subscription";
 import { cn } from "@/lib/utils";
+
+// Utility function for formatting price
+const formatPrice = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
 
 // Feature definitions
 const featureGroups = [
@@ -54,9 +56,9 @@ const featureGroups = [
   },
 ];
 
+// Analytics sections available by tier (3-tier system)
 const analyticsCountByTier: Record<string, number> = {
-  free: 2,
-  starter: 5,
+  free: 3,
   pro: 9,
   team: 9,
 };
@@ -115,7 +117,7 @@ export function PlanComparisonTable() {
                     <span className="text-[10px] font-normal text-zinc-500">
                       {plan.price_monthly === 0
                         ? "Free"
-                        : `${subscriptionService.formatPrice(plan.price_monthly)}/mo`}
+                        : `${formatPrice(plan.price_monthly)}/mo`}
                     </span>
                   </div>
                 </TableHead>

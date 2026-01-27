@@ -15,20 +15,20 @@ import { isTemporaryFreeAccessPeriod } from "@/lib/temporaryAccess";
 const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
 
 export interface DashboardFeatures {
-  // Expense-related features (Starter+)
+  // Expense-related features (Pro+)
   canViewExpenses: boolean;
   canAddExpense: boolean;
 
-  // Reports features (Starter+)
+  // Reports features (Pro+)
   canViewReports: boolean;
   canExportReports: boolean; // Pro+
 
   // Target features
-  canViewBasicTargets: boolean; // Starter+
+  canViewBasicTargets: boolean; // Pro+
   canViewFullTargets: boolean; // Pro+
 
-  // Tier info
-  tier: "free" | "starter" | "pro" | "team";
+  // Tier info (3-tier system: Free, Pro, Team)
+  tier: "free" | "pro" | "team";
   isLoading: boolean;
   isAdmin: boolean;
 
@@ -40,11 +40,10 @@ export interface DashboardFeatures {
 /**
  * Hook to determine which dashboard features are available for the current user
  *
- * Feature access by tier:
+ * Feature access by tier (3-tier system):
  * - Free: Basic dashboard (no expenses, no reports, no targets)
- * - Starter: + expenses, reports_view, targets_basic
- * - Pro: + reports_export, targets_full
- * - Team: Same as Pro for dashboard
+ * - Pro: + expenses, reports_view, reports_export, targets_basic, targets_full
+ * - Team: Same as Pro for dashboard, plus team management features
  *
  * Direct downlines of owners get Team-tier features
  */
@@ -124,11 +123,11 @@ export function useDashboardFeatures(): DashboardFeatures {
       return false;
     };
 
-    // Get plan name for tier display
+    // Get plan name for tier display (3-tier system: free, pro, team)
     const planName = subscription?.plan?.name?.toLowerCase() || "free";
     const baseTier = (
-      ["free", "starter", "pro", "team"].includes(planName) ? planName : "free"
-    ) as "free" | "starter" | "pro" | "team";
+      ["free", "pro", "team"].includes(planName) ? planName : "free"
+    ) as "free" | "pro" | "team";
 
     // If direct downline of owner, treat as team tier
     const tier = isDirectDownlineOfOwner ? "team" : baseTier;

@@ -3,8 +3,12 @@
 
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
+import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { usePermissionCheck } from "@/hooks/permissions";
-import type { SubscriptionFeatures } from "@/services/subscription/subscriptionService";
+import type {
+  SubscriptionFeatures,
+  SubscriptionPlan,
+} from "@/services/subscription";
 import {
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
@@ -18,28 +22,37 @@ const SUBSCRIPTION_BYPASS_ROLES = [] as const;
 
 export type FeatureKey = keyof SubscriptionFeatures;
 
-// Map features to the minimum required plan
-export const FEATURE_PLAN_REQUIREMENTS: Record<FeatureKey, string> = {
-  dashboard: "Free",
-  policies: "Free",
-  comp_guide: "Free",
-  settings: "Free",
-  connect_upline: "Free",
-  expenses: "Starter",
-  targets_basic: "Starter",
-  reports_view: "Starter",
-  targets_full: "Pro",
-  reports_export: "Pro",
-  email: "Pro",
-  sms: "Team",
-  hierarchy: "Team",
-  recruiting: "Team",
-  overrides: "Team",
-  downline_reports: "Team",
-  instagram_messaging: "Team",
-};
+// Plan tier order for determining "minimum required plan"
+// Note: Starter tier was removed - consolidated to 3-tier system
+const PLAN_TIER_ORDER = ["free", "pro", "team"];
 
-// Map features to user-friendly names
+/**
+ * Get the minimum required plan for a feature by checking all plans
+ * and finding the lowest tier that has the feature enabled.
+ */
+export function getRequiredPlanForFeature(
+  feature: FeatureKey,
+  plans: SubscriptionPlan[],
+): string {
+  // Sort plans by tier order
+  const sortedPlans = [...plans].sort(
+    (a, b) =>
+      PLAN_TIER_ORDER.indexOf(a.name.toLowerCase()) -
+      PLAN_TIER_ORDER.indexOf(b.name.toLowerCase()),
+  );
+
+  // Find the first plan that has this feature enabled
+  for (const plan of sortedPlans) {
+    if (plan.features[feature]) {
+      return plan.display_name;
+    }
+  }
+
+  // If no plan has this feature, return "Team" as highest tier
+  return "Team";
+}
+
+// Map features to user-friendly names (using feature registry)
 export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   dashboard: "Dashboard",
   policies: "Policy Management",
@@ -101,6 +114,9 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     tierName,
   } = useSubscription();
 
+  // Get all plans for dynamic required plan lookup
+  const { plans } = useSubscriptionPlans();
+
   // Check if user is a direct downline of the owner
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
@@ -110,13 +126,18 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
 
   return useMemo(() => {
+    // Dynamically determine required plan from database
+    const requiredPlan = plans?.length
+      ? getRequiredPlanForFeature(feature, plans)
+      : FEATURE_DISPLAY_NAMES[feature]; // Fallback to feature name if plans not loaded
+
     // While loading, assume no access (will update once loaded)
     if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
       return {
         hasAccess: false,
         isLoading: true,
         currentPlan: "Loading...",
-        requiredPlan: FEATURE_PLAN_REQUIREMENTS[feature],
+        requiredPlan,
         upgradeRequired: false,
         featureName: FEATURE_DISPLAY_NAMES[feature],
         isGrandfathered: false,
@@ -130,7 +151,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
         hasAccess: true,
         isLoading: false,
         currentPlan: "Staff",
-        requiredPlan: FEATURE_PLAN_REQUIREMENTS[feature],
+        requiredPlan,
         upgradeRequired: false,
         featureName: FEATURE_DISPLAY_NAMES[feature],
         isGrandfathered: false,
@@ -158,7 +179,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
       hasAccess,
       isLoading: false,
       currentPlan: hasOwnerDownlineAccess ? "Team (via upline)" : tierName,
-      requiredPlan: FEATURE_PLAN_REQUIREMENTS[feature],
+      requiredPlan,
       upgradeRequired: !hasAccess,
       featureName: FEATURE_DISPLAY_NAMES[feature],
       isGrandfathered,
@@ -175,6 +196,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     isGrandfathered,
     grandfatherDaysRemaining,
     tierName,
+    plans,
   ]);
 }
 

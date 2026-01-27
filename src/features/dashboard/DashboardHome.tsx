@@ -179,15 +179,15 @@ export const DashboardHome: React.FC = () => {
       label: "Add Expense",
       action: "Add Expense",
       hasAccess: dashboardFeatures.canAddExpense,
-      lockedTooltip: "Upgrade to Starter to track expenses",
-      requiredTier: "Starter",
+      lockedTooltip: "Upgrade to Pro to track expenses",
+      requiredTier: "Pro",
     },
     {
       label: "View Reports",
       action: "View Reports",
       hasAccess: dashboardFeatures.canViewReports,
-      lockedTooltip: "Upgrade to Starter to view reports",
-      requiredTier: "Starter",
+      lockedTooltip: "Upgrade to Pro to view reports",
+      requiredTier: "Pro",
     },
   ];
 

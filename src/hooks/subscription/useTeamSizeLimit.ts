@@ -3,7 +3,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/services/base/supabase";
+import { supabase } from "@/services/base";
 
 export interface TeamSizeLimitStatus {
   /** Maximum direct downlines allowed (null = unlimited, 0 = no team features) */
@@ -36,7 +36,7 @@ interface UseTeamSizeLimitResult {
  *
  * Pro tier users are limited to 5 direct downlines (agents + recruits)
  * Team tier users have unlimited downlines
- * Free/Starter users have no team features (limit = 0)
+ * Free tier users have no team features (limit = 0)
  *
  * @returns Team size limit status including can_add and warning states
  */

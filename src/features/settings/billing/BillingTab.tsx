@@ -13,9 +13,13 @@ import {
 import { CurrentPlanCard } from "./components/CurrentPlanCard";
 import { UsageOverview } from "./components/UsageOverview";
 import { PlanComparisonTable } from "./components/PlanComparisonTable";
-import { useSubscription, useSubscriptionPlans } from "@/hooks/subscription";
+import { PremiumAddonsSection } from "./components/PremiumAddonsSection";
+import {
+  useSubscription,
+  useSubscriptionPlans,
+  subscriptionService,
+} from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
-import { subscriptionService } from "@/services/subscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -273,6 +277,9 @@ export function BillingTab() {
           )}
         </div>
       </div>
+
+      {/* Premium Add-ons */}
+      <PremiumAddonsSection />
 
       {/* Plan Comparison */}
       <PlanComparisonTable />

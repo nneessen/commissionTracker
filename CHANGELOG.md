@@ -6,6 +6,125 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 15:32:07
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/subscription/UpgradePrompt.tsx`
+- `src/constants/features.ts`
+- `src/features/admin/components/AddonsManagementPanel.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/CreatePlanDialog.tsx`
+- `src/features/admin/components/FeatureAssignmentMatrix.tsx`
+- `src/features/admin/components/PlanEditorDialog.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/GatedAction.tsx`
+- `src/features/dashboard/components/GatedKPISection.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/PremiumAddonsSection.tsx`
+- `src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts`
+- `src/hooks/admin/index.ts`
+- `src/hooks/admin/useAdminSubscription.ts`
+- `src/hooks/dashboard/useDashboardFeatures.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useTeamSizeLimit.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/services/subscription/index.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260127135651_add_subscription_admin_system.sql`
+- `supabase/migrations/20260127144007_fix_subscription_rls_and_remove_starter.sql`
+
+### Statistics
+```
+ 32 files changed, 17061 insertions(+), 12625 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 15:27:25
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/subscription/UpgradePrompt.tsx`
+- `src/constants/features.ts`
+- `src/features/admin/components/AddonsManagementPanel.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/CreatePlanDialog.tsx`
+- `src/features/admin/components/FeatureAssignmentMatrix.tsx`
+- `src/features/admin/components/PlanEditorDialog.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/GatedAction.tsx`
+- `src/features/dashboard/components/GatedKPISection.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/PremiumAddonsSection.tsx`
+- `src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts`
+- `src/hooks/admin/index.ts`
+- `src/hooks/admin/useAdminSubscription.ts`
+- `src/hooks/dashboard/useDashboardFeatures.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useTeamSizeLimit.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/services/subscription/index.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260127135651_add_subscription_admin_system.sql`
+- `supabase/migrations/20260127144007_fix_subscription_rls_and_remove_starter.sql`
+
+### Statistics
+```
+ 32 files changed, 16991 insertions(+), 12620 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 15:23:14
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/components/subscription/UpgradePrompt.tsx`
+- `src/constants/features.ts`
+- `src/features/admin/components/AddonsManagementPanel.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/CreatePlanDialog.tsx`
+- `src/features/admin/components/FeatureAssignmentMatrix.tsx`
+- `src/features/admin/components/PlanEditorDialog.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/GatedAction.tsx`
+- `src/features/dashboard/components/GatedKPISection.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/PremiumAddonsSection.tsx`
+- `src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts`
+- `src/hooks/admin/useAdminSubscription.ts`
+- `src/hooks/dashboard/useDashboardFeatures.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useTeamSizeLimit.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260127135651_add_subscription_admin_system.sql`
+- `supabase/migrations/20260127144007_fix_subscription_rls_and_remove_starter.sql`
+
+### Statistics
+```
+ 28 files changed, 16947 insertions(+), 12613 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 13:30:07
 
 ### Changed Files

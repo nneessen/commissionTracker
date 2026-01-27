@@ -14,3 +14,19 @@ export {
 
 export { SubscriptionRepository } from "./SubscriptionRepository";
 export type { SubscriptionBaseEntity } from "./SubscriptionRepository";
+
+// Admin subscription service exports
+export {
+  adminSubscriptionService,
+  type SubscriptionPlan as AdminSubscriptionPlan,
+  type SubscriptionAddon,
+  type UserSubscriptionAddon,
+  type SubscriptionPlanChange,
+  type UpdatePlanFeaturesParams,
+  type UpdatePlanAnalyticsParams,
+  type UpdatePlanPricingParams,
+  type UpdatePlanLimitsParams,
+  type UpdatePlanMetadataParams,
+  type CreateAddonParams,
+  type UpdateAddonParams,
+} from "./adminSubscriptionService";

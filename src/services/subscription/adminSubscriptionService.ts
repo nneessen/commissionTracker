@@ -1,0 +1,951 @@
+// src/services/subscription/adminSubscriptionService.ts
+// Admin service for managing subscription plans and add-ons
+
+import { supabase } from "@/services/base";
+import { logger } from "../base/logger";
+import type { Database } from "@/types/database.types";
+import type { SubscriptionFeatures } from "./SubscriptionRepository";
+
+// Database row types
+type SubscriptionPlanRow =
+  Database["public"]["Tables"]["subscription_plans"]["Row"];
+type SubscriptionAddonRow =
+  Database["public"]["Tables"]["subscription_addons"]["Row"];
+type UserSubscriptionAddonRow =
+  Database["public"]["Tables"]["user_subscription_addons"]["Row"];
+type SubscriptionPlanChangeRow =
+  Database["public"]["Tables"]["subscription_plan_changes"]["Row"];
+
+// Entity types
+export interface SubscriptionPlan extends Omit<
+  SubscriptionPlanRow,
+  "features"
+> {
+  features: SubscriptionFeatures;
+}
+
+export type SubscriptionAddon = SubscriptionAddonRow;
+
+export interface UserSubscriptionAddon extends UserSubscriptionAddonRow {
+  addon?: SubscriptionAddon;
+}
+
+export interface SubscriptionPlanChange extends SubscriptionPlanChangeRow {
+  changer?: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+  };
+}
+
+// Param types
+export interface UpdatePlanFeaturesParams {
+  planId: string;
+  features: SubscriptionFeatures;
+  changedBy: string;
+}
+
+export interface UpdatePlanAnalyticsParams {
+  planId: string;
+  analyticsSections: string[];
+  changedBy: string;
+}
+
+export interface UpdatePlanPricingParams {
+  planId: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  changedBy: string;
+}
+
+export interface UpdatePlanLimitsParams {
+  planId: string;
+  emailLimit: number;
+  smsEnabled: boolean;
+  teamSizeLimit: number | null;
+  changedBy: string;
+}
+
+export interface UpdatePlanMetadataParams {
+  planId: string;
+  displayName?: string;
+  description?: string;
+  lemonVariantIdMonthly?: string | null;
+  lemonVariantIdAnnual?: string | null;
+  changedBy: string;
+}
+
+export interface CreateAddonParams {
+  name: string;
+  displayName: string;
+  description?: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  lemonVariantIdMonthly?: string;
+  lemonVariantIdAnnual?: string;
+}
+
+export interface UpdateAddonParams {
+  displayName?: string;
+  description?: string;
+  priceMonthly?: number;
+  priceAnnual?: number;
+  lemonVariantIdMonthly?: string | null;
+  lemonVariantIdAnnual?: string | null;
+  isActive?: boolean;
+}
+
+class AdminSubscriptionService {
+  // ============================================
+  // Plan Management
+  // ============================================
+
+  /**
+   * Get all subscription plans (including inactive)
+   */
+  async getAllPlans(): Promise<SubscriptionPlan[]> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_plans")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) {
+        logger.error("AdminSubscriptionService.getAllPlans", error);
+        throw error;
+      }
+
+      return (data || []).map((plan) => ({
+        ...plan,
+        features: plan.features as unknown as SubscriptionFeatures,
+      }));
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getAllPlans",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific plan by ID
+   */
+  async getPlanById(planId: string): Promise<SubscriptionPlan | null> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_plans")
+        .select("*")
+        .eq("id", planId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") return null;
+        logger.error("AdminSubscriptionService.getPlanById", error);
+        throw error;
+      }
+
+      return data
+        ? {
+            ...data,
+            features: data.features as unknown as SubscriptionFeatures,
+          }
+        : null;
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getPlanById",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update plan features
+   */
+  async updatePlanFeatures(params: UpdatePlanFeaturesParams): Promise<void> {
+    const { planId, features, changedBy } = params;
+
+    try {
+      // Get current plan for audit
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      // Update plan
+      const { error: updateError } = await supabase
+        .from("subscription_plans")
+        .update({ features: features as unknown as Record<string, unknown> })
+        .eq("id", planId);
+
+      if (updateError) {
+        logger.error(
+          "AdminSubscriptionService.updatePlanFeatures",
+          updateError,
+        );
+        throw updateError;
+      }
+
+      // Create audit entry
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "features",
+        oldValue: currentPlan.features,
+        newValue: features,
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updatePlanFeatures",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update plan analytics sections
+   */
+  async updatePlanAnalytics(params: UpdatePlanAnalyticsParams): Promise<void> {
+    const { planId, analyticsSections, changedBy } = params;
+
+    try {
+      // Get current plan for audit
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      // Update plan
+      const { error: updateError } = await supabase
+        .from("subscription_plans")
+        .update({ analytics_sections: analyticsSections })
+        .eq("id", planId);
+
+      if (updateError) {
+        logger.error(
+          "AdminSubscriptionService.updatePlanAnalytics",
+          updateError,
+        );
+        throw updateError;
+      }
+
+      // Create audit entry
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "analytics",
+        oldValue: currentPlan.analytics_sections,
+        newValue: analyticsSections,
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updatePlanAnalytics",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update plan pricing
+   */
+  async updatePlanPricing(params: UpdatePlanPricingParams): Promise<void> {
+    const { planId, priceMonthly, priceAnnual, changedBy } = params;
+
+    try {
+      // Get current plan for audit
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      // Update plan
+      const { error: updateError } = await supabase
+        .from("subscription_plans")
+        .update({
+          price_monthly: priceMonthly,
+          price_annual: priceAnnual,
+        })
+        .eq("id", planId);
+
+      if (updateError) {
+        logger.error("AdminSubscriptionService.updatePlanPricing", updateError);
+        throw updateError;
+      }
+
+      // Create audit entry
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "pricing",
+        oldValue: {
+          price_monthly: currentPlan.price_monthly,
+          price_annual: currentPlan.price_annual,
+        },
+        newValue: {
+          price_monthly: priceMonthly,
+          price_annual: priceAnnual,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updatePlanPricing",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update plan limits
+   */
+  async updatePlanLimits(params: UpdatePlanLimitsParams): Promise<void> {
+    const { planId, emailLimit, smsEnabled, teamSizeLimit, changedBy } = params;
+
+    try {
+      // Get current plan for audit
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      // Update plan
+      const { error: updateError } = await supabase
+        .from("subscription_plans")
+        .update({
+          email_limit: emailLimit,
+          sms_enabled: smsEnabled,
+          team_size_limit: teamSizeLimit,
+        })
+        .eq("id", planId);
+
+      if (updateError) {
+        logger.error("AdminSubscriptionService.updatePlanLimits", updateError);
+        throw updateError;
+      }
+
+      // Create audit entry
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "limits",
+        oldValue: {
+          email_limit: currentPlan.email_limit,
+          sms_enabled: currentPlan.sms_enabled,
+          team_size_limit: currentPlan.team_size_limit,
+        },
+        newValue: {
+          email_limit: emailLimit,
+          sms_enabled: smsEnabled,
+          team_size_limit: teamSizeLimit,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updatePlanLimits",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update plan metadata (name, description, Lemon Squeezy IDs)
+   */
+  async updatePlanMetadata(params: UpdatePlanMetadataParams): Promise<void> {
+    const { planId, changedBy, ...updates } = params;
+
+    try {
+      // Get current plan for audit
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      // Build update object
+      const updateData: Record<string, unknown> = {};
+      const oldValues: Record<string, unknown> = {};
+      const newValues: Record<string, unknown> = {};
+
+      if (updates.displayName !== undefined) {
+        updateData.display_name = updates.displayName;
+        oldValues.display_name = currentPlan.display_name;
+        newValues.display_name = updates.displayName;
+      }
+      if (updates.description !== undefined) {
+        updateData.description = updates.description;
+        oldValues.description = currentPlan.description;
+        newValues.description = updates.description;
+      }
+      if (updates.lemonVariantIdMonthly !== undefined) {
+        updateData.lemon_variant_id_monthly = updates.lemonVariantIdMonthly;
+        oldValues.lemon_variant_id_monthly =
+          currentPlan.lemon_variant_id_monthly;
+        newValues.lemon_variant_id_monthly = updates.lemonVariantIdMonthly;
+      }
+      if (updates.lemonVariantIdAnnual !== undefined) {
+        updateData.lemon_variant_id_annual = updates.lemonVariantIdAnnual;
+        oldValues.lemon_variant_id_annual = currentPlan.lemon_variant_id_annual;
+        newValues.lemon_variant_id_annual = updates.lemonVariantIdAnnual;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return; // Nothing to update
+      }
+
+      // Update plan
+      const { error: updateError } = await supabase
+        .from("subscription_plans")
+        .update(updateData)
+        .eq("id", planId);
+
+      if (updateError) {
+        logger.error(
+          "AdminSubscriptionService.updatePlanMetadata",
+          updateError,
+        );
+        throw updateError;
+      }
+
+      // Create audit entry
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "metadata",
+        oldValue: oldValues,
+        newValue: newValues,
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updatePlanMetadata",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  // ============================================
+  // Add-on Management
+  // ============================================
+
+  /**
+   * Get all add-ons
+   */
+  async getAllAddons(): Promise<SubscriptionAddon[]> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_addons")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) {
+        logger.error("AdminSubscriptionService.getAllAddons", error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getAllAddons",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get add-on by ID
+   */
+  async getAddonById(addonId: string): Promise<SubscriptionAddon | null> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_addons")
+        .select("*")
+        .eq("id", addonId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") return null;
+        logger.error("AdminSubscriptionService.getAddonById", error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getAddonById",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get add-on by name
+   */
+  async getAddonByName(name: string): Promise<SubscriptionAddon | null> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_addons")
+        .select("*")
+        .eq("name", name)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") return null;
+        logger.error("AdminSubscriptionService.getAddonByName", error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getAddonByName",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new add-on
+   */
+  async createAddon(params: CreateAddonParams): Promise<SubscriptionAddon> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_addons")
+        .insert({
+          name: params.name,
+          display_name: params.displayName,
+          description: params.description,
+          price_monthly: params.priceMonthly,
+          price_annual: params.priceAnnual,
+          lemon_variant_id_monthly: params.lemonVariantIdMonthly,
+          lemon_variant_id_annual: params.lemonVariantIdAnnual,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("AdminSubscriptionService.createAddon", error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.createAddon",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update an add-on
+   */
+  async updateAddon(
+    addonId: string,
+    params: UpdateAddonParams,
+  ): Promise<SubscriptionAddon> {
+    try {
+      const updateData: Record<string, unknown> = {};
+
+      if (params.displayName !== undefined)
+        updateData.display_name = params.displayName;
+      if (params.description !== undefined)
+        updateData.description = params.description;
+      if (params.priceMonthly !== undefined)
+        updateData.price_monthly = params.priceMonthly;
+      if (params.priceAnnual !== undefined)
+        updateData.price_annual = params.priceAnnual;
+      if (params.lemonVariantIdMonthly !== undefined)
+        updateData.lemon_variant_id_monthly = params.lemonVariantIdMonthly;
+      if (params.lemonVariantIdAnnual !== undefined)
+        updateData.lemon_variant_id_annual = params.lemonVariantIdAnnual;
+      if (params.isActive !== undefined) updateData.is_active = params.isActive;
+
+      const { data, error } = await supabase
+        .from("subscription_addons")
+        .update(updateData)
+        .eq("id", addonId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("AdminSubscriptionService.updateAddon", error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updateAddon",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  // ============================================
+  // User Add-on Grants
+  // ============================================
+
+  /**
+   * Grant an add-on to a user (manual grant by admin)
+   */
+  async grantAddonToUser(
+    userId: string,
+    addonId: string,
+    grantedBy: string,
+  ): Promise<void> {
+    try {
+      const { error } = await supabase.from("user_subscription_addons").upsert(
+        {
+          user_id: userId,
+          addon_id: addonId,
+          status: "manual_grant",
+          granted_by: grantedBy,
+        },
+        {
+          onConflict: "user_id,addon_id",
+        },
+      );
+
+      if (error) {
+        logger.error("AdminSubscriptionService.grantAddonToUser", error);
+        throw error;
+      }
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.grantAddonToUser",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Revoke an add-on from a user
+   */
+  async revokeAddonFromUser(userId: string, addonId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("user_subscription_addons")
+        .delete()
+        .eq("user_id", userId)
+        .eq("addon_id", addonId);
+
+      if (error) {
+        logger.error("AdminSubscriptionService.revokeAddonFromUser", error);
+        throw error;
+      }
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.revokeAddonFromUser",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get all user add-ons (for admin view)
+   */
+  async getUserAddons(userId: string): Promise<UserSubscriptionAddon[]> {
+    try {
+      const { data, error } = await supabase
+        .from("user_subscription_addons")
+        .select(
+          `
+          *,
+          addon:subscription_addons(*)
+        `,
+        )
+        .eq("user_id", userId);
+
+      if (error) {
+        logger.error("AdminSubscriptionService.getUserAddons", error);
+        throw error;
+      }
+
+      return (data || []).map((item) => ({
+        ...item,
+        addon: Array.isArray(item.addon) ? item.addon[0] : item.addon,
+      }));
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getUserAddons",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get all users with a specific add-on
+   */
+  async getUsersWithAddon(
+    addonId: string,
+  ): Promise<{ userId: string; status: string; grantedBy: string | null }[]> {
+    try {
+      const { data, error } = await supabase
+        .from("user_subscription_addons")
+        .select("user_id, status, granted_by")
+        .eq("addon_id", addonId)
+        .in("status", ["active", "manual_grant"]);
+
+      if (error) {
+        logger.error("AdminSubscriptionService.getUsersWithAddon", error);
+        throw error;
+      }
+
+      return (data || []).map((item) => ({
+        userId: item.user_id,
+        status: item.status,
+        grantedBy: item.granted_by,
+      }));
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getUsersWithAddon",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  // ============================================
+  // Audit Trail
+  // ============================================
+
+  /**
+   * Get plan change history
+   */
+  async getPlanChangeHistory(
+    planId: string,
+    limit: number = 50,
+  ): Promise<SubscriptionPlanChange[]> {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_plan_changes")
+        .select(
+          `
+          *,
+          changer:user_profiles!subscription_plan_changes_changed_by_fkey(
+            id,
+            first_name,
+            last_name,
+            email
+          )
+        `,
+        )
+        .eq("plan_id", planId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        logger.error("AdminSubscriptionService.getPlanChangeHistory", error);
+        throw error;
+      }
+
+      return (data || []).map((item) => ({
+        ...item,
+        changer: Array.isArray(item.changer) ? item.changer[0] : item.changer,
+      }));
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getPlanChangeHistory",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Create a plan change audit entry
+   */
+  private async createPlanChangeAudit(params: {
+    planId: string;
+    changedBy: string;
+    changeType: string;
+    oldValue: unknown;
+    newValue: unknown;
+    notes?: string;
+  }): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("subscription_plan_changes")
+        .insert({
+          plan_id: params.planId,
+          changed_by: params.changedBy,
+          change_type: params.changeType,
+          old_value: params.oldValue as Record<string, unknown>,
+          new_value: params.newValue as Record<string, unknown>,
+          notes: params.notes,
+        });
+
+      if (error) {
+        // Log but don't throw - audit failures shouldn't block operations
+        logger.error("AdminSubscriptionService.createPlanChangeAudit", error);
+      }
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.createPlanChangeAudit",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    }
+  }
+
+  // ============================================
+  // Plan CRUD Operations
+  // ============================================
+
+  /**
+   * Create a new subscription plan
+   */
+  async createPlan(params: {
+    name: string;
+    displayName: string;
+    description?: string;
+    priceMonthly: number;
+    priceAnnual: number;
+    sortOrder: number;
+  }): Promise<SubscriptionPlan> {
+    try {
+      // Default features (all off for new plan)
+      const defaultFeatures: SubscriptionFeatures = {
+        dashboard: false,
+        policies: false,
+        comp_guide: false,
+        settings: false,
+        connect_upline: false,
+        expenses: false,
+        targets_basic: false,
+        targets_full: false,
+        reports_view: false,
+        reports_export: false,
+        email: false,
+        sms: false,
+        hierarchy: false,
+        recruiting: false,
+        overrides: false,
+        downline_reports: false,
+        instagram_messaging: false,
+      };
+
+      const { data, error } = await supabase
+        .from("subscription_plans")
+        .insert({
+          name: params.name,
+          display_name: params.displayName,
+          description: params.description || null,
+          price_monthly: params.priceMonthly,
+          price_annual: params.priceAnnual,
+          sort_order: params.sortOrder,
+          features: defaultFeatures as unknown as Record<string, unknown>,
+          analytics_sections: [],
+          email_limit: 0,
+          sms_enabled: false,
+          team_size_limit: null,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("AdminSubscriptionService.createPlan", error);
+        throw error;
+      }
+
+      return {
+        ...data,
+        features: data.features as unknown as SubscriptionFeatures,
+      };
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.createPlan",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle plan active status
+   */
+  async togglePlanActive(
+    planId: string,
+    isActive: boolean,
+    changedBy: string,
+  ): Promise<void> {
+    try {
+      // Get current plan for audit
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      const { error } = await supabase
+        .from("subscription_plans")
+        .update({
+          is_active: isActive,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", planId);
+
+      if (error) {
+        logger.error("AdminSubscriptionService.togglePlanActive", error);
+        throw error;
+      }
+
+      // Create audit record
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "metadata",
+        oldValue: { is_active: currentPlan.is_active },
+        newValue: { is_active: isActive },
+        notes: isActive ? "Plan activated" : "Plan deactivated",
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.togglePlanActive",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  // ============================================
+  // Access Checks
+  // ============================================
+
+  /**
+   * Check if a user has UW Wizard access via add-on purchase
+   */
+  async checkUwWizardAccess(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc("user_has_uw_wizard_access", {
+        p_user_id: userId,
+      });
+
+      if (error) {
+        logger.error("AdminSubscriptionService.checkUwWizardAccess", error);
+        return false;
+      }
+
+      return data === true;
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.checkUwWizardAccess",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      return false;
+    }
+  }
+}
+
+export const adminSubscriptionService = new AdminSubscriptionService();

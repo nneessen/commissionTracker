@@ -1,14 +1,14 @@
 // src/lib/temporaryAccess.ts
 // Temporary free access period configuration
-// This file controls the temporary "all features free" period until end of January 2026
+// This file controls the temporary "all features free" period until end of February 2026
 
-import type { FeatureKey } from "@/hooks/subscription/useFeatureAccess";
+import type { FeatureKey } from "@/hooks/subscription";
 
 /**
  * End date for temporary free access period.
  * After this date, normal subscription gating resumes.
  */
-const TEMPORARY_ACCESS_END_DATE = new Date("2026-02-01T00:00:00Z");
+const TEMPORARY_ACCESS_END_DATE = new Date("2026-03-01T00:00:00Z");
 
 /**
  * Features that are EXCLUDED from temporary free access.
@@ -29,7 +29,7 @@ const PERMANENT_INSTAGRAM_ACCESS_EMAILS = ["meta-reviewer@thestandardhq.com"];
 
 /**
  * Check if we are currently in the temporary free access period.
- * Returns true until Feb 1, 2026 00:00 UTC.
+ * Returns true until Mar 1, 2026 00:00 UTC.
  */
 export function isTemporaryFreeAccessPeriod(): boolean {
   return new Date() < TEMPORARY_ACCESS_END_DATE;

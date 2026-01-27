@@ -33,7 +33,8 @@ import { useAuthorizationStatus } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useSubscription,
-  FEATURE_PLAN_REQUIREMENTS,
+  useSubscriptionPlans,
+  getRequiredPlanForFeature,
   type FeatureKey,
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
@@ -210,6 +211,7 @@ export default function Sidebar({
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
   const { supabaseUser } = useAuth();
   const { subscription, isLoading: subLoading } = useSubscription();
+  const { plans } = useSubscriptionPlans();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
   const { data: userRoles } = useUserRoles();
@@ -300,7 +302,9 @@ export default function Sidebar({
 
   // Handler for subscription-locked nav item clicks
   const handleSubscriptionLockedClick = (feature: FeatureKey) => {
-    const requiredPlan = FEATURE_PLAN_REQUIREMENTS[feature];
+    const requiredPlan = plans?.length
+      ? getRequiredPlanForFeature(feature, plans)
+      : "a higher";
     toast.error(
       `This feature requires the ${requiredPlan} plan. Go to Settings > Billing to upgrade.`,
       {
@@ -474,9 +478,10 @@ export default function Sidebar({
             // Check if this item requires a subscription feature the user doesn't have
             const isSubscriptionLocked =
               item.subscriptionFeature && !hasFeature(item.subscriptionFeature);
-            const requiredPlan = item.subscriptionFeature
-              ? FEATURE_PLAN_REQUIREMENTS[item.subscriptionFeature]
-              : null;
+            const requiredPlan =
+              item.subscriptionFeature && plans?.length
+                ? getRequiredPlanForFeature(item.subscriptionFeature, plans)
+                : null;
 
             if (isPendingLocked) {
               // Render locked nav item for pending users

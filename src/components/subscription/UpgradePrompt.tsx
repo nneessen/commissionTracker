@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   type FeatureKey,
   FEATURE_DISPLAY_NAMES,
-  FEATURE_PLAN_REQUIREMENTS,
+  useFeatureAccess,
 } from "@/hooks/subscription";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ export function UpgradePrompt({
   showCTA = true,
 }: UpgradePromptProps) {
   const featureName = FEATURE_DISPLAY_NAMES[feature];
-  const requiredPlan = FEATURE_PLAN_REQUIREMENTS[feature];
+  const { requiredPlan } = useFeatureAccess(feature);
 
   const defaultTitle = title ?? `Unlock ${featureName}`;
   const defaultDescription =
@@ -206,7 +206,7 @@ export function UpgradePromptCompact({
   feature: FeatureKey;
   className?: string;
 }) {
-  const requiredPlan = FEATURE_PLAN_REQUIREMENTS[feature];
+  const { requiredPlan } = useFeatureAccess(feature);
 
   return (
     <Link

@@ -34,7 +34,7 @@ export const GatedKPISection: React.FC<GatedKPISectionProps> = ({
   hasAccess,
   title,
   children,
-  requiredTier = "Starter",
+  requiredTier = "Pro",
   className,
 }) => {
   if (hasAccess) {

@@ -31,14 +31,14 @@ export const ANALYTICS_SECTION_NAMES: Record<AnalyticsSectionKey, string> = {
   predictive_analytics: "Predictive Analytics",
 };
 
-// Map sections to minimum required tier for display purposes
+// Map sections to minimum required tier for display purposes (3-tier system)
 export const ANALYTICS_SECTION_TIERS: Record<AnalyticsSectionKey, string> = {
   pace_metrics: "Free",
   carriers_products: "Free",
   product_matrix: "Free",
-  policy_status_breakdown: "Starter",
-  geographic: "Starter",
-  client_segmentation: "Starter",
+  policy_status_breakdown: "Pro",
+  geographic: "Pro",
+  client_segmentation: "Pro",
   game_plan: "Pro",
   commission_pipeline: "Pro",
   predictive_analytics: "Pro",

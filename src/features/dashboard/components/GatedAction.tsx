@@ -47,7 +47,7 @@ export const GatedAction: React.FC<GatedActionProps> = ({
   onClick,
   isLoading = false,
   lockedTooltip,
-  requiredTier = "Starter",
+  requiredTier = "Pro",
   className,
 }) => {
   const navigate = useNavigate();
