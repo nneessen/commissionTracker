@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 12:28:43
+
+### Changed Files
+- `src/features/training-hub/components/TrainerDashboard.tsx`
+
+### Statistics
+```
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+```
+
 ## [Checkpoint] - 2026-01-27 11:12:15
 
 ### Changed Files

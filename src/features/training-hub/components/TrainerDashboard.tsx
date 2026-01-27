@@ -196,7 +196,7 @@ export function TrainerDashboard() {
   const { data: contractStats, isLoading: contractsLoading } =
     useContractStats();
 
-  // Fetch recent recruits
+  // Fetch recent recruits (only those actively enrolled in a pipeline, not prospects)
   const { data: recentRecruits, isLoading: recruitsLoading } = useQuery({
     queryKey: ["trainer-dashboard-recent-recruits"],
     queryFn: async () => {
@@ -206,6 +206,10 @@ export function TrainerDashboard() {
           "id, first_name, last_name, email, onboarding_status, current_onboarding_phase, updated_at",
         )
         .contains("roles", ["recruit"])
+        // Exclude prospects
+        .neq("onboarding_status", "prospect")
+        // Must be enrolled (has onboarding_status or onboarding_started_at)
+        .or("onboarding_status.not.is.null,onboarding_started_at.not.is.null")
         .order("updated_at", { ascending: false })
         .limit(8);
 
