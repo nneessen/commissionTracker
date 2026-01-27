@@ -112,6 +112,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         policyNumber: policy.policyNumber || "",
         submitDate: policy.submitDate || formatDateForDB(new Date()),
         effectiveDate: policy.effectiveDate || formatDateForDB(new Date()),
+        termLength: policy.termLength,
         premium: calculatePaymentAmount(
           policy.annualPremium || 0,
           policy.paymentFrequency,
@@ -272,6 +273,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       policyNumber: policy.policyNumber || "",
       submitDate: policy.submitDate || formatDateForDB(new Date()),
       effectiveDate: policy.effectiveDate || formatDateForDB(new Date()),
+      termLength: policy.termLength,
       premium: calculatePaymentAmount(
         policy.annualPremium || 0,
         policy.paymentFrequency,
