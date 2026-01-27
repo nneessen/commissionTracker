@@ -101,10 +101,17 @@ export class RecruitRepository extends BaseRepository<
     limit = 50,
   ): Promise<PaginatedRecruits> {
     // First get potential recruit IDs - ONLY users with recruit role
-    const { data: initialData, error: initialError } = await this.client
+    let initialQuery = this.client
       .from(this.tableName)
       .select("*")
       .contains("roles", ["recruit"]);
+
+    // Apply imo_id filter at initial query level for efficiency
+    if (filters?.imo_id) {
+      initialQuery = initialQuery.eq("imo_id", filters.imo_id);
+    }
+
+    const { data: initialData, error: initialError } = await initialQuery;
 
     if (initialError) {
       throw this.handleError(initialError, "findRecruits");
@@ -152,6 +159,14 @@ export class RecruitRepository extends BaseRepository<
       query = query
         .gte("created_at", filters.date_range.start)
         .lte("created_at", filters.date_range.end);
+    }
+
+    // Exclude prospects (recruits not enrolled in a pipeline)
+    // A recruit is enrolled if onboarding_status is set and not 'prospect'
+    if (filters?.exclude_prospects) {
+      query = query
+        .not("onboarding_status", "is", null)
+        .neq("onboarding_status", "prospect");
     }
 
     // Pagination

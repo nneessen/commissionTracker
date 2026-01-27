@@ -33,10 +33,13 @@ import { RecruitingPreviewBanner } from "./components/RecruitingPreviewBanner";
 import { isSuperAdminEmail } from "@/lib/temporaryAccess";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useAuth } from "@/contexts/AuthContext";
+import { STAFF_ONLY_ROLES } from "@/constants/roles";
+import type { RecruitFilters } from "@/types/recruiting.types";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { downloadCSV } from "@/utils/exportHelpers";
 import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports -- pre-existing: recruiter_slug query needs direct supabase access
 import { supabase } from "@/services/base/supabase";
 import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
@@ -58,9 +61,38 @@ type RecruitWithRelations = UserProfile & {
 
 function RecruitingDashboardContent() {
   const { user, supabaseUser } = useAuth();
-  console.log(user);
+
+  // Detect staff role (trainer or contracting_manager)
+  const isStaffRole =
+    user?.roles?.some((role) =>
+      STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
+    ) ?? false;
+
+  const isAdmin = user?.is_admin ?? false;
+
+  // Build filters based on user role:
+  // - Admins: See all recruits (no recruiter_id/imo_id filter, but exclude prospects)
+  // - Staff roles: See all IMO recruits (filter by imo_id, exclude prospects)
+  // - Regular recruiters: See only their direct recruits (filter by recruiter_id, exclude prospects)
+  const recruitFilters: RecruitFilters | undefined = (() => {
+    if (!user?.id) return undefined;
+
+    if (isAdmin) {
+      // Admins see all, just exclude prospects
+      return { exclude_prospects: true };
+    }
+
+    if (isStaffRole && user.imo_id) {
+      // Staff roles see all recruits in their IMO
+      return { imo_id: user.imo_id, exclude_prospects: true };
+    }
+
+    // Regular recruiters see only their direct recruits
+    return { recruiter_id: user.id, exclude_prospects: true };
+  })();
+
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
-    { recruiter_id: user?.id },
+    recruitFilters,
     1,
     50,
     { enabled: !!user?.id },

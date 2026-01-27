@@ -349,6 +349,17 @@ export interface RecruitFilters {
    * Filter by assigned upline/manager (canonical field).
    */
   assigned_upline_id?: string;
+  /**
+   * Filter by IMO - for staff roles (trainer, contracting_manager)
+   * to see all recruits in their IMO.
+   */
+  imo_id?: string;
+  /**
+   * Exclude prospects (recruits not enrolled in a pipeline).
+   * When true, excludes users with onboarding_status = 'prospect'
+   * OR onboarding_started_at = NULL.
+   */
+  exclude_prospects?: boolean;
   search?: string;
   date_range?: {
     start: string;
