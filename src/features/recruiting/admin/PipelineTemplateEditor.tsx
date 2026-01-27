@@ -15,14 +15,24 @@ import { PhaseEditor } from "./PhaseEditor";
 interface PipelineTemplateEditorProps {
   templateId: string;
   onClose: () => void;
+  /** Whether the current user is an admin (can edit any pipeline) */
+  isAdmin: boolean;
+  /** Current user's ID (for ownership checks) */
+  currentUserId?: string;
 }
 
 export function PipelineTemplateEditor({
   templateId,
   onClose,
+  isAdmin,
+  currentUserId,
 }: PipelineTemplateEditorProps) {
   const { data: template, isLoading } = useTemplate(templateId);
   const updateTemplate = useUpdateTemplate();
+
+  // Check if user can modify this template (admin or owner)
+  const canModify =
+    isAdmin || (currentUserId && template?.created_by === currentUserId);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -98,6 +108,17 @@ export function PipelineTemplateEditor({
 
   return (
     <div className="space-y-2.5">
+      {/* Read-only warning for non-owners */}
+      {!canModify && (
+        <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+          <span className="text-[11px] text-amber-700 dark:text-amber-300">
+            You can only view this template. Only the creator or an admin can
+            make changes.
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2">
@@ -123,19 +144,21 @@ export function PipelineTemplateEditor({
             </Badge>
           )}
         </div>
-        <Button
-          size="sm"
-          className="h-7 px-3 text-[11px]"
-          onClick={handleSave}
-          disabled={!hasChanges || updateTemplate.isPending}
-        >
-          {updateTemplate.isPending ? (
-            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-          ) : (
-            <Save className="h-3 w-3 mr-1.5" />
-          )}
-          Save Changes
-        </Button>
+        {canModify && (
+          <Button
+            size="sm"
+            className="h-7 px-3 text-[11px]"
+            onClick={handleSave}
+            disabled={!hasChanges || updateTemplate.isPending}
+          >
+            {updateTemplate.isPending ? (
+              <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+            ) : (
+              <Save className="h-3 w-3 mr-1.5" />
+            )}
+            Save Changes
+          </Button>
+        )}
       </div>
 
       {/* Template Details */}
@@ -151,6 +174,7 @@ export function PipelineTemplateEditor({
             <Input
               value={name}
               onChange={(e) => handleFieldChange("name", e.target.value)}
+              disabled={!canModify}
               className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
@@ -164,6 +188,7 @@ export function PipelineTemplateEditor({
                 onCheckedChange={(checked: boolean) =>
                   handleFieldChange("is_active", checked)
                 }
+                disabled={!canModify}
               />
               <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                 {isActive ? "Active" : "Inactive"}
@@ -178,6 +203,7 @@ export function PipelineTemplateEditor({
               value={description}
               onChange={(e) => handleFieldChange("description", e.target.value)}
               placeholder="Optional description..."
+              disabled={!canModify}
               className="text-[11px] min-h-14 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
@@ -186,7 +212,7 @@ export function PipelineTemplateEditor({
 
       {/* Phases Editor */}
       <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
-        <PhaseEditor templateId={templateId} />
+        <PhaseEditor templateId={templateId} readOnly={!canModify} />
       </div>
     </div>
   );

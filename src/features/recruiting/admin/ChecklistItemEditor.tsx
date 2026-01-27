@@ -27,9 +27,14 @@ import { ChecklistItemFormDialog } from "./ChecklistItemFormDialog";
 
 interface ChecklistItemEditorProps {
   phaseId: string;
+  /** When true, hides add/edit/delete actions */
+  readOnly?: boolean;
 }
 
-export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
+export function ChecklistItemEditor({
+  phaseId,
+  readOnly = false,
+}: ChecklistItemEditorProps) {
   const { data: items, isLoading } = useChecklistItems(phaseId);
   const createItem = useCreateChecklistItem();
   const updateItem = useUpdateChecklistItem();
@@ -119,15 +124,17 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
           Checklist Items ({itemCount})
         </span>
-        <Button
-          size="sm"
-          variant="success"
-          className="h-6 text-[10px]"
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add Item
-        </Button>
+        {!readOnly && (
+          <Button
+            size="sm"
+            variant="success"
+            className="h-6 text-[10px]"
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add Item
+          </Button>
+        )}
       </div>
 
       {/* List */}
@@ -139,6 +146,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         onToggleExpand={handleToggleExpand}
         onEdit={setEditingItem}
         onDelete={setDeleteConfirmId}
+        readOnly={readOnly}
       />
 
       {/* Create Dialog */}

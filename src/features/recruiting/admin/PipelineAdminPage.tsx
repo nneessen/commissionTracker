@@ -6,19 +6,32 @@ import { Settings2, ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { PipelineTemplatesList } from "./PipelineTemplatesList";
 import { PipelineTemplateEditor } from "./PipelineTemplateEditor";
-import { useIsAdmin } from "@/hooks/permissions";
+import { useIsAdmin, useUserRoles } from "@/hooks/permissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { STAFF_ONLY_ROLES } from "@/constants/roles";
 
 export function PipelineAdminPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   );
 
-  // Permission check - only admins can access pipeline administration
+  // Permission check - admins and staff roles can access pipeline administration
   const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
+  const { data: userRoles, isLoading: rolesLoading } = useUserRoles();
+
+  // Check if user is a staff role (trainer/contracting_manager)
+  const isStaffRole =
+    userRoles?.some((role) =>
+      STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
+    ) ?? false;
+
+  // Can access if admin OR staff role
+  const canAccess = isAdmin || isStaffRole;
 
   // Loading state
-  if (isAdminLoading) {
+  if (isAdminLoading || rolesLoading) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="text-center">
@@ -32,7 +45,7 @@ export function PipelineAdminPage() {
   }
 
   // Access denied state
-  if (!isAdmin) {
+  if (!canAccess) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="p-6 max-w-sm text-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -41,7 +54,7 @@ export function PipelineAdminPage() {
             Access Denied
           </h2>
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-4">
-            Pipeline administration requires admin privileges.
+            Pipeline administration requires admin or trainer privileges.
           </p>
           <Button
             variant="outline"
@@ -87,10 +100,14 @@ export function PipelineAdminPage() {
           <PipelineTemplateEditor
             templateId={selectedTemplateId}
             onClose={() => setSelectedTemplateId(null)}
+            isAdmin={isAdmin ?? false}
+            currentUserId={user?.id}
           />
         ) : (
           <PipelineTemplatesList
             onSelectTemplate={(id) => setSelectedTemplateId(id)}
+            isAdmin={isAdmin ?? false}
+            currentUserId={user?.id}
           />
         )}
       </div>

@@ -250,25 +250,28 @@ function RecruitingDashboardContent() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5">
-          <Button
-            size="sm"
-            variant="ghost"
-            asChild
-            className="h-6 text-[10px] px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-          >
-            <Link to="/recruiting/leads">
-              <Inbox className="h-3 w-3 mr-1" />
-              Leads
-              {pendingLeadsCount && pendingLeadsCount > 0 ? (
-                <Badge
-                  variant="secondary"
-                  className="ml-1 h-4 px-1 text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
-                >
-                  {pendingLeadsCount}
-                </Badge>
-              ) : null}
-            </Link>
-          </Button>
+          {/* Leads button - hidden for staff roles (trainer/contracting_manager) */}
+          {!isStaffRole && (
+            <Button
+              size="sm"
+              variant="ghost"
+              asChild
+              className="h-6 text-[10px] px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              <Link to="/recruiting/leads">
+                <Inbox className="h-3 w-3 mr-1" />
+                Leads
+                {pendingLeadsCount && pendingLeadsCount > 0 ? (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-4 px-1 text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
+                  >
+                    {pendingLeadsCount}
+                  </Badge>
+                ) : null}
+              </Link>
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -321,57 +324,61 @@ function RecruitingDashboardContent() {
         </div>
       </div>
 
-      {/* Recruiting Link Banner */}
-      {recruiterSlug ? (
-        <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 rounded-lg px-3 py-2 border border-emerald-200 dark:border-emerald-800">
-          <div className="flex items-center gap-2">
-            <Link2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[11px] text-emerald-700 dark:text-emerald-300">
-              Your link:
-            </span>
-            <span className="text-[11px] font-mono text-emerald-800 dark:text-emerald-200">
-              www.thestandardhq.com/join-{recruiterSlug}
-            </span>
-          </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleCopyLink}
-            className="h-6 text-[10px] px-2 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
-          >
-            {linkCopied ? (
-              <>
-                <Check className="h-3 w-3 mr-1" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="h-3 w-3 mr-1" />
-                Copy Link
-              </>
-            )}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800">
-          <div className="flex items-center gap-2">
-            <Link2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-            <span className="text-[11px] text-amber-700 dark:text-amber-300">
-              Set up your personal recruiting link to share on social media
-            </span>
-          </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            asChild
-            className="h-6 text-[10px] px-2 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-          >
-            <Link to="/settings">
-              Set Up Link
-              <ArrowRight className="h-3 w-3 ml-1" />
-            </Link>
-          </Button>
-        </div>
+      {/* Recruiting Link Banner - hidden for staff roles (trainer/contracting_manager) */}
+      {!isStaffRole && (
+        <>
+          {recruiterSlug ? (
+            <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 rounded-lg px-3 py-2 border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center gap-2">
+                <Link2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                  Your link:
+                </span>
+                <span className="text-[11px] font-mono text-emerald-800 dark:text-emerald-200">
+                  www.thestandardhq.com/join-{recruiterSlug}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleCopyLink}
+                className="h-6 text-[10px] px-2 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+              >
+                {linkCopied ? (
+                  <>
+                    <Check className="h-3 w-3 mr-1" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3 mr-1" />
+                    Copy Link
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-2">
+                <Link2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                  Set up your personal recruiting link to share on social media
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                asChild
+                className="h-6 text-[10px] px-2 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+              >
+                <Link to="/settings">
+                  Set Up Link
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Main Content - Table */}

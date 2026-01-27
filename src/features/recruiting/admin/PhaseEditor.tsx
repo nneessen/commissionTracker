@@ -56,6 +56,8 @@ import type { PipelinePhase, CreatePhaseInput } from "@/types/recruiting.types";
 
 interface PhaseEditorProps {
   templateId: string;
+  /** When true, hides add/edit/delete actions */
+  readOnly?: boolean;
 }
 
 // Sortable Phase Item Component
@@ -70,6 +72,7 @@ interface SortablePhaseItemProps {
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  readOnly?: boolean;
 }
 
 function SortablePhaseItem({
@@ -83,6 +86,7 @@ function SortablePhaseItem({
   onDelete,
   onMoveUp,
   onMoveDown,
+  readOnly = false,
 }: SortablePhaseItemProps) {
   const {
     attributes,
@@ -178,36 +182,40 @@ function SortablePhaseItem({
             Hidden
           </Badge>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-5 w-5 p-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-        >
-          <Edit2 className="h-3 w-3 text-muted-foreground" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-5 w-5 p-0 text-destructive hover:text-destructive/80"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {!readOnly && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Edit2 className="h-3 w-3 text-muted-foreground" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 p-0 text-destructive hover:text-destructive/80"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Expanded: Checklist Items & Automations */}
       {isExpanded && (
         <div className="m-2 p-3 rounded-md bg-muted/40 space-y-4">
-          <ChecklistItemEditor phaseId={phase.id} />
+          <ChecklistItemEditor phaseId={phase.id} readOnly={readOnly} />
           <div className="border-t border-border/50 pt-3">
-            <PhaseAutomationConfig phaseId={phase.id} />
+            <PhaseAutomationConfig phaseId={phase.id} readOnly={readOnly} />
           </div>
         </div>
       )}
@@ -215,7 +223,10 @@ function SortablePhaseItem({
   );
 }
 
-export function PhaseEditor({ templateId }: PhaseEditorProps) {
+export function PhaseEditor({
+  templateId,
+  readOnly = false,
+}: PhaseEditorProps) {
   const { data: phases, isLoading } = usePhases(templateId);
   const createPhase = useCreatePhase();
   const updatePhase = useUpdatePipelinePhase();
@@ -383,15 +394,17 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         <h3 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           Pipeline Phases ({sortedPhases.length})
         </h3>
-        <Button
-          size="sm"
-          variant="default"
-          className="h-7 px-3 text-[11px]"
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          <Plus className="h-3 w-3 mr-1.5" />
-          Add Phase
-        </Button>
+        {!readOnly && (
+          <Button
+            size="sm"
+            variant="default"
+            className="h-7 px-3 text-[11px]"
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            <Plus className="h-3 w-3 mr-1.5" />
+            Add Phase
+          </Button>
+        )}
       </div>
 
       {sortedPhases.length === 0 ? (
@@ -422,6 +435,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                   onDelete={() => setDeleteConfirmId(phase.id)}
                   onMoveUp={() => handleMoveUp(index)}
                   onMoveDown={() => handleMoveDown(index)}
+                  readOnly={readOnly}
                 />
               ))}
             </div>

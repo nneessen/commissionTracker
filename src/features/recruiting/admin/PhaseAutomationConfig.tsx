@@ -33,9 +33,14 @@ import { TRIGGER_SHORT_LABELS } from "@/types/recruiting.types";
 
 interface PhaseAutomationConfigProps {
   phaseId: string;
+  /** When true, hides add/edit/delete actions */
+  readOnly?: boolean;
 }
 
-export function PhaseAutomationConfig({ phaseId }: PhaseAutomationConfigProps) {
+export function PhaseAutomationConfig({
+  phaseId,
+  readOnly = false,
+}: PhaseAutomationConfigProps) {
   const { data: automations, isLoading } = usePhaseAutomations(phaseId);
   const deleteAutomation = useDeleteAutomation();
   const updateAutomation = useUpdateAutomation();
@@ -112,18 +117,20 @@ export function PhaseAutomationConfig({ phaseId }: PhaseAutomationConfigProps) {
             Automations ({automations?.length || 0})
           </span>
         </div>
-        <Button
-          size="sm"
-          variant="secondary"
-          className="h-6 text-[10px]"
-          onClick={() => {
-            setEditingAutomation(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
+        {!readOnly && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-6 text-[10px]"
+            onClick={() => {
+              setEditingAutomation(null);
+              setDialogOpen(true);
+            }}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add
+          </Button>
+        )}
       </div>
 
       {automations && automations.length > 0 ? (
@@ -155,30 +162,34 @@ export function PhaseAutomationConfig({ phaseId }: PhaseAutomationConfigProps) {
               <span className="text-[10px] text-zinc-600 dark:text-zinc-400 flex-1 truncate">
                 → {automation.recipients.map((r) => r.type).join(", ")}
               </span>
-              <Switch
-                checked={automation.is_active}
-                onCheckedChange={() => handleToggleActive(automation)}
-                className="scale-75"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0"
-                onClick={() => {
-                  setEditingAutomation(automation);
-                  setDialogOpen(true);
-                }}
-              >
-                <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
-                onClick={() => setDeleteConfirmId(automation.id)}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
+              {!readOnly && (
+                <>
+                  <Switch
+                    checked={automation.is_active}
+                    onCheckedChange={() => handleToggleActive(automation)}
+                    className="scale-75"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0"
+                    onClick={() => {
+                      setEditingAutomation(automation);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
+                    onClick={() => setDeleteConfirmId(automation.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
             </div>
           ))}
         </div>

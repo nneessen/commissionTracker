@@ -83,6 +83,8 @@ export interface SortableChecklistItemProps {
   onDelete: (itemId: string) => void;
   onMoveUp: (itemId: string) => void;
   onMoveDown: (itemId: string) => void;
+  /** When true, hides edit/delete actions */
+  readOnly?: boolean;
 }
 
 function SortableChecklistItemComponent({
@@ -96,6 +98,7 @@ function SortableChecklistItemComponent({
   onDelete,
   onMoveUp,
   onMoveDown,
+  readOnly = false,
 }: SortableChecklistItemProps) {
   const {
     attributes,
@@ -208,28 +211,32 @@ function SortableChecklistItemComponent({
             <EyeOff className="h-2 w-2" />
           </Badge>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-5 w-5 p-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEdit();
-          }}
-        >
-          <Edit2 className="h-3 w-3 text-muted-foreground" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-5 w-5 p-0 text-destructive hover:text-destructive/80"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDelete();
-          }}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {!readOnly && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit();
+              }}
+            >
+              <Edit2 className="h-3 w-3 text-muted-foreground" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 p-0 text-destructive hover:text-destructive/80"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Expanded: Automations */}

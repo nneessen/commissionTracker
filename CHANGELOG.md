@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 10:08:45
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/ChecklistItemList.tsx`
+- `src/features/recruiting/admin/PhaseAutomationConfig.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/admin/SortableChecklistItem.tsx`
+
+### Statistics
+```
+ 12 files changed, 346 insertions(+), 202 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 10:07:23
+
+### Changed Files
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/ChecklistItemList.tsx`
+- `src/features/recruiting/admin/PhaseAutomationConfig.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/admin/SortableChecklistItem.tsx`
+
+### Statistics
+```
+ 10 files changed, 324 insertions(+), 198 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 09:43:54
 
 ### Changed Files

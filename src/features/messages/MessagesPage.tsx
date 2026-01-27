@@ -36,6 +36,9 @@ import { InstagramTemplatesSettings } from "./components/instagram/templates";
 import { MessagesSettingsContainer } from "./components/settings";
 import { MessagingAnalyticsDashboard } from "./components/analytics";
 import { useUserSlackPreferences, useSlackIntegrations } from "@/hooks/slack";
+import { useUserRoles } from "@/hooks/permissions";
+import { useImo } from "@/contexts/ImoContext";
+import type { RoleName } from "@/types/permissions.types";
 import {
   useActiveInstagramIntegration,
   useInstagramConversations,
@@ -82,6 +85,22 @@ export function MessagesPage() {
 
   // Mobile detection
   const isMobile = useIsMobile();
+
+  // Role-based access control
+  const { data: userRoles } = useUserRoles();
+  const { isSuperAdmin } = useImo();
+
+  const hasRole = (role: RoleName) => {
+    return userRoles?.includes(role) || false;
+  };
+
+  // Staff-only: has trainer/contracting_manager but NOT agent/admin
+  const isStaffOnlyUser =
+    !isSuperAdmin &&
+    (hasRole("trainer" as RoleName) ||
+      hasRole("contracting_manager" as RoleName)) &&
+    !hasRole("agent" as RoleName) &&
+    !hasRole("admin" as RoleName);
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
@@ -288,8 +307,8 @@ export function MessagesPage() {
     setIsComposeOpen(true);
   };
 
-  // Tab configuration
-  const tabs: { id: TabType; label: string; icon: typeof Inbox }[] = [
+  // Tab configuration - filter based on role
+  const allTabs: { id: TabType; label: string; icon: typeof Inbox }[] = [
     { id: "email", label: "Email", icon: Mail },
     { id: "slack", label: "Slack", icon: MessageSquare },
     { id: "instagram", label: "Instagram", icon: Instagram },
@@ -298,6 +317,11 @@ export function MessagesPage() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "settings", label: "Settings", icon: Settings },
   ];
+
+  // Staff-only users (trainer/contracting_manager) cannot access templates or analytics
+  const tabs = isStaffOnlyUser
+    ? allTabs.filter((tab) => tab.id !== "templates" && tab.id !== "analytics")
+    : allTabs;
 
   // Folder configuration
   const folders: {

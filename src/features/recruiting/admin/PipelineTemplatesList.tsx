@@ -34,10 +34,16 @@ import {
 
 interface PipelineTemplatesListProps {
   onSelectTemplate: (id: string) => void;
+  /** Whether the current user is an admin (can edit/delete any pipeline) */
+  isAdmin: boolean;
+  /** Current user's ID (for ownership checks) */
+  currentUserId?: string;
 }
 
 export function PipelineTemplatesList({
   onSelectTemplate,
+  isAdmin,
+  currentUserId,
 }: PipelineTemplatesListProps) {
   const { data: templates, isLoading } = useTemplates();
   const createTemplate = useCreateTemplate();
@@ -56,6 +62,13 @@ export function PipelineTemplatesList({
     description: "",
     is_active: true,
   });
+
+  // Helper: Check if user can modify a template (admin or owner)
+  const canModifyTemplate = (templateCreatedBy: string | undefined | null) => {
+    if (isAdmin) return true;
+    if (!currentUserId || !templateCreatedBy) return false;
+    return templateCreatedBy === currentUserId;
+  };
 
   const handleCreate = async () => {
     if (!newTemplate.name.trim()) {
@@ -208,7 +221,12 @@ export function PipelineTemplatesList({
                       size="sm"
                       className="h-6 w-6 p-0"
                       onClick={() => handleSetDefault(template.id)}
-                      disabled={setDefaultTemplate.isPending}
+                      disabled={setDefaultTemplate.isPending || !isAdmin}
+                      title={
+                        !isAdmin
+                          ? "Only admins can set the default template"
+                          : undefined
+                      }
                     >
                       <Star className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                     </Button>
@@ -221,8 +239,16 @@ export function PipelineTemplatesList({
                       size="sm"
                       className="h-6 w-6 p-0"
                       onClick={() => onSelectTemplate(template.id)}
+                      disabled={!canModifyTemplate(template.created_by)}
+                      title={
+                        !canModifyTemplate(template.created_by)
+                          ? "You can only edit your own templates"
+                          : undefined
+                      }
                     >
-                      <Edit2 className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
+                      <Edit2
+                        className={`h-3 w-3 ${canModifyTemplate(template.created_by) ? "text-zinc-600 dark:text-zinc-400" : "text-zinc-300 dark:text-zinc-600"}`}
+                      />
                     </Button>
                     <Button
                       variant="ghost"
@@ -240,9 +266,19 @@ export function PipelineTemplatesList({
                       size="sm"
                       className="h-6 w-6 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
                       onClick={() => setDeleteConfirmId(template.id)}
-                      disabled={template.is_default}
+                      disabled={
+                        template.is_default ||
+                        !canModifyTemplate(template.created_by)
+                      }
+                      title={
+                        !canModifyTemplate(template.created_by)
+                          ? "You can only delete your own templates"
+                          : undefined
+                      }
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2
+                        className={`h-3 w-3 ${canModifyTemplate(template.created_by) ? "" : "opacity-30"}`}
+                      />
                     </Button>
                   </div>
                 </TableCell>

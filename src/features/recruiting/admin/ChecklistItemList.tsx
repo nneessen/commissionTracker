@@ -28,6 +28,8 @@ interface ChecklistItemListProps {
   onToggleExpand: (itemId: string) => void;
   onEdit: (item: PhaseChecklistItem) => void;
   onDelete: (itemId: string) => void;
+  /** When true, hides edit/delete actions */
+  readOnly?: boolean;
 }
 
 function ChecklistItemListComponent({
@@ -38,6 +40,7 @@ function ChecklistItemListComponent({
   onToggleExpand,
   onEdit,
   onDelete,
+  readOnly = false,
 }: ChecklistItemListProps) {
   // Memoize sorted items to prevent unnecessary re-renders
   const sortedItems = useMemo(
@@ -134,6 +137,7 @@ function ChecklistItemListComponent({
               onDelete={onDelete}
               onMoveUp={handleMoveUp}
               onMoveDown={handleMoveDown}
+              readOnly={readOnly}
             />
           ))}
         </div>
