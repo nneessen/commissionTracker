@@ -19,6 +19,7 @@ import {
 import { IntegrationDialog } from "./components/IntegrationDialog";
 import { SlackIntegrationCard } from "./components/slack";
 import { InstagramIntegrationCard } from "./components/instagram";
+import { GmailIntegrationCard } from "./components/gmail";
 import type {
   SchedulingIntegration,
   SchedulingIntegrationType,
@@ -113,6 +114,14 @@ export function IntegrationsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Email Integration Section */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 px-1">
+          Email Integration
+        </h3>
+        <GmailIntegrationCard />
+      </div>
+
       {/* Messaging Integrations Section */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 px-1">

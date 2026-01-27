@@ -2973,6 +2973,134 @@ export type Database = {
         };
         Relationships: [];
       };
+      gmail_integrations: {
+        Row: {
+          access_token_encrypted: string;
+          api_calls_reset_at: string | null;
+          api_calls_today: number | null;
+          connection_status: Database["public"]["Enums"]["gmail_connection_status"];
+          created_at: string | null;
+          gmail_address: string;
+          gmail_name: string | null;
+          gmail_picture_url: string | null;
+          gmail_user_id: string;
+          history_id: string | null;
+          id: string;
+          is_active: boolean;
+          last_connected_at: string | null;
+          last_error: string | null;
+          last_error_at: string | null;
+          last_full_sync_at: string | null;
+          last_refresh_at: string | null;
+          last_synced_at: string | null;
+          refresh_token_encrypted: string;
+          scopes: string[];
+          token_expires_at: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          api_calls_reset_at?: string | null;
+          api_calls_today?: number | null;
+          connection_status?: Database["public"]["Enums"]["gmail_connection_status"];
+          created_at?: string | null;
+          gmail_address: string;
+          gmail_name?: string | null;
+          gmail_picture_url?: string | null;
+          gmail_user_id: string;
+          history_id?: string | null;
+          id?: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_full_sync_at?: string | null;
+          last_refresh_at?: string | null;
+          last_synced_at?: string | null;
+          refresh_token_encrypted: string;
+          scopes?: string[];
+          token_expires_at: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          api_calls_reset_at?: string | null;
+          api_calls_today?: number | null;
+          connection_status?: Database["public"]["Enums"]["gmail_connection_status"];
+          created_at?: string | null;
+          gmail_address?: string;
+          gmail_name?: string | null;
+          gmail_picture_url?: string | null;
+          gmail_user_id?: string;
+          history_id?: string | null;
+          id?: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          last_full_sync_at?: string | null;
+          last_refresh_at?: string | null;
+          last_synced_at?: string | null;
+          refresh_token_encrypted?: string;
+          scopes?: string[];
+          token_expires_at?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      gmail_sync_log: {
+        Row: {
+          created_at: string | null;
+          duration_ms: number | null;
+          error_message: string | null;
+          history_id_after: string | null;
+          history_id_before: string | null;
+          id: string;
+          integration_id: string;
+          messages_failed: number | null;
+          messages_synced: number | null;
+          status: string;
+          sync_type: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          duration_ms?: number | null;
+          error_message?: string | null;
+          history_id_after?: string | null;
+          history_id_before?: string | null;
+          id?: string;
+          integration_id: string;
+          messages_failed?: number | null;
+          messages_synced?: number | null;
+          status: string;
+          sync_type: string;
+        };
+        Update: {
+          created_at?: string | null;
+          duration_ms?: number | null;
+          error_message?: string | null;
+          history_id_after?: string | null;
+          history_id_before?: string | null;
+          id?: string;
+          integration_id?: string;
+          messages_failed?: number | null;
+          messages_synced?: number | null;
+          status?: string;
+          sync_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gmail_sync_log_integration_id_fkey";
+            columns: ["integration_id"];
+            isOneToOne: false;
+            referencedRelation: "gmail_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       hierarchy_invitations: {
         Row: {
           created_at: string;
@@ -9113,10 +9241,15 @@ export type Database = {
           click_count: number | null;
           created_at: string | null;
           delivered_at: string | null;
+          email_provider: string | null;
           failed_reason: string | null;
           first_clicked_at: string | null;
           first_opened_at: string | null;
           from_address: string | null;
+          gmail_history_id: string | null;
+          gmail_label_ids: string[] | null;
+          gmail_message_id: string | null;
+          gmail_thread_id: string | null;
           has_attachments: boolean | null;
           id: string;
           in_reply_to_header: string | null;
@@ -9154,10 +9287,15 @@ export type Database = {
           click_count?: number | null;
           created_at?: string | null;
           delivered_at?: string | null;
+          email_provider?: string | null;
           failed_reason?: string | null;
           first_clicked_at?: string | null;
           first_opened_at?: string | null;
           from_address?: string | null;
+          gmail_history_id?: string | null;
+          gmail_label_ids?: string[] | null;
+          gmail_message_id?: string | null;
+          gmail_thread_id?: string | null;
           has_attachments?: boolean | null;
           id?: string;
           in_reply_to_header?: string | null;
@@ -9195,10 +9333,15 @@ export type Database = {
           click_count?: number | null;
           created_at?: string | null;
           delivered_at?: string | null;
+          email_provider?: string | null;
           failed_reason?: string | null;
           first_clicked_at?: string | null;
           first_opened_at?: string | null;
           from_address?: string | null;
+          gmail_history_id?: string | null;
+          gmail_label_ids?: string[] | null;
+          gmail_message_id?: string | null;
+          gmail_thread_id?: string | null;
           has_attachments?: boolean | null;
           id?: string;
           in_reply_to_header?: string | null;
@@ -14140,6 +14283,11 @@ export type Database = {
         | "uncategorized";
       expense_type: "personal" | "business";
       file_type: "csv" | "pdf" | "xlsx";
+      gmail_connection_status:
+        | "connected"
+        | "disconnected"
+        | "expired"
+        | "error";
       health_class:
         | "preferred_plus"
         | "preferred"
@@ -14469,6 +14617,12 @@ export const Constants = {
       ],
       expense_type: ["personal", "business"],
       file_type: ["csv", "pdf", "xlsx"],
+      gmail_connection_status: [
+        "connected",
+        "disconnected",
+        "expired",
+        "error",
+      ],
       health_class: [
         "preferred_plus",
         "preferred",

@@ -31,6 +31,7 @@ import { JoinRequestPage } from "./join-request";
 import { NotificationsSettingsPage } from "./notifications";
 import { IntegrationsTab } from "./integrations";
 import { AuditTrailPage } from "@/features/audit";
+// eslint-disable-next-line no-restricted-imports -- Legacy import, needs refactor
 import { UnderwritingSettingsTab } from "@/features/underwriting/components/UnderwritingSettingsTab";
 import { LandingPageSettingsTab } from "./landing-page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +42,7 @@ import { usePendingAgencyRequestCount } from "@/hooks/agency-request";
 import { usePendingJoinApprovalCount } from "@/hooks/join-request";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports -- Legacy import, needs refactor to use hooks
 import { supabase } from "@/services/base/supabase";
 import type { RoleName } from "@/types/permissions.types";
 
@@ -231,36 +233,40 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
               <Link2 className="h-3 w-3 shrink-0" />
               <span className="truncate">Integrations</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="agency-request"
-              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            >
-              <ClipboardCheck className="h-3 w-3 shrink-0" />
-              <span className="truncate">Agency</span>
-              {pendingAgencyRequestCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="h-3.5 px-1 text-[9px] min-w-0"
-                >
-                  {pendingAgencyRequestCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="join-request"
-              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            >
-              <UserPlus className="h-3 w-3 shrink-0" />
-              <span className="truncate">Join</span>
-              {pendingJoinRequestCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="h-3.5 px-1 text-[9px] min-w-0"
-                >
-                  {pendingJoinRequestCount}
-                </Badge>
-              )}
-            </TabsTrigger>
+            {!isStaffOnly && (
+              <TabsTrigger
+                value="agency-request"
+                className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <ClipboardCheck className="h-3 w-3 shrink-0" />
+                <span className="truncate">Agency</span>
+                {pendingAgencyRequestCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-3.5 px-1 text-[9px] min-w-0"
+                  >
+                    {pendingAgencyRequestCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
+            {!isStaffOnly && (
+              <TabsTrigger
+                value="join-request"
+                className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <UserPlus className="h-3 w-3 shrink-0" />
+                <span className="truncate">Join</span>
+                {pendingJoinRequestCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-3.5 px-1 text-[9px] min-w-0"
+                  >
+                    {pendingJoinRequestCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="notifications"
               className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -342,13 +348,17 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
               <IntegrationsTab />
             </TabsContent>
 
-            <TabsContent value="agency-request" className="mt-0">
-              <AgencyRequestPage />
-            </TabsContent>
+            {!isStaffOnly && (
+              <TabsContent value="agency-request" className="mt-0">
+                <AgencyRequestPage />
+              </TabsContent>
+            )}
 
-            <TabsContent value="join-request" className="mt-0">
-              <JoinRequestPage />
-            </TabsContent>
+            {!isStaffOnly && (
+              <TabsContent value="join-request" className="mt-0">
+                <JoinRequestPage />
+              </TabsContent>
+            )}
 
             <TabsContent value="notifications" className="mt-0">
               <NotificationsSettingsPage />

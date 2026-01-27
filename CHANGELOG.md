@@ -6,6 +6,123 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 09:43:54
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/messages/services/emailService.ts`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/gmail/GmailIntegrationCard.tsx`
+- `src/features/settings/integrations/components/gmail/index.ts`
+- `src/hooks/gmail/index.ts`
+- `src/hooks/gmail/useGmailIntegration.ts`
+- `src/services/gmail/gmailService.ts`
+- `src/services/gmail/index.ts`
+- `src/services/index.ts`
+- `src/types/database.types.ts`
+- `src/types/gmail.types.ts`
+- `supabase/functions/gmail-oauth-callback/index.ts`
+- `supabase/functions/gmail-oauth-init/index.ts`
+- `supabase/functions/gmail-refresh-token/index.ts`
+- `supabase/functions/gmail-send-email/index.ts`
+- `supabase/functions/gmail-sync-inbox/index.ts`
+- `supabase/migrations/20260127091516_gmail_oauth_integration.sql`
+
+### Statistics
+```
+ 21 files changed, 16122 insertions(+), 12555 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 09:43:22
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/messages/services/emailService.ts`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/gmail/GmailIntegrationCard.tsx`
+- `src/features/settings/integrations/components/gmail/index.ts`
+- `src/hooks/gmail/index.ts`
+- `src/hooks/gmail/useGmailIntegration.ts`
+- `src/services/gmail/gmailService.ts`
+- `src/services/gmail/index.ts`
+- `src/services/index.ts`
+- `src/types/database.types.ts`
+- `src/types/gmail.types.ts`
+- `supabase/functions/gmail-oauth-callback/index.ts`
+- `supabase/functions/gmail-oauth-init/index.ts`
+- `supabase/functions/gmail-refresh-token/index.ts`
+- `supabase/functions/gmail-send-email/index.ts`
+- `supabase/functions/gmail-sync-inbox/index.ts`
+- `supabase/migrations/20260127091516_gmail_oauth_integration.sql`
+
+### Statistics
+```
+ 21 files changed, 16088 insertions(+), 12555 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 09:42:40
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/messages/services/emailService.ts`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/gmail/GmailIntegrationCard.tsx`
+- `src/features/settings/integrations/components/gmail/index.ts`
+- `src/hooks/gmail/index.ts`
+- `src/hooks/gmail/useGmailIntegration.ts`
+- `src/services/gmail/gmailService.ts`
+- `src/services/gmail/index.ts`
+- `src/services/index.ts`
+- `src/types/database.types.ts`
+- `src/types/gmail.types.ts`
+- `supabase/functions/gmail-oauth-callback/index.ts`
+- `supabase/functions/gmail-oauth-init/index.ts`
+- `supabase/functions/gmail-refresh-token/index.ts`
+- `supabase/functions/gmail-send-email/index.ts`
+- `supabase/functions/gmail-sync-inbox/index.ts`
+- `supabase/migrations/20260127091516_gmail_oauth_integration.sql`
+
+### Statistics
+```
+ 21 files changed, 16056 insertions(+), 12556 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 09:40:55
+
+### Changed Files
+- `src/features/messages/services/emailService.ts`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/gmail/GmailIntegrationCard.tsx`
+- `src/features/settings/integrations/components/gmail/index.ts`
+- `src/hooks/gmail/index.ts`
+- `src/hooks/gmail/useGmailIntegration.ts`
+- `src/services/gmail/gmailService.ts`
+- `src/services/gmail/index.ts`
+- `src/types/database.types.ts`
+- `src/types/gmail.types.ts`
+- `supabase/functions/gmail-oauth-callback/index.ts`
+- `supabase/functions/gmail-oauth-init/index.ts`
+- `supabase/functions/gmail-refresh-token/index.ts`
+- `supabase/functions/gmail-send-email/index.ts`
+- `supabase/functions/gmail-sync-inbox/index.ts`
+- `supabase/migrations/20260127091516_gmail_oauth_integration.sql`
+
+### Statistics
+```
+ 18 files changed, 16021 insertions(+), 12550 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 08:50:16
 
 ### Changed Files

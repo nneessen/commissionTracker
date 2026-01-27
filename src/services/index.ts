@@ -32,6 +32,9 @@ export { commissionService } from "./commissions/commissionService";
 export { expenseService } from "./expenses";
 export { clientService } from "./clients";
 
+// Gmail integration
+export * from "./gmail";
+
 // Type exports
 export type { CreatePolicyData, UpdatePolicyData } from "../types/policy.types";
 export type {

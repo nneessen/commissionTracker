@@ -1,7 +1,11 @@
 // src/features/messages/services/emailService.ts
 // Service for sending and managing emails
+// Supports dual provider: Gmail (if connected) or Mailgun (fallback)
 
+// eslint-disable-next-line no-restricted-imports -- Services within features need infrastructure access
 import { supabase } from "@/services/base/supabase";
+// eslint-disable-next-line no-restricted-imports -- Gmail service needed for dual-provider routing
+import { gmailService } from "@/services/gmail";
 
 // Email source types for domain selection
 // - personal: System emails from compose (mail.thestandardhq.com)
@@ -86,6 +90,21 @@ export async function sendEmail(
   } = params;
 
   try {
+    // Check if user has Gmail connected - route through Gmail API if so
+    const hasGmail = await gmailService.hasActiveIntegration(userId);
+
+    if (hasGmail && !fromOverride) {
+      // Gmail integration is active - use Gmail API
+      // Note: fromOverride bypasses Gmail to use system addresses
+      console.log(
+        "[sendEmail] User has Gmail connected, routing through Gmail API",
+      );
+      return sendViaGmail(params);
+    }
+
+    // No Gmail or explicit fromOverride - use Mailgun
+    console.log("[sendEmail] Using Mailgun provider");
+
     // Check quota first
     const quota = await getEmailQuota(userId);
     if (quota.dailyUsed >= quota.dailyLimit) {
@@ -617,4 +636,325 @@ function rewriteLinksForTracking(html: string, trackingId: string): string {
     const trackingUrl = `${baseUrl}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
     return `href="${trackingUrl}"`;
   });
+}
+
+// =========================================================================
+// Gmail Provider: Send email via Gmail API
+// =========================================================================
+async function sendViaGmail(
+  params: SendEmailParams,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const {
+    userId,
+    to,
+    cc,
+    bcc,
+    subject,
+    bodyHtml,
+    bodyText,
+    replyToMessageId,
+    threadId,
+    signatureId,
+    scheduledFor,
+    trackOpens = true,
+    trackClicks = true,
+  } = params;
+
+  try {
+    // Check quota first (Gmail also has quotas)
+    const quota = await getEmailQuota(userId);
+    if (quota.dailyUsed >= quota.dailyLimit) {
+      return { success: false, error: "Daily email limit reached" };
+    }
+
+    // Get user's profile for name
+    const { data: userData } = await supabase
+      .from("user_profiles")
+      .select("email, first_name, last_name")
+      .eq("id", userId)
+      .single();
+
+    if (!userData?.email) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Get signature if specified
+    let finalBodyHtml = bodyHtml;
+    if (signatureId) {
+      const { data: signature } = await supabase
+        .from("email_signatures")
+        .select("content_html")
+        .eq("id", signatureId)
+        .eq("user_id", userId)
+        .single();
+
+      if (signature?.content_html) {
+        finalBodyHtml = `${bodyHtml}<br/><br/>${signature.content_html}`;
+      }
+    }
+
+    // Generate tracking ID and Message-ID
+    const trackingId = crypto.randomUUID();
+    const messageId = `<${crypto.randomUUID()}@gmail.com>`;
+
+    // Get threading headers if this is a reply
+    let inReplyToHeader: string | null = null;
+    let referencesArray: string[] = [];
+    let gmailThreadId: string | null = null;
+
+    if (replyToMessageId) {
+      const { data: parentMessage } = await supabase
+        .from("user_emails")
+        .select("message_id_header, references_header, gmail_thread_id")
+        .eq("id", replyToMessageId)
+        .single();
+
+      if (parentMessage) {
+        if (parentMessage.message_id_header) {
+          inReplyToHeader = parentMessage.message_id_header;
+          referencesArray = [
+            ...(parentMessage.references_header || []),
+            parentMessage.message_id_header,
+          ];
+        }
+        // Use Gmail thread ID for threading in Gmail
+        gmailThreadId = parentMessage.gmail_thread_id;
+      }
+    }
+
+    // Add tracking pixel if enabled
+    if (trackOpens) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none" />`;
+      finalBodyHtml = `${finalBodyHtml}${trackingPixel}`;
+    }
+
+    // Rewrite links for click tracking if enabled
+    if (trackClicks) {
+      finalBodyHtml = rewriteLinksForTracking(finalBodyHtml, trackingId);
+    }
+
+    // Handle scheduled emails (Gmail doesn't support scheduling natively, so we use our system)
+    if (scheduledFor && scheduledFor > new Date()) {
+      // Create email record with scheduled status
+      const { data: emailRecord, error: emailError } = await supabase
+        .from("user_emails")
+        .insert({
+          user_id: userId,
+          sender_id: userId,
+          to_addresses: to,
+          cc_addresses: cc || [],
+          subject,
+          body_html: finalBodyHtml,
+          body_text: bodyText || stripHtml(bodyHtml),
+          status: "scheduled",
+          scheduled_for: scheduledFor.toISOString(),
+          tracking_id: trackingId,
+          thread_id: threadId,
+          is_incoming: false,
+          email_provider: "gmail", // Will be sent via Gmail when triggered
+        })
+        .select()
+        .single();
+
+      if (emailError) {
+        console.error(
+          "[sendViaGmail] Error creating scheduled email:",
+          emailError,
+        );
+        return { success: false, error: "Failed to schedule email" };
+      }
+
+      // Create schedule queue entry
+      const { error: scheduleError } = await supabase
+        .from("email_scheduled")
+        .insert({
+          user_id: userId,
+          email_id: emailRecord.id,
+          scheduled_for: scheduledFor.toISOString(),
+          status: "pending",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+
+      if (scheduleError) {
+        await supabase.from("user_emails").delete().eq("id", emailRecord.id);
+        return { success: false, error: "Failed to schedule email" };
+      }
+
+      return { success: true, messageId: emailRecord.id };
+    }
+
+    // Determine or create thread
+    let finalThreadId = threadId;
+    if (!finalThreadId) {
+      const subjectHash = subject
+        .toLowerCase()
+        .replace(/^(re:|fwd:|fw:)\s*/gi, "")
+        .trim()
+        .slice(0, 255);
+
+      const { data: newThread, error: threadError } = await supabase
+        .from("email_threads")
+        .insert({
+          user_id: userId,
+          subject,
+          subject_hash: subjectHash,
+          snippet: stripHtml(bodyHtml).slice(0, 200),
+          message_count: 1,
+          unread_count: 0,
+          last_message_at: new Date().toISOString(),
+          participant_emails: [...to, ...(cc || [])],
+          is_starred: false,
+          is_archived: false,
+          labels: [],
+        })
+        .select()
+        .single();
+
+      if (threadError) {
+        console.error("[sendViaGmail] Error creating thread:", threadError);
+        return {
+          success: false,
+          error: "Failed to create conversation thread",
+        };
+      }
+
+      finalThreadId = newThread.id;
+    } else {
+      // Update existing thread
+      const { data: existingThread } = await supabase
+        .from("email_threads")
+        .select("message_count")
+        .eq("id", threadId)
+        .single();
+
+      await supabase
+        .from("email_threads")
+        .update({
+          snippet: stripHtml(bodyHtml).slice(0, 200),
+          last_message_at: new Date().toISOString(),
+          message_count: (existingThread?.message_count || 0) + 1,
+        })
+        .eq("id", threadId);
+    }
+
+    // Send via Gmail edge function
+    console.log("[sendViaGmail] Invoking gmail-send-email function");
+
+    const { data, error } = await supabase.functions.invoke(
+      "gmail-send-email",
+      {
+        body: {
+          userId,
+          to,
+          cc,
+          bcc,
+          subject,
+          html: finalBodyHtml,
+          text: bodyText || stripHtml(bodyHtml),
+          threadId: finalThreadId,
+          gmailThreadId,
+          messageIdHeader: messageId,
+          inReplyTo: inReplyToHeader,
+          references: referencesArray.length > 0 ? referencesArray : undefined,
+        },
+      },
+    );
+
+    console.log("[sendViaGmail] Edge function response:", { data, error });
+
+    if (error) {
+      console.error("[sendViaGmail] Edge function error:", error);
+      // Delete thread if we just created it
+      if (!threadId && finalThreadId) {
+        await supabase.from("email_threads").delete().eq("id", finalThreadId);
+      }
+      return { success: false, error: error.message };
+    }
+
+    // Check for specific error codes from the edge function
+    if (data && !data.success) {
+      console.error("[sendViaGmail] Edge function returned failure:", data);
+      if (!threadId && finalThreadId) {
+        await supabase.from("email_threads").delete().eq("id", finalThreadId);
+      }
+
+      // If Gmail not connected or auth failed, provide helpful message
+      if (
+        data.code === "NOT_CONNECTED" ||
+        data.code === "TOKEN_EXPIRED" ||
+        data.code === "AUTH_FAILED"
+      ) {
+        return {
+          success: false,
+          error:
+            "Gmail connection issue. Please reconnect your Gmail account in Settings.",
+        };
+      }
+
+      return {
+        success: false,
+        error: data.error || "Failed to send via Gmail",
+      };
+    }
+
+    // Get Gmail integration info for the from address
+    const gmailIntegration = await gmailService.getIntegration(userId);
+    const fromAddress = gmailIntegration?.gmail_address || userData.email;
+
+    // Create email record in user_emails
+    const { data: emailRecord, error: emailRecordError } = await supabase
+      .from("user_emails")
+      .insert({
+        user_id: userId,
+        sender_id: userId,
+        thread_id: finalThreadId,
+        from_address: fromAddress,
+        to_addresses: to,
+        cc_addresses: cc || [],
+        subject,
+        body_html: finalBodyHtml,
+        body_text: bodyText || stripHtml(bodyHtml),
+        is_incoming: false,
+        is_read: true,
+        status: "sent",
+        tracking_id: trackingId,
+        email_provider: "gmail",
+        // Gmail-specific fields
+        gmail_message_id: data?.gmailMessageId,
+        gmail_thread_id: data?.gmailThreadId,
+        // Threading headers
+        message_id_header: messageId,
+        in_reply_to_header: inReplyToHeader,
+        references_header: referencesArray.length > 0 ? referencesArray : null,
+        provider: "gmail",
+        provider_message_id: data?.gmailMessageId,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (emailRecordError) {
+      console.error(
+        "[sendViaGmail] CRITICAL: Email sent but record failed to save:",
+        emailRecordError,
+      );
+      return {
+        success: true,
+        messageId: data?.messageId || trackingId,
+        error:
+          "Email sent but failed to save record. It may not appear in Sent folder.",
+      };
+    }
+
+    console.log("[sendViaGmail] Email record saved:", emailRecord?.id);
+
+    // Update quota
+    await incrementQuota(userId);
+
+    return { success: true, messageId: data?.messageId || trackingId };
+  } catch (err) {
+    console.error("[sendViaGmail] Error:", err);
+    return { success: false, error: "Failed to send email via Gmail" };
+  }
 }
