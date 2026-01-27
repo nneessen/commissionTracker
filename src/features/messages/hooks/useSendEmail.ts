@@ -16,6 +16,7 @@ export type {
   SendEmailParams,
   EmailQuota,
   EmailDraft,
+  TrainingDocumentAttachment,
 } from "../services/emailService";
 
 export function useSendEmail() {

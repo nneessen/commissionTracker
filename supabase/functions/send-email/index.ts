@@ -2,12 +2,23 @@
 // Send Email Edge Function - Sends user-composed emails via Mailgun API
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+// Training document attachment info
+interface TrainingDocumentAttachment {
+  id: string;
+  name: string;
+  fileName: string;
+  fileType: string | null;
+  fileSize: number | null;
+  storagePath: string;
+}
 
 interface SendEmailRequest {
   to: string[];
@@ -25,6 +36,8 @@ interface SendEmailRequest {
   messageId?: string; // Our generated Message-ID
   inReplyTo?: string; // Message-ID of email we're replying to
   references?: string[]; // Chain of Message-IDs in thread
+  // Training document attachments
+  trainingDocuments?: TrainingDocumentAttachment[];
 }
 
 interface MailgunResponse {
@@ -86,6 +99,7 @@ serve(async (req) => {
       messageId,
       inReplyTo,
       references,
+      trainingDocuments,
     } = body;
 
     // Validate required fields
@@ -168,6 +182,87 @@ serve(async (req) => {
     form.append("o:tracking", "yes");
     form.append("o:tracking-clicks", "yes");
     form.append("o:tracking-opens", "yes");
+
+    // Handle training document attachments
+    if (trainingDocuments && trainingDocuments.length > 0) {
+      console.log(
+        "[send-email] Processing training document attachments:",
+        trainingDocuments.length,
+      );
+
+      // Validate total attachment size (Mailgun limit is 25MB)
+      const MAX_TOTAL_ATTACHMENT_SIZE = 25 * 1024 * 1024; // 25MB
+      const totalAttachmentSize = trainingDocuments.reduce(
+        (sum, doc) => sum + (doc.fileSize || 0),
+        0,
+      );
+
+      if (totalAttachmentSize > MAX_TOTAL_ATTACHMENT_SIZE) {
+        const sizeMB = (totalAttachmentSize / 1024 / 1024).toFixed(1);
+        console.error(
+          `[send-email] Total attachment size ${sizeMB}MB exceeds 25MB limit`,
+        );
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Total attachment size (${sizeMB}MB) exceeds the 25MB limit. Please reduce the number or size of attachments.`,
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // Initialize Supabase client for storage access
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        for (const doc of trainingDocuments) {
+          try {
+            console.log("[send-email] Downloading attachment:", doc.fileName);
+
+            // Download the file from storage
+            const { data: fileData, error: downloadError } =
+              await supabase.storage
+                .from("training-documents")
+                .download(doc.storagePath);
+
+            if (downloadError) {
+              console.error(
+                "[send-email] Failed to download attachment:",
+                doc.fileName,
+                downloadError,
+              );
+              continue; // Skip this attachment but continue with others
+            }
+
+            if (fileData) {
+              // Mailgun expects attachments as File or Blob with filename
+              const file = new File([fileData], doc.fileName, {
+                type: doc.fileType || "application/octet-stream",
+              });
+              form.append("attachment", file, doc.fileName);
+              console.log("[send-email] Attached:", doc.fileName);
+            }
+          } catch (attachError) {
+            console.error(
+              "[send-email] Error attaching document:",
+              doc.fileName,
+              attachError,
+            );
+            // Continue with other attachments
+          }
+        }
+      } else {
+        console.warn(
+          "[send-email] Missing Supabase credentials for attachment download",
+        );
+      }
+    }
 
     const mailgunUrl = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`;
     console.log("[send-email] Sending to Mailgun:", {

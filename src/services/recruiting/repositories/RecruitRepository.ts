@@ -162,11 +162,12 @@ export class RecruitRepository extends BaseRepository<
     }
 
     // Exclude prospects (recruits not enrolled in a pipeline)
-    // A recruit is enrolled if onboarding_status is set and not 'prospect'
+    // Logic matches getStats(): exclude if status='prospect' OR (no status AND not started)
+    // A recruit is enrolled if they have onboarding_status (not prospect) OR onboarding_started_at
     if (filters?.exclude_prospects) {
       query = query
-        .not("onboarding_status", "is", null)
-        .neq("onboarding_status", "prospect");
+        .neq("onboarding_status", "prospect")
+        .or("onboarding_status.not.is.null,onboarding_started_at.not.is.null");
     }
 
     // Pagination
@@ -302,15 +303,29 @@ export class RecruitRepository extends BaseRepository<
       return true;
     });
 
+    // Filter out prospects - only include recruits actively enrolled in a pipeline
+    // Prospects are identified by: onboarding_status = 'prospect' OR onboarding_started_at = null
+    const enrolledRecruits = recruits.filter((r) => {
+      // Exclude if status is 'prospect'
+      if (r.onboarding_status === "prospect") {
+        return false;
+      }
+      // Exclude if not yet enrolled (onboarding_started_at is null and status is null/empty)
+      if (!r.onboarding_started_at && !r.onboarding_status) {
+        return false;
+      }
+      return true;
+    });
+
     // Count "active" recruits: those whose status matches any of the active phase statuses
     // Terminal statuses (completed, dropped) are handled separately
     const activeCount = activePhaseStatuses
-      ? recruits.filter(
+      ? enrolledRecruits.filter(
           (r) =>
             r.onboarding_status &&
             activePhaseStatuses.includes(r.onboarding_status),
         ).length
-      : recruits.filter(
+      : enrolledRecruits.filter(
           (r) =>
             r.onboarding_status &&
             r.onboarding_status !== "completed" &&
@@ -318,12 +333,14 @@ export class RecruitRepository extends BaseRepository<
         ).length;
 
     return {
-      total: recruits.length,
+      total: enrolledRecruits.length,
       active: activeCount,
-      completed: recruits.filter((r) => r.onboarding_status === "completed")
+      completed: enrolledRecruits.filter(
+        (r) => r.onboarding_status === "completed",
+      ).length,
+      dropped: enrolledRecruits.filter((r) => r.onboarding_status === "dropped")
         .length,
-      dropped: recruits.filter((r) => r.onboarding_status === "dropped").length,
-      byPhase: recruits.reduce(
+      byPhase: enrolledRecruits.reduce(
         (acc, recruit) => {
           const status = recruit.onboarding_status || "unknown";
           acc[status] = (acc[status] || 0) + 1;

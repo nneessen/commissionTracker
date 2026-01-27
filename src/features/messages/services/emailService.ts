@@ -14,6 +14,16 @@ import { gmailService } from "@/services/gmail";
 // - owner: Personal emails from owner's actual address (thestandardhq.com root)
 export type EmailSource = "personal" | "workflow" | "bulk" | "owner";
 
+// Training document attachment info
+export interface TrainingDocumentAttachment {
+  id: string;
+  name: string;
+  fileName: string;
+  fileType: string | null;
+  fileSize: number | null;
+  storagePath: string;
+}
+
 export interface SendEmailParams {
   userId: string;
   to: string[];
@@ -25,6 +35,7 @@ export interface SendEmailParams {
   replyToMessageId?: string;
   threadId?: string;
   attachments?: File[];
+  trainingDocuments?: TrainingDocumentAttachment[]; // Training documents to attach
   scheduledFor?: Date;
   signatureId?: string;
   trackOpens?: boolean;
@@ -81,6 +92,7 @@ export async function sendEmail(
     bodyText,
     replyToMessageId,
     threadId,
+    trainingDocuments,
     scheduledFor,
     signatureId,
     trackOpens = true,
@@ -318,6 +330,11 @@ export async function sendEmail(
         messageId,
         inReplyTo: inReplyToHeader,
         references: referencesArray.length > 0 ? referencesArray : undefined,
+        // Training document attachments
+        trainingDocuments:
+          trainingDocuments && trainingDocuments.length > 0
+            ? trainingDocuments
+            : undefined,
       },
     });
 

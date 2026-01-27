@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 11:12:15
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/email/services/emailTemplateService.ts`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/training-hub/components/DocumentBrowserSheet.tsx`
+- `src/features/training-hub/components/DocumentsTab.tsx`
+- `src/features/training-hub/components/TrainerDashboard.tsx`
+- `src/features/training-hub/components/TrainingHubPage.tsx`
+- `src/features/training-hub/components/UploadTrainingDocumentDialog.tsx`
+- `src/features/training-hub/hooks/useTrainingDocuments.ts`
+- `src/features/training-hub/index.ts`
+- `src/features/training-hub/services/trainingDocumentService.ts`
+- `src/features/training-hub/types/training-document.types.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/send-email/index.ts`
+- `supabase/migrations/20260127102829_training_documents.sql`
+
+### Statistics
+```
+ 19 files changed, 15060 insertions(+), 12523 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 11:10:28
+
+### Changed Files
+- `src/features/email/services/emailTemplateService.ts`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/training-hub/components/DocumentBrowserSheet.tsx`
+- `src/features/training-hub/components/DocumentsTab.tsx`
+- `src/features/training-hub/components/TrainerDashboard.tsx`
+- `src/features/training-hub/components/TrainingHubPage.tsx`
+- `src/features/training-hub/components/UploadTrainingDocumentDialog.tsx`
+- `src/features/training-hub/hooks/useTrainingDocuments.ts`
+- `src/features/training-hub/services/trainingDocumentService.ts`
+- `src/features/training-hub/types/training-document.types.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/send-email/index.ts`
+- `supabase/migrations/20260127102829_training_documents.sql`
+
+### Statistics
+```
+ 16 files changed, 15009 insertions(+), 12518 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 10:08:45
 
 ### Changed Files

@@ -8027,6 +8027,76 @@ export type Database = {
           },
         ];
       };
+      training_documents: {
+        Row: {
+          category: string;
+          created_at: string | null;
+          description: string | null;
+          file_name: string;
+          file_size: number | null;
+          file_type: string | null;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          storage_path: string;
+          tags: string[] | null;
+          updated_at: string | null;
+          uploaded_by: string;
+        };
+        Insert: {
+          category: string;
+          created_at?: string | null;
+          description?: string | null;
+          file_name: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          storage_path: string;
+          tags?: string[] | null;
+          updated_at?: string | null;
+          uploaded_by: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string | null;
+          description?: string | null;
+          file_name?: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          storage_path?: string;
+          tags?: string[] | null;
+          updated_at?: string | null;
+          uploaded_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "training_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "training_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "training_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       trigger_event_types: {
         Row: {
           available_variables: Json | null;
@@ -13676,6 +13746,7 @@ export type Database = {
       is_same_imo: { Args: { target_user_id: string }; Returns: boolean };
       is_staff_role: { Args: never; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };
+      is_training_hub_staff: { Args: { user_id: string }; Returns: boolean };
       is_underwriting_wizard_enabled: {
         Args: { p_agency_id: string };
         Returns: boolean;

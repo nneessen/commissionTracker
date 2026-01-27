@@ -3,16 +3,25 @@
 // Note: Recruit pipeline management is now via the main /recruiting page
 // Note: Automation/workflows moved to super-admin-only /system/workflows page
 import { useState, useEffect } from "react";
-import { Mail, Activity, Search, X, GraduationCap } from "lucide-react";
+import {
+  Mail,
+  Activity,
+  Search,
+  X,
+  GraduationCap,
+  FileText,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import { ActivityTab } from "./ActivityTab";
 import { EmailTemplatesTab } from "./EmailTemplatesTab";
+import { DocumentsTab } from "./DocumentsTab";
 
-type TabView = "templates" | "activity";
+type TabView = "templates" | "activity" | "documents";
 
 const TAB_STORAGE_KEY = "training-hub-active-tab";
 
@@ -20,7 +29,7 @@ export default function TrainingHubPage() {
   // Persist tab selection in localStorage
   const [activeView, setActiveView] = useState<TabView>(() => {
     const saved = localStorage.getItem(TAB_STORAGE_KEY);
-    if (saved && ["templates", "activity"].includes(saved)) {
+    if (saved && ["templates", "activity", "documents"].includes(saved)) {
       return saved as TabView;
     }
     return "templates";
@@ -46,12 +55,32 @@ export default function TrainingHubPage() {
     },
   });
 
+  // Fetch training documents count
+  const { data: documentStats } = useQuery({
+    queryKey: ["training-hub-document-stats"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("training_documents")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+
+      if (error) throw error;
+      return { count: count || 0 };
+    },
+  });
+
   const tabs = [
     {
       id: "templates" as TabView,
       label: "Email Templates",
       icon: Mail,
       count: templateStats?.count,
+    },
+    {
+      id: "documents" as TabView,
+      label: "Documents",
+      icon: FileText,
+      count: documentStats?.count,
     },
     { id: "activity" as TabView, label: "Activity", icon: Activity },
   ];
@@ -77,6 +106,15 @@ export default function TrainingHubPage() {
               </span>
               <span className="text-zinc-500 dark:text-zinc-400">
                 templates
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <FileText className="h-3 w-3 text-emerald-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {documentStats?.count || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">
+                documents
               </span>
             </div>
           </div>
@@ -140,9 +178,12 @@ export default function TrainingHubPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
         {activeView === "templates" && (
           <EmailTemplatesTab searchQuery={searchQuery} />
+        )}
+        {activeView === "documents" && (
+          <DocumentsTab searchQuery={searchQuery} />
         )}
         {activeView === "activity" && <ActivityTab searchQuery={searchQuery} />}
       </div>

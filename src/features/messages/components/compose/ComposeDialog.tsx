@@ -38,6 +38,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSendEmail, useEmailQuota } from "../../hooks/useSendEmail";
 import { useCurrentUserProfile } from "@/hooks/admin";
 import { ContactBrowser } from "./ContactBrowser";
+import {
+  DocumentBrowserSheet,
+  formatFileSize,
+  type TrainingDocument,
+} from "@/features/training-hub";
 import type { Contact } from "../../services/contactService";
 
 // Super admin email - all admin-sent emails come from this address
@@ -91,9 +96,13 @@ export function ComposeDialog({
 
   // UI state - Sheet starts closed
   const [showContactBrowser, setShowContactBrowser] = useState(false);
+  const [showDocumentBrowser, setShowDocumentBrowser] = useState(false);
   const [activeRecipientField, setActiveRecipientField] = useState<
     "to" | "cc" | "bcc"
   >("to");
+
+  // Attachment state
+  const [attachments, setAttachments] = useState<TrainingDocument[]>([]);
 
   const handleSend = async () => {
     if (to.length === 0) {
@@ -129,6 +138,8 @@ export function ComposeDialog({
         // Admins always send from the super admin email
         source: "owner",
         fromOverride: isAdmin ? SUPER_ADMIN_EMAIL : undefined,
+        // Include attachments from training documents
+        trainingDocuments: attachments.length > 0 ? attachments : undefined,
       });
 
       if (result.success) {
@@ -171,6 +182,7 @@ export function ComposeDialog({
     setScheduledDate(undefined);
     setShowSchedule(false);
     setError(null);
+    setAttachments([]);
   };
 
   const handleSelectContact = useCallback(
@@ -355,6 +367,43 @@ export function ComposeDialog({
                 </div>
               )}
 
+              {/* Attachments Display */}
+              {attachments.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                    Attachments ({attachments.length})
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {attachments.map((doc) => (
+                      <Badge
+                        key={doc.id}
+                        variant="secondary"
+                        className="h-6 text-[10px] gap-1.5 pr-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        <Paperclip className="h-3 w-3" />
+                        <span className="max-w-[120px] truncate">
+                          {doc.name}
+                        </span>
+                        <span className="text-[9px] text-blue-500 dark:text-blue-400">
+                          ({formatFileSize(doc.fileSize)})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAttachments((prev) =>
+                              prev.filter((a) => a.id !== doc.id),
+                            )
+                          }
+                          className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Error */}
               {error && (
                 <div className="text-[11px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-sm border border-red-200 dark:border-red-800">
@@ -393,10 +442,20 @@ export function ComposeDialog({
 
                 <Button
                   size="sm"
-                  className="h-6 px-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 dark:text-zinc-500 border-0 shadow-none"
-                  disabled
+                  className={cn(
+                    "h-6 px-2 border-0 shadow-none",
+                    attachments.length > 0
+                      ? "bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                      : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400",
+                  )}
+                  onClick={() => setShowDocumentBrowser(true)}
                 >
                   <Paperclip className="h-3 w-3" />
+                  {attachments.length > 0 && (
+                    <span className="ml-1 text-[10px]">
+                      {attachments.length}
+                    </span>
+                  )}
                 </Button>
               </div>
 
@@ -436,6 +495,15 @@ export function ComposeDialog({
         onOpenChange={setShowContactBrowser}
         onSelectContact={handleSelectContact}
         selectedEmails={allSelectedEmails}
+      />
+
+      {/* Document Browser Sheet - for attachments */}
+      <DocumentBrowserSheet
+        open={showDocumentBrowser}
+        onOpenChange={setShowDocumentBrowser}
+        onSelectDocuments={setAttachments}
+        selectedDocuments={attachments}
+        maxAttachments={10}
       />
     </>
   );
