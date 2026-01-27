@@ -150,6 +150,12 @@ export class RecruitRepository extends BaseRepository<
     if (filters?.assigned_upline_id) {
       query = query.eq("upline_id", filters.assigned_upline_id);
     }
+    // Filter for "my recruits" - show recruits where user is recruiter OR upline
+    if (filters?.my_recruits_user_id) {
+      query = query.or(
+        `recruiter_id.eq.${filters.my_recruits_user_id},upline_id.eq.${filters.my_recruits_user_id}`,
+      );
+    }
     if (filters?.search) {
       query = query.or(
         `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,

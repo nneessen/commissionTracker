@@ -35,6 +35,10 @@ export interface SubscriptionFeatures {
   overrides: boolean;
   downline_reports: boolean;
   instagram_messaging: boolean;
+  // Premium branding features
+  recruiting_basic: boolean;
+  recruiting_custom_pipeline: boolean;
+  custom_branding: boolean;
 }
 
 // Entity types

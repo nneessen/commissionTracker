@@ -42,6 +42,9 @@ import { useQuery } from "@tanstack/react-query";
 // eslint-disable-next-line no-restricted-imports -- pre-existing: recruiter_slug query needs direct supabase access
 import { supabase } from "@/services/base/supabase";
 import { normalizePhaseNameToStatus } from "@/lib/pipeline";
+import { useFeatureAccess } from "@/hooks/subscription";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { BasicRecruitingView } from "./components/BasicRecruitingView";
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
@@ -68,27 +71,25 @@ function RecruitingDashboardContent() {
       STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
     ) ?? false;
 
-  const isAdmin = user?.is_admin ?? false;
+  const _isAdmin = user?.is_admin ?? false;
+
+  // Check if user has access to custom branding features
+  const { hasAccess: hasCustomBranding } = useFeatureAccess("custom_branding");
 
   // Build filters based on user role:
-  // - Admins: See all recruits (no recruiter_id/imo_id filter, but exclude prospects)
-  // - Staff roles: See all IMO recruits (filter by imo_id, exclude prospects)
-  // - Regular recruiters: See only their direct recruits (filter by recruiter_id, exclude prospects)
+  // - Staff roles (trainer/contracting_manager): See all IMO recruits
+  // - Everyone else (including is_admin): See recruits where they are recruiter OR upline
+  // Note: Super admins have a separate recruiting page in the admin section
   const recruitFilters: RecruitFilters | undefined = (() => {
     if (!user?.id) return undefined;
 
-    if (isAdmin) {
-      // Admins see all, just exclude prospects
-      return { exclude_prospects: true };
-    }
-
     if (isStaffRole && user.imo_id) {
-      // Staff roles see all recruits in their IMO
-      return { imo_id: user.imo_id, exclude_prospects: true };
+      // Staff roles (trainer, contracting_manager) see all recruits in their IMO
+      return { imo_id: user.imo_id };
     }
 
-    // Regular recruiters see only their direct recruits
-    return { recruiter_id: user.id, exclude_prospects: true };
+    // Everyone else sees recruits where they are the recruiter OR the assigned upline
+    return { my_recruits_user_id: user.id };
   })();
 
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
@@ -338,8 +339,8 @@ function RecruitingDashboardContent() {
         </div>
       </div>
 
-      {/* Recruiting Link Banner - hidden for staff roles (trainer/contracting_manager) */}
-      {!isStaffRole && (
+      {/* Recruiting Link Banner - hidden for staff roles and requires custom_branding feature */}
+      {!isStaffRole && hasCustomBranding && (
         <>
           {recruiterSlug ? (
             <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 rounded-lg px-3 py-2 border border-emerald-200 dark:border-emerald-800">
@@ -450,9 +451,43 @@ function RecruitingDashboardContent() {
 }
 
 export function RecruitingDashboard() {
+  // Check feature access levels
+  const { hasAccess: hasCustomPipeline, isLoading: loadingCustomPipeline } =
+    useFeatureAccess("recruiting_custom_pipeline");
+  const { hasAccess: hasBasicRecruiting, isLoading: loadingBasicRecruiting } =
+    useFeatureAccess("recruiting_basic");
+
+  // Show loading state while checking feature access
+  if (loadingCustomPipeline || loadingBasicRecruiting) {
+    return (
+      <div className="flex items-center justify-center h-64 text-[11px] text-zinc-500">
+        Loading...
+      </div>
+    );
+  }
+
+  // Full custom pipeline access - show full dashboard
+  if (hasCustomPipeline) {
+    return (
+      <RecruitingErrorBoundary>
+        <RecruitingDashboardContent />
+      </RecruitingErrorBoundary>
+    );
+  }
+
+  // Basic recruiting access only - show simplified view
+  if (hasBasicRecruiting) {
+    return (
+      <RecruitingErrorBoundary>
+        <BasicRecruitingView className="p-4" />
+      </RecruitingErrorBoundary>
+    );
+  }
+
+  // No recruiting access - show upgrade prompt
   return (
-    <RecruitingErrorBoundary>
-      <RecruitingDashboardContent />
-    </RecruitingErrorBoundary>
+    <FeatureGate feature="recruiting_basic" promptVariant="card">
+      <div />
+    </FeatureGate>
   );
 }

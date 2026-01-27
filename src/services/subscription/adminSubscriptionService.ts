@@ -834,6 +834,10 @@ class AdminSubscriptionService {
         overrides: false,
         downline_reports: false,
         instagram_messaging: false,
+        // Premium branding features
+        recruiting_basic: false,
+        recruiting_custom_pipeline: false,
+        custom_branding: false,
       };
 
       const { data, error } = await supabase

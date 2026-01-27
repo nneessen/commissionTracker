@@ -7,7 +7,8 @@ export type FeatureCategory =
   | "reports"
   | "team"
   | "messaging"
-  | "analytics";
+  | "analytics"
+  | "branding";
 
 export interface FeatureDefinition {
   key: string;
@@ -138,6 +139,27 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     description: "Manage Instagram DMs from the platform",
     category: "messaging",
   },
+
+  // Premium Branding Features
+  recruiting_basic: {
+    key: "recruiting_basic",
+    displayName: "Basic Recruiting",
+    description: "Simple recruiting pipeline with lead tracking",
+    category: "team",
+  },
+  recruiting_custom_pipeline: {
+    key: "recruiting_custom_pipeline",
+    displayName: "Custom Recruiting Pipeline",
+    description: "Full recruiting pipeline with custom stages and automation",
+    category: "team",
+  },
+  custom_branding: {
+    key: "custom_branding",
+    displayName: "Custom Branding",
+    description:
+      "Custom domain, personalized recruiting link, and landing page customization",
+    category: "branding",
+  },
 } as const;
 
 // ============================================
@@ -240,6 +262,10 @@ export const FEATURE_CATEGORIES: Record<
     label: "Analytics",
     description: "Advanced analytics sections",
   },
+  branding: {
+    label: "Branding & White Label",
+    description: "Custom branding and white-label features",
+  },
 };
 
 /**
@@ -256,6 +282,7 @@ export function getFeaturesByCategory(): Record<
     team: [],
     messaging: [],
     analytics: [],
+    branding: [],
   };
 
   for (const feature of Object.values(FEATURE_REGISTRY)) {

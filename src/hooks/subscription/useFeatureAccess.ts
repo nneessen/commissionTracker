@@ -71,6 +71,10 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   overrides: "Override Tracking",
   downline_reports: "Downline Reports",
   instagram_messaging: "Instagram Messaging",
+  // Premium branding features
+  recruiting_basic: "Basic Recruiting",
+  recruiting_custom_pipeline: "Custom Recruiting Pipeline",
+  custom_branding: "Custom Branding",
 };
 
 export interface UseFeatureAccessResult {

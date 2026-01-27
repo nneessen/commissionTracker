@@ -355,6 +355,11 @@ export interface RecruitFilters {
    */
   imo_id?: string;
   /**
+   * Filter to show recruits where the user is either the recruiter OR the upline.
+   * Uses OR logic: recruiter_id = user_id OR upline_id = user_id
+   */
+  my_recruits_user_id?: string;
+  /**
    * Exclude prospects (recruits not enrolled in a pipeline).
    * When true, excludes users with onboarding_status = 'prospect'
    * OR onboarding_started_at = NULL.

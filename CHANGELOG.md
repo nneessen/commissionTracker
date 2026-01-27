@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 16:34:39
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/uw-wizard/uw-wizard-cost-analysis.md`
+- `plans/active/uw-wizard-tiered-pricing.md`
+- `src/constants/features.ts`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/migrations/20260127161944_add_premium_branding_features.sql`
+
+### Statistics
+```
+ 14 files changed, 1303 insertions(+), 127 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-27 16:34:03
+
+### Changed Files
+- `docs/uw-wizard/uw-wizard-cost-analysis.md`
+- `plans/active/uw-wizard-tiered-pricing.md`
+- `src/constants/features.ts`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/migrations/20260127161944_add_premium_branding_features.sql`
+
+### Statistics
+```
+ 12 files changed, 1276 insertions(+), 121 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 15:32:07
 
 ### Changed Files
