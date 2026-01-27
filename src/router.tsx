@@ -385,9 +385,15 @@ const orgChartRoute = createRoute({
 
 // Recruiting route - requires approval, blocks recruits, requires recruiting subscription feature
 // Note: Staff roles (trainers, contracting managers) CAN access - they see all IMO recruits via RLS
+// Search params: recruitId - optional recruit ID to auto-select on load
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { recruitId?: string } => ({
+    recruitId: search.recruitId ? String(search.recruitId) : undefined,
+  }),
   component: () => (
     <RouteGuard
       permission="nav.recruiting_pipeline"
@@ -399,12 +405,14 @@ const recruitingRoute = createRoute({
   ),
 });
 
-// Recruiting admin route - pipeline management - Super-admin only
+// Recruiting admin route - pipeline management
+// Accessible by: super admins (bypass), staff roles (trainers, contracting managers)
+// RLS policies control which pipelines each user can actually view/edit
 const recruitingAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting/admin/pipelines",
   component: () => (
-    <RouteGuard requireEmail="nickneessen@thestandardhq.com">
+    <RouteGuard staffOnly noRecruits subscriptionFeature="recruiting">
       <PipelineAdminPage />
     </RouteGuard>
   ),

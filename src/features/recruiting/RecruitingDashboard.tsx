@@ -1,7 +1,7 @@
 // src/features/recruiting/RecruitingDashboard.tsx
 // Redesigned with zinc palette and compact design patterns
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -36,7 +36,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
 import type { RecruitFilters } from "@/types/recruiting.types";
 import { toast } from "sonner";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { downloadCSV } from "@/utils/exportHelpers";
 import { useQuery } from "@tanstack/react-query";
 // eslint-disable-next-line no-restricted-imports -- pre-existing: recruiter_slug query needs direct supabase access
@@ -112,6 +112,9 @@ function RecruitingDashboardContent() {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Read recruitId from URL search params (for deep linking from trainer dashboard)
+  const { recruitId } = useSearch({ from: "/recruiting" });
+
   // Fetch current user's recruiter_slug
   const { data: recruiterSlug } = useQuery({
     queryKey: ["recruiter-slug", user?.id],
@@ -143,6 +146,17 @@ function RecruitingDashboardContent() {
   const recruits = (
     (recruitsData?.data || []) as RecruitWithRelations[]
   ).filter((recruit) => recruit.id !== user?.id);
+
+  // Auto-select recruit from URL param (deep link from trainer dashboard)
+  useEffect(() => {
+    if (recruitId && recruits.length > 0 && !selectedRecruit) {
+      const recruit = recruits.find((r) => r.id === recruitId);
+      if (recruit) {
+        setSelectedRecruit(recruit);
+        setDetailSheetOpen(true);
+      }
+    }
+  }, [recruitId, recruits, selectedRecruit]);
 
   // Calculate stats from recruits data directly
   // Active phases come from the pipeline_phases table, normalized to status keys

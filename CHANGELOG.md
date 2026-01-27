@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 13:30:07
+
+### Changed Files
+- `plans/active/trainer-dashboard-agency-filter.md`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/training-hub/components/AgencyPipelineOverview.tsx`
+- `src/features/training-hub/components/TrainerDashboard.tsx`
+- `src/features/training-hub/hooks/useAgencyPipelineStats.ts`
+- `src/router.tsx`
+- `supabase/migrations/20260127132900_fix_pipeline_rls_policies.sql`
+
+### Statistics
+```
+ 7 files changed, 1222 insertions(+), 42 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 12:28:43
 
 ### Changed Files

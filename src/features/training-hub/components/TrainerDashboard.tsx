@@ -39,6 +39,8 @@ import { formatDistanceToNow, format, subDays, startOfMonth } from "date-fns";
 // eslint-disable-next-line no-restricted-imports
 import { useContractStats } from "@/features/contracting/hooks/useContracts";
 import { cn } from "@/lib/utils";
+import { hasStaffRole } from "@/constants/roles";
+import { AgencyPipelineOverview } from "./AgencyPipelineOverview";
 
 // Types
 interface RecruitStats {
@@ -50,6 +52,7 @@ interface RecruitStats {
   needsAttention: number;
   byPhase: Record<string, number>;
   avgDaysToComplete: number;
+  prospects: number; // Un-enrolled recruits (not yet in pipeline)
 }
 
 // RecentActivity interface reserved for future combined activity feed
@@ -107,6 +110,7 @@ export function TrainerDashboard() {
   }, [timePeriod, periodOffset]);
 
   // Fetch recruit statistics
+  // IMPORTANT: Only count recruits actively enrolled in a pipeline, NOT prospects
   const { data: recruitStats, isLoading: statsLoading } =
     useQuery<RecruitStats>({
       queryKey: ["trainer-dashboard-stats", timePeriod, periodOffset],
@@ -114,7 +118,7 @@ export function TrainerDashboard() {
         const { data, error } = await supabase
           .from("user_profiles")
           .select(
-            "id, onboarding_status, current_onboarding_phase, updated_at, created_at",
+            "id, onboarding_status, current_onboarding_phase, updated_at, created_at, onboarding_started_at, roles, is_admin",
           )
           .contains("roles", ["recruit"]);
 
@@ -124,12 +128,48 @@ export function TrainerDashboard() {
         const sevenDaysAgo = subDays(now, 7);
         const monthStart = startOfMonth(now);
 
-        // Phase breakdown
+        // First filter to actual recruits - exclude users who also have agent/admin/staff roles
+        // This matches RecruitRepository.filterRecruitIds logic
+        const actualRecruits = (data || []).filter((r) => {
+          const roles = r.roles as string[] | null;
+          const hasAgentRole =
+            roles?.includes("agent") || roles?.includes("active_agent");
+          const hasAdminRole = roles?.includes("admin");
+          const isAdmin = r.is_admin === true;
+          if (hasAgentRole || hasAdminRole || isAdmin || hasStaffRole(roles)) {
+            return false;
+          }
+          return true;
+        });
+
+        // Separate enrolled recruits from prospects
+        // A recruit is enrolled if they have onboarding_status (not 'prospect') OR onboarding_started_at
+        const enrolledRecruits = actualRecruits.filter((r) => {
+          // Exclude if status is 'prospect'
+          if (r.onboarding_status === "prospect") {
+            return false;
+          }
+          // Exclude if not yet enrolled (onboarding_started_at is null and status is null/empty)
+          if (!r.onboarding_started_at && !r.onboarding_status) {
+            return false;
+          }
+          return true;
+        });
+
+        // Count prospects (not yet enrolled in pipeline)
+        const prospects = actualRecruits.filter((r) => {
+          return (
+            r.onboarding_status === "prospect" ||
+            (!r.onboarding_started_at && !r.onboarding_status)
+          );
+        });
+
+        // Phase breakdown - only for enrolled recruits
         const byPhase: Record<string, number> = {};
         let totalDaysToComplete = 0;
         let completedCount = 0;
 
-        data?.forEach((r) => {
+        enrolledRecruits.forEach((r) => {
           const phase =
             r.current_onboarding_phase || r.onboarding_status || "not_started";
           byPhase[phase] = (byPhase[phase] || 0) + 1;
@@ -150,42 +190,41 @@ export function TrainerDashboard() {
         });
 
         const stats: RecruitStats = {
-          total: data?.length || 0,
-          active:
-            data?.filter(
-              (r) =>
+          total: enrolledRecruits.length,
+          active: enrolledRecruits.filter(
+            (r) =>
+              r.onboarding_status &&
+              !["completed", "dropped"].includes(r.onboarding_status),
+          ).length,
+          completedThisMonth: enrolledRecruits.filter(
+            (r) =>
+              r.onboarding_status === "completed" &&
+              r.updated_at &&
+              new Date(r.updated_at) >= monthStart,
+          ).length,
+          completedTotal: enrolledRecruits.filter(
+            (r) => r.onboarding_status === "completed",
+          ).length,
+          dropped: enrolledRecruits.filter(
+            (r) => r.onboarding_status === "dropped",
+          ).length,
+          needsAttention: enrolledRecruits.filter((r) => {
+            if (r.updated_at && new Date(r.updated_at) < sevenDaysAgo) {
+              if (
                 r.onboarding_status &&
-                !["completed", "dropped"].includes(r.onboarding_status),
-            ).length || 0,
-          completedThisMonth:
-            data?.filter(
-              (r) =>
-                r.onboarding_status === "completed" &&
-                r.updated_at &&
-                new Date(r.updated_at) >= monthStart,
-            ).length || 0,
-          completedTotal:
-            data?.filter((r) => r.onboarding_status === "completed").length ||
-            0,
-          dropped:
-            data?.filter((r) => r.onboarding_status === "dropped").length || 0,
-          needsAttention:
-            data?.filter((r) => {
-              if (r.updated_at && new Date(r.updated_at) < sevenDaysAgo) {
-                if (
-                  r.onboarding_status &&
-                  !["completed", "dropped"].includes(r.onboarding_status)
-                ) {
-                  return true;
-                }
+                !["completed", "dropped"].includes(r.onboarding_status)
+              ) {
+                return true;
               }
-              return false;
-            }).length || 0,
+            }
+            return false;
+          }).length,
           byPhase,
           avgDaysToComplete:
             completedCount > 0
               ? Math.round(totalDaysToComplete / completedCount)
               : 0,
+          prospects: prospects.length,
         };
 
         return stats;
@@ -430,7 +469,7 @@ export function TrainerDashboard() {
               <div className="space-y-0.5">
                 {/* Recruiting Metrics */}
                 <StatRow
-                  label="Total Recruits"
+                  label="Total Enrolled"
                   value={recruitStats?.total || 0}
                   loading={statsLoading}
                   icon={<Users className="h-3 w-3" />}
@@ -455,6 +494,13 @@ export function TrainerDashboard() {
                   loading={statsLoading}
                   icon={<TrendingDown className="h-3 w-3" />}
                   color="text-red-600 dark:text-red-400"
+                />
+                <StatRow
+                  label="Prospects (Not Enrolled)"
+                  value={recruitStats?.prospects || 0}
+                  loading={statsLoading}
+                  icon={<UserPlus className="h-3 w-3" />}
+                  color="text-zinc-500 dark:text-zinc-400"
                 />
 
                 <div className="my-2 border-t border-zinc-100 dark:border-zinc-800" />
@@ -728,7 +774,7 @@ export function TrainerDashboard() {
                   </div>
                   <div className="space-y-1">
                     <KPIRow
-                      label="Total Recruits"
+                      label="Total Enrolled"
                       value={recruitStats?.total?.toString() || "0"}
                       loading={statsLoading}
                     />
@@ -752,6 +798,11 @@ export function TrainerDashboard() {
                     <KPIRow
                       label="Dropped"
                       value={recruitStats?.dropped?.toString() || "0"}
+                      loading={statsLoading}
+                    />
+                    <KPIRow
+                      label="Prospects"
+                      value={recruitStats?.prospects?.toString() || "0"}
                       loading={statsLoading}
                     />
                     <KPIRow
@@ -833,6 +884,9 @@ export function TrainerDashboard() {
             </TooltipProvider>
           </div>
 
+          {/* Agency Pipeline Breakdown - Shows recruiting metrics by agency/pipeline owner */}
+          <AgencyPipelineOverview />
+
           {/* Recent Activity Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {/* Recent Recruits */}
@@ -874,10 +928,15 @@ export function TrainerDashboard() {
                       "Not Started";
 
                     return (
-                      <Link
+                      <div
                         key={recruit.id}
-                        to="/recruiting"
-                        className="flex items-center justify-between px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                        onClick={() =>
+                          navigate({
+                            to: "/recruiting",
+                            search: { recruitId: recruit.id },
+                          })
+                        }
+                        className="flex items-center justify-between px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2">
                           <div className="h-7 w-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
@@ -911,7 +970,7 @@ export function TrainerDashboard() {
                               : "-"}
                           </span>
                         </div>
-                      </Link>
+                      </div>
                     );
                   })
                 ) : (
