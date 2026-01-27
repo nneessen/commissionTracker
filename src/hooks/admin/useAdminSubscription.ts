@@ -17,6 +17,8 @@ import {
   type CreateAddonParams,
   type UpdateAddonParams,
   type SubscriptionFeatures,
+  type AddonTier,
+  type AddonTierConfig,
 } from "@/services/subscription";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -27,6 +29,8 @@ export type {
   SubscriptionPlanChange,
   UserSubscriptionAddon,
   SubscriptionFeatures,
+  AddonTier,
+  AddonTierConfig,
 };
 
 // ============================================
@@ -462,6 +466,62 @@ export function useTogglePlanActive() {
     onError: (error) => {
       toast.error(`Failed to toggle plan: ${error.message}`);
     },
+  });
+}
+
+// ============================================
+// User Plan Testing
+// ============================================
+
+/**
+ * Change a user's subscription plan (for testing tier feature gating)
+ */
+export function useChangeUserPlan() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation<
+    void,
+    Error,
+    { userId: string; planId: string; reason?: string }
+  >({
+    mutationFn: async ({ userId, planId, reason }) => {
+      if (!user?.id) throw new Error("User not authenticated");
+      return adminSubscriptionService.changeUserPlan({
+        userId,
+        planId,
+        changedBy: user.id,
+        reason,
+      });
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate all subscription-related queries
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      queryClient.invalidateQueries({
+        queryKey: adminSubscriptionKeys.plans(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["user-subscription", variables.userId],
+      });
+      toast.success("User plan changed successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to change plan: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Get a user's current subscription (for admin testing view)
+ */
+export function useUserSubscriptionAdmin(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["user-subscription", userId],
+    queryFn: () => {
+      if (!userId) return Promise.resolve({ subscription: null, plan: null });
+      return adminSubscriptionService.getUserSubscription(userId);
+    },
+    enabled: !!userId,
   });
 }
 

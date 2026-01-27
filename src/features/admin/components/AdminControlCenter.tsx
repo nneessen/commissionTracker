@@ -11,6 +11,7 @@ import {
   XCircle,
   UserPlus,
   CreditCard,
+  TestTube,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAllUsers, useCreateUser } from "@/hooks/admin";
@@ -36,11 +37,12 @@ import { RecruitingPipelineTab } from "./RecruitingPipelineTab";
 import { RolesPermissionsTab } from "./RolesPermissionsTab";
 import { SystemSettingsTab } from "./SystemSettingsTab";
 import { SubscriptionPlansTab } from "./SubscriptionPlansTab";
+import { TierTestingPanel } from "./TierTestingPanel";
 
 export default function AdminControlCenter() {
   // Tab navigation
   const [activeView, setActiveView] = useState<
-    "users" | "recruits" | "roles" | "system" | "subscriptions"
+    "users" | "recruits" | "roles" | "system" | "subscriptions" | "testing"
   >("users");
 
   // Shared dialog state (Edit User is used by both Users and Recruits tabs)
@@ -272,6 +274,19 @@ export default function AdminControlCenter() {
             Subscription Plans
           </button>
         )}
+        {isSuperAdmin && (
+          <button
+            onClick={() => setActiveView("testing")}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
+              activeView === "testing"
+                ? "bg-white dark:bg-zinc-900 shadow-sm text-violet-700 dark:text-violet-300"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            <TestTube className="h-3.5 w-3.5" />
+            Tier Testing
+          </button>
+        )}
       </div>
 
       {/* Content area - Tab components */}
@@ -312,6 +327,8 @@ export default function AdminControlCenter() {
         {activeView === "subscriptions" && isSuperAdmin && (
           <SubscriptionPlansTab />
         )}
+
+        {activeView === "testing" && isSuperAdmin && <TierTestingPanel />}
       </div>
 
       {/* Shared dialogs */}

@@ -20,7 +20,6 @@ import {
   GraduationCap,
   Lock,
   Mail,
-  Crown,
   FileCheck,
   Workflow,
   ShieldCheck,
@@ -33,8 +32,6 @@ import { useAuthorizationStatus } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useSubscription,
-  useSubscriptionPlans,
-  getRequiredPlanForFeature,
   type FeatureKey,
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
@@ -74,12 +71,14 @@ const navigationItems: NavigationItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     permission: "nav.dashboard",
+    subscriptionFeature: "dashboard",
   },
   {
     icon: TrendingUp,
     label: "Analytics",
     href: "/analytics",
     permission: "nav.dashboard",
+    subscriptionFeature: "dashboard",
   },
   {
     icon: Target,
@@ -210,8 +209,7 @@ export default function Sidebar({
   const { can, isLoading } = usePermissionCheck();
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
   const { supabaseUser } = useAuth();
-  const { subscription, isLoading: subLoading } = useSubscription();
-  const { plans } = useSubscriptionPlans();
+  const { subscription, isLoading: subLoading, isActive: isSubscriptionActive } = useSubscription();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
   const { data: userRoles } = useUserRoles();
@@ -245,18 +243,19 @@ export default function Sidebar({
     // UI should show loading skeleton instead of hiding/showing features
     if (subLoading || downlineLoading) return false;
 
-    // Check subscription plan features
+    // Check subscription plan features ONLY if subscription is active
     const features = subscription?.plan?.features;
-    if (features?.[feature]) return true;
+    if (isSubscriptionActive && features?.[feature]) return true;
 
     // Check if user is direct downline of owner and feature is granted
     if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature)) {
       return true;
     }
 
-    // Check temporary free access period (until Feb 1, 2026)
+    // Check temporary free access period (until Mar 1, 2026)
     // Grants access to all features EXCEPT recruiting
-    if (shouldGrantTemporaryAccess(feature)) {
+    // Test accounts are excluded from temporary access
+    if (shouldGrantTemporaryAccess(feature, supabaseUser?.email)) {
       return true;
     }
 
@@ -300,29 +299,11 @@ export default function Sidebar({
     );
   };
 
-  // Handler for subscription-locked nav item clicks
-  const handleSubscriptionLockedClick = (feature: FeatureKey) => {
-    const requiredPlan = plans?.length
-      ? getRequiredPlanForFeature(feature, plans)
-      : "a higher";
-    toast.error(
-      `This feature requires the ${requiredPlan} plan. Go to Settings > Billing to upgrade.`,
-      {
-        action: {
-          label: "Upgrade",
-          onClick: () => {
-            window.location.href = "/settings?tab=billing";
-          },
-        },
-      },
-    );
-  };
-
   // Navigation logic:
   // - Recruits: Show ONLY recruit navigation
   // - Staff (trainer/contracting_manager only): Show staff navigation (trainer dashboard, training hub, messages, settings)
   // - Pending users: Show all items but rendered as locked
-  // - Regular users: Show navigation based on permissions
+  // - Regular users: Show navigation based on permissions AND subscription features (hide locked items)
   const visibleNavItems = isRecruit
     ? recruitNavigationItems
     : isTrainerOnly
@@ -335,10 +316,20 @@ export default function Sidebar({
       : isPending
         ? navigationItems // Show all items for pending users (will be rendered as locked)
         : navigationItems.filter((item) => {
+            // Public items always visible
             if (item.public) return true;
+
+            // Permission check (role-based visibility)
             if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
             if (isLoading) return false;
-            return can(item.permission);
+            if (!can(item.permission)) return false;
+
+            // Subscription feature check (HIDE if locked, not show with crown)
+            if (item.subscriptionFeature && !hasFeature(item.subscriptionFeature)) {
+              return false;
+            }
+
+            return true;
           });
 
   // Staff-only roles don't see the training items section (it's already in their main nav)
@@ -475,13 +466,6 @@ export default function Sidebar({
             const Icon = item.icon;
             // Check if this item should be locked (pending user + not a public item)
             const isPendingLocked = isPending && !item.public;
-            // Check if this item requires a subscription feature the user doesn't have
-            const isSubscriptionLocked =
-              item.subscriptionFeature && !hasFeature(item.subscriptionFeature);
-            const requiredPlan =
-              item.subscriptionFeature && plans?.length
-                ? getRequiredPlanForFeature(item.subscriptionFeature, plans)
-                : null;
 
             if (isPendingLocked) {
               // Render locked nav item for pending users
@@ -514,42 +498,9 @@ export default function Sidebar({
               );
             }
 
-            if (isSubscriptionLocked && item.subscriptionFeature) {
-              // Render subscription-locked nav item with crown icon
-              return (
-                <div
-                  key={item.href}
-                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
-                  onClick={() =>
-                    handleSubscriptionLockedClick(item.subscriptionFeature!)
-                  }
-                >
-                  <Button
-                    variant="ghost"
-                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-60 cursor-pointer hover:opacity-80`}
-                    title={
-                      isCollapsed
-                        ? `${item.label} (${requiredPlan} required)`
-                        : `Requires ${requiredPlan} plan`
-                    }
-                  >
-                    <Icon
-                      size={16}
-                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
-                    />
-                    {!isCollapsed && (
-                      <span className="text-sm text-muted-foreground">
-                        {item.label}
-                      </span>
-                    )}
-                  </Button>
-                  <Crown
-                    size={12}
-                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-amber-500`}
-                  />
-                </div>
-              );
-            }
+            // Note: Subscription-locked items are now filtered out before rendering
+            // so the crown icon rendering block has been removed.
+            // Pending users still see all items with lock icons (handled above).
 
             // Render normal nav item
             return (

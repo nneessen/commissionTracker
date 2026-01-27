@@ -1,8 +1,15 @@
 // src/features/settings/billing/components/PremiumAddonsSection.tsx
-// Section for purchasing premium add-ons like UW Wizard
+// Section for purchasing premium add-ons like UW Wizard with tier selection
 
 import { useState } from "react";
-import { Sparkles, Check, ExternalLink, Loader2, Wand2 } from "lucide-react";
+import {
+  Sparkles,
+  Check,
+  ExternalLink,
+  Loader2,
+  Wand2,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -10,8 +17,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   useAdminSubscriptionAddons,
   type SubscriptionAddon,
+  type AddonTierConfig,
+  type AddonTier,
 } from "@/hooks/admin";
 import { useUnderwritingFeatureFlag } from "@/features/underwriting";
+import { useUWWizardUsage } from "@/features/underwriting/hooks/useUWWizardUsage";
+
+interface TierWithAddon extends AddonTier {
+  addonId: string;
+}
 
 export function PremiumAddonsSection() {
   const { user, supabaseUser } = useAuth();
@@ -19,18 +33,54 @@ export function PremiumAddonsSection() {
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">(
     "monthly",
   );
+  const [selectedTierId, setSelectedTierId] = useState<string>("professional");
 
   // Get available add-ons (only show active ones)
   const { data: allAddons, isLoading: addonsLoading } =
     useAdminSubscriptionAddons();
   const addons = allAddons?.filter((a) => a.is_active);
 
-  // Check UW Wizard access
+  // Check UW Wizard access and usage
   const { isEnabled: hasUwWizard, accessSource } = useUnderwritingFeatureFlag();
+  const { data: uwUsage } = useUWWizardUsage();
 
   const formatPrice = (cents: number) => {
     if (cents === 0) return "Free";
     return `$${(cents / 100).toFixed(2)}`;
+  };
+
+  const getTierConfig = (addon: SubscriptionAddon): AddonTierConfig | null => {
+    const raw = (addon as { tier_config?: AddonTierConfig | null }).tier_config;
+    if (!raw || !raw.tiers || raw.tiers.length === 0) return null;
+    return raw;
+  };
+
+  const generateTierCheckoutUrl = (tier: TierWithAddon): string | null => {
+    if (!user?.id || !userEmail) return null;
+
+    const variantId =
+      billingInterval === "annual"
+        ? tier.lemon_variant_id_annual
+        : tier.lemon_variant_id_monthly;
+
+    if (!variantId) return null;
+
+    const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
+    if (!LEMON_STORE_ID) return null;
+
+    const checkoutUrl = new URL(
+      `https://${LEMON_STORE_ID}.lemonsqueezy.com/buy/${variantId}`,
+    );
+
+    checkoutUrl.searchParams.set("checkout[email]", userEmail);
+    checkoutUrl.searchParams.set("checkout[custom][user_id]", user.id);
+    checkoutUrl.searchParams.set("checkout[custom][addon_id]", tier.addonId);
+    checkoutUrl.searchParams.set("checkout[custom][tier_id]", tier.id);
+
+    const redirectUrl = `${window.location.origin}/settings?tab=billing&addon_checkout=success`;
+    checkoutUrl.searchParams.set("checkout[redirect_url]", redirectUrl);
+
+    return checkoutUrl.toString();
   };
 
   const generateAddonCheckoutUrl = (
@@ -62,6 +112,13 @@ export function PremiumAddonsSection() {
     return checkoutUrl.toString();
   };
 
+  const handlePurchaseTier = (tier: TierWithAddon) => {
+    const checkoutUrl = generateTierCheckoutUrl(tier);
+    if (checkoutUrl) {
+      window.open(checkoutUrl, "_blank");
+    }
+  };
+
   const handlePurchaseAddon = (addon: SubscriptionAddon) => {
     const checkoutUrl = generateAddonCheckoutUrl(addon);
     if (checkoutUrl) {
@@ -86,7 +143,7 @@ export function PremiumAddonsSection() {
   }
 
   if (!addons || addons.length === 0) {
-    return null; // Don't show section if no add-ons
+    return null;
   }
 
   return (
@@ -103,25 +160,20 @@ export function PremiumAddonsSection() {
           subscription plan.
         </p>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {addons.map((addon) => {
-            // Special handling for UW Wizard
             const isUwWizard = addon.name === "uw_wizard";
             const hasAccess = isUwWizard && hasUwWizard;
-            const hasVariantIds =
-              addon.lemon_variant_id_monthly || addon.lemon_variant_id_annual;
+            const tierConfig = getTierConfig(addon);
+            const hasTiers = tierConfig && tierConfig.tiers.length > 0;
 
-            return (
-              <div
-                key={addon.id}
-                className={cn(
-                  "relative p-3 rounded-lg border",
-                  hasAccess
-                    ? "border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20"
-                    : "border-zinc-200 dark:border-zinc-700",
-                )}
-              >
-                {hasAccess && (
+            // For tiered addons with access, show current usage
+            if (hasAccess && isUwWizard) {
+              return (
+                <div
+                  key={addon.id}
+                  className="relative p-3 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20"
+                >
                   <div className="absolute -top-2 right-3">
                     <Badge className="bg-purple-500 text-white text-[9px] px-1.5">
                       <Check className="h-2.5 w-2.5 mr-0.5" />
@@ -132,67 +184,160 @@ export function PremiumAddonsSection() {
                           : "Active"}
                     </Badge>
                   </div>
-                )}
 
-                <div className="flex items-start gap-3">
-                  {/* Icon */}
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                    <Wand2 className="h-5 w-5 text-white" />
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                      <Wand2 className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                         {addon.display_name}
                       </h3>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      {addon.description ||
-                        "Advanced underwriting analysis with AI-powered recommendations."}
-                    </p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        {addon.description}
+                      </p>
 
-                    {/* Features */}
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                        AI Analysis
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                        Carrier Matching
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                        Health Class Prediction
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Price & Action */}
-                  <div className="flex-shrink-0 text-right">
-                    {!hasAccess && (
-                      <>
-                        <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                          {formatPrice(
-                            billingInterval === "annual"
-                              ? addon.price_annual / 12
-                              : addon.price_monthly,
-                          )}
-                        </div>
-                        <div className="text-[10px] text-zinc-500">
-                          /month
-                          {billingInterval === "annual" && (
-                            <span className="text-emerald-600 ml-1">
-                              (billed yearly)
+                      {/* Usage Display */}
+                      {uwUsage && (
+                        <div className="mt-3 p-2 bg-white dark:bg-zinc-800 rounded border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300">
+                              {uwUsage.tier_name} Tier
                             </span>
-                          )}
+                            <span className="text-[10px] text-zinc-500">
+                              {uwUsage.runs_used} / {uwUsage.runs_limit} runs
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                uwUsage.usage_percent >= 90
+                                  ? "bg-red-500"
+                                  : uwUsage.usage_percent >= 75
+                                    ? "bg-amber-500"
+                                    : "bg-purple-500",
+                              )}
+                              style={{ width: `${Math.min(uwUsage.usage_percent, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-[9px] text-zinc-400 mt-1">
+                            {uwUsage.runs_remaining} runs remaining this month
+                          </p>
                         </div>
-                      </>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
+              );
+            }
 
-                {/* Action Area */}
-                {!hasAccess && (
-                  <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+            // For tiered addons without access, show tier selection
+            if (hasTiers && isUwWizard) {
+              const selectedTier = tierConfig.tiers.find(
+                (t) => t.id === selectedTierId,
+              ) || tierConfig.tiers[1]; // Default to middle tier
+
+              const selectedTierWithAddon: TierWithAddon = {
+                ...selectedTier,
+                addonId: addon.id,
+              };
+
+              const hasVariantIds =
+                selectedTier.lemon_variant_id_monthly ||
+                selectedTier.lemon_variant_id_annual;
+
+              return (
+                <div
+                  key={addon.id}
+                  className="relative p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                >
+                  {/* Header */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                      <Wand2 className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {addon.display_name}
+                      </h3>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        {addon.description ||
+                          "Advanced underwriting analysis with AI-powered recommendations."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tier Selection */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      <span className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300">
+                        Choose Your Plan
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {tierConfig.tiers.map((tier) => {
+                        const isSelected = selectedTierId === tier.id;
+                        const price =
+                          billingInterval === "annual"
+                            ? tier.price_annual / 12
+                            : tier.price_monthly;
+
+                        return (
+                          <button
+                            key={tier.id}
+                            onClick={() => setSelectedTierId(tier.id)}
+                            className={cn(
+                              "p-2 rounded-lg border text-left transition-all",
+                              isSelected
+                                ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
+                                : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600",
+                            )}
+                          >
+                            <div className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                              {tier.name}
+                            </div>
+                            <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                              {formatPrice(price)}
+                              <span className="text-[9px] font-normal text-zinc-500">
+                                /mo
+                              </span>
+                            </div>
+                            <div className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                              {tier.runs_per_month.toLocaleString()} runs/mo
+                            </div>
+                            {isSelected && (
+                              <div className="mt-1">
+                                <Badge className="text-[8px] bg-purple-500 text-white">
+                                  Selected
+                                </Badge>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Features for selected tier */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      AI Analysis
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      Carrier Matching
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      Health Class Prediction
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-medium">
+                      {selectedTier.runs_per_month.toLocaleString()} runs/month
+                    </span>
+                  </div>
+
+                  {/* Action Area */}
+                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                     {/* Billing Toggle */}
                     <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5">
                       <button
@@ -216,22 +361,120 @@ export function PremiumAddonsSection() {
                         )}
                       >
                         Annual{" "}
-                        {addon.price_annual > 0 && addon.price_monthly > 0 && (
-                          <span className="text-emerald-600">
-                            (-
-                            {Math.round(
-                              (1 -
-                                addon.price_annual /
-                                  (addon.price_monthly * 12)) *
-                                100,
-                            )}
-                            %)
-                          </span>
-                        )}
+                        {selectedTier.price_annual > 0 &&
+                          selectedTier.price_monthly > 0 && (
+                            <span className="text-emerald-600">
+                              (-
+                              {Math.round(
+                                (1 -
+                                  selectedTier.price_annual /
+                                    (selectedTier.price_monthly * 12)) *
+                                  100,
+                              )}
+                              %)
+                            </span>
+                          )}
                       </button>
                     </div>
 
                     {/* Purchase Button */}
+                    {hasVariantIds ? (
+                      <Button
+                        size="sm"
+                        className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700"
+                        onClick={() => handlePurchaseTier(selectedTierWithAddon)}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Subscribe to {selectedTier.name}
+                      </Button>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px]">
+                        Coming Soon
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            // For non-tiered addons, show original simple display
+            const hasVariantIds =
+              addon.lemon_variant_id_monthly || addon.lemon_variant_id_annual;
+
+            return (
+              <div
+                key={addon.id}
+                className={cn(
+                  "relative p-3 rounded-lg border",
+                  hasAccess
+                    ? "border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20"
+                    : "border-zinc-200 dark:border-zinc-700",
+                )}
+              >
+                {hasAccess && (
+                  <div className="absolute -top-2 right-3">
+                    <Badge className="bg-purple-500 text-white text-[9px] px-1.5">
+                      <Check className="h-2.5 w-2.5 mr-0.5" />
+                      Active
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                    <Wand2 className="h-5 w-5 text-white" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      {addon.display_name}
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      {addon.description}
+                    </p>
+                  </div>
+
+                  {!hasAccess && (
+                    <div className="flex-shrink-0 text-right">
+                      <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                        {formatPrice(
+                          billingInterval === "annual"
+                            ? addon.price_annual / 12
+                            : addon.price_monthly,
+                        )}
+                      </div>
+                      <div className="text-[10px] text-zinc-500">/month</div>
+                    </div>
+                  )}
+                </div>
+
+                {!hasAccess && (
+                  <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5">
+                      <button
+                        onClick={() => setBillingInterval("monthly")}
+                        className={cn(
+                          "px-2 py-1 text-[10px] rounded transition-colors",
+                          billingInterval === "monthly"
+                            ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                            : "text-zinc-500 dark:text-zinc-400",
+                        )}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        onClick={() => setBillingInterval("annual")}
+                        className={cn(
+                          "px-2 py-1 text-[10px] rounded transition-colors",
+                          billingInterval === "annual"
+                            ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                            : "text-zinc-500 dark:text-zinc-400",
+                        )}
+                      >
+                        Annual
+                      </button>
+                    </div>
+
                     {hasVariantIds ? (
                       <Button
                         size="sm"

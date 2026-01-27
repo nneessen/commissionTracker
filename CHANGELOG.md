@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-27 18:26:26
+
+### Changed Files
+- `src/App.tsx`
+- `src/components/layout/FreeUserHeader.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/layout/index.ts`
+- `src/features/admin/components/AddonTierEditor.tsx`
+- `src/features/admin/components/AddonsManagementPanel.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/TierTestingPanel.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/settings/billing/components/PremiumAddonsSection.tsx`
+- `src/features/underwriting/components/UWLimitReachedDialog.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/hooks/index.ts`
+- `src/features/underwriting/hooks/useUWWizardUsage.ts`
+- `src/hooks/admin/useAdminSubscription.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/router.tsx`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/services/subscription/index.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/underwriting-ai-analyze/index.ts`
+- `supabase/migrations/20260127164337_uw_wizard_tiered_usage.sql`
+- `supabase/migrations/20260127174607_fix_subscription_feature_gating.sql`
+
+### Statistics
+```
+ 27 files changed, 15385 insertions(+), 13005 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 16:34:39
 
 ### Changed Files

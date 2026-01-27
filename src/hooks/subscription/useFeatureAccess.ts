@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { usePermissionCheck } from "@/hooks/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 import type {
   SubscriptionFeatures,
   SubscriptionPlan,
@@ -71,6 +72,9 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   overrides: "Override Tracking",
   downline_reports: "Downline Reports",
   instagram_messaging: "Instagram Messaging",
+  // Instagram sub-features
+  instagram_scheduled_messages: "Scheduled Instagram Messages",
+  instagram_templates: "Instagram Templates",
   // Premium branding features
   recruiting_basic: "Basic Recruiting",
   recruiting_custom_pipeline: "Custom Recruiting Pipeline",
@@ -113,10 +117,15 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   const {
     subscription,
     isLoading,
+    isActive,
     isGrandfathered,
     grandfatherDaysRemaining,
     tierName,
   } = useSubscription();
+
+  // Get user email for test account check
+  const { user } = useAuth();
+  const userEmail = user?.email;
 
   // Get all plans for dynamic required plan lookup
   const { plans } = useSubscriptionPlans();
@@ -164,17 +173,19 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     }
 
     // Check if feature is enabled in the user's plan
+    // Only grant access if subscription is active (active/trialing with valid period)
     const features = subscription?.plan?.features;
-    const hasSubscriptionAccess = features?.[feature] ?? false;
+    const hasSubscriptionAccess = isActive && (features?.[feature] ?? false);
 
     // Direct downlines of owner get access to granted features
     // (Team-tier features, but NOT admin features)
     const hasOwnerDownlineAccess =
       isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature);
 
-    // Temporary free access period (until Feb 1, 2026)
+    // Temporary free access period (until Mar 1, 2026)
     // Grants access to all features EXCEPT recruiting
-    const hasTemporaryAccess = shouldGrantTemporaryAccess(feature);
+    // Test accounts (defined in temporaryAccess.ts) are excluded from temporary access
+    const hasTemporaryAccess = shouldGrantTemporaryAccess(feature, userEmail);
 
     const hasAccess =
       hasSubscriptionAccess || hasOwnerDownlineAccess || hasTemporaryAccess;
@@ -192,6 +203,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   }, [
     subscription,
     isLoading,
+    isActive,
     isLoadingDownlineCheck,
     isLoadingRoles,
     isDirectDownlineOfOwner,
@@ -201,6 +213,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     grandfatherDaysRemaining,
     tierName,
     plans,
+    userEmail,
   ]);
 }
 
@@ -214,7 +227,9 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
   accessibleFeatures: FeatureKey[];
   lockedFeatures: FeatureKey[];
 } {
-  const { subscription, isLoading } = useSubscription();
+  const { subscription, isLoading, isActive } = useSubscription();
+  const { user } = useAuth();
+  const userEmail = user?.email;
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
   const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
@@ -242,18 +257,18 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
 
     const planFeatures = subscription?.plan?.features;
 
-    // Check subscription access, owner downline access, and temporary access
+    // Check subscription access (only if active), owner downline access, and temporary access
     const accessibleFeatures = features.filter(
       (f) =>
-        planFeatures?.[f] ||
+        (isActive && planFeatures?.[f]) ||
         (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) ||
-        shouldGrantTemporaryAccess(f),
+        shouldGrantTemporaryAccess(f, userEmail),
     );
     const lockedFeatures = features.filter(
       (f) =>
-        !planFeatures?.[f] &&
+        !(isActive && planFeatures?.[f]) &&
         !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
-        !shouldGrantTemporaryAccess(f),
+        !shouldGrantTemporaryAccess(f, userEmail),
     );
 
     return {
@@ -265,11 +280,13 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
   }, [
     subscription,
     isLoading,
+    isActive,
     isLoadingDownlineCheck,
     isLoadingRoles,
     isDirectDownlineOfOwner,
     hasStaffBypass,
     features,
+    userEmail,
   ]);
 }
 
@@ -282,7 +299,9 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
   isLoading: boolean;
   missingFeatures: FeatureKey[];
 } {
-  const { subscription, isLoading } = useSubscription();
+  const { subscription, isLoading, isActive } = useSubscription();
+  const { user } = useAuth();
+  const userEmail = user?.email;
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
   const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
@@ -308,12 +327,12 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
 
     const planFeatures = subscription?.plan?.features;
 
-    // Check subscription access, owner downline access, and temporary access
+    // Check subscription access (only if active), owner downline access, and temporary access
     const missingFeatures = features.filter(
       (f) =>
-        !planFeatures?.[f] &&
+        !(isActive && planFeatures?.[f]) &&
         !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
-        !shouldGrantTemporaryAccess(f),
+        !shouldGrantTemporaryAccess(f, userEmail),
     );
 
     return {
@@ -324,10 +343,12 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
   }, [
     subscription,
     isLoading,
+    isActive,
     isLoadingDownlineCheck,
     isLoadingRoles,
     isDirectDownlineOfOwner,
     hasStaffBypass,
     features,
+    userEmail,
   ]);
 }

@@ -26,6 +26,7 @@ import {
   useAddonUsers,
   type SubscriptionAddon,
 } from "@/hooks/admin";
+import { AddonTierEditor, type TierConfig } from "./AddonTierEditor";
 
 interface AddonsManagementPanelProps {
   addons: SubscriptionAddon[];
@@ -223,10 +224,11 @@ function AddonEditorDialog({
   const [lemonVariantMonthly, setLemonVariantMonthly] = useState("");
   const [lemonVariantAnnual, setLemonVariantAnnual] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
 
   const updateAddon = useUpdateAddon();
 
-  // Initialize form when addon changes
+  // Re-initialize when addon prop changes or dialog opens
   useState(() => {
     if (addon) {
       setDisplayName(addon.display_name);
@@ -236,6 +238,10 @@ function AddonEditorDialog({
       setLemonVariantMonthly(addon.lemon_variant_id_monthly || "");
       setLemonVariantAnnual(addon.lemon_variant_id_annual || "");
       setIsActive(addon.is_active ?? true);
+      // Parse tier_config from addon (it's stored as JSONB)
+      const rawTierConfig = (addon as { tier_config?: TierConfig | null })
+        .tier_config;
+      setTierConfig(rawTierConfig || null);
     }
   });
 
@@ -252,9 +258,15 @@ function AddonEditorDialog({
     setLemonVariantMonthly(addon.lemon_variant_id_monthly || "");
     setLemonVariantAnnual(addon.lemon_variant_id_annual || "");
     setIsActive(addon.is_active ?? true);
+    const rawTierConfig = (addon as { tier_config?: TierConfig | null })
+      .tier_config;
+    setTierConfig(rawTierConfig || null);
   }
 
   if (!addon) return null;
+
+  // Check if this addon supports tiers (currently just UW Wizard)
+  const supportsTiers = addon.name === "uw_wizard";
 
   const handleSave = async () => {
     await updateAddon.mutateAsync({
@@ -267,6 +279,7 @@ function AddonEditorDialog({
         lemonVariantIdMonthly: lemonVariantMonthly || null,
         lemonVariantIdAnnual: lemonVariantAnnual || null,
         isActive,
+        tierConfig: supportsTiers ? tierConfig : undefined,
       },
     });
     onOpenChange(false);
@@ -378,6 +391,13 @@ function AddonEditorDialog({
               </div>
             </div>
           </div>
+
+          {/* Tier Configuration (for usage-based addons like UW Wizard) */}
+          {supportsTiers && (
+            <div className="border-t pt-4">
+              <AddonTierEditor tierConfig={tierConfig} onChange={setTierConfig} />
+            </div>
+          )}
 
           {/* Active Toggle */}
           <div className="flex items-center justify-between pt-2 border-t">

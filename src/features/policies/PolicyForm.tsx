@@ -654,7 +654,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               <CollapsibleTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-[10px] text-blue-700 hover:text-foreground transition-colors"
                 >
                   <ChevronDown
                     className={`h-3 w-3 transition-transform ${showContactDetails ? "rotate-180" : ""}`}

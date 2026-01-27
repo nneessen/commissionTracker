@@ -29,7 +29,9 @@ import {
   User,
   Sparkles,
   ArrowRight,
+  GraduationCap,
 } from "lucide-react";
+import { GraduateToAgentDialog } from "@/features/admin/components/GraduateToAgentDialog";
 import { useRecruits, useCreateRecruit } from "../hooks";
 import { useAuth } from "@/contexts/AuthContext";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -46,6 +48,8 @@ interface BasicRecruitingViewProps {
 export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
   const { user } = useAuth();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [graduatingRecruit, setGraduatingRecruit] =
+    useState<UserProfile | null>(null);
 
   // Detect staff role
   const isStaffRole =
@@ -61,7 +65,8 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
       return { imo_id: user.imo_id };
     }
 
-    return { my_recruits_user_id: user.id };
+    // Filter by upline_id only - users only see recruits where they are the upline
+    return { assigned_upline_id: user.id };
   })();
 
   const { data: recruitsData, isLoading } = useRecruits(recruitFilters, 1, 50, {
@@ -177,6 +182,9 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                 <TableHead className="text-[10px] font-semibold h-8">
                   Added
                 </TableHead>
+                <TableHead className="text-[10px] font-semibold h-8 w-20">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -220,12 +228,37 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                         : "Unknown"}
                     </span>
                   </TableCell>
+                  <TableCell className="py-2">
+                    {(recruit.approval_status === "pending" ||
+                      recruit.approval_status === "active") && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 px-1.5 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-900/20"
+                        onClick={() => setGraduatingRecruit(recruit)}
+                      >
+                        <GraduationCap className="h-3 w-3 mr-0.5" />
+                        Graduate
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
       </div>
+
+      {/* Graduate to Agent Dialog */}
+      {graduatingRecruit && (
+        <GraduateToAgentDialog
+          recruit={graduatingRecruit}
+          open={!!graduatingRecruit}
+          onOpenChange={(open) => {
+            if (!open) setGraduatingRecruit(null);
+          }}
+        />
+      )}
     </div>
   );
 }

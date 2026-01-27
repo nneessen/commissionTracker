@@ -78,6 +78,7 @@ import {
   exportPoliciesToExcel,
 } from "./utils/policyExport";
 import type { Commission } from "@/types/commission.types";
+import { useFeatureAccess } from "@/hooks/subscription";
 
 interface PolicyListProps {
   onEditPolicy: (policyId: string) => void;
@@ -170,6 +171,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const { mutate: updatePolicy } = useUpdatePolicy();
   const { mutate: deletePolicy } = useDeletePolicy();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
+
+  // Check if user has access to commission data (dashboard feature gates this)
+  // Free tier users can see and manage policies but not commission calculations
+  const { hasAccess: canViewCommissions } = useFeatureAccess("dashboard");
 
   // UI state
   const [showFilters, setShowFilters] = useState(false);
@@ -461,21 +466,25 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             </div>
             <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
 
-            {/* Commission metrics */}
-            <div className="flex items-center gap-1">
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                ${(earnedCommission / 1000).toFixed(1)}k
-              </span>
-              <span className="text-zinc-500 dark:text-zinc-400">earned</span>
-            </div>
-            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
-            <div className="flex items-center gap-1">
-              <span className="font-medium text-amber-600 dark:text-amber-400">
-                ${(pendingCommission / 1000).toFixed(1)}k
-              </span>
-              <span className="text-zinc-500 dark:text-zinc-400">pending</span>
-            </div>
-            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            {/* Commission metrics - hidden for Free tier users */}
+            {canViewCommissions && (
+              <>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    ${(earnedCommission / 1000).toFixed(1)}k
+                  </span>
+                  <span className="text-zinc-500 dark:text-zinc-400">earned</span>
+                </div>
+                <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex items-center gap-1">
+                  <span className="font-medium text-amber-600 dark:text-amber-400">
+                    ${(pendingCommission / 1000).toFixed(1)}k
+                  </span>
+                  <span className="text-zinc-500 dark:text-zinc-400">pending</span>
+                </div>
+                <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+              </>
+            )}
 
             {/* YTD metrics */}
             <div className="flex items-center gap-1">
@@ -694,12 +703,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                     ))}
                 </div>
               </TableHead>
-              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-right">
-                Commission
-              </TableHead>
-              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-center">
-                Comm Status
-              </TableHead>
+              {canViewCommissions && (
+                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-right">
+                  Commission
+                </TableHead>
+              )}
+              {canViewCommissions && (
+                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-center">
+                  Comm Status
+                </TableHead>
+              )}
               <TableHead
                 className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                 onClick={() => toggleSort("effective_date")}
@@ -722,14 +735,14 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12">
+                <TableCell colSpan={canViewCommissions ? 9 : 7} className="text-center py-12">
                   <LogoSpinner size="xl" className="mr-2" />
                   Your policies are loading...
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12">
+                <TableCell colSpan={canViewCommissions ? 9 : 7} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <AlertCircle className="h-8 w-8 text-zinc-300 dark:text-zinc-600" />
                     <span className="text-[11px] text-red-600 dark:text-red-400">
@@ -749,7 +762,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               </TableRow>
             ) : policies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12">
+                <TableCell colSpan={canViewCommissions ? 9 : 7} className="text-center py-12">
                   <div className="flex flex-col items-center justify-center p-4">
                     <FileText className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -842,55 +855,59 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-[11px] py-1.5 px-2 text-right tabular-nums">
-                      <div className="flex flex-col gap-0 items-end">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                          {formatCurrency(commission)}
-                        </span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                          {(policy.commissionPercentage * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-1.5 px-2 text-center">
-                      {policyCommission ? (
-                        <Select
-                          value={
-                            policyCommission.status === "charged_back" ||
-                            policyCommission.status === "earned"
-                              ? "cancelled"
-                              : policyCommission.status
-                          }
-                          onValueChange={(value) =>
-                            handleStatusChange(policyCommission, value, policy)
-                          }
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              "h-6 text-[10px] w-[90px] px-1.5 gap-1 font-medium border",
-                              policyCommission.status === "paid" &&
-                                "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
-                              policyCommission.status === "pending" &&
-                                "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-                              (policyCommission.status === "cancelled" ||
-                                policyCommission.status === "charged_back") &&
-                                "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
-                            )}
+                    {canViewCommissions && (
+                      <TableCell className="text-[11px] py-1.5 px-2 text-right tabular-nums">
+                        <div className="flex flex-col gap-0 items-end">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            {formatCurrency(commission)}
+                          </span>
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                            {(policy.commissionPercentage * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      </TableCell>
+                    )}
+                    {canViewCommissions && (
+                      <TableCell className="py-1.5 px-2 text-center">
+                        {policyCommission ? (
+                          <Select
+                            value={
+                              policyCommission.status === "charged_back" ||
+                              policyCommission.status === "earned"
+                                ? "cancelled"
+                                : policyCommission.status
+                            }
+                            onValueChange={(value) =>
+                              handleStatusChange(policyCommission, value, policy)
+                            }
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">
-                          No commission
-                        </span>
-                      )}
-                    </TableCell>
+                            <SelectTrigger
+                              className={cn(
+                                "h-6 text-[10px] w-[90px] px-1.5 gap-1 font-medium border",
+                                policyCommission.status === "paid" &&
+                                  "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+                                policyCommission.status === "pending" &&
+                                  "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+                                (policyCommission.status === "cancelled" ||
+                                  policyCommission.status === "charged_back") &&
+                                  "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">
+                            No commission
+                          </span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5 px-2">
                       {formatDate(policy.effectiveDate)}
                     </TableCell>

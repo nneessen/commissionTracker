@@ -94,6 +94,21 @@ export interface UpdateAddonParams {
   lemonVariantIdMonthly?: string | null;
   lemonVariantIdAnnual?: string | null;
   isActive?: boolean;
+  tierConfig?: AddonTierConfig | null;
+}
+
+export interface AddonTier {
+  id: string;
+  name: string;
+  runs_per_month: number;
+  price_monthly: number;
+  price_annual: number;
+  lemon_variant_id_monthly?: string;
+  lemon_variant_id_annual?: string;
+}
+
+export interface AddonTierConfig {
+  tiers: AddonTier[];
 }
 
 class AdminSubscriptionService {
@@ -567,6 +582,8 @@ class AdminSubscriptionService {
       if (params.lemonVariantIdAnnual !== undefined)
         updateData.lemon_variant_id_annual = params.lemonVariantIdAnnual;
       if (params.isActive !== undefined) updateData.is_active = params.isActive;
+      if (params.tierConfig !== undefined)
+        updateData.tier_config = params.tierConfig;
 
       const { data, error } = await supabase
         .from("subscription_addons")
@@ -834,6 +851,9 @@ class AdminSubscriptionService {
         overrides: false,
         downline_reports: false,
         instagram_messaging: false,
+        // Instagram sub-features
+        instagram_scheduled_messages: false,
+        instagram_templates: false,
         // Premium branding features
         recruiting_basic: false,
         recruiting_custom_pipeline: false,
@@ -917,6 +937,159 @@ class AdminSubscriptionService {
     } catch (error) {
       logger.error(
         "AdminSubscriptionService.togglePlanActive",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  // ============================================
+  // User Plan Management (Testing)
+  // ============================================
+
+  /**
+   * Change a user's subscription plan (for testing purposes)
+   * This allows admins to switch users between tiers to test feature gating
+   */
+  async changeUserPlan(params: {
+    userId: string;
+    planId: string;
+    changedBy: string;
+    reason?: string;
+  }): Promise<void> {
+    const { userId, planId, changedBy, reason } = params;
+
+    try {
+      // Get current subscription for audit
+      const { data: currentSub, error: fetchError } = await supabase
+        .from("user_subscriptions")
+        .select("*, plan:subscription_plans(*)")
+        .eq("user_id", userId)
+        .single();
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        logger.error("AdminSubscriptionService.changeUserPlan - fetch", fetchError);
+        throw fetchError;
+      }
+
+      // Validate the new plan exists
+      const newPlan = await this.getPlanById(planId);
+      if (!newPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      if (currentSub) {
+        // Update existing subscription
+        const { error: updateError } = await supabase
+          .from("user_subscriptions")
+          .update({
+            plan_id: planId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+
+        if (updateError) {
+          logger.error("AdminSubscriptionService.changeUserPlan - update", updateError);
+          throw updateError;
+        }
+
+        // Create audit entry
+        await this.createPlanChangeAudit({
+          planId,
+          changedBy,
+          changeType: "user_plan_change",
+          oldValue: {
+            user_id: userId,
+            old_plan_id: currentSub.plan_id,
+            old_plan_name: (currentSub.plan as SubscriptionPlanRow)?.display_name,
+          },
+          newValue: {
+            user_id: userId,
+            new_plan_id: planId,
+            new_plan_name: newPlan.display_name,
+          },
+          notes: reason || "Admin changed user plan for testing",
+        });
+      } else {
+        // Create new subscription for user
+        const { error: insertError } = await supabase
+          .from("user_subscriptions")
+          .insert({
+            user_id: userId,
+            plan_id: planId,
+            status: "active",
+            billing_interval: "monthly",
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+
+        if (insertError) {
+          logger.error("AdminSubscriptionService.changeUserPlan - insert", insertError);
+          throw insertError;
+        }
+
+        // Create audit entry
+        await this.createPlanChangeAudit({
+          planId,
+          changedBy,
+          changeType: "user_plan_change",
+          oldValue: { user_id: userId, old_plan_id: null, old_plan_name: "No subscription" },
+          newValue: { user_id: userId, new_plan_id: planId, new_plan_name: newPlan.display_name },
+          notes: reason || "Admin assigned plan to user for testing",
+        });
+      }
+
+      logger.info("AdminSubscriptionService.changeUserPlan", {
+        userId,
+        newPlanId: planId,
+        newPlanName: newPlan.display_name,
+        changedBy,
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.changeUserPlan",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get a user's current subscription with plan details
+   */
+  async getUserSubscription(userId: string): Promise<{
+    subscription: Database["public"]["Tables"]["user_subscriptions"]["Row"] | null;
+    plan: SubscriptionPlan | null;
+  }> {
+    try {
+      const { data, error } = await supabase
+        .from("user_subscriptions")
+        .select("*, plan:subscription_plans(*)")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return { subscription: null, plan: null };
+        }
+        logger.error("AdminSubscriptionService.getUserSubscription", error);
+        throw error;
+      }
+
+      const planData = data.plan as SubscriptionPlanRow | null;
+
+      return {
+        subscription: data,
+        plan: planData
+          ? {
+              ...planData,
+              features: planData.features as unknown as SubscriptionFeatures,
+            }
+          : null,
+      };
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.getUserSubscription",
         error instanceof Error ? error : new Error(String(error)),
       );
       throw error;

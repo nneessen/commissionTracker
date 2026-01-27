@@ -1,8 +1,9 @@
 // src/features/underwriting/components/UnderwritingWizard.tsx
 
 import { useState, useCallback, useEffect } from "react";
-import { ArrowLeft, ArrowRight, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -10,6 +11,8 @@ import {
   useSaveUnderwritingSession,
   useDecisionEngineRecommendations,
   transformWizardToDecisionEngineInput,
+  useUWWizardUsage,
+  getUsageStatus,
 } from "../hooks";
 import { calculateBMI } from "../utils/bmiCalculator";
 import type {
@@ -32,6 +35,7 @@ import { safeParseJsonObject, safeParseJsonArray } from "../utils/formatters";
 // Layout and step components
 import { WizardDialogLayout } from "./WizardDialogLayout";
 import { WizardSessionHistory } from "./SessionHistory";
+import { UWLimitReachedDialog } from "./UWLimitReachedDialog";
 import ClientInfoStep from "./WizardSteps/ClientInfoStep";
 import HealthConditionsStep from "./WizardSteps/HealthConditionsStep";
 import MedicationsStep from "./WizardSteps/MedicationsStep";
@@ -127,11 +131,17 @@ export default function UnderwritingWizard({
   const [lastAnalyzedData, setLastAnalyzedData] = useState<string | null>(null);
   // Session history view toggle
   const [showingHistory, setShowingHistory] = useState(false);
+  // Limit reached dialog
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
 
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
   const decisionEngineMutation = useDecisionEngineRecommendations();
   const saveSessionMutation = useSaveUnderwritingSession();
+
+  // Usage tracking for quota limits
+  const { data: usageData, refetch: refetchUsage } = useUWWizardUsage();
+  const usageStatus = getUsageStatus(usageData);
 
   const currentStep = WIZARD_STEPS[currentStepIndex];
 
@@ -277,6 +287,12 @@ export default function UnderwritingWizard({
         return;
       }
 
+      // Check usage limit before running analysis
+      if (usageData && usageData.runs_remaining <= 0) {
+        setShowLimitDialog(true);
+        return;
+      }
+
       const bmi = calculateBMI(
         formData.client.heightFeet,
         formData.client.heightInches,
@@ -321,7 +337,11 @@ export default function UnderwritingWizard({
       setLastAnalyzedData(currentDataHash);
 
       analysisMutation.mutate(aiRequest, {
-        onSuccess: (result) => setAnalysisResult(result),
+        onSuccess: (result) => {
+          setAnalysisResult(result);
+          // Refetch usage to update the badge after a run
+          refetchUsage();
+        },
         onError: () =>
           setErrors({
             submit: "AI analysis failed. Results may be incomplete.",
@@ -680,8 +700,32 @@ export default function UnderwritingWizard({
                   <h3 className="text-base font-semibold text-foreground">
                     {currentStep.label}
                   </h3>
+
+                  {/* Usage Badge */}
+                  {usageData && (
+                    <Badge
+                      variant={
+                        usageStatus.status === "exceeded"
+                          ? "destructive"
+                          : usageStatus.status === "critical"
+                            ? "destructive"
+                            : usageStatus.status === "warning"
+                              ? "outline"
+                              : "secondary"
+                      }
+                      className={`ml-auto flex items-center gap-1 text-[10px] px-2 py-0.5 ${
+                        usageStatus.status === "warning"
+                          ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                          : ""
+                      }`}
+                    >
+                      <Zap className="h-3 w-3" />
+                      {usageData.runs_used}/{usageData.runs_limit}
+                    </Badge>
+                  )}
+
                   {currentStep.id === "results" && (
-                    <span className="text-xs text-red-500 ml-auto">
+                    <span className="text-xs text-red-500">
                       BETA - Do not use for actual recommendations
                     </span>
                   )}
@@ -762,6 +806,13 @@ export default function UnderwritingWizard({
           )}
         </WizardDialogLayout>
       </DialogContent>
+
+      {/* Limit Reached Dialog */}
+      <UWLimitReachedDialog
+        open={showLimitDialog}
+        onOpenChange={setShowLimitDialog}
+        usage={usageData ?? null}
+      />
     </Dialog>
   );
 }

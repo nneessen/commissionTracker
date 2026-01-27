@@ -297,6 +297,44 @@ serve(async (req) => {
     // Use authenticated IMO for all tenant-scoped queries
     const imoId = authenticatedImoId;
 
+    // ==========================================================================
+    // USAGE QUOTA CHECK - Verify user has runs remaining before proceeding
+    // ==========================================================================
+    const { data: quotaCheck, error: quotaError } = await supabase.rpc(
+      "can_run_uw_wizard",
+      { p_user_id: user.id },
+    );
+
+    if (quotaError) {
+      console.error("[Quota] Error checking quota:", quotaError.message);
+      // Continue without blocking on quota check errors (graceful degradation)
+    } else if (quotaCheck && quotaCheck.length > 0 && !quotaCheck[0].allowed) {
+      const reason = quotaCheck[0].reason;
+      console.log(
+        `[Quota] User ${user.id} blocked: ${reason}, tier: ${quotaCheck[0].tier_id}`,
+      );
+
+      const errorMessages: Record<string, string> = {
+        no_subscription: "UW Wizard subscription required",
+        limit_exceeded:
+          "Monthly usage limit reached. Upgrade your plan for more runs.",
+      };
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: errorMessages[reason] || "Unable to verify usage quota",
+          code: reason,
+          runs_remaining: quotaCheck[0].runs_remaining || 0,
+          tier_id: quotaCheck[0].tier_id,
+        }),
+        {
+          status: reason === "no_subscription" ? 403 : 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // Validate required fields
     if (!client || !client.age || !client.gender || !client.state) {
       throw new Error("Missing required client information");
@@ -844,10 +882,60 @@ serve(async (req) => {
     // Update analysis result with merged recommendations
     analysisResult.recommendations = mergedRecommendations;
 
+    // ==========================================================================
+    // INCREMENT USAGE - Track this run for billing/quota purposes
+    // ==========================================================================
+    const tokenUsage = {
+      input: response.usage?.input_tokens || null,
+      output: response.usage?.output_tokens || null,
+    };
+
+    let usageInfo = null;
+    try {
+      const { data: incrementResult } = await supabase.rpc(
+        "increment_uw_wizard_usage",
+        {
+          p_user_id: user.id,
+          p_imo_id: imoId,
+          p_session_id: null, // Could pass session ID if saving
+          p_input_tokens: tokenUsage.input,
+          p_output_tokens: tokenUsage.output,
+        },
+      );
+
+      if (incrementResult && incrementResult.length > 0) {
+        // Get full usage info for response
+        const { data: currentUsage } = await supabase.rpc(
+          "get_uw_wizard_usage",
+          { p_user_id: user.id },
+        );
+
+        if (currentUsage && currentUsage.length > 0) {
+          usageInfo = {
+            runs_used: currentUsage[0].runs_used,
+            runs_limit: currentUsage[0].runs_limit,
+            runs_remaining: currentUsage[0].runs_remaining,
+            usage_percent: currentUsage[0].usage_percent,
+            tier_id: currentUsage[0].tier_id,
+            tier_name: currentUsage[0].tier_name,
+          };
+        }
+      }
+
+      console.log(
+        `[Usage] User ${user.id} run recorded. Tokens: ${tokenUsage.input}/${tokenUsage.output}. ` +
+          `Remaining: ${usageInfo?.runs_remaining ?? "unknown"}`,
+      );
+    } catch (usageError) {
+      console.error("[Usage] Failed to increment usage:", usageError);
+      // Continue without blocking - usage tracking is non-critical
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         analysis: analysisResult,
+        usage: usageInfo,
         filteredProducts: filteredOutProducts,
         fullUnderwritingRequired: productsRequiringFullUW,
         // Phase 5: Include criteria evaluation results

@@ -29,4 +29,6 @@ export {
   type UpdatePlanMetadataParams,
   type CreateAddonParams,
   type UpdateAddonParams,
+  type AddonTier,
+  type AddonTierConfig,
 } from "./adminSubscriptionService";

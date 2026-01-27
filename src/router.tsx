@@ -62,33 +62,45 @@ const rootRoute = createRootRoute({
   ),
 });
 
-// Dashboard/Home route - requires approval, blocks recruits and staff roles
+// Dashboard/Home route - requires approval, blocks recruits and staff roles, requires dashboard subscription
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits noStaffRoles>
+    <RouteGuard
+      permission="nav.dashboard"
+      noRecruits
+      noStaffRoles
+      subscriptionFeature="dashboard"
+    >
       <DashboardHome />
     </RouteGuard>
   ),
 });
 
-// Dashboard route (alias for home) - requires approval, blocks recruits and staff roles
+// Dashboard route (alias for home) - requires approval, blocks recruits and staff roles, requires dashboard subscription
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "dashboard",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits noStaffRoles>
+    <RouteGuard
+      permission="nav.dashboard"
+      noRecruits
+      noStaffRoles
+      subscriptionFeature="dashboard"
+    >
       <DashboardHome />
     </RouteGuard>
   ),
 });
 
 // Login route with success handler
+// Default redirect is /policies since all tiers have access to it
+// Dashboard and other premium routes will redirect unauthorized users
 function LoginComponent() {
   const navigate = useNavigate();
   const handleLoginSuccess = () => {
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/policies" });
   };
   return <Login onSuccess={handleLoginSuccess} />;
 }
@@ -131,23 +143,33 @@ const policiesRoute = createRoute({
   ),
 });
 
-// Analytics route - requires approval, blocks recruits and staff roles
+// Analytics route - requires approval, blocks recruits and staff roles, requires dashboard subscription
 const analyticsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "analytics",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits noStaffRoles>
+    <RouteGuard
+      permission="nav.dashboard"
+      noRecruits
+      noStaffRoles
+      subscriptionFeature="dashboard"
+    >
       <AnalyticsDashboard />
     </RouteGuard>
   ),
 });
 
-// Comp Guide route - Admin only (manages carriers, products, commission rates)
+// Comp Guide route - Admin only (manages carriers, products, commission rates), requires comp_guide subscription
 const compGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "comps",
   component: () => (
-    <RouteGuard permission="carriers.manage" noRecruits noStaffRoles>
+    <RouteGuard
+      permission="carriers.manage"
+      noRecruits
+      noStaffRoles
+      subscriptionFeature="comp_guide"
+    >
       <CompGuide />
     </RouteGuard>
   ),

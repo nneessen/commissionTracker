@@ -28,6 +28,29 @@ export const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
 const PERMANENT_INSTAGRAM_ACCESS_EMAILS = ["meta-reviewer@thestandardhq.com"];
 
 /**
+ * Test emails that should NOT get temporary free access.
+ * These accounts will always see real subscription-based feature gating.
+ * Used for testing tier feature gating before launch.
+ */
+const SUBSCRIPTION_TEST_EMAILS = [
+  "nick@nickneessen.com",
+  // Add more test emails here as needed
+];
+
+/**
+ * Check if an email is a subscription test account.
+ * Test accounts skip temporary free access to properly test tier gating.
+ */
+export function isSubscriptionTestEmail(
+  email: string | undefined | null,
+): boolean {
+  if (!email) return false;
+  return SUBSCRIPTION_TEST_EMAILS.some(
+    (testEmail) => testEmail.toLowerCase() === email.toLowerCase(),
+  );
+}
+
+/**
  * Check if we are currently in the temporary free access period.
  * Returns true until Mar 1, 2026 00:00 UTC.
  */
@@ -38,8 +61,19 @@ export function isTemporaryFreeAccessPeriod(): boolean {
 /**
  * Check if a feature should be granted free access during the temporary period.
  * Recruiting and any other excluded features will NOT be granted free access.
+ *
+ * @param feature - The feature to check
+ * @param userEmail - Optional user email to check if they're a test account
  */
-export function shouldGrantTemporaryAccess(feature: FeatureKey): boolean {
+export function shouldGrantTemporaryAccess(
+  feature: FeatureKey,
+  userEmail?: string | null,
+): boolean {
+  // Test accounts never get temporary access - they see real subscription behavior
+  if (isSubscriptionTestEmail(userEmail)) {
+    return false;
+  }
+
   if (!isTemporaryFreeAccessPeriod()) {
     return false;
   }

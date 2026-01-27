@@ -17,6 +17,7 @@ type SubscriptionEventRow =
   Database["public"]["Tables"]["subscription_events"]["Row"];
 
 // Feature definitions
+// All keys must be present in subscription_plans.features JSONB
 export interface SubscriptionFeatures {
   dashboard: boolean;
   policies: boolean;
@@ -35,6 +36,9 @@ export interface SubscriptionFeatures {
   overrides: boolean;
   downline_reports: boolean;
   instagram_messaging: boolean;
+  // Instagram sub-features
+  instagram_scheduled_messages: boolean;
+  instagram_templates: boolean;
   // Premium branding features
   recruiting_basic: boolean;
   recruiting_custom_pipeline: boolean;
