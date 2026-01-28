@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-28 09:20:13
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/slack-notification-routing.md`
+- `plans/active/hierarchy-ap-calculation-continuation.md`
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/subscription/AnalyticsSectionGate.tsx`
+- `src/constants/features.ts`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260118122916_add_uw_wizard_user_access.sql`
+- `supabase/migrations/20260128085225_add_analytics_feature.sql`
+
+### Statistics
+```
+ 16 files changed, 14185 insertions(+), 14126 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-28 09:19:49
+
+### Changed Files
+- `docs/slack-notification-routing.md`
+- `plans/active/hierarchy-ap-calculation-continuation.md`
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/subscription/AnalyticsSectionGate.tsx`
+- `src/constants/features.ts`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260118122916_add_uw_wizard_user_access.sql`
+- `supabase/migrations/20260128085225_add_analytics_feature.sql`
+
+### Statistics
+```
+ 14 files changed, 14157 insertions(+), 14121 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-28 08:30:11
 
 ### Changed Files

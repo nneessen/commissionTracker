@@ -1,7 +1,8 @@
 // src/features/analytics/AnalyticsDashboard.tsx
 
 import React, { lazy, Suspense } from "react";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Sparkles, CheckCircle2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { TimePeriodSelector } from "./components/TimePeriodSelector";
 import { Button } from "@/components/ui/button";
 import { useAnalyticsData } from "@/hooks";
@@ -12,6 +13,10 @@ import {
 } from "./context/AnalyticsDateContext";
 import { AnalyticsSectionGate } from "@/components/subscription";
 import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
+import {
+  useAccessibleAnalyticsSections,
+  ANALYTICS_SECTION_NAMES,
+} from "@/hooks/subscription";
 
 // Lazy load analytics components for better performance
 const PaceMetrics = lazy(() =>
@@ -54,6 +59,13 @@ function AnalyticsDashboardContent() {
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });
+
+  // Get accessible/locked sections for upgrade banner
+  const {
+    accessibleSections,
+    lockedSections,
+    isLoading: sectionsLoading,
+  } = useAccessibleAnalyticsSections();
 
   // React 19.1 optimizes automatically - no need for useCallback
   const handleExportCSV = () => {
@@ -142,69 +154,136 @@ function AnalyticsDashboardContent() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {/* Loading State */}
-        {analyticsData.isLoading ? (
+        {analyticsData.isLoading || sectionsLoading ? (
           <div className="p-4 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
             Loading analytics...
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2 max-w-[1920px] mx-auto w-full">
-            {/* Free Tier Sections (3) */}
-            <AnalyticsSectionGate section="pace_metrics">
-              <Suspense fallback={null}>
-                <PaceMetrics />
-              </Suspense>
-            </AnalyticsSectionGate>
+          <>
+            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2 max-w-[1920px] mx-auto w-full">
+              {/* Sections are rendered based on plan access - hidden if no access */}
+              <AnalyticsSectionGate section="pace_metrics">
+                <Suspense fallback={null}>
+                  <PaceMetrics />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            <AnalyticsSectionGate section="carriers_products">
-              <Suspense fallback={null}>
-                <CarriersProductsBreakdown />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="carriers_products">
+                <Suspense fallback={null}>
+                  <CarriersProductsBreakdown />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            <AnalyticsSectionGate section="product_matrix">
-              <Suspense fallback={null}>
-                <ProductMatrix />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="product_matrix">
+                <Suspense fallback={null}>
+                  <ProductMatrix />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            {/* Pro Tier Sections (all 9 sections) */}
-            <AnalyticsSectionGate section="policy_status_breakdown">
-              <Suspense fallback={null}>
-                <PolicyStatusBreakdown />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="policy_status_breakdown">
+                <Suspense fallback={null}>
+                  <PolicyStatusBreakdown />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            <AnalyticsSectionGate section="geographic">
-              <Suspense fallback={null}>
-                <GeographicAnalysis />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="geographic">
+                <Suspense fallback={null}>
+                  <GeographicAnalysis />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            <AnalyticsSectionGate section="client_segmentation">
-              <Suspense fallback={null}>
-                <ClientSegmentation />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="client_segmentation">
+                <Suspense fallback={null}>
+                  <ClientSegmentation />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            {/* Pro Tier Sections (+3 = 9 total) */}
-            <AnalyticsSectionGate section="game_plan">
-              <Suspense fallback={null}>
-                <GamePlan />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="game_plan">
+                <Suspense fallback={null}>
+                  <GamePlan />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            <AnalyticsSectionGate section="commission_pipeline">
-              <Suspense fallback={null}>
-                <CommissionPipeline />
-              </Suspense>
-            </AnalyticsSectionGate>
+              <AnalyticsSectionGate section="commission_pipeline">
+                <Suspense fallback={null}>
+                  <CommissionPipeline />
+                </Suspense>
+              </AnalyticsSectionGate>
 
-            <AnalyticsSectionGate section="predictive_analytics">
-              <Suspense fallback={null}>
-                <PredictiveAnalytics />
-              </Suspense>
-            </AnalyticsSectionGate>
-          </div>
+              <AnalyticsSectionGate section="predictive_analytics">
+                <Suspense fallback={null}>
+                  <PredictiveAnalytics />
+                </Suspense>
+              </AnalyticsSectionGate>
+            </div>
+
+            {/* Upgrade Banner - only show when there are locked sections */}
+            {lockedSections.length > 0 && (
+              <div className="mt-4 max-w-[1920px] mx-auto">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg border border-amber-200 dark:border-amber-800/50 p-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                          Unlock More Analytics
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-6 gap-y-2">
+                        {/* Available Sections */}
+                        {accessibleSections.length > 0 && (
+                          <div>
+                            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                              Your Plan Includes
+                            </span>
+                            <div className="flex flex-wrap gap-1.5 mt-1">
+                              {accessibleSections.map((section) => (
+                                <span
+                                  key={section}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  {ANALYTICS_SECTION_NAMES[section]}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Locked Sections */}
+                        <div>
+                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                            Upgrade to Unlock
+                          </span>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {lockedSections.map((section) => (
+                              <span
+                                key={section}
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                              >
+                                {ANALYTICS_SECTION_NAMES[section]}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Link to="/settings" search={{ tab: "billing" }}>
+                      <Button
+                        size="sm"
+                        className="h-8 px-4 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 whitespace-nowrap"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                        Upgrade Plan
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Compact Footer Note */}

@@ -9,6 +9,7 @@ The previous assistant made multiple incorrect attempts to fix this. The user is
 This is an MLM-style insurance agency system. The "Production by Agency" dashboard panel should show **RECURSIVE HIERARCHY-BASED TOTALS**, NOT flat organizational membership.
 
 ### Agency Structure
+
 ```
 Self Made Financial (TOP LEVEL - owned by Kerry Glass)
 ├── The Standard (child agency - owned by Nick Neessen, who is Kerry's DIRECT DOWNLINE)
@@ -17,6 +18,7 @@ Self Made Financial (TOP LEVEL - owned by Kerry Glass)
 ```
 
 ### User Hierarchy (upline/downline relationships)
+
 ```
 Kerry Glass (Self Made owner)
 ├── Nick Neessen (owns The Standard, reports to Kerry)
@@ -31,16 +33,17 @@ Kerry Glass (Self Made owner)
 
 ### What "Production by Agency" SHOULD Show
 
-| Agency | Should Include |
-|--------|---------------|
+| Agency              | Should Include                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Self Made Financial | Kerry + Nick + Hunter + nick@nickneessen.com + Hayes + all Hayes' downlines + Chase + all Chase' downlines = **ENTIRE ORGANIZATION** |
-| The Standard | Nick + Hunter + nick@nickneessen.com + all Nick's other downlines |
-| 1 of 1 Financial | Hayes + all Hayes' downlines |
-| Ten Toes Down | Chase + all Chase's downlines |
+| The Standard        | Nick + Hunter + nick@nickneessen.com + all Nick's other downlines                                                                    |
+| 1 of 1 Financial    | Hayes + all Hayes' downlines                                                                                                         |
+| Ten Toes Down       | Chase + all Chase's downlines                                                                                                        |
 
 **YES, THE NUMBERS WILL OVERLAP.** Self Made's total will be larger than the sum of the child agencies because Self Made includes EVERYTHING.
 
 ### The Key Insight
+
 - Each agency's AP = SUM of policies written by users in the **agency owner's hierarchy tree**
 - Use `hierarchy_path LIKE owner_path || '.%'` to find all descendants
 - This is RECURSIVE - unlimited depth
@@ -58,6 +61,7 @@ So hierarchy-based IS correct, but something was wrong with the implementation.
 ## Files Involved
 
 ### SQL Migrations (in order applied)
+
 ```
 supabase/migrations/20260115_001_fix_agency_metrics_hierarchy.sql  -- Fixed get_agency_dashboard_metrics
 supabase/migrations/20260115_002_fix_remaining_hierarchy_bugs.sql  -- Fixed get_imo_production_by_agency (hierarchy) + others
@@ -65,11 +69,13 @@ supabase/migrations/20260115_003_revert_imo_production_by_agency.sql  -- REVERTE
 ```
 
 ### Key RPC Functions
+
 - `get_agency_dashboard_metrics` - Individual agency's team total (hierarchy-based) ✅
 - `get_imo_production_by_agency` - Breakdown showing all agencies (NEEDS HIERARCHY)
 - `get_agency_override_summary` - Override totals (hierarchy-based)
 
 ### Frontend Code Path
+
 ```
 src/features/dashboard/components/OrgMetricsSection.tsx
   └── ProductionBreakdownPanel (line ~534)
@@ -135,6 +141,7 @@ GROUP BY awp.agency_id, awp.name;
 ## Debug Queries to Run
 
 ### 1. Check actual policy data
+
 ```sql
 SELECT COUNT(*), SUM(annual_premium)
 FROM policies
@@ -142,6 +149,7 @@ WHERE status = 'active';
 ```
 
 ### 2. Check Kerry's full team (should be everyone)
+
 ```sql
 WITH kerry AS (
   SELECT id, hierarchy_path FROM user_profiles WHERE email = 'kerryglass.ffl@gmail.com'
@@ -152,6 +160,7 @@ WHERE up.id = k.id OR up.hierarchy_path LIKE k.hierarchy_path || '.%';
 ```
 
 ### 3. Check what the RPC actually returns
+
 ```sql
 -- Run as authenticated user (not postgres) to test access
 SELECT * FROM get_imo_production_by_agency('2025-01-01', '2026-12-31');
@@ -165,11 +174,13 @@ SELECT * FROM get_imo_production_by_agency('2025-01-01', '2026-12-31');
 4. **Test** the dashboard shows correct numbers
 
 ## DO NOT
+
 - Revert to flat agency_id - the user explicitly said hierarchy is required
 - Make assumptions - verify with actual data queries
 - Apply migrations without testing the SQL logic first
 
 ## User's Frustration
+
 The user said: "you did absolutely nothing correct" and "this is showing me all the exact same #'s as before, so you literally changed/fixed nothing at all"
 
 Take this seriously. Verify your changes actually work before telling the user it's fixed.

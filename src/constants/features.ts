@@ -60,6 +60,14 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     category: "core",
   },
 
+  // Analytics Features
+  analytics: {
+    key: "analytics",
+    displayName: "Analytics Dashboard",
+    description: "Advanced analytics with charts and insights",
+    category: "analytics",
+  },
+
   // Tracking Features
   expenses: {
     key: "expenses",

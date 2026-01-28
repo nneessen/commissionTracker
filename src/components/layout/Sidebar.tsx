@@ -55,6 +55,7 @@ interface NavigationItem {
   permission?: PermissionCode;
   public?: boolean;
   subscriptionFeature?: FeatureKey;
+  subscriptionFeatures?: FeatureKey[]; // Alternative: any of these features grants access
 }
 
 interface SidebarProps {
@@ -78,7 +79,7 @@ const navigationItems: NavigationItem[] = [
     label: "Analytics",
     href: "/analytics",
     permission: "nav.dashboard",
-    subscriptionFeature: "dashboard",
+    subscriptionFeature: "analytics",
   },
   {
     icon: Target,
@@ -119,7 +120,7 @@ const navigationItems: NavigationItem[] = [
     label: "Recruiting",
     href: "/recruiting",
     permission: "nav.recruiting_pipeline",
-    subscriptionFeature: "recruiting",
+    subscriptionFeatures: ["recruiting", "recruiting_basic"], // Either full or basic grants access
   },
   {
     icon: Mail,
@@ -332,9 +333,17 @@ export default function Sidebar({
             if (!can(item.permission)) return false;
 
             // Subscription feature check (HIDE if locked, not show with crown)
+            // Check single feature
             if (
               item.subscriptionFeature &&
               !hasFeature(item.subscriptionFeature)
+            ) {
+              return false;
+            }
+            // Check array of features (any grants access)
+            if (
+              item.subscriptionFeatures &&
+              !item.subscriptionFeatures.some((f) => hasFeature(f))
             ) {
               return false;
             }

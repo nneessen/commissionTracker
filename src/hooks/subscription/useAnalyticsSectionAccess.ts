@@ -1,10 +1,11 @@
 // src/hooks/subscription/useAnalyticsSectionAccess.ts
 // Hook for checking analytics section access based on subscription tier
+// NOTE: Temporary access controls PAGE access (nav visibility), not section access.
+// Individual section access is ALWAYS controlled by the plan's analytics_sections array.
 
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
 import { useOwnerDownlineAccess } from "./useOwnerDownlineAccess";
-import { isTemporaryFreeAccessPeriod } from "@/lib/temporaryAccess";
 
 // Analytics section identifiers that match database analytics_sections array
 export type AnalyticsSectionKey =
@@ -101,19 +102,8 @@ export function useAnalyticsSectionAccess(
       };
     }
 
-    // Temporary free access period (until Feb 1, 2026)
-    // Grants access to ALL analytics sections
-    if (isTemporaryFreeAccessPeriod()) {
-      return {
-        hasAccess: true,
-        isLoading: false,
-        currentPlan: tierName,
-        requiredPlan: ANALYTICS_SECTION_TIERS[section],
-        sectionName: ANALYTICS_SECTION_NAMES[section],
-      };
-    }
-
-    // Get analytics sections from the plan
+    // Section access is ALWAYS controlled by the plan's analytics_sections array
+    // Temporary access only controls PAGE visibility (handled by sidebar/nav gating)
     const analyticsSections = subscription?.plan?.analytics_sections || [];
     const hasAccess = analyticsSections.includes(section);
 
@@ -183,17 +173,7 @@ export function useAccessibleAnalyticsSections(): {
       };
     }
 
-    // Temporary free access period (until Feb 1, 2026)
-    // Grants access to ALL analytics sections
-    if (isTemporaryFreeAccessPeriod()) {
-      return {
-        accessibleSections: allSections,
-        lockedSections: [],
-        isLoading: false,
-        tierName,
-      };
-    }
-
+    // Section access is ALWAYS controlled by the plan's analytics_sections array
     const analyticsSections = (subscription?.plan?.analytics_sections ||
       []) as AnalyticsSectionKey[];
 

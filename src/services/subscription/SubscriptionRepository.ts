@@ -20,6 +20,7 @@ type SubscriptionEventRow =
 // All keys must be present in subscription_plans.features JSONB
 export interface SubscriptionFeatures {
   dashboard: boolean;
+  analytics: boolean;
   policies: boolean;
   comp_guide: boolean;
   settings: boolean;

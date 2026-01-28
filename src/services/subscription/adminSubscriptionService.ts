@@ -835,6 +835,7 @@ class AdminSubscriptionService {
       // Default features (all off for new plan)
       const defaultFeatures: SubscriptionFeatures = {
         dashboard: false,
+        analytics: false,
         policies: false,
         comp_guide: false,
         settings: false,
@@ -968,7 +969,10 @@ class AdminSubscriptionService {
         .single();
 
       if (fetchError && fetchError.code !== "PGRST116") {
-        logger.error("AdminSubscriptionService.changeUserPlan - fetch", fetchError);
+        logger.error(
+          "AdminSubscriptionService.changeUserPlan - fetch",
+          fetchError,
+        );
         throw fetchError;
       }
 
@@ -989,7 +993,10 @@ class AdminSubscriptionService {
           .eq("user_id", userId);
 
         if (updateError) {
-          logger.error("AdminSubscriptionService.changeUserPlan - update", updateError);
+          logger.error(
+            "AdminSubscriptionService.changeUserPlan - update",
+            updateError,
+          );
           throw updateError;
         }
 
@@ -1001,7 +1008,8 @@ class AdminSubscriptionService {
           oldValue: {
             user_id: userId,
             old_plan_id: currentSub.plan_id,
-            old_plan_name: (currentSub.plan as SubscriptionPlanRow)?.display_name,
+            old_plan_name: (currentSub.plan as SubscriptionPlanRow)
+              ?.display_name,
           },
           newValue: {
             user_id: userId,
@@ -1020,11 +1028,16 @@ class AdminSubscriptionService {
             status: "active",
             billing_interval: "monthly",
             current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            current_period_end: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
           });
 
         if (insertError) {
-          logger.error("AdminSubscriptionService.changeUserPlan - insert", insertError);
+          logger.error(
+            "AdminSubscriptionService.changeUserPlan - insert",
+            insertError,
+          );
           throw insertError;
         }
 
@@ -1033,8 +1046,16 @@ class AdminSubscriptionService {
           planId,
           changedBy,
           changeType: "user_plan_change",
-          oldValue: { user_id: userId, old_plan_id: null, old_plan_name: "No subscription" },
-          newValue: { user_id: userId, new_plan_id: planId, new_plan_name: newPlan.display_name },
+          oldValue: {
+            user_id: userId,
+            old_plan_id: null,
+            old_plan_name: "No subscription",
+          },
+          newValue: {
+            user_id: userId,
+            new_plan_id: planId,
+            new_plan_name: newPlan.display_name,
+          },
           notes: reason || "Admin assigned plan to user for testing",
         });
       }
@@ -1058,7 +1079,9 @@ class AdminSubscriptionService {
    * Get a user's current subscription with plan details
    */
   async getUserSubscription(userId: string): Promise<{
-    subscription: Database["public"]["Tables"]["user_subscriptions"]["Row"] | null;
+    subscription:
+      | Database["public"]["Tables"]["user_subscriptions"]["Row"]
+      | null;
     plan: SubscriptionPlan | null;
   }> {
     try {

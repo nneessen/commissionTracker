@@ -57,6 +57,7 @@ export function getRequiredPlanForFeature(
 // Map features to user-friendly names (using feature registry)
 export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   dashboard: "Dashboard",
+  analytics: "Analytics Dashboard",
   policies: "Policy Management",
   comp_guide: "Compensation Guide",
   settings: "Settings",

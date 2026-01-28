@@ -21,7 +21,7 @@ WHERE up.imo_id = i.id
 -- Step 4: Enable for users in email allowlist
 UPDATE public.user_profiles
 SET uw_wizard_enabled = TRUE
-WHERE email IN ('nickneessen@thestandardhq.com', 'kerryglass.ffl@gmail.com');
+WHERE email IN ('nickneessen@thestandardhq.com');
 
 -- Step 5: Add comment
 COMMENT ON COLUMN public.user_profiles.uw_wizard_enabled IS

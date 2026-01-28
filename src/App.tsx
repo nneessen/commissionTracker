@@ -113,18 +113,17 @@ function AuthenticatedApp() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { shouldShow: showAnnouncement, dismiss: dismissAnnouncement } =
     useSubscriptionAnnouncement();
-  const { subscription, isActive: isSubscriptionActive } = useSubscription();
+  const { subscription, isActive: _isSubscriptionActive } = useSubscription();
 
-  // Determine if sidebar should be hidden for Free tier users
-  // Free tier only has policies + settings - no need for a sidebar with just 2 items
-  const isFreeTier = subscription?.plan?.name === "free";
+  // Always show sidebar - even for free tier users
+  // Feature gating is handled within the sidebar via locked nav items
+  const _isFreeTier = subscription?.plan?.name === "free";
   const { shouldGrantTemporaryAccess } = useTemporaryAccessCheck();
-  const hasTemporaryAccess = shouldGrantTemporaryAccess(
+  const _hasTemporaryAccess = shouldGrantTemporaryAccess(
     "dashboard",
     user?.email,
   );
-  const shouldHideSidebar =
-    isFreeTier && isSubscriptionActive && !hasTemporaryAccess;
+  const shouldHideSidebar = false; // Always show sidebar
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
