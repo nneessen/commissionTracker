@@ -19,7 +19,14 @@ window.addEventListener("vite:preloadError", () => {
 // Checks version.json every 5 minutes and prompts refresh on new deploy
 (function setupVersionPolling() {
   const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  const MAX_NOTES_TO_SHOW = 5;
   let initialVersion: string | null = null;
+
+  interface ReleaseNote {
+    id: string;
+    type: "feat" | "fix" | "improve";
+    text: string;
+  }
 
   async function checkVersion() {
     try {
@@ -31,6 +38,21 @@ window.addEventListener("vite:preloadError", () => {
 
       const data = await response.json();
       const currentVersion = data.v;
+      const notes: ReleaseNote[] = data.notes || [];
+
+      // Get last seen note ID from localStorage (persists across sessions)
+      const lastSeenNoteId = localStorage.getItem("last-seen-note-id");
+
+      // Find new notes (all notes newer than lastSeenNoteId)
+      let newNotes = notes.slice(0, MAX_NOTES_TO_SHOW);
+      if (lastSeenNoteId) {
+        const seenIndex = notes.findIndex((n) => n.id === lastSeenNoteId);
+        if (seenIndex !== -1) {
+          // Only show notes before (newer than) the seen one
+          newNotes = notes.slice(0, seenIndex);
+        }
+        // If seenIndex === -1, lastSeenNoteId not in list = show all notes (up to max)
+      }
 
       if (initialVersion === null) {
         // First load - store the version
@@ -41,18 +63,20 @@ window.addEventListener("vite:preloadError", () => {
         console.log("[Version Check] New version detected:", currentVersion);
 
         // Update stored version BEFORE showing banner
-        // This ensures refresh won't trigger the banner again
         initialVersion = currentVersion;
         sessionStorage.setItem("app-version", currentVersion);
 
-        // Dispatch custom event with release notes for React to handle
-        // The VersionUpdateDialog component listens for this event
-        const changes = data.changes || [];
-        window.dispatchEvent(
-          new CustomEvent("version-update-available", {
-            detail: { changes },
-          }),
-        );
+        // Only show dialog if there are new notes the user hasn't seen
+        if (newNotes.length > 0) {
+          console.log("[Version Check] New notes to show:", newNotes.length);
+          window.dispatchEvent(
+            new CustomEvent("version-update-available", {
+              detail: { notes: newNotes },
+            }),
+          );
+        } else {
+          console.log("[Version Check] No new notes to show");
+        }
       }
     } catch (_e) {
       // Silently ignore - version.json might not exist in dev
