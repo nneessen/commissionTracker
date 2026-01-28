@@ -654,84 +654,43 @@ class UserService {
   }
 
   /**
-   * Graduate a recruit to agent and log activity/notifications
+   * Graduate a recruit to agent using RPC (bypasses RLS)
+   * The RPC handles update, activity logging, and notifications
    */
   async graduateRecruit({
     recruit,
     contractLevel,
     notes,
-    graduatedBy,
   }: {
     recruit: Pick<UserProfile, "id" | "first_name" | "last_name" | "upline_id">;
     contractLevel: number;
     notes?: string;
     graduatedBy?: string | null;
   }): Promise<{ success: boolean; error?: string }> {
-    const now = new Date().toISOString();
-
     try {
-      const { error: updateError } = await supabase
-        .from("user_profiles")
-        .update({
-          roles: ["agent"],
-          onboarding_status: "completed",
-          current_onboarding_phase: "completed",
-          approval_status: "approved",
-          contract_level: contractLevel,
-          graduated_at: now,
-          graduation_notes: notes || null,
-          updated_at: now,
-        })
-        .eq("id", recruit.id);
-
-      if (updateError) {
-        return { success: false, error: updateError.message };
-      }
-
-      const { error: logError } = await supabase.from("user_activity_log").insert({
-        user_id: recruit.id,
-        action: "graduated_to_agent",
-        description: `Graduated to agent with ${contractLevel}% contract level`,
-        metadata: {
-          previous_role: "recruit",
-          new_role: "agent",
-          contract_level: contractLevel,
-          notes: notes,
-          graduated_by: graduatedBy,
-        },
+      const { data, error } = await supabase.rpc("graduate_recruit_to_agent", {
+        p_recruit_id: recruit.id,
+        p_contract_level: contractLevel,
+        p_notes: notes || null,
       });
 
-      if (logError) {
-        logger.warn(
-          "UserService.graduateRecruit activity log failed",
-          logError,
-          "UserService",
-        );
+      if (error) {
+        logger.error("Error in graduateRecruit RPC", error, "UserService");
+        return { success: false, error: error.message };
       }
 
-      if (recruit.upline_id) {
-        const { error: notifyError } = await supabase
-          .from("notifications")
-          .insert({
-            user_id: recruit.upline_id,
-            type: "recruit_graduated",
-            title: `${recruit.first_name} ${recruit.last_name} Graduated!`,
-            message: `Your recruit ${recruit.first_name} ${recruit.last_name} has successfully completed onboarding and is now an active agent with ${contractLevel}% contract level.`,
-            metadata: {
-              recruit_id: recruit.id,
-              recruit_name: `${recruit.first_name} ${recruit.last_name}`,
-              contract_level: contractLevel,
-              graduated_at: now,
-            },
-          });
+      // RPC returns JSON with success/error fields
+      const result = data as {
+        success: boolean;
+        error?: string;
+        message?: string;
+      };
 
-        if (notifyError) {
-          logger.warn(
-            "UserService.graduateRecruit notification failed",
-            notifyError,
-            "UserService",
-          );
-        }
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error || "Failed to graduate recruit",
+        };
       }
 
       return { success: true };
@@ -740,9 +699,7 @@ class UserService {
       return {
         success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "Failed to graduate recruit",
+          error instanceof Error ? error.message : "Failed to graduate recruit",
       };
     }
   }
