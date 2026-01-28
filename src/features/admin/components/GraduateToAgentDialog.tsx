@@ -25,6 +25,7 @@ import type { UserProfile } from "@/types/user.types";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGraduateRecruit } from "@/hooks/admin";
+import { toast } from "sonner";
 
 interface GraduateToAgentDialogProps {
   recruit: UserProfile;
@@ -43,20 +44,37 @@ export function GraduateToAgentDialog({
   const [notes, setNotes] = useState("");
 
   const handleGraduate = async () => {
-    const result = await graduateMutation.mutateAsync({
-      recruit,
-      contractLevel: Number.parseInt(contractLevel, 10),
-      notes: notes || undefined,
-      graduatedBy: currentUser?.id ?? null,
-    });
+    try {
+      console.log(
+        "[GraduateToAgentDialog] Starting graduation for:",
+        recruit.id,
+      );
+      const result = await graduateMutation.mutateAsync({
+        recruit,
+        contractLevel: Number.parseInt(contractLevel, 10),
+        notes: notes || undefined,
+        graduatedBy: currentUser?.id ?? null,
+      });
 
-    if (!result.success) {
-      return;
+      console.log("[GraduateToAgentDialog] Graduation result:", result);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to graduate recruit");
+        return;
+      }
+
+      toast.success(
+        `${recruit.first_name} ${recruit.last_name} has been graduated to agent!`,
+      );
+      onOpenChange(false);
+      setNotes("");
+      setContractLevel("80");
+    } catch (error) {
+      console.error("[GraduateToAgentDialog] Graduation error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to graduate recruit",
+      );
     }
-
-    onOpenChange(false);
-    setNotes("");
-    setContractLevel("80");
   };
 
   return (

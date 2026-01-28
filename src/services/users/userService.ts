@@ -668,10 +668,21 @@ class UserService {
     graduatedBy?: string | null;
   }): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log("[userService.graduateRecruit] Starting RPC call:", {
+        recruitId: recruit.id,
+        contractLevel,
+        notes,
+      });
+
       const { data, error } = await supabase.rpc("graduate_recruit_to_agent", {
         p_recruit_id: recruit.id,
         p_contract_level: contractLevel,
         p_notes: notes || null,
+      });
+
+      console.log("[userService.graduateRecruit] RPC response:", {
+        data,
+        error,
       });
 
       if (error) {
@@ -686,6 +697,8 @@ class UserService {
         message?: string;
       };
 
+      console.log("[userService.graduateRecruit] Parsed result:", result);
+
       if (!result.success) {
         return {
           success: false,
@@ -695,6 +708,7 @@ class UserService {
 
       return { success: true };
     } catch (error) {
+      console.error("[userService.graduateRecruit] Exception:", error);
       logger.error("Error in graduateRecruit", error as Error, "UserService");
       return {
         success: false,
