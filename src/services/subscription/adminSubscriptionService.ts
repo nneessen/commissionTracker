@@ -845,16 +845,19 @@ class AdminSubscriptionService {
         targets_full: false,
         reports_view: false,
         reports_export: false,
+        // Messaging features
         email: false,
         sms: false,
+        slack: false,
+        linkedin: false,
+        instagram_messaging: false,
+        instagram_scheduled_messages: false,
+        instagram_templates: false,
+        // Team features
         hierarchy: false,
         recruiting: false,
         overrides: false,
         downline_reports: false,
-        instagram_messaging: false,
-        // Instagram sub-features
-        instagram_scheduled_messages: false,
-        instagram_templates: false,
         // Premium branding features
         recruiting_basic: false,
         recruiting_custom_pipeline: false,

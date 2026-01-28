@@ -38,6 +38,7 @@ import { MessagingAnalyticsDashboard } from "./components/analytics";
 import { useUserSlackPreferences, useSlackIntegrations } from "@/hooks/slack";
 import { useUserRoles } from "@/hooks/permissions";
 import { useImo } from "@/contexts/ImoContext";
+import { useFeatureAccess } from "@/hooks/subscription";
 import type { RoleName } from "@/types/permissions.types";
 import {
   useActiveInstagramIntegration,
@@ -101,6 +102,17 @@ export function MessagesPage() {
       hasRole("contracting_manager" as RoleName)) &&
     !hasRole("agent" as RoleName) &&
     !hasRole("admin" as RoleName);
+
+  // Feature access checks for messaging tabs
+  const { hasAccess: hasEmailAccess } = useFeatureAccess("email");
+  const { hasAccess: hasSlackAccess } = useFeatureAccess("slack");
+  const { hasAccess: hasInstagramAccess } = useFeatureAccess(
+    "instagram_messaging",
+  );
+  const { hasAccess: hasLinkedInAccess } = useFeatureAccess("linkedin");
+  const { hasAccess: hasTemplatesAccess } = useFeatureAccess(
+    "instagram_templates",
+  );
 
   // Query client for cache invalidation
   const queryClient = useQueryClient();
@@ -307,21 +319,62 @@ export function MessagesPage() {
     setIsComposeOpen(true);
   };
 
-  // Tab configuration - filter based on role
-  const allTabs: { id: TabType; label: string; icon: typeof Inbox }[] = [
-    { id: "email", label: "Email", icon: Mail },
-    { id: "slack", label: "Slack", icon: MessageSquare },
-    { id: "instagram", label: "Instagram", icon: Instagram },
-    { id: "linkedin", label: "LinkedIn", icon: Linkedin },
-    { id: "templates", label: "Templates", icon: FileText },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "settings", label: "Settings", icon: Settings },
+  // Tab configuration - filter based on role and subscription features
+  const allTabs: {
+    id: TabType;
+    label: string;
+    icon: typeof Inbox;
+    hasAccess: boolean;
+  }[] = [
+    { id: "email", label: "Email", icon: Mail, hasAccess: hasEmailAccess },
+    {
+      id: "slack",
+      label: "Slack",
+      icon: MessageSquare,
+      hasAccess: hasSlackAccess,
+    },
+    {
+      id: "instagram",
+      label: "Instagram",
+      icon: Instagram,
+      hasAccess: hasInstagramAccess,
+    },
+    {
+      id: "linkedin",
+      label: "LinkedIn",
+      icon: Linkedin,
+      hasAccess: hasLinkedInAccess,
+    },
+    {
+      id: "templates",
+      label: "Templates",
+      icon: FileText,
+      hasAccess: hasTemplatesAccess,
+    },
+    { id: "analytics", label: "Analytics", icon: BarChart3, hasAccess: true }, // Analytics controlled separately
+    { id: "settings", label: "Settings", icon: Settings, hasAccess: true }, // Always show settings
   ];
 
-  // Staff-only users (trainer/contracting_manager) cannot access templates or analytics
-  const tabs = isStaffOnlyUser
-    ? allTabs.filter((tab) => tab.id !== "templates" && tab.id !== "analytics")
-    : allTabs;
+  // Filter tabs based on:
+  // 1. Subscription feature access
+  // 2. Staff-only restrictions (no templates or analytics)
+  const tabs = allTabs.filter((tab) => {
+    // Check subscription feature access first
+    if (!tab.hasAccess) return false;
+    // Staff-only users cannot access templates or analytics
+    if (isStaffOnlyUser && (tab.id === "templates" || tab.id === "analytics")) {
+      return false;
+    }
+    return true;
+  });
+
+  // Redirect to first available tab if current tab is not accessible
+  useEffect(() => {
+    const currentTabAvailable = tabs.some((tab) => tab.id === activeTab);
+    if (!currentTabAvailable && tabs.length > 0) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [tabs, activeTab]);
 
   // Folder configuration
   const folders: {

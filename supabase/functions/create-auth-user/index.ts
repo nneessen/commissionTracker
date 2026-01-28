@@ -239,14 +239,43 @@ serve(async (req) => {
       );
       if (existingUser) {
         console.log(
-          "[create-auth-user] User already exists, returning success:",
+          "[create-auth-user] User already exists, updating profile:",
           { email: normalizedEmail, userId: existingUser.id },
         );
-        // User already exists - return success with existing user info
+
+        // User exists - still update their profile with any new data (like upline_id)
+        let existingProfile = null;
+        if (profileData) {
+          const { data: updatedProfile, error: profileError } =
+            await supabaseAdmin
+              .from("user_profiles")
+              .update(profileData)
+              .eq("id", existingUser.id)
+              .select()
+              .single();
+
+          if (profileError) {
+            console.error(
+              "[create-auth-user] Profile update failed for existing user:",
+              profileError,
+            );
+          } else {
+            existingProfile = updatedProfile;
+            console.log(
+              "[create-auth-user] Profile updated for existing user:",
+              {
+                userId: existingUser.id,
+                upline_id: existingProfile?.upline_id,
+              },
+            );
+          }
+        }
+
         return new Response(
           JSON.stringify({
             user: existingUser,
-            message: "User already exists",
+            profile: existingProfile,
+            message: "User already exists - profile updated",
             emailSent: false,
             alreadyExists: true,
           }),
@@ -316,6 +345,14 @@ serve(async (req) => {
       // Small delay to ensure trigger has completed
       await new Promise((resolve) => setTimeout(resolve, 100));
 
+      // Debug: Log what we're about to update
+      console.log("[create-auth-user] Updating profile with data:", {
+        userId: authUser.user.id,
+        upline_id: profileData.upline_id,
+        imo_id: profileData.imo_id,
+        keys: Object.keys(profileData),
+      });
+
       const { data: updatedProfile, error: profileError } = await supabaseAdmin
         .from("user_profiles")
         .update(profileData)
@@ -326,13 +363,18 @@ serve(async (req) => {
       if (profileError) {
         console.error(
           "[create-auth-user] Profile update failed:",
-          profileError,
+          JSON.stringify(profileError),
+        );
+        console.error(
+          "[create-auth-user] ProfileData that failed:",
+          JSON.stringify(profileData),
         );
         // Don't throw - auth user was created, profile will have minimal data
       } else {
         profile = updatedProfile;
         console.log("[create-auth-user] Profile updated successfully:", {
           userId: authUser.user.id,
+          upline_id: profile?.upline_id,
           imo_id: profile?.imo_id,
         });
       }
@@ -435,6 +477,9 @@ serve(async (req) => {
       JSON.stringify({
         user: authUser.user,
         profile, // Include the updated profile (or null if profileData wasn't provided)
+        profileUpdateError: profile
+          ? null
+          : "Profile update may have failed - check logs",
         message: emailSent
           ? "User created successfully. Password reset email sent."
           : "User created but email could not be sent. Check edge function logs.",

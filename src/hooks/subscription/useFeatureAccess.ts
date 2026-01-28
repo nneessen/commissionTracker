@@ -67,16 +67,19 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   reports_view: "Reports View",
   targets_full: "Full Targets & Goals",
   reports_export: "Export Reports",
+  // Messaging features
   email: "Email Messaging",
   sms: "SMS Messaging",
+  slack: "Slack Integration",
+  linkedin: "LinkedIn Messaging",
+  instagram_messaging: "Instagram Messaging",
+  instagram_scheduled_messages: "Scheduled Instagram Messages",
+  instagram_templates: "Instagram Templates",
+  // Team features
   hierarchy: "Team Hierarchy",
   recruiting: "Recruiting Pipeline",
   overrides: "Override Tracking",
   downline_reports: "Downline Reports",
-  instagram_messaging: "Instagram Messaging",
-  // Instagram sub-features
-  instagram_scheduled_messages: "Scheduled Instagram Messages",
-  instagram_templates: "Instagram Templates",
   // Premium branding features
   recruiting_basic: "Basic Recruiting",
   recruiting_custom_pipeline: "Custom Recruiting Pipeline",

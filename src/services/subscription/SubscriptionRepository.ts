@@ -30,16 +30,20 @@ export interface SubscriptionFeatures {
   targets_full: boolean;
   reports_view: boolean;
   reports_export: boolean;
+  // Messaging features
   email: boolean;
   sms: boolean;
-  hierarchy: boolean;
-  recruiting: boolean;
-  overrides: boolean;
-  downline_reports: boolean;
+  slack: boolean;
+  linkedin: boolean;
   instagram_messaging: boolean;
   // Instagram sub-features
   instagram_scheduled_messages: boolean;
   instagram_templates: boolean;
+  // Team features
+  hierarchy: boolean;
+  recruiting: boolean;
+  overrides: boolean;
+  downline_reports: boolean;
   // Premium branding features
   recruiting_basic: boolean;
   recruiting_custom_pipeline: boolean;

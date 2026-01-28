@@ -5,7 +5,11 @@ import { Navigate } from "@tanstack/react-router";
 import { useAuthorizationStatus } from "@/hooks/admin";
 import { usePermissionCheck } from "@/hooks/permissions";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFeatureAccess, type FeatureKey } from "@/hooks/subscription";
+import {
+  useFeatureAccess,
+  useAnyFeatureAccess,
+  type FeatureKey,
+} from "@/hooks/subscription";
 import { PendingApproval } from "@/features/auth";
 import { PermissionDenied } from "@/features/auth";
 import { UpgradePrompt } from "@/components/subscription";
@@ -33,8 +37,10 @@ interface RouteGuardProps {
   staffOnly?: boolean;
   /** Required email for super-admin routes */
   requireEmail?: string;
-  /** Required subscription feature to access this route */
+  /** Required subscription feature to access this route (single) */
   subscriptionFeature?: FeatureKey;
+  /** Multiple subscription features - ANY grants access (like Sidebar) */
+  subscriptionFeatures?: FeatureKey[];
   /** Custom fallback component */
   fallback?: React.ReactNode;
 }
@@ -77,6 +83,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   staffOnly = false,
   requireEmail,
   subscriptionFeature,
+  subscriptionFeatures,
   fallback,
 }) => {
   const { supabaseUser } = useAuth();
@@ -96,9 +103,19 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     isLoading: permLoading,
   } = usePermissionCheck();
 
-  // Feature access check (only if subscriptionFeature is specified)
-  const featureAccess = useFeatureAccess(subscriptionFeature || "dashboard");
-  const checkingFeature = subscriptionFeature && featureAccess.isLoading;
+  // Feature access check - single feature (only if subscriptionFeature is specified)
+  const singleFeatureAccess = useFeatureAccess(
+    subscriptionFeature || "dashboard",
+  );
+
+  // Feature access check - multiple features (any grants access)
+  const multiFeatureAccess = useAnyFeatureAccess(subscriptionFeatures || []);
+
+  // Determine which feature check to use
+  const hasFeatureRequirement = subscriptionFeature || subscriptionFeatures;
+  const checkingFeature =
+    (subscriptionFeature && singleFeatureAccess.isLoading) ||
+    (subscriptionFeatures && multiFeatureAccess.isLoading);
 
   // Show loading state while checking
   if (authLoading || permLoading || checkingFeature) {
@@ -190,12 +207,24 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   // Check subscription feature access (after permission checks)
   // Staff-only roles (trainers, contracting managers) bypass subscription checks
   // They have IMO-level access and don't need individual subscriptions
-  if (subscriptionFeature && !featureAccess.hasAccess && !isStaffOnlyRole) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] p-4">
-        <UpgradePrompt feature={subscriptionFeature} variant="card" />
-      </div>
-    );
+  if (hasFeatureRequirement && !isStaffOnlyRole) {
+    // Check single feature
+    if (subscriptionFeature && !singleFeatureAccess.hasAccess) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh] p-4">
+          <UpgradePrompt feature={subscriptionFeature} variant="card" />
+        </div>
+      );
+    }
+    // Check multiple features (any grants access)
+    if (subscriptionFeatures && !multiFeatureAccess.hasAccess) {
+      // Use the first feature for the upgrade prompt
+      return (
+        <div className="flex items-center justify-center min-h-[60vh] p-4">
+          <UpgradePrompt feature={subscriptionFeatures[0]} variant="card" />
+        </div>
+      );
+    }
   }
 
   // All checks passed - render children

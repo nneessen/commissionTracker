@@ -420,7 +420,7 @@ const recruitingRoute = createRoute({
     <RouteGuard
       permission="nav.recruiting_pipeline"
       noRecruits
-      subscriptionFeature="recruiting"
+      subscriptionFeatures={["recruiting", "recruiting_basic"]}
     >
       <RecruitingDashboard />
     </RouteGuard>

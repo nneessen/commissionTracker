@@ -141,10 +141,34 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     description: "Send SMS messages from the platform",
     category: "messaging",
   },
+  slack: {
+    key: "slack",
+    displayName: "Slack Integration",
+    description: "Connect and message via Slack channels",
+    category: "messaging",
+  },
+  linkedin: {
+    key: "linkedin",
+    displayName: "LinkedIn Messaging",
+    description: "Manage LinkedIn messages from the platform",
+    category: "messaging",
+  },
   instagram_messaging: {
     key: "instagram_messaging",
     displayName: "Instagram Messaging",
     description: "Manage Instagram DMs from the platform",
+    category: "messaging",
+  },
+  instagram_scheduled_messages: {
+    key: "instagram_scheduled_messages",
+    displayName: "Scheduled Instagram Messages",
+    description: "Schedule Instagram DMs to send later",
+    category: "messaging",
+  },
+  instagram_templates: {
+    key: "instagram_templates",
+    displayName: "Instagram Templates",
+    description: "Create and use message templates for Instagram",
     category: "messaging",
   },
 

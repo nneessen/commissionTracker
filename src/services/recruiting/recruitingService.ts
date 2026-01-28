@@ -97,9 +97,20 @@ export const recruitingService = {
       // Required hierarchy fields (set defaults)
       hierarchy_path: "", // Will be updated by trigger
       hierarchy_depth: 0, // Will be updated by trigger
+      // IMPORTANT: Set contract_level to null for new recruits
+      // This prevents the default value of 80 from triggering hierarchy validation
+      // that requires upline contract_level > downline contract_level
+      contract_level: null,
       approval_status: "pending",
       is_admin: recruit.is_admin || false,
     };
+
+    // Debug: Log profileData being sent to edge function
+    console.log("[recruitingService.createRecruit] Sending profileData:", {
+      upline_id: profileData.upline_id,
+      imo_id: profileData.imo_id,
+      keys: Object.keys(profileData),
+    });
 
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
@@ -123,6 +134,15 @@ export const recruitingService = {
     );
 
     const result = await response.json();
+
+    // Debug: Log the full result from edge function
+    console.log("[recruitingService.createRecruit] Edge function result:", {
+      ok: response.ok,
+      status: response.status,
+      hasProfile: !!result.profile,
+      profileUpdateError: result.profileUpdateError,
+      alreadyExists: result.alreadyExists,
+    });
 
     if (!response.ok) {
       console.error("[recruitingService.createRecruit] Edge function failed:", {

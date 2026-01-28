@@ -37,7 +37,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
 import type { RecruitFilters } from "@/types/recruiting.types";
 import type { UserProfile } from "@/types/hierarchy.types";
-import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 
@@ -314,11 +313,13 @@ function BasicAddRecruitDialog({
         imo_id: user?.imo_id ?? undefined,
       });
 
-      toast.success("Recruit added successfully");
+      // Success toast is handled by the mutation's onSuccess callback
       setFormData({ first_name: "", last_name: "", email: "", phone: "" });
       onOpenChange(false);
-    } catch (_error) {
-      toast.error("Failed to add recruit");
+    } catch (error) {
+      // Error toast is handled by the mutation's onError callback
+      // Log for debugging
+      console.error("[BasicRecruitingView] Create recruit failed:", error);
     }
   };
 
