@@ -24,10 +24,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCreateRecruit } from "../hooks/useRecruitMutations";
+import {
+  useCreateRecruit,
+  useCheckEmailExists,
+} from "../hooks/useRecruitMutations";
 import { useInitializeRecruitProgress } from "../hooks/useRecruitProgress";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/services/base/supabase";
 import { Loader2, UserPlus } from "lucide-react";
 import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 import type { AgentStatus, LicensingInfo } from "@/types/recruiting.types";
@@ -122,6 +124,7 @@ export function AddRecruitDialog({
 }: AddRecruitDialogProps) {
   const { user } = useAuth();
   const createRecruitMutation = useCreateRecruit();
+  const checkEmailMutation = useCheckEmailExists();
   const initializeProgressMutation = useInitializeRecruitProgress();
   const [activeTab, setActiveTab] = useState("basic");
 
@@ -157,13 +160,8 @@ export function AddRecruitDialog({
       if (!user?.id) return;
 
       // Check for duplicate email
-      const { data: existingUser } = await supabase
-        .from("user_profiles")
-        .select("id, email")
-        .eq("email", value.email)
-        .maybeSingle();
-
-      if (existingUser) {
+      const emailCheck = await checkEmailMutation.mutateAsync(value.email);
+      if (emailCheck.exists) {
         alert(`A user with email ${value.email} already exists.`);
         return;
       }
@@ -209,6 +207,7 @@ export function AddRecruitDialog({
         recruiter_id: user.id,
         upline_id: value.upline_id || undefined,
         referral_source: value.referral_source || undefined,
+        imo_id: user?.imo_id ?? undefined,
       });
 
       if (recruit) {

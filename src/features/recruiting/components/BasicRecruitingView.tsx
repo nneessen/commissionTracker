@@ -31,7 +31,7 @@ import {
   ArrowRight,
   GraduationCap,
 } from "lucide-react";
-import { GraduateToAgentDialog } from "@/features/admin/components/GraduateToAgentDialog";
+import { GraduateToAgentDialog } from "@/features/admin";
 import { useRecruits, useCreateRecruit } from "../hooks";
 import { useAuth } from "@/contexts/AuthContext";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -311,6 +311,7 @@ function BasicAddRecruitDialog({
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim() || undefined,
         upline_id: user?.id,
+        imo_id: user?.imo_id ?? undefined,
       });
 
       toast.success("Recruit added successfully");

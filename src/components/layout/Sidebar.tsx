@@ -41,7 +41,7 @@ import type { RoleName } from "@/types/permissions.types";
 import { NotificationDropdown } from "@/components/notifications";
 import { toast } from "sonner";
 import { useImo } from "@/contexts/ImoContext";
-import { shouldGrantTemporaryAccess } from "@/lib/temporaryAccess";
+import { useTemporaryAccessCheck } from "@/hooks/subscription";
 import {
   UnderwritingWizard,
   QuickQuoteDialog,
@@ -209,7 +209,11 @@ export default function Sidebar({
   const { can, isLoading } = usePermissionCheck();
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
   const { supabaseUser } = useAuth();
-  const { subscription, isLoading: subLoading, isActive: isSubscriptionActive } = useSubscription();
+  const {
+    subscription,
+    isLoading: subLoading,
+    isActive: isSubscriptionActive,
+  } = useSubscription();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
   const { data: userRoles } = useUserRoles();
@@ -224,6 +228,10 @@ export default function Sidebar({
   const [isQuickQuoteOpen, setIsQuickQuoteOpen] = useState(false);
   const { isEnabled: isUnderwritingEnabled, isLoading: isUnderwritingLoading } =
     useUnderwritingFeatureFlag();
+
+  // Temporary access check (database-driven)
+  const { shouldGrantTemporaryAccess, isLoading: tempAccessLoading } =
+    useTemporaryAccessCheck();
 
   const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
   const isAdmin =
@@ -241,7 +249,7 @@ export default function Sidebar({
 
     // SECURITY: During loading, deny access to prevent exposure of premium features
     // UI should show loading skeleton instead of hiding/showing features
-    if (subLoading || downlineLoading) return false;
+    if (subLoading || downlineLoading || tempAccessLoading) return false;
 
     // Check subscription plan features ONLY if subscription is active
     const features = subscription?.plan?.features;
@@ -252,9 +260,8 @@ export default function Sidebar({
       return true;
     }
 
-    // Check temporary free access period (until Mar 1, 2026)
-    // Grants access to all features EXCEPT recruiting
-    // Test accounts are excluded from temporary access
+    // Check temporary free access period (configurable via admin panel)
+    // Uses database-driven config instead of hardcoded values
     if (shouldGrantTemporaryAccess(feature, supabaseUser?.email)) {
       return true;
     }
@@ -325,7 +332,10 @@ export default function Sidebar({
             if (!can(item.permission)) return false;
 
             // Subscription feature check (HIDE if locked, not show with crown)
-            if (item.subscriptionFeature && !hasFeature(item.subscriptionFeature)) {
+            if (
+              item.subscriptionFeature &&
+              !hasFeature(item.subscriptionFeature)
+            ) {
               return false;
             }
 

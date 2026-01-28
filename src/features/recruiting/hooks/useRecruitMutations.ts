@@ -71,6 +71,12 @@ export function useDeleteRecruit() {
   });
 }
 
+export function useCheckEmailExists() {
+  return useMutation({
+    mutationFn: (email: string) => recruitingService.checkEmailExists(email),
+  });
+}
+
 export function useRecruitMutations() {
   const createRecruit = useCreateRecruit();
   const updateRecruit = useUpdateRecruit();

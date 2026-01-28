@@ -70,6 +70,8 @@ export interface CreateRecruitInput {
   // Optional role override for admin/non-agent users
   roles?: string[];
   is_admin?: boolean;
+  // IMO to assign recruit to (from caller's context)
+  imo_id?: string;
 }
 
 export interface PipelineTemplate {

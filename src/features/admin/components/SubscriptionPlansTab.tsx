@@ -13,6 +13,7 @@ import {
   Users,
   Mail,
   BarChart3,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import { PlanEditorDialog } from "./PlanEditorDialog";
 import { FeatureAssignmentMatrix } from "./FeatureAssignmentMatrix";
 import { AddonsManagementPanel } from "./AddonsManagementPanel";
 import { CreatePlanDialog } from "./CreatePlanDialog";
+import { TemporaryAccessSettings } from "./TemporaryAccessSettings";
 import { cn } from "@/lib/utils";
 
 export function SubscriptionPlansTab() {
@@ -112,6 +114,10 @@ export function SubscriptionPlansTab() {
             <TabsTrigger value="addons" className="text-xs">
               <Package className="h-3.5 w-3.5 mr-1.5" />
               Add-ons
+            </TabsTrigger>
+            <TabsTrigger value="access" className="text-xs">
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
+              Temporary Access
             </TabsTrigger>
           </TabsList>
 
@@ -310,6 +316,11 @@ export function SubscriptionPlansTab() {
           {/* Add-ons Tab */}
           <TabsContent value="addons" className="flex-1 mt-0">
             <AddonsManagementPanel addons={addons || []} />
+          </TabsContent>
+
+          {/* Temporary Access Tab */}
+          <TabsContent value="access" className="flex-1 mt-0">
+            <TemporaryAccessSettings />
           </TabsContent>
         </Tabs>
       </div>

@@ -167,8 +167,16 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // Exception: Hooks inside features CAN import from services (they're the data layer interface)
+  {
+    files: ['src/features/**/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
   {
     files: ['src/features/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
+    ignores: ['src/features/**/hooks/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',

@@ -32,3 +32,10 @@ export {
   type AddonTier,
   type AddonTierConfig,
 } from "./adminSubscriptionService";
+
+// Subscription settings service exports
+export {
+  subscriptionSettingsService,
+  type TemporaryAccessConfig,
+  type SubscriptionSettings,
+} from "./subscriptionSettingsService";

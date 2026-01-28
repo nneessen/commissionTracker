@@ -83,6 +83,24 @@ export const recruitingService = {
     const fullName =
       `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim();
 
+    // Prepare profile data to be applied by edge function (bypasses RLS)
+    const profileData = {
+      ...dbFields,
+      roles,
+      agent_status: recruit.agent_status || "unlicensed",
+      pipeline_template_id: pipelineTemplateId,
+      licensing_info: recruit.licensing_info || {},
+      // Start as prospect - no active pipeline enrollment yet
+      onboarding_status: skip_pipeline ? null : "prospect",
+      current_onboarding_phase: skip_pipeline ? null : "prospect",
+      onboarding_started_at: null, // Set when enrolled in pipeline
+      // Required hierarchy fields (set defaults)
+      hierarchy_path: "", // Will be updated by trigger
+      hierarchy_depth: 0, // Will be updated by trigger
+      approval_status: "pending",
+      is_admin: recruit.is_admin || false,
+    };
+
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
       {
@@ -97,6 +115,9 @@ export const recruitingService = {
           roles,
           isAdmin: recruit.is_admin || false,
           skipPipeline: skip_pipeline || false,
+          phone: recruit.phone,
+          // Pass all profile data to be applied by edge function (bypasses RLS)
+          profileData,
         }),
       },
     );
@@ -124,38 +145,14 @@ export const recruitingService = {
       throw new Error("Auth user was created but no ID was returned");
     }
 
-    // Update the profile created by trigger with recruit-specific data
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .update({
-        ...dbFields,
-        roles,
-        agent_status: recruit.agent_status || "unlicensed",
-        pipeline_template_id: pipelineTemplateId,
-        licensing_info: recruit.licensing_info || {},
-        // Start as prospect - no active pipeline enrollment yet
-        onboarding_status: skip_pipeline ? null : "prospect",
-        current_onboarding_phase: skip_pipeline ? null : "prospect",
-        onboarding_started_at: null, // Set when enrolled in pipeline
-        // Required hierarchy fields (set defaults)
-        hierarchy_path: "", // Will be updated by trigger
-        hierarchy_depth: 0, // Will be updated by trigger
-        approval_status: "pending",
-        is_admin: recruit.is_admin || false,
-      })
-      .eq("id", authUserId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(
-        "[recruitingService.createRecruit] Profile update failed:",
-        error,
-      );
-      throw error;
-    }
-
-    const newRecruit = data as UserProfile;
+    // Profile is updated by edge function - use returned profile or create fallback
+    const newRecruit =
+      (result.profile as UserProfile) ||
+      ({
+        ...profileData,
+        id: authUserId,
+        email: recruit.email.toLowerCase().trim(),
+      } as UserProfile);
 
     // Emit recruit created event
     await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_CREATED, {
@@ -454,5 +451,23 @@ export const recruitingService = {
 
   async searchRecruits(searchTerm: string, limit = 10) {
     return recruitRepository.searchRecruits(searchTerm, limit);
+  },
+
+  /**
+   * Check if a user exists by email
+   */
+  async checkEmailExists(
+    email: string,
+  ): Promise<{ exists: boolean; userId?: string }> {
+    const { data } = await supabase
+      .from("user_profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    return {
+      exists: !!data,
+      userId: data?.id,
+    };
   },
 };

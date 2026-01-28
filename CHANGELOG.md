@@ -6,6 +6,122 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-28 08:24:10
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `eslint.config.js`
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/admin/components/TemporaryAccessSettings.tsx`
+- `src/features/admin/index.ts`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useSubscriptionSettings.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionSettingsService.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20260128075800_subscription_settings.sql`
+
+### Statistics
+```
+ 22 files changed, 1304 insertions(+), 144 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-28 08:22:46
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/admin/components/TemporaryAccessSettings.tsx`
+- `src/features/admin/index.ts`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useSubscriptionSettings.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionSettingsService.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20260128075800_subscription_settings.sql`
+
+### Statistics
+```
+ 21 files changed, 1266 insertions(+), 144 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-28 08:20:40
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/admin/components/TemporaryAccessSettings.tsx`
+- `src/features/admin/index.ts`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useSubscriptionSettings.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionSettingsService.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20260128075800_subscription_settings.sql`
+
+### Statistics
+```
+ 20 files changed, 1206 insertions(+), 136 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-28 08:18:18
+
+### Changed Files
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/admin/components/TemporaryAccessSettings.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useSubscriptionSettings.ts`
+- `src/lib/temporaryAccess.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionSettingsService.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20260128075800_subscription_settings.sql`
+
+### Statistics
+```
+ 17 files changed, 1168 insertions(+), 129 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-27 18:26:26
 
 ### Changed Files

@@ -10,8 +10,11 @@ import { ApprovalGuard } from "./components/auth/ApprovalGuard";
 import { CookieConsentBanner } from "./features/legal";
 import { getDisplayName } from "./types/user.types";
 import { SubscriptionAnnouncementDialog } from "./components/subscription";
-import { useSubscriptionAnnouncement, useSubscription } from "./hooks/subscription";
-import { shouldGrantTemporaryAccess } from "./lib/temporaryAccess";
+import {
+  useSubscriptionAnnouncement,
+  useSubscription,
+  useTemporaryAccessCheck,
+} from "./hooks/subscription";
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
 import { PublicLandingPage } from "./features/landing";
 import { RecruitHeader } from "./components/layout/RecruitHeader";
@@ -115,8 +118,13 @@ function AuthenticatedApp() {
   // Determine if sidebar should be hidden for Free tier users
   // Free tier only has policies + settings - no need for a sidebar with just 2 items
   const isFreeTier = subscription?.plan?.name === "free";
-  const hasTemporaryAccess = shouldGrantTemporaryAccess("dashboard", user?.email);
-  const shouldHideSidebar = isFreeTier && isSubscriptionActive && !hasTemporaryAccess;
+  const { shouldGrantTemporaryAccess } = useTemporaryAccessCheck();
+  const hasTemporaryAccess = shouldGrantTemporaryAccess(
+    "dashboard",
+    user?.email,
+  );
+  const shouldHideSidebar =
+    isFreeTier && isSubscriptionActive && !hasTemporaryAccess;
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {

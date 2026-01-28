@@ -14,7 +14,8 @@ import {
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
 } from "./useOwnerDownlineAccess";
-import { shouldGrantTemporaryAccess } from "@/lib/temporaryAccess";
+import { useTemporaryAccessConfig } from "./useSubscriptionSettings";
+import { subscriptionSettingsService } from "@/services/subscription";
 
 // Roles that bypass subscription checks (staff roles)
 // Note: trainer and contracting_manager removed - they should have limited access
@@ -138,6 +139,10 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
   const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
 
+  // Get temporary access configuration from database
+  const { data: tempAccessConfig, isLoading: isLoadingTempAccess } =
+    useTemporaryAccessConfig();
+
   return useMemo(() => {
     // Dynamically determine required plan from database
     const requiredPlan = plans?.length
@@ -145,7 +150,12 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
       : FEATURE_DISPLAY_NAMES[feature]; // Fallback to feature name if plans not loaded
 
     // While loading, assume no access (will update once loaded)
-    if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
+    if (
+      isLoading ||
+      isLoadingDownlineCheck ||
+      isLoadingRoles ||
+      isLoadingTempAccess
+    ) {
       return {
         hasAccess: false,
         isLoading: true,
@@ -182,10 +192,15 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     const hasOwnerDownlineAccess =
       isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature);
 
-    // Temporary free access period (until Mar 1, 2026)
-    // Grants access to all features EXCEPT recruiting
-    // Test accounts (defined in temporaryAccess.ts) are excluded from temporary access
-    const hasTemporaryAccess = shouldGrantTemporaryAccess(feature, userEmail);
+    // Temporary free access period (configurable via admin panel)
+    // Uses database-driven config instead of hardcoded values
+    const hasTemporaryAccess = tempAccessConfig
+      ? subscriptionSettingsService.shouldGrantTemporaryAccess(
+          feature,
+          userEmail,
+          tempAccessConfig,
+        )
+      : false;
 
     const hasAccess =
       hasSubscriptionAccess || hasOwnerDownlineAccess || hasTemporaryAccess;
@@ -206,6 +221,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     isActive,
     isLoadingDownlineCheck,
     isLoadingRoles,
+    isLoadingTempAccess,
     isDirectDownlineOfOwner,
     hasStaffBypass,
     feature,
@@ -214,6 +230,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     tierName,
     plans,
     userEmail,
+    tempAccessConfig,
   ]);
 }
 
@@ -234,9 +251,16 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
     useOwnerDownlineAccess();
   const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
   const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
+  const { data: tempAccessConfig, isLoading: isLoadingTempAccess } =
+    useTemporaryAccessConfig();
 
   return useMemo(() => {
-    if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
+    if (
+      isLoading ||
+      isLoadingDownlineCheck ||
+      isLoadingRoles ||
+      isLoadingTempAccess
+    ) {
       return {
         hasAccess: false,
         isLoading: true,
@@ -257,18 +281,28 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
 
     const planFeatures = subscription?.plan?.features;
 
+    // Helper to check temporary access using database config
+    const checkTempAccess = (f: FeatureKey) =>
+      tempAccessConfig
+        ? subscriptionSettingsService.shouldGrantTemporaryAccess(
+            f,
+            userEmail,
+            tempAccessConfig,
+          )
+        : false;
+
     // Check subscription access (only if active), owner downline access, and temporary access
     const accessibleFeatures = features.filter(
       (f) =>
         (isActive && planFeatures?.[f]) ||
         (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) ||
-        shouldGrantTemporaryAccess(f, userEmail),
+        checkTempAccess(f),
     );
     const lockedFeatures = features.filter(
       (f) =>
         !(isActive && planFeatures?.[f]) &&
         !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
-        !shouldGrantTemporaryAccess(f, userEmail),
+        !checkTempAccess(f),
     );
 
     return {
@@ -283,10 +317,12 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
     isActive,
     isLoadingDownlineCheck,
     isLoadingRoles,
+    isLoadingTempAccess,
     isDirectDownlineOfOwner,
     hasStaffBypass,
     features,
     userEmail,
+    tempAccessConfig,
   ]);
 }
 
@@ -306,9 +342,16 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
     useOwnerDownlineAccess();
   const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
   const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
+  const { data: tempAccessConfig, isLoading: isLoadingTempAccess } =
+    useTemporaryAccessConfig();
 
   return useMemo(() => {
-    if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
+    if (
+      isLoading ||
+      isLoadingDownlineCheck ||
+      isLoadingRoles ||
+      isLoadingTempAccess
+    ) {
       return {
         hasAccess: false,
         isLoading: true,
@@ -327,12 +370,22 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
 
     const planFeatures = subscription?.plan?.features;
 
+    // Helper to check temporary access using database config
+    const checkTempAccess = (f: FeatureKey) =>
+      tempAccessConfig
+        ? subscriptionSettingsService.shouldGrantTemporaryAccess(
+            f,
+            userEmail,
+            tempAccessConfig,
+          )
+        : false;
+
     // Check subscription access (only if active), owner downline access, and temporary access
     const missingFeatures = features.filter(
       (f) =>
         !(isActive && planFeatures?.[f]) &&
         !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
-        !shouldGrantTemporaryAccess(f, userEmail),
+        !checkTempAccess(f),
     );
 
     return {
@@ -346,9 +399,11 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
     isActive,
     isLoadingDownlineCheck,
     isLoadingRoles,
+    isLoadingTempAccess,
     isDirectDownlineOfOwner,
     hasStaffBypass,
     features,
     userEmail,
+    tempAccessConfig,
   ]);
 }

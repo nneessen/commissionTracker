@@ -27,6 +27,15 @@ export {
   OWNER_DOWNLINE_GRANTED_FEATURES,
   type OwnerDownlineGrantedFeature,
 } from "./useOwnerDownlineAccess";
+export {
+  useSubscriptionSettings,
+  useTemporaryAccessConfig,
+  useUpdateTemporaryAccessSettings,
+  useTemporaryAccessCheck,
+  subscriptionSettingsKeys,
+  type TemporaryAccessConfig,
+  type SubscriptionSettings,
+} from "./useSubscriptionSettings";
 
 // Re-export billing utilities for UI components
 export { subscriptionService } from "@/services/subscription";

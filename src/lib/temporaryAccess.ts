@@ -1,20 +1,7 @@
 // src/lib/temporaryAccess.ts
-// Temporary free access period configuration
-// This file controls the temporary "all features free" period until end of February 2026
-
-import type { FeatureKey } from "@/hooks/subscription";
-
-/**
- * End date for temporary free access period.
- * After this date, normal subscription gating resumes.
- */
-const TEMPORARY_ACCESS_END_DATE = new Date("2026-03-01T00:00:00Z");
-
-/**
- * Features that are EXCLUDED from temporary free access.
- * These features will still require proper subscription even during the free period.
- */
-const EXCLUDED_FEATURES: FeatureKey[] = ["recruiting"];
+// Special access constants and helpers
+// NOTE: Temporary access period configuration has moved to database (subscription_settings table)
+// Use useTemporaryAccessConfig hook or subscriptionSettingsService for temporary access checks
 
 /**
  * Admin email that bypasses ALL restrictions including the recruiting preview banner.
@@ -26,65 +13,6 @@ export const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
  * These accounts bypass subscription checks indefinitely.
  */
 const PERMANENT_INSTAGRAM_ACCESS_EMAILS = ["meta-reviewer@thestandardhq.com"];
-
-/**
- * Test emails that should NOT get temporary free access.
- * These accounts will always see real subscription-based feature gating.
- * Used for testing tier feature gating before launch.
- */
-const SUBSCRIPTION_TEST_EMAILS = [
-  "nick@nickneessen.com",
-  // Add more test emails here as needed
-];
-
-/**
- * Check if an email is a subscription test account.
- * Test accounts skip temporary free access to properly test tier gating.
- */
-export function isSubscriptionTestEmail(
-  email: string | undefined | null,
-): boolean {
-  if (!email) return false;
-  return SUBSCRIPTION_TEST_EMAILS.some(
-    (testEmail) => testEmail.toLowerCase() === email.toLowerCase(),
-  );
-}
-
-/**
- * Check if we are currently in the temporary free access period.
- * Returns true until Mar 1, 2026 00:00 UTC.
- */
-export function isTemporaryFreeAccessPeriod(): boolean {
-  return new Date() < TEMPORARY_ACCESS_END_DATE;
-}
-
-/**
- * Check if a feature should be granted free access during the temporary period.
- * Recruiting and any other excluded features will NOT be granted free access.
- *
- * @param feature - The feature to check
- * @param userEmail - Optional user email to check if they're a test account
- */
-export function shouldGrantTemporaryAccess(
-  feature: FeatureKey,
-  userEmail?: string | null,
-): boolean {
-  // Test accounts never get temporary access - they see real subscription behavior
-  if (isSubscriptionTestEmail(userEmail)) {
-    return false;
-  }
-
-  if (!isTemporaryFreeAccessPeriod()) {
-    return false;
-  }
-
-  // Excluded features don't get temporary access
-  if (EXCLUDED_FEATURES.includes(feature)) {
-    return false;
-  }
-
-  return true;
-}
 
 /**
  * Check if a user email is the super admin.
@@ -104,14 +32,50 @@ export function hasPermanentInstagramAccess(
   return PERMANENT_INSTAGRAM_ACCESS_EMAILS.includes(email.toLowerCase());
 }
 
+// ============================================================================
+// DEPRECATED: The following functions are kept for backward compatibility
+// but should be replaced with database-driven checks via useTemporaryAccessConfig
+// ============================================================================
+
 /**
- * Get the days remaining in the temporary free access period.
- * Returns 0 if the period has ended.
+ * @deprecated Use subscriptionSettingsService.shouldGrantTemporaryAccess instead
+ * This function is kept only for backward compatibility during migration
+ */
+export function shouldGrantTemporaryAccess(): boolean {
+  // Always return false - actual logic now comes from database
+  // This ensures any stale code paths fail safely (deny access)
+  console.warn(
+    "shouldGrantTemporaryAccess() is deprecated. Use database-driven config via useTemporaryAccessConfig hook.",
+  );
+  return false;
+}
+
+/**
+ * @deprecated Use subscriptionSettingsService.getDaysRemaining instead
  */
 export function getTemporaryAccessDaysRemaining(): number {
-  const now = new Date();
-  if (now >= TEMPORARY_ACCESS_END_DATE) return 0;
+  console.warn(
+    "getTemporaryAccessDaysRemaining() is deprecated. Use database-driven config via useTemporaryAccessConfig hook.",
+  );
+  return 0;
+}
 
-  const diff = TEMPORARY_ACCESS_END_DATE.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+/**
+ * @deprecated Temporary access config now stored in database
+ */
+export function isTemporaryFreeAccessPeriod(): boolean {
+  console.warn(
+    "isTemporaryFreeAccessPeriod() is deprecated. Use database-driven config via useTemporaryAccessConfig hook.",
+  );
+  return false;
+}
+
+/**
+ * @deprecated Test emails now stored in database subscription_settings table
+ */
+export function isSubscriptionTestEmail(): boolean {
+  console.warn(
+    "isSubscriptionTestEmail() is deprecated. Test emails are now configured in the admin panel.",
+  );
+  return false;
 }

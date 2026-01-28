@@ -217,6 +217,7 @@ serve(async (req) => {
       skipPipeline,
       profileId: _profileId,
       phone,
+      profileData,
     } = await req.json();
 
     if (!email) {
@@ -307,6 +308,35 @@ serve(async (req) => {
     // Note: user_profiles.id IS auth.users.id (same UUID)
     // The handle_new_user trigger creates the profile automatically
     // No need to manually link - the profile id = auth user id
+
+    // Update the profile with additional data if provided (using service role to bypass RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let profile: any = null;
+    if (authUser.user && profileData) {
+      // Small delay to ensure trigger has completed
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const { data: updatedProfile, error: profileError } = await supabaseAdmin
+        .from("user_profiles")
+        .update(profileData)
+        .eq("id", authUser.user.id)
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error(
+          "[create-auth-user] Profile update failed:",
+          profileError,
+        );
+        // Don't throw - auth user was created, profile will have minimal data
+      } else {
+        profile = updatedProfile;
+        console.log("[create-auth-user] Profile updated successfully:", {
+          userId: authUser.user.id,
+          imo_id: profile?.imo_id,
+        });
+      }
+    }
 
     // Send password reset email via Mailgun (not Supabase's built-in email)
     let emailSent = false;
@@ -404,6 +434,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         user: authUser.user,
+        profile, // Include the updated profile (or null if profileData wasn't provided)
         message: emailSent
           ? "User created successfully. Password reset email sent."
           : "User created but email could not be sent. Check edge function logs.",
