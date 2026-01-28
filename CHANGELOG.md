@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-28 16:07:12
+
+### Changed Files
+- `src/types/database.types.ts`
+- `supabase/migrations/20260128160119_fix_instagram_conversations_user_fk.sql`
+
+### Statistics
+```
+ 2 files changed, 14176 insertions(+), 13978 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-28 14:07:24
 
 ### Changed Files
