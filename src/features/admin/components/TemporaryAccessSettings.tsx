@@ -94,19 +94,23 @@ export function TemporaryAccessSettings() {
     );
   }, [enabled, endDate, excludedFeatures, testEmails, settings]);
 
-  const handleToggleEnabled = (newState: boolean) => {
+  const handleToggleEnabled = async (newState: boolean) => {
     if (!newState && enabled) {
-      // Disabling - show confirmation
+      // Disabling - show confirmation first
       setPendingEnableState(false);
       setShowDisableConfirm(true);
     } else {
+      // Enabling - auto-save immediately
       setEnabled(newState);
+      await updateSettings.mutateAsync({ enabled: newState });
     }
   };
 
-  const confirmDisable = () => {
+  const confirmDisable = async () => {
     if (pendingEnableState !== null) {
       setEnabled(pendingEnableState);
+      // Auto-save the disabled state immediately
+      await updateSettings.mutateAsync({ enabled: pendingEnableState });
     }
     setShowDisableConfirm(false);
     setPendingEnableState(null);
