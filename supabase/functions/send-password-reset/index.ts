@@ -91,6 +91,7 @@ serve(async (req) => {
         email: email,
         options: {
           redirectTo: redirectTo || `${SITE_URL}/auth/callback`,
+          expiresIn: 259200, // 72 hours in seconds
         },
       });
 

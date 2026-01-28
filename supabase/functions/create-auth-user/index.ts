@@ -409,6 +409,7 @@ serve(async (req) => {
             email: normalizedEmail,
             options: {
               redirectTo: `${siteUrl}/auth/callback`,
+              expiresIn: 259200, // 72 hours in seconds
             },
           });
 

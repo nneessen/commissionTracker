@@ -51,6 +51,7 @@ import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
 import { WorkflowAdminPage } from "./features/workflows";
+import { LeaderboardPage } from "./features/leaderboard";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -155,6 +156,22 @@ const analyticsRoute = createRoute({
       subscriptionFeature="dashboard"
     >
       <AnalyticsDashboard />
+    </RouteGuard>
+  ),
+});
+
+// Leaderboard route - requires approval, blocks recruits and staff roles, requires hierarchy subscription
+const leaderboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "leaderboard",
+  component: () => (
+    <RouteGuard
+      permission="nav.dashboard"
+      noRecruits
+      noStaffRoles
+      subscriptionFeature="hierarchy"
+    >
+      <LeaderboardPage />
     </RouteGuard>
   ),
 });
@@ -596,6 +613,7 @@ const routeTree = rootRoute.addChildren([
   authDiagnosticRoute,
   policiesRoute,
   analyticsRoute,
+  leaderboardRoute,
   compGuideRoute,
   settingsRoute,
   targetsRoute,

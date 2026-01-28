@@ -1,0 +1,372 @@
+// src/services/leaderboard/leaderboardService.ts
+// Service for leaderboard data fetching and transformation
+
+import { supabase } from "../base/supabase";
+import type { Database } from "../../types/database.types";
+import type {
+  LeaderboardFilters,
+  AgentLeaderboardEntry,
+  AgencyLeaderboardEntry,
+  TeamLeaderboardEntry,
+  AgentLeaderboardResponse,
+  AgencyLeaderboardResponse,
+  TeamLeaderboardResponse,
+  LeaderboardTotals,
+  TeamLeader,
+  DateRange,
+  LeaderboardTimePeriod,
+} from "../../types/leaderboard.types";
+
+// Database row types from generated types
+type AgentLeaderboardRow =
+  Database["public"]["Functions"]["get_leaderboard_data"]["Returns"][number];
+type AgencyLeaderboardRow =
+  Database["public"]["Functions"]["get_agency_leaderboard_data"]["Returns"][number];
+type TeamLeaderboardRow =
+  Database["public"]["Functions"]["get_team_leaderboard_data"]["Returns"][number];
+type TeamLeaderRow =
+  Database["public"]["Functions"]["get_team_leaders_for_leaderboard"]["Returns"][number];
+
+/**
+ * Calculate date range from a time period filter
+ */
+function calculateDateRange(
+  period: LeaderboardTimePeriod,
+  customStart?: string,
+  customEnd?: string,
+): DateRange {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+
+  switch (period) {
+    case "daily":
+      return { start: today, end: today };
+
+    case "mtd": {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        start: monthStart.toISOString().split("T")[0],
+        end: today,
+      };
+    }
+
+    case "ytd": {
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      return {
+        start: yearStart.toISOString().split("T")[0],
+        end: today,
+      };
+    }
+
+    case "custom":
+      if (!customStart || !customEnd) {
+        throw new Error(
+          "Custom date range requires both startDate and endDate",
+        );
+      }
+      return { start: customStart, end: customEnd };
+
+    default: {
+      // Default to MTD
+      const defaultMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        start: defaultMonthStart.toISOString().split("T")[0],
+        end: today,
+      };
+    }
+  }
+}
+
+/**
+ * Transform database row to AgentLeaderboardEntry
+ */
+function transformAgentEntry(row: AgentLeaderboardRow): AgentLeaderboardEntry {
+  return {
+    agentId: row.agent_id,
+    agentName: row.agent_name,
+    agentEmail: row.agent_email,
+    profilePhotoUrl: row.profile_photo_url,
+    agencyId: row.agency_id,
+    agencyName: row.agency_name,
+    directDownlineCount: row.direct_downline_count,
+    ipTotal: Number(row.ip_total),
+    apTotal: Number(row.ap_total),
+    policyCount: row.policy_count,
+    pendingPolicyCount: row.pending_policy_count,
+    prospectCount: row.prospect_count,
+    pipelineCount: row.pipeline_count,
+    rankOverall: row.rank_overall,
+  };
+}
+
+/**
+ * Transform database row to AgencyLeaderboardEntry
+ */
+function transformAgencyEntry(
+  row: AgencyLeaderboardRow,
+): AgencyLeaderboardEntry {
+  return {
+    agencyId: row.agency_id,
+    agencyName: row.agency_name,
+    ownerId: row.owner_id,
+    ownerName: row.owner_name,
+    agentCount: row.agent_count,
+    ipTotal: Number(row.ip_total),
+    apTotal: Number(row.ap_total),
+    policyCount: row.policy_count,
+    pendingPolicyCount: row.pending_policy_count,
+    prospectCount: row.prospect_count,
+    pipelineCount: row.pipeline_count,
+    rankOverall: row.rank_overall,
+  };
+}
+
+/**
+ * Transform database row to TeamLeaderboardEntry
+ */
+function transformTeamEntry(row: TeamLeaderboardRow): TeamLeaderboardEntry {
+  return {
+    leaderId: row.leader_id,
+    leaderName: row.leader_name,
+    leaderEmail: row.leader_email,
+    leaderProfilePhotoUrl: row.leader_profile_photo_url,
+    agencyId: row.agency_id,
+    agencyName: row.agency_name,
+    teamSize: row.team_size,
+    ipTotal: Number(row.ip_total),
+    apTotal: Number(row.ap_total),
+    policyCount: row.policy_count,
+    pendingPolicyCount: row.pending_policy_count,
+    prospectCount: row.prospect_count,
+    pipelineCount: row.pipeline_count,
+    rankOverall: row.rank_overall,
+  };
+}
+
+/**
+ * Calculate aggregate totals from agent entries
+ */
+function calculateAgentTotals(
+  entries: AgentLeaderboardEntry[],
+): LeaderboardTotals {
+  const totalEntries = entries.length;
+  const totalIp = entries.reduce((sum, e) => sum + e.ipTotal, 0);
+  const totalAp = entries.reduce((sum, e) => sum + e.apTotal, 0);
+  const totalPolicies = entries.reduce((sum, e) => sum + e.policyCount, 0);
+  const totalPendingPolicies = entries.reduce(
+    (sum, e) => sum + e.pendingPolicyCount,
+    0,
+  );
+  const totalProspects = entries.reduce((sum, e) => sum + e.prospectCount, 0);
+  const totalPipeline = entries.reduce((sum, e) => sum + e.pipelineCount, 0);
+  const avgIpPerEntry = totalEntries > 0 ? totalIp / totalEntries : 0;
+
+  return {
+    totalEntries,
+    totalIp,
+    totalAp,
+    totalPolicies,
+    totalPendingPolicies,
+    avgIpPerEntry,
+    totalProspects,
+    totalPipeline,
+  };
+}
+
+/**
+ * Calculate aggregate totals from agency entries
+ */
+function calculateAgencyTotals(
+  entries: AgencyLeaderboardEntry[],
+): LeaderboardTotals {
+  const totalEntries = entries.length;
+  const totalIp = entries.reduce((sum, e) => sum + e.ipTotal, 0);
+  const totalAp = entries.reduce((sum, e) => sum + e.apTotal, 0);
+  const totalPolicies = entries.reduce((sum, e) => sum + e.policyCount, 0);
+  const totalPendingPolicies = entries.reduce(
+    (sum, e) => sum + e.pendingPolicyCount,
+    0,
+  );
+  const totalProspects = entries.reduce((sum, e) => sum + e.prospectCount, 0);
+  const totalPipeline = entries.reduce((sum, e) => sum + e.pipelineCount, 0);
+  const avgIpPerEntry = totalEntries > 0 ? totalIp / totalEntries : 0;
+
+  return {
+    totalEntries,
+    totalIp,
+    totalAp,
+    totalPolicies,
+    totalPendingPolicies,
+    avgIpPerEntry,
+    totalProspects,
+    totalPipeline,
+  };
+}
+
+/**
+ * Calculate aggregate totals from team entries
+ */
+function calculateTeamTotals(
+  entries: TeamLeaderboardEntry[],
+): LeaderboardTotals {
+  const totalEntries = entries.length;
+  const totalIp = entries.reduce((sum, e) => sum + e.ipTotal, 0);
+  const totalAp = entries.reduce((sum, e) => sum + e.apTotal, 0);
+  const totalPolicies = entries.reduce((sum, e) => sum + e.policyCount, 0);
+  const totalPendingPolicies = entries.reduce(
+    (sum, e) => sum + e.pendingPolicyCount,
+    0,
+  );
+  const totalProspects = entries.reduce((sum, e) => sum + e.prospectCount, 0);
+  const totalPipeline = entries.reduce((sum, e) => sum + e.pipelineCount, 0);
+  const avgIpPerEntry = totalEntries > 0 ? totalIp / totalEntries : 0;
+
+  return {
+    totalEntries,
+    totalIp,
+    totalAp,
+    totalPolicies,
+    totalPendingPolicies,
+    avgIpPerEntry,
+    totalProspects,
+    totalPipeline,
+  };
+}
+
+/**
+ * Transform database row to TeamLeader
+ */
+function transformTeamLeader(row: TeamLeaderRow): TeamLeader {
+  return {
+    id: row.id,
+    name: row.name,
+    downlineCount: row.downline_count,
+  };
+}
+
+/**
+ * Leaderboard service for fetching and managing leaderboard data
+ */
+export const leaderboardService = {
+  /**
+   * Fetch individual agent leaderboard data
+   */
+  async getAgentLeaderboard(
+    filters: LeaderboardFilters,
+  ): Promise<AgentLeaderboardResponse> {
+    const { timePeriod, startDate, endDate } = filters;
+    const dateRange = calculateDateRange(timePeriod, startDate, endDate);
+
+    const { data, error } = await supabase.rpc("get_leaderboard_data", {
+      p_start_date: dateRange.start,
+      p_end_date: dateRange.end,
+      p_scope: "all",
+    });
+
+    if (error) {
+      console.error("Error fetching agent leaderboard:", error);
+      throw new Error(`Failed to fetch agent leaderboard: ${error.message}`);
+    }
+
+    const entries = (data || []).map(transformAgentEntry);
+    const totals = calculateAgentTotals(entries);
+
+    return { entries, totals };
+  },
+
+  /**
+   * Fetch agency leaderboard data (rankings agencies as units)
+   */
+  async getAgencyLeaderboard(
+    filters: LeaderboardFilters,
+  ): Promise<AgencyLeaderboardResponse> {
+    const { timePeriod, startDate, endDate } = filters;
+    const dateRange = calculateDateRange(timePeriod, startDate, endDate);
+
+    const { data, error } = await supabase.rpc("get_agency_leaderboard_data", {
+      p_start_date: dateRange.start,
+      p_end_date: dateRange.end,
+    });
+
+    if (error) {
+      console.error("Error fetching agency leaderboard:", error);
+      throw new Error(`Failed to fetch agency leaderboard: ${error.message}`);
+    }
+
+    const entries = (data || []).map(transformAgencyEntry);
+    const totals = calculateAgencyTotals(entries);
+
+    return { entries, totals };
+  },
+
+  /**
+   * Fetch team leaderboard data (ranking teams as units)
+   */
+  async getTeamLeaderboard(
+    filters: LeaderboardFilters,
+  ): Promise<TeamLeaderboardResponse> {
+    const { timePeriod, startDate, endDate, teamThreshold } = filters;
+    const dateRange = calculateDateRange(timePeriod, startDate, endDate);
+
+    const { data, error } = await supabase.rpc("get_team_leaderboard_data", {
+      p_start_date: dateRange.start,
+      p_end_date: dateRange.end,
+      p_min_downlines: teamThreshold || 5,
+    });
+
+    if (error) {
+      console.error("Error fetching team leaderboard:", error);
+      throw new Error(`Failed to fetch team leaderboard: ${error.message}`);
+    }
+
+    const entries = (data || []).map(transformTeamEntry);
+    const totals = calculateTeamTotals(entries);
+
+    return { entries, totals };
+  },
+
+  /**
+   * Fetch team leaders (agents with N+ direct downlines)
+   * @param minDownlines - Minimum number of direct downlines to qualify
+   * @returns Array of TeamLeader objects
+   */
+  async getTeamLeaders(minDownlines: number = 5): Promise<TeamLeader[]> {
+    const { data, error } = await supabase.rpc(
+      "get_team_leaders_for_leaderboard",
+      {
+        p_min_downlines: minDownlines,
+      },
+    );
+
+    if (error) {
+      console.error("Error fetching team leaders:", error);
+      throw new Error(`Failed to fetch team leaders: ${error.message}`);
+    }
+
+    return (data || []).map(transformTeamLeader);
+  },
+
+  /**
+   * Fetch list of agencies for the agency filter dropdown
+   * @returns Array of agency objects with id and name
+   */
+  async getAgencies(): Promise<{ id: string; name: string }[]> {
+    const { data, error } = await supabase
+      .from("agencies")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) {
+      console.error("Error fetching agencies:", error);
+      throw new Error(`Failed to fetch agencies: ${error.message}`);
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Calculate date range from filters (exposed for testing/debugging)
+   */
+  calculateDateRange,
+};

@@ -24,6 +24,7 @@ import {
   Workflow,
   ShieldCheck,
   Calculator,
+  Trophy,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,13 @@ const navigationItems: NavigationItem[] = [
     label: "Team",
     href: "/hierarchy",
     permission: "nav.team_dashboard",
+    subscriptionFeature: "hierarchy",
+  },
+  {
+    icon: Trophy,
+    label: "Leaderboard",
+    href: "/leaderboard",
+    permission: "nav.dashboard",
     subscriptionFeature: "hierarchy",
   },
   {

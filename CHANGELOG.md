@@ -6,6 +6,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-28 17:25:38
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/leaderboard/LeaderboardPage.tsx`
+- `src/features/leaderboard/components/LeaderboardTable.tsx`
+- `src/features/leaderboard/components/index.ts`
+- `src/features/leaderboard/index.ts`
+- `src/hooks/leaderboard/index.ts`
+- `src/hooks/leaderboard/leaderboardKeys.ts`
+- `src/hooks/leaderboard/useAgencies.ts`
+- `src/hooks/leaderboard/useLeaderboard.ts`
+- `src/hooks/leaderboard/useTeamLeaders.ts`
+- `src/router.tsx`
+- `src/services/leaderboard/index.ts`
+- `src/services/leaderboard/leaderboardService.ts`
+- `src/types/database.types.ts`
+- `src/types/leaderboard.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/functions/send-password-reset/index.ts`
+- `supabase/migrations/20260128163807_leaderboard_rpc.sql`
+- `supabase/migrations/20260128165513_leaderboard_rpc_v2.sql`
+- `supabase/migrations/20260128170509_leaderboard_fix_column_name.sql`
+
+### Statistics
+```
+ 22 files changed, 17233 insertions(+), 13983 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-28 17:25:19
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/leaderboard/LeaderboardPage.tsx`
+- `src/features/leaderboard/components/LeaderboardTable.tsx`
+- `src/features/leaderboard/components/index.ts`
+- `src/features/leaderboard/index.ts`
+- `src/hooks/leaderboard/index.ts`
+- `src/hooks/leaderboard/leaderboardKeys.ts`
+- `src/hooks/leaderboard/useAgencies.ts`
+- `src/hooks/leaderboard/useLeaderboard.ts`
+- `src/hooks/leaderboard/useTeamLeaders.ts`
+- `src/router.tsx`
+- `src/services/leaderboard/index.ts`
+- `src/services/leaderboard/leaderboardService.ts`
+- `src/types/database.types.ts`
+- `src/types/leaderboard.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/functions/send-password-reset/index.ts`
+- `supabase/migrations/20260128163807_leaderboard_rpc.sql`
+- `supabase/migrations/20260128165513_leaderboard_rpc_v2.sql`
+- `supabase/migrations/20260128170509_leaderboard_fix_column_name.sql`
+
+### Statistics
+```
+ 20 files changed, 17199 insertions(+), 13978 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-28 16:07:12
 
 ### Changed Files

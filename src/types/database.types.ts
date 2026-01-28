@@ -12615,6 +12615,23 @@ export type Database = {
           parent_agency_id: string;
         }[];
       };
+      get_agency_leaderboard_data: {
+        Args: { p_end_date?: string; p_start_date?: string };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          agent_count: number;
+          ap_total: number;
+          ip_total: number;
+          owner_id: string;
+          owner_name: string;
+          pending_policy_count: number;
+          pipeline_count: number;
+          policy_count: number;
+          prospect_count: number;
+          rank_overall: number;
+        }[];
+      };
       get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json };
       get_agency_override_summary: {
         Args: {
@@ -13305,6 +13322,31 @@ export type Database = {
           vendor_name: string;
         }[];
       };
+      get_leaderboard_data: {
+        Args: {
+          p_end_date?: string;
+          p_scope?: string;
+          p_scope_id?: string;
+          p_start_date?: string;
+          p_team_threshold?: number;
+        };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          agent_email: string;
+          agent_id: string;
+          agent_name: string;
+          ap_total: number;
+          direct_downline_count: number;
+          ip_total: number;
+          pending_policy_count: number;
+          pipeline_count: number;
+          policy_count: number;
+          profile_photo_url: string;
+          prospect_count: number;
+          rank_overall: number;
+        }[];
+      };
       get_license_expirations_for_check: {
         Args: {
           p_rule_id: string;
@@ -13742,6 +13784,37 @@ export type Database = {
           rank_by_policies: number;
           rank_by_premium: number;
           retention_rate: number;
+        }[];
+      };
+      get_team_leaderboard_data: {
+        Args: {
+          p_end_date?: string;
+          p_min_downlines?: number;
+          p_start_date?: string;
+        };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          ap_total: number;
+          ip_total: number;
+          leader_email: string;
+          leader_id: string;
+          leader_name: string;
+          leader_profile_photo_url: string;
+          pending_policy_count: number;
+          pipeline_count: number;
+          policy_count: number;
+          prospect_count: number;
+          rank_overall: number;
+          team_size: number;
+        }[];
+      };
+      get_team_leaders_for_leaderboard: {
+        Args: { p_min_downlines?: number };
+        Returns: {
+          downline_count: number;
+          id: string;
+          name: string;
         }[];
       };
       get_templates_for_platform: {
