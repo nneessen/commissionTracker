@@ -72,6 +72,7 @@ export function transformFormToCreateData(
     carrierId: form.carrierId,
     productId: form.productId || undefined,
     product: form.product,
+    submitDate: form.submitDate ? parseLocalDate(form.submitDate) : undefined,
     effectiveDate: parseLocalDate(form.effectiveDate),
     termLength: form.termLength,
     expirationDate: form.expirationDate
@@ -109,6 +110,9 @@ export function transformFormToUpdateData(
   if (updates.notes !== undefined) result.notes = updates.notes;
 
   // Handle dates
+  if (updates.submitDate !== undefined) {
+    result.submitDate = parseLocalDate(updates.submitDate);
+  }
   if (updates.effectiveDate !== undefined) {
     result.effectiveDate = parseLocalDate(updates.effectiveDate);
   }

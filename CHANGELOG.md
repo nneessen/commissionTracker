@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-28 14:07:24
+
+### Changed Files
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/policies/utils/policyFormTransformer.ts`
+- `src/hooks/recruiting/useRecruitingStats.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/policy.types.ts`
+- `supabase/migrations/20260128135940_add_submit_date_column.sql`
+
+### Statistics
+```
+ 9 files changed, 14010 insertions(+), 13973 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-28 09:20:13
 
 ### Changed Files

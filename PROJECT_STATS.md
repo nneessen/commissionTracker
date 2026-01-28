@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-28 09:20:14
+Last Updated: 2026-01-28 14:07:24
 
 ## Metrics
 - Total Files: 29685
-- Total Lines of Code: 555064
-- Total Commits: 832
+- Total Lines of Code: 555338
+- Total Commits: 840
 
 ## Recent Activity
-be3689f1 docs: CHANGELOG.md,PROJECT_STATS.md,TemporaryAccessSettings.tsx
-1519e7f1 docs: multiple changes in .,src,src/components/layout
-02a2c1a8 feat(subscription): add Free tier feature gating with FreeUserHeader
-23e9bec4 docs: multiple changes in .,docs/uw-wizard,plans/active
-60d80e72 docs: multiple changes in .,src/components/layout,src/components/subscription
+18e94b64 fix(slack): fix policy notification trigger for agency hierarchy
+d21ac7a0 fix(recruiting): use correct schema columns in graduation RPC
+964034cc fix(recruiting): remove non-existent columns from graduation RPC
+7a9330c3 fix(recruiting): add error handling and debug logging to graduation
+0f783dd8 fix(recruiting): use RPC for graduation to bypass RLS

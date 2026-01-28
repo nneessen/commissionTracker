@@ -5564,6 +5564,7 @@ export type Database = {
           product_id: string | null;
           referral_source: string | null;
           status: string;
+          submit_date: string | null;
           term_length: number | null;
           updated_at: string | null;
           user_id: string | null;
@@ -5595,6 +5596,7 @@ export type Database = {
           product_id?: string | null;
           referral_source?: string | null;
           status?: string;
+          submit_date?: string | null;
           term_length?: number | null;
           updated_at?: string | null;
           user_id?: string | null;
@@ -5626,6 +5628,7 @@ export type Database = {
           product_id?: string | null;
           referral_source?: string | null;
           status?: string;
+          submit_date?: string | null;
           term_length?: number | null;
           updated_at?: string | null;
           user_id?: string | null;
@@ -14103,6 +14106,14 @@ export type Database = {
           simple_avg_rate: number;
           weighted_avg_rate: number;
         }[];
+      };
+      graduate_recruit_to_agent: {
+        Args: {
+          p_contract_level: number;
+          p_notes?: string;
+          p_recruit_id: string;
+        };
+        Returns: Json;
       };
       hard_delete_user: {
         Args: {

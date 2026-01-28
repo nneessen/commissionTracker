@@ -13,6 +13,8 @@ export interface RecruitingStats {
 
 export interface UseRecruitingStatsOptions {
   recruiterId?: string;
+  /** Include prospects in stats (for basic recruiting tier) */
+  includeProspects?: boolean;
   enabled?: boolean;
   staleTime?: number;
   gcTime?: number;
@@ -25,11 +27,20 @@ export interface UseRecruitingStatsOptions {
  * @returns TanStack Query result with recruiting stats
  */
 export const useRecruitingStats = (options?: UseRecruitingStatsOptions) => {
-  const { recruiterId, enabled = true, staleTime, gcTime } = options || {};
+  const {
+    recruiterId,
+    includeProspects,
+    enabled = true,
+    staleTime,
+    gcTime,
+  } = options || {};
 
   return useQuery({
-    queryKey: ["recruiting", "stats", recruiterId].filter(Boolean),
-    queryFn: () => recruitingService.getRecruitingStats(recruiterId),
+    queryKey: ["recruiting", "stats", recruiterId, includeProspects].filter(
+      (v) => v !== undefined,
+    ),
+    queryFn: () =>
+      recruitingService.getRecruitingStats(recruiterId, includeProspects),
     staleTime: staleTime ?? 5 * 60 * 1000, // 5 minutes default
     gcTime: gcTime ?? 10 * 60 * 1000, // 10 minutes garbage collection
     enabled,

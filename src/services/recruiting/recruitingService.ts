@@ -461,8 +461,8 @@ export const recruitingService = {
   // STATS & ANALYTICS (using RecruitRepository)
   // ========================================
 
-  async getRecruitingStats(recruiterId?: string) {
-    return recruitRepository.getStats(recruiterId);
+  async getRecruitingStats(recruiterId?: string, includeProspects?: boolean) {
+    return recruitRepository.getStats(recruiterId, undefined, includeProspects);
   },
 
   // ========================================

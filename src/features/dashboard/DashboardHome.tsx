@@ -93,13 +93,20 @@ export const DashboardHome: React.FC = () => {
   // Feature access for premium sections
   const { hasAccess: hasTeamAccess } = useFeatureAccess("hierarchy");
   const { hasAccess: hasRecruitingAccess } = useFeatureAccess("recruiting");
+  const { hasAccess: hasBasicRecruiting } =
+    useFeatureAccess("recruiting_basic");
+
+  // Basic tier users should see prospects in their stats (since they don't have pipeline enrollment)
+  const shouldIncludeProspects = hasBasicRecruiting && !hasRecruitingAccess;
 
   // Team & Recruiting data (only fetch if user has access or is admin)
   const { data: hierarchyStats } = useMyHierarchyStats({
     enabled: hasTeamAccess || dashboardFeatures.isAdmin,
   });
   const { data: recruitingStats } = useRecruitingStats({
-    enabled: hasRecruitingAccess || dashboardFeatures.isAdmin,
+    enabled:
+      hasRecruitingAccess || hasBasicRecruiting || dashboardFeatures.isAdmin,
+    includeProspects: shouldIncludeProspects,
   });
 
   // Notification & messaging counts

@@ -1068,6 +1068,12 @@ export class PolicyRepository extends BaseRepository<
           ? formatDateForDB(data.effectiveDate)
           : data.effectiveDate;
     }
+    if (data.submitDate !== undefined) {
+      dbData.submit_date =
+        data.submitDate instanceof Date
+          ? formatDateForDB(data.submitDate)
+          : data.submitDate;
+    }
     if (data.termLength !== undefined) dbData.term_length = data.termLength;
     if (data.expirationDate !== undefined) {
       dbData.expiration_date =

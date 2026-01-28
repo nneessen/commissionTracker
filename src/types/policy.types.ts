@@ -195,6 +195,7 @@ export interface CreatePolicyData {
   productId?: string;
   userId: string;
   product: ProductType;
+  submitDate?: Date;
   effectiveDate: Date;
   termLength?: number;
   expirationDate?: Date;

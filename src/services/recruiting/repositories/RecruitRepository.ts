@@ -270,10 +270,12 @@ export class RecruitRepository extends BaseRepository<
    * @param recruiterId - Optional recruiter ID to filter by
    * @param activePhaseStatuses - Phase status strings (normalized, e.g., "interview_1") to count as "active"
    *                              These should come from pipeline_phases table, not hardcoded.
+   * @param includeProspects - If true, include prospects in stats (for basic recruiting tier)
    */
   async getStats(
     recruiterId?: string,
     activePhaseStatuses?: string[],
+    includeProspects?: boolean,
   ): Promise<{
     total: number;
     active: number;
@@ -311,17 +313,20 @@ export class RecruitRepository extends BaseRepository<
 
     // Filter out prospects - only include recruits actively enrolled in a pipeline
     // Prospects are identified by: onboarding_status = 'prospect' OR onboarding_started_at = null
-    const enrolledRecruits = recruits.filter((r) => {
-      // Exclude if status is 'prospect'
-      if (r.onboarding_status === "prospect") {
-        return false;
-      }
-      // Exclude if not yet enrolled (onboarding_started_at is null and status is null/empty)
-      if (!r.onboarding_started_at && !r.onboarding_status) {
-        return false;
-      }
-      return true;
-    });
+    // When includeProspects is true (basic recruiting tier), include all recruits
+    const enrolledRecruits = includeProspects
+      ? recruits
+      : recruits.filter((r) => {
+          // Exclude if status is 'prospect'
+          if (r.onboarding_status === "prospect") {
+            return false;
+          }
+          // Exclude if not yet enrolled (onboarding_started_at is null and status is null/empty)
+          if (!r.onboarding_started_at && !r.onboarding_status) {
+            return false;
+          }
+          return true;
+        });
 
     // Count "active" recruits: those whose status matches any of the active phase statuses
     // Terminal statuses (completed, dropped) are handled separately
