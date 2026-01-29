@@ -168,14 +168,11 @@ export class RecruitRepository extends BaseRepository<
     }
 
     // Exclude prospects (recruits not enrolled in a pipeline)
-    // A recruit is "enrolled" and should be visible if:
-    //   - They have a non-prospect onboarding_status (actively progressing)
-    //   - OR they have onboarding_started_at set (registration complete, in pipeline)
-    // This excludes pure prospects who haven't started the pipeline yet
+    // A recruit is "enrolled" when they have a non-null, non-prospect onboarding_status
     if (filters?.exclude_prospects) {
-      query = query.or(
-        "and(onboarding_status.not.is.null,onboarding_status.neq.prospect),onboarding_started_at.not.is.null",
-      );
+      query = query
+        .not("onboarding_status", "is", null)
+        .neq("onboarding_status", "prospect");
     }
 
     // Pagination

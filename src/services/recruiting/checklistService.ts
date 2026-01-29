@@ -1,6 +1,6 @@
 // src/services/recruiting/checklistService.ts
 
-import { supabase } from "@/services/base/supabase";
+import { supabase } from "@/services";
 import {
   RecruitPhaseProgressRepository,
   type PhaseProgressStatus,
@@ -119,13 +119,25 @@ export const checklistService = {
         `[checklistService] Syncing ${missingPhases.length} new phases for user ${userId}`,
       );
 
-      // Create progress records for missing phases
+      // Get user's imo_id and agency_id for RLS policies
+      const { data: userProfile } = await supabase
+        .from("user_profiles")
+        .select("imo_id, agency_id")
+        .eq("id", userId)
+        .single();
+
+      const imoId = userProfile?.imo_id ?? null;
+      const agencyId = userProfile?.agency_id ?? null;
+
+      // Create progress records for missing phases (include imo_id and agency_id for RLS)
       const newProgressRecords = missingPhases.map((phase) => ({
         userId,
         phaseId: phase.id,
         templateId,
         status: "not_started" as PhaseProgressStatus,
         startedAt: null,
+        imoId,
+        agencyId,
       }));
 
       await phaseProgressRepository.upsertMany(newProgressRecords);
@@ -161,6 +173,16 @@ export const checklistService = {
       return fullProgress as unknown as RecruitPhaseProgress[];
     }
 
+    // Get user's imo_id and agency_id for RLS policies
+    const { data: userProfile } = await supabase
+      .from("user_profiles")
+      .select("imo_id, agency_id")
+      .eq("id", userId)
+      .single();
+
+    const imoId = userProfile?.imo_id ?? null;
+    const agencyId = userProfile?.agency_id ?? null;
+
     // Get all phases for the template
     const phases = await pipelinePhaseRepository.findByTemplateId(templateId);
 
@@ -168,7 +190,7 @@ export const checklistService = {
       throw new Error("No phases found for template");
     }
 
-    // Create progress records for all phases
+    // Create progress records for all phases (include imo_id and agency_id for RLS)
     const progressRecords = phases.map((phase, index) => ({
       userId,
       phaseId: phase.id,
@@ -177,6 +199,8 @@ export const checklistService = {
         ? "in_progress"
         : "not_started") as PhaseProgressStatus,
       startedAt: index === 0 ? new Date().toISOString() : null,
+      imoId,
+      agencyId,
     }));
 
     const data = await phaseProgressRepository.createMany(progressRecords);

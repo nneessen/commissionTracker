@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-29 12:43:23
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/RecruitPhaseProgressRepository.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `supabase/migrations/20260129120447_fix_licensed_agent_roles.sql`
+- `supabase/migrations/20260129124021_fix_phase_progress_imo_id.sql`
+
+### Statistics
+```
+ 8 files changed, 110 insertions(+), 16 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-29 12:42:40
+
+### Changed Files
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/RecruitPhaseProgressRepository.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `supabase/migrations/20260129120447_fix_licensed_agent_roles.sql`
+- `supabase/migrations/20260129124021_fix_phase_progress_imo_id.sql`
+
+### Statistics
+```
+ 6 files changed, 90 insertions(+), 11 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-29 11:41:01
 
 ### Changed Files

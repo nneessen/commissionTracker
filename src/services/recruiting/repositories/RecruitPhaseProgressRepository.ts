@@ -36,6 +36,8 @@ export interface CreateRecruitPhaseProgressData {
   templateId: string;
   status?: PhaseProgressStatus;
   startedAt?: string | null;
+  imoId?: string | null;
+  agencyId?: string | null;
 }
 
 export interface UpdateRecruitPhaseProgressData {
@@ -333,6 +335,8 @@ export class RecruitPhaseProgressRepository extends BaseRepository<
       template_id: createData.templateId,
       status: createData.status ?? "not_started",
       started_at: createData.startedAt ?? null,
+      imo_id: createData.imoId ?? null,
+      agency_id: createData.agencyId ?? null,
     };
   }
 }

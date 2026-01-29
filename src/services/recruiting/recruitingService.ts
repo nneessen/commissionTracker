@@ -51,8 +51,9 @@ export const recruitingService = {
       roles = recruit.roles || ["view_only"];
       pipelineTemplateId = null;
     } else if (recruit.agent_status === "licensed") {
-      // Licensed agent - gets agent role and fast-track pipeline
-      roles = ["agent"];
+      // Licensed agent - gets recruit role during pipeline, same as unlicensed
+      // The 'agent' role is added when onboarding completes
+      roles = ["recruit"];
 
       // Get the fast-track template (use maybeSingle to avoid 406 on no match)
       const { data: template } = await supabase
