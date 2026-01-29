@@ -11,5 +11,6 @@ export {
 export {
   useInvitationByToken,
   useSubmitRegistrationWithPassword,
+  useCancelInvitation,
 } from "./hooks/useRecruitInvitations";
 export { AutomationDialog } from "./admin/AutomationDialog";

@@ -34,6 +34,7 @@ import {
   AlertTriangle,
   EyeOff,
   Undo2,
+  X,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -67,7 +68,12 @@ import { useCurrentUserProfile } from "@/hooks/admin";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { useRecruitEmails } from "../hooks/useRecruitEmails";
 import { useRecruitActivityLog } from "../hooks/useRecruitActivity";
-import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
+import {
+  TERMINAL_STATUS_COLORS,
+  INVITATION_STATUS_LABELS,
+  type InvitationStatus,
+} from "@/types/recruiting.types";
+import { useCancelInvitation } from "../hooks/useRecruitInvitations";
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -93,6 +99,17 @@ export function RecruitDetailPanel({
   const [unenrollDialogOpen, setUnenrollDialogOpen] = useState(false);
   const [resendingInvite, setResendingInvite] = useState(false);
   const _router = useRouter();
+
+  // Invitation detection - for pending invitations that haven't registered yet
+  const isInvitation = recruit?.id?.startsWith("invitation-");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Virtual recruit type includes invitation fields
+  const invitationId = (recruit as any)?.invitation_id as string | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Virtual recruit type includes invitation fields
+  const invitationStatus = (recruit as any)?.invitation_status as
+    | InvitationStatus
+    | undefined;
+
+  const cancelInvitation = useCancelInvitation();
 
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { data: phaseProgress, isLoading: progressLoading } =
@@ -451,7 +468,61 @@ export function RecruitDetailPanel({
             ),
           )) && (
           <div className="flex items-center gap-1 mt-2">
-            {hasPipelineProgress ? (
+            {isInvitation ? (
+              /* Invitation-specific actions */
+              <>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                >
+                  {invitationStatus
+                    ? INVITATION_STATUS_LABELS[invitationStatus]
+                    : "Pending"}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResendInvite}
+                  disabled={resendingInvite}
+                  className="h-6 text-[10px] px-2"
+                >
+                  {resendingInvite ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <SendHorizontal className="h-3 w-3 mr-0.5" />
+                  )}
+                  Resend
+                </Button>
+                <div className="flex-1" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    if (
+                      invitationId &&
+                      confirm(
+                        "Cancel this invitation? The registration link will no longer work.",
+                      )
+                    ) {
+                      cancelInvitation.mutate(invitationId, {
+                        onSuccess: () => {
+                          onRecruitDeleted?.();
+                        },
+                      });
+                    }
+                  }}
+                  disabled={cancelInvitation.isPending || !invitationId}
+                  className="h-6 text-[10px] px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  {cancelInvitation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <X className="h-3 w-3 mr-0.5" />
+                  )}
+                  Cancel
+                </Button>
+              </>
+            ) : hasPipelineProgress ? (
               <>
                 <Button
                   size="sm"
@@ -529,37 +600,42 @@ export function RecruitDetailPanel({
                 Initialize
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleResendInvite}
-              disabled={resendingInvite}
-              className="h-6 text-[10px] px-2"
-            >
-              {resendingInvite ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <SendHorizontal className="h-3 w-3 mr-0.5" />
-              )}
-              Invite
-            </Button>
-            <div className="flex-1" />
-            {currentUserId !== recruit.id && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="h-6 text-[10px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
+            {/* Common actions for registered recruits */}
+            {!isInvitation && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResendInvite}
+                  disabled={resendingInvite}
+                  className="h-6 text-[10px] px-2"
+                >
+                  {resendingInvite ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <SendHorizontal className="h-3 w-3 mr-0.5" />
+                  )}
+                  Invite
+                </Button>
+                <div className="flex-1" />
+                {currentUserId !== recruit.id && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDeleteDialogOpen(true)}
+                    className="h-6 text-[10px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
         )}
       </div>
 
-      {/* Horizontal Phase Stepper */}
-      {hasPipelineProgress && sortedPhases.length > 0 && (
+      {/* Horizontal Phase Stepper - Hidden for invitations */}
+      {!isInvitation && hasPipelineProgress && sortedPhases.length > 0 && (
         <div className="px-3 py-2 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
@@ -661,8 +737,8 @@ export function RecruitDetailPanel({
         </div>
       )}
 
-      {/* No Pipeline State */}
-      {!hasPipelineProgress && (
+      {/* No Pipeline State - Hidden for invitations */}
+      {!isInvitation && !hasPipelineProgress && (
         <div className="px-3 py-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-center">
           <Circle className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
@@ -681,6 +757,20 @@ export function RecruitDetailPanel({
                 : "Initialize Pipeline"}
             </Button>
           )}
+        </div>
+      )}
+
+      {/* Invitation Pending State */}
+      {isInvitation && (
+        <div className="px-3 py-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-center">
+          <Mail className="h-8 w-8 text-amber-400 dark:text-amber-500 mx-auto mb-2" />
+          <p className="text-xs text-zinc-600 dark:text-zinc-300 font-medium mb-1">
+            Awaiting Registration
+          </p>
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            This person has been invited but hasn&apos;t completed their
+            registration form yet.
+          </p>
         </div>
       )}
 

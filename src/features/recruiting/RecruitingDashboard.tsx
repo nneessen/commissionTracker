@@ -219,14 +219,7 @@ function RecruitingDashboardContent() {
   };
 
   const handleSelectRecruit = (recruit: UserProfile) => {
-    // Check if this is a pending invitation (not a registered recruit yet)
-    if (recruit.id.startsWith("invitation-")) {
-      toast.info("Awaiting Registration", {
-        description: `${recruit.first_name || recruit.email} hasn't completed their registration yet. They'll appear in the pipeline once they submit the registration form.`,
-        duration: 4000,
-      });
-      return;
-    }
+    // Allow both real recruits and pending invitations to open the detail panel
     setSelectedRecruit(recruit);
     setDetailSheetOpen(true);
   };
