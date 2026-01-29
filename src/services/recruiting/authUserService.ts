@@ -1,6 +1,6 @@
 // src/services/recruiting/authUserService.ts
 
-import { supabase } from "@/services/base/supabase";
+import { supabase } from "@/services/base";
 
 export interface CreateAuthUserParams {
   email: string;
@@ -100,4 +100,42 @@ export async function checkUserExists(email: string): Promise<boolean> {
   }
 
   return !!data;
+}
+
+export interface SendPasswordResetResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Sends a password reset email to the user
+ * Uses the send-password-reset edge function
+ */
+export async function sendPasswordReset(
+  email: string,
+  redirectTo: string,
+): Promise<SendPasswordResetResult> {
+  const { data, error } = await supabase.functions.invoke(
+    "send-password-reset",
+    {
+      body: {
+        email,
+        redirectTo,
+      },
+    },
+  );
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message || "Failed to send password reset",
+    };
+  }
+
+  return {
+    success: data?.success === true,
+    message: data?.message,
+    error: data?.error,
+  };
 }

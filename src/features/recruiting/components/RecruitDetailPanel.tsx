@@ -74,7 +74,7 @@ import {
   type InvitationStatus,
 } from "@/types/recruiting.types";
 import { useCancelInvitation } from "../hooks/useRecruitInvitations";
-import { supabase } from "@/services/base/supabase";
+import { useResendInvite } from "../hooks/useAuthUser";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -110,17 +110,25 @@ export function RecruitDetailPanel({
     | undefined;
 
   const cancelInvitation = useCancelInvitation();
+  const resendInvite = useResendInvite();
 
   const { data: currentUserProfile } = useCurrentUserProfile();
+
+  // For pending invitations, skip all database queries that require a valid UUID
+  // The isInvitation check happens at line 104 and uses recruit?.id?.startsWith("invitation-")
+  const recruitIdForQueries = isInvitation ? undefined : recruit.id;
+
   const { data: phaseProgress, isLoading: progressLoading } =
-    useRecruitPhaseProgress(recruit.id);
+    useRecruitPhaseProgress(recruitIdForQueries);
   const { data: currentPhase, isLoading: currentPhaseLoading } =
-    useCurrentPhase(recruit.id);
+    useCurrentPhase(recruitIdForQueries);
 
   // CRITICAL: Use the recruit's actual template, not the global default
   // Get template ID from progress records (most reliable) or from recruit profile
-  const recruitTemplateId =
-    phaseProgress?.[0]?.template_id || recruit.pipeline_template_id || null;
+  // For invitations, we don't have progress data, so fall back to default template
+  const recruitTemplateId = isInvitation
+    ? null
+    : phaseProgress?.[0]?.template_id || recruit.pipeline_template_id || null;
 
   // Use the recruit's specific template if they have one, otherwise fall back to default for new recruits
   const { data: recruitTemplate, isLoading: recruitTemplateLoading } =
@@ -135,12 +143,12 @@ export function RecruitDetailPanel({
     : defaultTemplateLoading;
 
   const { data: checklistProgress } = useChecklistProgress(
-    recruit.id,
+    recruitIdForQueries,
     selectedPhaseId || currentPhase?.phase_id,
   );
-  const { data: documents } = useRecruitDocuments(recruit.id);
-  const { data: emails } = useRecruitEmails(recruit.id);
-  const { data: activityLog } = useRecruitActivityLog(recruit.id);
+  const { data: documents } = useRecruitDocuments(recruitIdForQueries);
+  const { data: emails } = useRecruitEmails(recruitIdForQueries);
+  const { data: activityLog } = useRecruitActivityLog(recruitIdForQueries);
 
   const advancePhase = useAdvancePhase();
   const blockPhase = useBlockPhase();
@@ -237,90 +245,12 @@ export function RecruitDetailPanel({
     if (!recruit.email) return;
     setResendingInvite(true);
     try {
-      // First, try to send password reset (works if auth user exists)
-      // Use /auth/callback which is whitelisted and handles recovery type
-      const { data, error: fnError } = await supabase.functions.invoke(
-        "send-password-reset",
-        {
-          body: {
-            email: recruit.email,
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        },
-      );
-
-      // Check if password reset succeeded
-      if (data?.success === true) {
-        toast.success("Invite sent!");
-        return;
-      }
-
-      // If there's an error (404 = user not found in auth.users), create auth user first
-      // The supabase client wraps 404 errors, so we check for fnError OR data.success === false
-      const shouldCreateAuthUser =
-        fnError !== null || // Any error from send-password-reset means user likely doesn't exist
-        data?.error?.includes("No auth account found") ||
-        data?.error?.includes("not found");
-
-      if (shouldCreateAuthUser) {
-        console.log(
-          "[RecruitDetailPanel] Auth user not found or error occurred, creating one...",
-        );
-        const { data: createData, error: createError } =
-          await supabase.functions.invoke("create-auth-user", {
-            body: {
-              email: recruit.email,
-              fullName:
-                `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim(),
-              roles: (recruit.roles as string[]) || ["recruit"],
-              isAdmin: false,
-              skipPipeline: true, // Pipeline may already exist
-            },
-          });
-
-        if (createError) {
-          // Check for specific error messages and provide helpful feedback
-          const errorMsg = createError.message?.toLowerCase() || "";
-          if (
-            errorMsg.includes("database error") ||
-            errorMsg.includes("invalid email")
-          ) {
-            toast.error(
-              `Cannot create account for "${recruit.email}" - email format may be invalid. Try updating the email address first.`,
-            );
-          } else {
-            toast.error(createError.message || "Failed to create login access");
-          }
-        } else if (createData?.error) {
-          // Check for database errors in the response data
-          const dataError = createData.error?.toLowerCase() || "";
-          if (dataError.includes("database error")) {
-            toast.error(
-              `Cannot create account for "${recruit.email}" - email format may be invalid. Try updating the email address first.`,
-            );
-          } else {
-            toast.error(createData.error);
-          }
-        } else if (createData?.emailSent) {
-          toast.success("Login instructions sent!");
-        } else if (createData?.alreadyExists) {
-          // User already exists in auth - send password reset instead
-          toast.success(
-            "User already has an account. Sending password reset...",
-          );
-          // Could optionally retry send-password-reset here
-        } else {
-          toast.success(
-            "Account created but email may not have sent. Check edge function logs.",
-          );
-        }
-        return;
-      }
-
-      // Fallback error handling
-      if (data?.success === false) {
-        toast.error(data.error || "Failed to send invite");
-      }
+      await resendInvite.mutateAsync({
+        email: recruit.email,
+        fullName:
+          `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim(),
+        roles: (recruit.roles as string[]) || ["recruit"],
+      });
     } finally {
       setResendingInvite(false);
     }

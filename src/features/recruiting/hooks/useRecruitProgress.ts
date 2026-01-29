@@ -5,6 +5,21 @@ import { checklistService } from "@/services/recruiting/checklistService";
 import type { UpdateChecklistItemStatusInput } from "@/types/recruiting.types";
 
 // ========================================
+// VALIDATION HELPER
+// ========================================
+
+/**
+ * Validates that a string is a valid UUID format.
+ * Prevents invalid IDs (like "invitation-{uuid}") from being used in database queries.
+ */
+const isValidUuid = (id: string | undefined): boolean => {
+  if (!id) return false;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
+// ========================================
 // RECRUIT PHASE PROGRESS
 // ========================================
 
@@ -12,7 +27,7 @@ export function useRecruitPhaseProgress(userId: string | undefined) {
   return useQuery({
     queryKey: ["recruit-phase-progress", userId],
     queryFn: () => checklistService.getRecruitPhaseProgress(userId!),
-    enabled: !!userId,
+    enabled: !!userId && isValidUuid(userId),
   });
 }
 
@@ -20,7 +35,7 @@ export function useCurrentPhase(userId: string | undefined) {
   return useQuery({
     queryKey: ["recruit-current-phase", userId],
     queryFn: () => checklistService.getCurrentPhase(userId!),
-    enabled: !!userId,
+    enabled: !!userId && isValidUuid(userId),
   });
 }
 
@@ -171,7 +186,7 @@ export function useChecklistProgress(
   return useQuery({
     queryKey: ["recruit-checklist-progress", userId, phaseId],
     queryFn: () => checklistService.getChecklistProgress(userId!, phaseId!),
-    enabled: !!userId && !!phaseId,
+    enabled: !!userId && !!phaseId && isValidUuid(userId),
   });
 }
 

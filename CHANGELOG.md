@@ -6,6 +6,74 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-29 11:41:01
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/useAuthUser.ts`
+- `src/features/recruiting/hooks/useRecruitActivity.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/hooks/useRecruitEmails.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/index.ts`
+
+### Statistics
+```
+ 10 files changed, 286 insertions(+), 111 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-29 11:38:29
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/useRecruitActivity.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/hooks/useRecruitEmails.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/index.ts`
+
+### Statistics
+```
+ 9 files changed, 187 insertions(+), 77 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-29 11:36:48
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/useRecruitActivity.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/hooks/useRecruitEmails.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/services/recruiting/authUserService.ts`
+
+### Statistics
+```
+ 8 files changed, 168 insertions(+), 76 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-29 11:34:19
+
+### Changed Files
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/useRecruitActivity.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/hooks/useRecruitEmails.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+
+### Statistics
+```
+ 5 files changed, 76 insertions(+), 21 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-29 11:20:01
 
 ### Changed Files
