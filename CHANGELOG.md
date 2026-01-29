@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-29 11:20:01
+
+### Changed Files
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `supabase/migrations/20260129110250_fix_registration_onboarding_started.sql`
+- `supabase/migrations/20260129111320_fix_admin_deleteuser_user_id_column.sql`
+
+### Statistics
+```
+ 3 files changed, 482 insertions(+), 9 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-29 10:53:10
 
 ### Changed Files
