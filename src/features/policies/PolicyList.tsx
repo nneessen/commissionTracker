@@ -22,6 +22,7 @@ import {
   Link2Off,
   Link2,
   Download,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateForDB, parseLocalDate } from "@/lib/date";
@@ -99,6 +100,8 @@ const PRODUCT_ABBREV: Record<string, string> = {
   annuity: "Ann",
 };
 
+type DateColumnType = "effective" | "submit";
+
 export const PolicyList: React.FC<PolicyListProps> = ({
   onEditPolicy,
   onNewPolicy,
@@ -111,6 +114,20 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     field: "created_at",
     direction: "desc",
   });
+
+  // Date column type state with localStorage persistence
+  const [dateColumnType, setDateColumnType] = useState<DateColumnType>(() => {
+    const stored = localStorage.getItem("policies-date-column-type");
+    return stored === "effective" ? "effective" : "submit"; // Default: submit
+  });
+
+  useEffect(() => {
+    localStorage.setItem("policies-date-column-type", dateColumnType);
+  }, [dateColumnType]);
+
+  // Helper to get the sort field dynamically based on date column type
+  const getDateSortField = () =>
+    dateColumnType === "effective" ? "effective_date" : "submit_date";
 
   const {
     policies,
@@ -473,14 +490,18 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   <span className="font-medium text-emerald-600 dark:text-emerald-400">
                     ${(earnedCommission / 1000).toFixed(1)}k
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400">earned</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    earned
+                  </span>
                 </div>
                 <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
                 <div className="flex items-center gap-1">
                   <span className="font-medium text-amber-600 dark:text-amber-400">
                     ${(pendingCommission / 1000).toFixed(1)}k
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400">pending</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    pending
+                  </span>
                 </div>
                 <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
               </>
@@ -713,19 +734,58 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   Comm Status
                 </TableHead>
               )}
-              <TableHead
-                className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                onClick={() => toggleSort("effective_date")}
-              >
-                <div className="flex items-center gap-1">
-                  Effective
-                  {sortConfig.field === "effective_date" &&
-                    (sortConfig.direction === "asc" ? (
-                      <ChevronUp size={12} />
-                    ) : (
-                      <ChevronDown size={12} />
-                    ))}
-                </div>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-1 px-1.5 py-0.5 -ml-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group">
+                      <span className="group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                        {dateColumnType === "effective"
+                          ? "Effective"
+                          : "Submit"}
+                      </span>
+                      <ChevronDown
+                        size={12}
+                        className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                      />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[160px]">
+                    <DropdownMenuItem
+                      onClick={() => setDateColumnType("effective")}
+                      className="text-[11px] flex items-center justify-between"
+                    >
+                      Effective Date
+                      {dateColumnType === "effective" && <Check size={12} />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setDateColumnType("submit")}
+                      className="text-[11px] flex items-center justify-between"
+                    >
+                      Submit Date
+                      {dateColumnType === "submit" && <Check size={12} />}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => toggleSort(getDateSortField())}
+                      className="text-[11px] flex items-center justify-between"
+                    >
+                      Sort{" "}
+                      {sortConfig.field === getDateSortField() &&
+                      sortConfig.direction === "asc"
+                        ? "Descending"
+                        : "Ascending"}
+                      {sortConfig.field === getDateSortField() ? (
+                        sortConfig.direction === "asc" ? (
+                          <ChevronDown size={12} />
+                        ) : (
+                          <ChevronUp size={12} />
+                        )
+                      ) : (
+                        <ChevronUp size={12} className="opacity-50" />
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableHead>
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-right">
                 Actions
@@ -735,14 +795,20 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={canViewCommissions ? 9 : 7} className="text-center py-12">
+                <TableCell
+                  colSpan={canViewCommissions ? 9 : 7}
+                  className="text-center py-12"
+                >
                   <LogoSpinner size="xl" className="mr-2" />
                   Your policies are loading...
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={canViewCommissions ? 9 : 7} className="text-center py-12">
+                <TableCell
+                  colSpan={canViewCommissions ? 9 : 7}
+                  className="text-center py-12"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <AlertCircle className="h-8 w-8 text-zinc-300 dark:text-zinc-600" />
                     <span className="text-[11px] text-red-600 dark:text-red-400">
@@ -762,7 +828,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               </TableRow>
             ) : policies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canViewCommissions ? 9 : 7} className="text-center py-12">
+                <TableCell
+                  colSpan={canViewCommissions ? 9 : 7}
+                  className="text-center py-12"
+                >
                   <div className="flex flex-col items-center justify-center p-4">
                     <FileText className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -878,7 +947,11 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                                 : policyCommission.status
                             }
                             onValueChange={(value) =>
-                              handleStatusChange(policyCommission, value, policy)
+                              handleStatusChange(
+                                policyCommission,
+                                value,
+                                policy,
+                              )
                             }
                           >
                             <SelectTrigger
@@ -898,7 +971,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             <SelectContent>
                               <SelectItem value="pending">Pending</SelectItem>
                               <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                              <SelectItem value="cancelled">
+                                Cancelled
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
@@ -909,7 +984,11 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       </TableCell>
                     )}
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5 px-2">
-                      {formatDate(policy.effectiveDate)}
+                      {dateColumnType === "effective"
+                        ? formatDate(policy.effectiveDate)
+                        : policy.submitDate
+                          ? formatDate(policy.submitDate)
+                          : "—"}
                     </TableCell>
                     <TableCell className="py-1.5 px-2">
                       <DropdownMenu>
