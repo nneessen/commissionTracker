@@ -70,20 +70,18 @@ interface AgentTableProps {
 }
 
 // Statuses for AP calculations
-const ACTIVE_AP_STATUSES = ["active"]; // Policies that are active/in-force
-const ISSUED_AP_STATUSES = ["active"]; // Policies that are active/in-force (IP)
+const ISSUED_AP_STATUSES = ["active"]; // Policies that are in-force (IP = Issued Premium)
 const PENDING_AP_STATUSES = ["pending", "submitted", "underwriting"]; // Pending policies
 
 // Metrics for a single agent
 interface AgentMetrics {
-  mtd_ap: number; // Active/Issued AP (for backward compatibility)
+  mtd_ap: number; // Issued AP (for backward compatibility)
   mtd_policies: number;
   override_amount: number;
-  // New detailed AP metrics
-  total_ip: number; // Issued Premium (issued status)
+  // Detailed AP metrics
+  total_ip: number; // Issued Premium (in-force policies)
   pending_ap: number; // Pending AP (pending/submitted/underwriting)
-  active_ap: number; // Active AP (active status)
-  total_ap: number; // Total = active + issued + pending
+  total_ap: number; // Total = IP + Pending
 }
 
 /**
@@ -135,11 +133,7 @@ async function fetchAllAgentMetrics(
       return createdDate >= startOfMonth && createdDate <= endOfMonth;
     });
 
-    // Calculate detailed AP metrics
-    const active_ap = mtdPolicies
-      .filter((p) => ACTIVE_AP_STATUSES.includes(p.status || ""))
-      .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
-
+    // Calculate AP metrics
     const total_ip = mtdPolicies
       .filter((p) => ISSUED_AP_STATUSES.includes(p.status || ""))
       .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
@@ -148,19 +142,15 @@ async function fetchAllAgentMetrics(
       .filter((p) => PENDING_AP_STATUSES.includes(p.status || ""))
       .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
 
-    // Total AP = Active + Issued + Pending
-    const total_ap = active_ap + total_ip + pending_ap;
-
-    // MTD AP for backward compatibility (active + issued)
-    const mtd_ap = active_ap + total_ip;
+    // Total AP = IP + Pending
+    const total_ap = total_ip + pending_ap;
 
     metricsMap.set(agentId, {
-      mtd_ap,
+      mtd_ap: total_ip, // For backward compatibility
       mtd_policies: mtdPolicies.length,
       override_amount: overridesByAgent.get(agentId) || 0,
       total_ip,
       pending_ap,
-      active_ap,
       total_ap,
     });
   }
@@ -199,7 +189,6 @@ function AgentRow({
       override_amount: 0,
       total_ip: 0,
       pending_ap: 0,
-      active_ap: 0,
       total_ap: 0,
     };
 
