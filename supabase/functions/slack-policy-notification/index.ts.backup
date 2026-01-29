@@ -232,7 +232,6 @@ async function postSlackMessage(
   options?: {
     username?: string;
     icon_url?: string;
-    blocks?: unknown[];
   },
 ): Promise<{ ok: boolean; ts?: string; error?: string }> {
   try {
@@ -244,10 +243,6 @@ async function postSlackMessage(
     }
     if (options?.icon_url) {
       payload.icon_url = options.icon_url;
-    }
-    // Add blocks for rich formatting
-    if (options?.blocks) {
-      payload.blocks = options.blocks;
     }
 
     const response = await fetch("https://slack.com/api/chat.postMessage", {
@@ -273,24 +268,19 @@ async function updateSlackMessage(
   channelId: string,
   messageTs: string,
   text: string,
-  blocks?: unknown[],
 ): Promise<{ ok: boolean; ts?: string; error?: string }> {
   try {
-    const payload: Record<string, unknown> = {
-      channel: channelId,
-      ts: messageTs,
-      text,
-    };
-    if (blocks) {
-      payload.blocks = blocks;
-    }
     const response = await fetch("https://slack.com/api/chat.update", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${botToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        channel: channelId,
+        ts: messageTs,
+        text,
+      }),
     });
     return await response.json();
   } catch (err) {
@@ -300,14 +290,14 @@ async function updateSlackMessage(
 }
 
 /**
- * Build the daily leaderboard with Block Kit for better formatting
- * Returns both text (fallback) and blocks
+ * Build the daily leaderboard text (simple text format)
+ * Uses inline code for dollar amounts to make them stand out
  */
-function buildLeaderboard(
+function buildLeaderboardText(
   title: string,
   entries: DailyProductionEntry[],
   totalAP: number,
-): { text: string; blocks: unknown[] } {
+): string {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
@@ -315,101 +305,30 @@ function buildLeaderboard(
     timeZone: "America/New_York",
   });
 
-  // Build fallback text (shown in notifications/previews)
-  let text = `${title} - ${today}\n`;
-  entries.forEach((entry, index) => {
-    const rank = index + 1;
-    const ap = formatCurrency(entry.total_annual_premium);
-    text += `${rank}. ${entry.agent_name || "Unknown"} - ${ap}\n`;
-  });
-  text += `Total: ${formatCurrency(totalAP)}`;
-
-  // Build Block Kit blocks for rich display
-  const blocks: unknown[] = [];
-
-  // Header with title
-  blocks.push({
-    type: "header",
-    text: {
-      type: "plain_text",
-      text: title,
-      emoji: true,
-    },
-  });
-
-  // Date context
-  blocks.push({
-    type: "context",
-    elements: [
-      {
-        type: "mrkdwn",
-        text: `📅 ${today}`,
-      },
-    ],
-  });
-
-  // Divider
-  blocks.push({ type: "divider" });
+  let text = `*${title}*\n_${today}_\n\n`;
 
   if (entries.length === 0) {
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "_No sales yet today_",
-      },
-    });
+    text += "_No sales yet today_\n";
   } else {
-    // Build leaderboard entries - AP first for natural alignment
-    // Pad AP values so they right-align (e.g., "  $761" vs "$9,934")
-    const maxApLen = Math.max(
-      ...entries.map((e) => formatCurrency(e.total_annual_premium).length),
-    );
-
-    const lines = entries.map((entry, index) => {
+    entries.forEach((entry, index) => {
       const rank = index + 1;
-      const rankEmoji = getRankDisplay(rank);
-      const name = entry.agent_name || "Unknown";
-      const ap = formatCurrency(entry.total_annual_premium).padStart(maxApLen);
+      const rankDisplay = getRankDisplay(rank);
+      const ap = formatCurrency(entry.total_annual_premium);
       const policies = entry.policy_count;
       const policyText = policies === 1 ? "policy" : "policies";
 
-      return `${rankEmoji} ${ap}  ·  *${name}*  _(${policies} ${policyText})_`;
-    });
+      // Always use agent_name - slack_member_id is workspace-specific and unreliable
+      // (causes "Private user" when agent isn't in that Slack workspace)
+      const nameDisplay = entry.agent_name || "Unknown";
 
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: lines.join("\n"),
-      },
+      // Use inline code for dollar amount to make it stand out
+      text += `${rankDisplay} ${nameDisplay} · \`${ap}\` _(${policies} ${policyText})_\n`;
     });
   }
 
-  // Divider before total
-  blocks.push({ type: "divider" });
+  text += `\n*Total: ${formatCurrency(totalAP)}*`;
 
-  // Total
-  blocks.push({
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: `*💰 Total: ${formatCurrency(totalAP)}*`,
-    },
-  });
-
-  return { text, blocks };
-}
-
-/**
- * Build the daily leaderboard text (simple text format) - kept for backwards compatibility
- */
-function buildLeaderboardText(
-  title: string,
-  entries: DailyProductionEntry[],
-  totalAP: number,
-): string {
-  return buildLeaderboard(title, entries, totalAP).text;
+  return text;
 }
 
 /**
@@ -544,14 +463,13 @@ async function handleCompleteFirstSale(
       : log.title
         ? sanitizeSlackTitle(log.title)
         : getDefaultDailyTitle();
-    const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(title, production, totalAP);
+    const leaderboardText = buildLeaderboardText(title, production, totalAP);
 
-    // Post the leaderboard with Block Kit
+    // Post the leaderboard
     const leaderboardResult = await postSlackMessage(
       botToken,
       log.channel_id,
       leaderboardText,
-      { blocks: leaderboardBlocks },
     );
 
     leaderboardOk = leaderboardResult.ok;
@@ -668,15 +586,14 @@ async function handleUpdateLeaderboard(
   const title = log.title
     ? sanitizeSlackTitle(log.title)
     : getDefaultDailyTitle();
-  const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(title, production, totalAP);
+  const leaderboardText = buildLeaderboardText(title, production, totalAP);
 
-  // Update the Slack message with Block Kit
+  // Update the Slack message
   const updateResult = await updateSlackMessage(
     botToken,
     log.channel_id,
     log.leaderboard_message_ts,
     leaderboardText,
-    leaderboardBlocks,
   );
 
   if (!updateResult.ok) {
@@ -1406,7 +1323,7 @@ serve(async (req) => {
           // Subsequent sale - delete old leaderboard and post fresh one
           // This ensures leaderboard always appears AFTER the latest policy notification
           // Sanitize user-provided title to prevent Slack injection
-          const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(
+          const leaderboardText = buildLeaderboardText(
             existingLog.title
               ? sanitizeSlackTitle(existingLog.title)
               : getDefaultDailyTitle(),
@@ -1446,12 +1363,11 @@ serve(async (req) => {
             }
           }
 
-          // Always post fresh leaderboard after the policy notification with Block Kit
+          // Always post fresh leaderboard after the policy notification
           const leaderboardData = await postSlackMessage(
             botToken,
             integration.policy_channel_id,
             leaderboardText,
-            { blocks: leaderboardBlocks },
           );
           leaderboardOk = leaderboardData.ok;
 
