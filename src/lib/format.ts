@@ -15,6 +15,36 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
+ * Format a number as compact USD currency with K/M/B suffixes
+ * Used for dense data displays like leaderboards and dashboards
+ *
+ * @example
+ * formatCompactCurrency(1500) // "$2K"
+ * formatCompactCurrency(1500000) // "$1.5M"
+ * formatCompactCurrency(500) // "$500"
+ */
+export function formatCompactCurrency(value: number): string {
+  const absValue = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+
+  if (absValue >= 1_000_000_000) {
+    return `${sign}$${(absValue / 1_000_000_000).toFixed(1)}B`;
+  }
+  if (absValue >= 1_000_000) {
+    return `${sign}$${(absValue / 1_000_000).toFixed(1)}M`;
+  }
+  if (absValue >= 1_000) {
+    return `${sign}$${(absValue / 1_000).toFixed(0)}K`;
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
  * Format a date string or Date object for display
  *
  * IMPORTANT: Uses parseLocalDate to avoid UTC timezone shifting bugs

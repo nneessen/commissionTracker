@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getInitialsFromEmail } from "@/lib/string";
 import { sanitizeHtml } from "@/features/email/services/sanitizationService";
 
 interface ThreadViewProps {
@@ -422,7 +423,7 @@ function MessageCard({
           .join("")
           .toUpperCase()
           .slice(0, 2)
-      : getInitials(message.fromAddress);
+      : getInitialsFromEmail(message.fromAddress);
 
   return (
     <div
@@ -645,15 +646,6 @@ function ThreadViewSkeleton() {
 }
 
 // Helper functions
-function getInitials(email: string): string {
-  const namePart = email.split("@")[0];
-  const parts = namePart.split(/[._-]/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return namePart.slice(0, 2).toUpperCase();
-}
-
 function formatEmailAddress(email: string): string {
   const namePart = email.split("@")[0];
   const parts = namePart.split(/[._-]/);

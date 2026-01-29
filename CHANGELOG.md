@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-29 15:30:51
+
+### Changed Files
+- `.serena/project.yml`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/promptAddOns/REFACTOR_FILE_ARCHITECT.md`
+- `src/components/ui/rank-badge.tsx`
+- `src/features/leaderboard/LeaderboardPage.tsx`
+- `src/features/leaderboard/components/LeaderboardTable.tsx`
+- `src/features/leaderboard/components/MetricsHelpPopover.tsx`
+- `src/features/messages/components/inbox/ThreadListItem.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/lib/__tests__/format.test.ts`
+- `src/lib/__tests__/string.test.ts`
+- `src/lib/format.ts`
+- `src/lib/string.ts`
+- `supabase/migrations/20260129132352_team_leaderboard_recursive_hierarchy.sql`
+- `supabase/migrations/20260129152701_fix_leaderboard_submit_date_filter.sql`
+
+### Statistics
+```
+ 16 files changed, 1100 insertions(+), 195 deletions(-)
+```
+
+## [Checkpoint] - 2026-01-29 13:39:23
+
+### Changed Files
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `supabase/migrations/20260129132352_team_leaderboard_recursive_hierarchy.sql`
+
+### Statistics
+```
+ 2 files changed, 250 insertions(+), 1 deletion(-)
+```
+
 ## [Checkpoint] - 2026-01-29 13:09:39
 
 ### Changed Files

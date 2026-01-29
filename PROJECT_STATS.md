@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-01-29 13:09:39
+Last Updated: 2026-01-29 15:30:51
 
 ## Metrics
-- Total Files: 29698
-- Total Lines of Code: 558181
-- Total Commits: 855
+- Total Files: 29703
+- Total Lines of Code: 558435
+- Total Commits: 858
 
 ## Recent Activity
+7b60f4ab fix(slack): prevent backdated policies from posting to Slack
+7d53f070 fix(hierarchy): correct IP column showing $0 in team table
+93bc7abf docs: multiple changes in .,src/components/layout,supabase/migrations
 7ae9ece4 docs: multiple changes in .,src/services/recruiting,src/services/recruiting/repositories
 de796c58 docs: multiple changes in .,src/features/recruiting/components,src/features/recruiting/hooks
-626641f3 docs: multiple changes in .,src/services/recruiting/repositories,supabase/migrations
-cbe985b7 feat(recruiting): add cancel invitation feature to detail panel
-09f4a061 fix(recruiting): use edge function for registration with password

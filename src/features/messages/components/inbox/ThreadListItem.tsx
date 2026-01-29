@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star, Paperclip, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getInitialsFromEmail } from "@/lib/string";
 import type { Thread } from "../../hooks/useThreads";
 
 interface ThreadListItemProps {
@@ -28,7 +29,7 @@ export function ThreadListItem({
   // Get initials and display name based on view type
   const firstParticipant = thread.participantEmails[0] || "Unknown";
   const displayName = isSentView ? "Me" : formatParticipant(firstParticipant);
-  const initials = isSentView ? "ME" : getInitials(firstParticipant);
+  const initials = isSentView ? "ME" : getInitialsFromEmail(firstParticipant);
 
   // Format relative time
   const timeAgo = formatDistanceToNow(new Date(thread.lastMessageAt), {
@@ -143,17 +144,6 @@ export function ThreadListItem({
 }
 
 // Helper functions
-function getInitials(email: string): string {
-  const namePart = email.split("@")[0];
-  const parts = namePart.split(/[._-]/);
-
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  return namePart.slice(0, 2).toUpperCase();
-}
-
 function formatParticipant(email: string): string {
   const namePart = email.split("@")[0];
   const parts = namePart.split(/[._-]/);

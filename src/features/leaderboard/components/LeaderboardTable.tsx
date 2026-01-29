@@ -2,9 +2,12 @@
 // Unified leaderboard table supporting all three modes
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RankBadge } from "@/components/ui/rank-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Trophy, Medal, Award, Building2, Users } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
+import { getInitials } from "@/lib/string";
+import { Building2, Users, Trophy } from "lucide-react";
 import type {
   LeaderboardScope,
   AgentLeaderboardEntry,
@@ -22,61 +25,6 @@ interface LeaderboardTableProps {
   entries: AnyEntry[];
   isLoading?: boolean;
   error?: Error | null;
-}
-
-// Format currency with appropriate precision
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-// Get initials from name
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-// Rank badge component
-function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) {
-    return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-sm">
-        <Trophy className="h-3 w-3 text-amber-900" />
-      </div>
-    );
-  }
-  if (rank === 2) {
-    return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-400 shadow-sm">
-        <Medal className="h-3 w-3 text-zinc-700" />
-      </div>
-    );
-  }
-  if (rank === 3) {
-    return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-sm">
-        <Award className="h-3 w-3 text-orange-900" />
-      </div>
-    );
-  }
-  return (
-    <span
-      className={cn(
-        "font-mono text-xs font-semibold w-6 text-center",
-        rank <= 10 ? "text-amber-600 dark:text-amber-400" : "text-zinc-400",
-      )}
-    >
-      {rank}
-    </span>
-  );
 }
 
 // Loading skeleton
