@@ -299,6 +299,425 @@ async function updateSlackMessage(
   }
 }
 
+// ============================================================================
+// MILESTONE CELEBRATION SYSTEM
+// ============================================================================
+
+// Milestone thresholds
+const POLICY_MILESTONES = [2, 3, 5] as const;
+const AP_MILESTONES = [2500, 5000, 7500, 10000] as const;
+
+// Flavor text pools - randomized for variety
+const FLAVOR_TEXT = {
+  // Policy milestones
+  policy_2: [
+    "starting to cook 🍳",
+    "the warmup is over",
+    "they're locked in now",
+  ],
+  policy_3: [
+    "three for three. no misses.",
+    "hat trick secured 🎩",
+    "rule of three: they write, they close, they repeat",
+  ],
+  policy_5: [
+    "absolutely unhinged performance",
+    "someone check on the competition 💀",
+    "main character energy activated",
+  ],
+  // AP milestones
+  ap_2500: ["bag secured 💼", "stacking starts here"],
+  ap_5000: ["money printer go brrrr", "halfway to legendary"],
+  ap_7500: ["big dawg behavior", "closing in on greatness"],
+  ap_10000: [
+    "generational wealth mindset 👑",
+    "different breed. built different. 💎",
+  ],
+  // Dual milestone
+  dual: [
+    "that's called inevitable. 💎",
+    "can't be stopped. won't be stopped.",
+    "elite mentality, elite results.",
+  ],
+};
+
+/**
+ * Get random flavor text for a milestone
+ */
+function getFlavorText(
+  type: "policy" | "ap" | "dual",
+  value?: number,
+): string {
+  let pool: string[];
+  if (type === "dual") {
+    pool = FLAVOR_TEXT.dual;
+  } else if (type === "policy") {
+    pool =
+      FLAVOR_TEXT[`policy_${value}` as keyof typeof FLAVOR_TEXT] ||
+      FLAVOR_TEXT.policy_2;
+  } else {
+    pool =
+      FLAVOR_TEXT[`ap_${value}` as keyof typeof FLAVOR_TEXT] ||
+      FLAVOR_TEXT.ap_2500;
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/**
+ * Build celebration blocks for Slack
+ */
+function buildCelebrationBlocks(
+  agentName: string,
+  slackMemberId: string | null,
+  policyMilestone: number | null,
+  apMilestone: number | null,
+): { text: string; blocks: unknown[] } {
+  const mention = slackMemberId ? `<@${slackMemberId}>` : agentName;
+  const isDual = policyMilestone && apMilestone;
+
+  let emoji: string;
+  let title: string;
+  let achievement: string;
+  let flavor: string;
+  let color: string;
+
+  if (isDual) {
+    // Combined mega-celebration
+    emoji = "🔥👑";
+    title = "DOUBLE THREAT";
+    const policyLabel =
+      policyMilestone === 5
+        ? "5 policies"
+        : policyMilestone === 3
+          ? "their 3rd policy"
+          : "policy #2";
+    const apLabel = formatCurrency(apMilestone);
+    achievement = `${mention} just hit ${policyLabel} AND crossed ${apLabel} AP`;
+    flavor =
+      policyMilestone === 3
+        ? `trifecta + big money? ${getFlavorText("dual")}`
+        : getFlavorText("dual");
+    color = "#FFD700"; // Gold
+  } else if (policyMilestone) {
+    // Policy milestone
+    switch (policyMilestone) {
+      case 2:
+        emoji = "🔥";
+        title = "HEATING UP";
+        achievement = `${mention} just locked in policy #2 today`;
+        flavor = getFlavorText("policy", 2);
+        color = "#FF6B35";
+        break;
+      case 3:
+        emoji = "🎯";
+        title = "TRIFECTA";
+        achievement = `${mention} just hit their 3rd policy today`;
+        flavor = getFlavorText("policy", 3);
+        color = "#4ECDC4";
+        break;
+      case 5:
+        emoji = "😈";
+        title = "CERTIFIED DEMON";
+        achievement = `${mention} locked in 5 policies today`;
+        flavor = getFlavorText("policy", 5);
+        color = "#9B59B6";
+        break;
+      default:
+        emoji = "🔥";
+        title = "ON FIRE";
+        achievement = `${mention} is crushing it`;
+        flavor = "let's go!";
+        color = "#FF6B35";
+    }
+  } else if (apMilestone) {
+    // AP milestone
+    const apFormatted = formatCurrency(apMilestone);
+    switch (apMilestone) {
+      case 2500:
+        emoji = "💪";
+        title = "$2.5K DAY";
+        achievement = `${mention} crossed $2,500 AP today`;
+        flavor = getFlavorText("ap", 2500);
+        color = "#CD7F32"; // Bronze
+        break;
+      case 5000:
+        emoji = "🚀";
+        title = "$5K DAY";
+        achievement = `${mention} crossed $5,000 AP today`;
+        flavor = getFlavorText("ap", 5000);
+        color = "#C0C0C0"; // Silver
+        break;
+      case 7500:
+        emoji = "💰";
+        title = "$7.5K DAY";
+        achievement = `${mention} crossed $7,500 AP today`;
+        flavor = getFlavorText("ap", 7500);
+        color = "#FFD700"; // Gold
+        break;
+      case 10000:
+        emoji = "👑";
+        title = "$10K CLUB";
+        achievement = `${mention} crossed $10,000 AP today`;
+        flavor = getFlavorText("ap", 10000);
+        color = "#E5E4E2"; // Platinum
+        break;
+      default:
+        emoji = "💰";
+        title = `${apFormatted} DAY`;
+        achievement = `${mention} crossed ${apFormatted} AP`;
+        flavor = "big moves!";
+        color = "#FFD700";
+    }
+  } else {
+    // Fallback (shouldn't happen)
+    emoji = "🎉";
+    title = "CELEBRATION";
+    achievement = `${mention} is doing great!`;
+    flavor = "keep it up!";
+    color = "#3498DB";
+  }
+
+  const text = `${emoji} ${title} ${emoji}\n${achievement}\n${flavor}`;
+
+  const blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `${emoji} *${title}* ${emoji}\n━━━━━━━━━━━━━━━━━━━━━━\n${achievement}\n\n_${flavor}_`,
+      },
+    },
+  ];
+
+  return { text, blocks };
+}
+
+/**
+ * Check and post milestone celebration
+ * Called after leaderboard is updated
+ */
+async function checkAndPostCelebration(
+  supabase: ReturnType<typeof createClient>,
+  botToken: string,
+  channelId: string,
+  logId: string,
+  agentId: string,
+  agentName: string,
+  slackMemberId: string | null,
+  imoId: string,
+  agencyId: string | null,
+): Promise<{
+  celebrated: boolean;
+  policyMilestone?: number;
+  apMilestone?: number;
+  smsSent?: boolean;
+}> {
+  try {
+    // Get agent's current daily stats
+    const { data: statsData, error: statsError } = await supabase.rpc(
+      "get_agent_daily_stats",
+      {
+        p_user_id: agentId,
+        p_imo_id: imoId,
+      },
+    );
+
+    if (statsError || !statsData || statsData.length === 0) {
+      console.log(
+        "[slack-policy-notification] Could not get agent stats:",
+        statsError,
+      );
+      return { celebrated: false };
+    }
+
+    const { policy_count, total_ap } = statsData[0];
+
+    // Check and update milestones
+    const { data: milestoneData, error: milestoneError } = await supabase.rpc(
+      "check_and_update_milestones",
+      {
+        p_log_id: logId,
+        p_policy_count: policy_count,
+        p_total_ap: total_ap,
+      },
+    );
+
+    if (milestoneError || !milestoneData || milestoneData.length === 0) {
+      console.log(
+        "[slack-policy-notification] Could not check milestones:",
+        milestoneError,
+      );
+      return { celebrated: false };
+    }
+
+    const { new_policy_milestone, new_ap_milestone, should_send_sms } =
+      milestoneData[0];
+
+    // If no new milestone, return early
+    if (!new_policy_milestone && !new_ap_milestone) {
+      console.log("[slack-policy-notification] No new milestones to celebrate");
+      return { celebrated: false };
+    }
+
+    console.log(
+      `[slack-policy-notification] New milestone! Policy: ${new_policy_milestone}, AP: ${new_ap_milestone}, SMS: ${should_send_sms}`,
+    );
+
+    // Build and post celebration message
+    const { text, blocks } = buildCelebrationBlocks(
+      agentName,
+      slackMemberId,
+      new_policy_milestone || null,
+      new_ap_milestone || null,
+    );
+
+    const celebrationResult = await postSlackMessage(botToken, channelId, text, {
+      blocks,
+    });
+
+    if (!celebrationResult.ok) {
+      console.error(
+        "[slack-policy-notification] Failed to post celebration:",
+        celebrationResult.error,
+      );
+    } else {
+      console.log(
+        "[slack-policy-notification] Celebration posted successfully!",
+      );
+    }
+
+    // Send SMS if mega milestone (5 policies or $10k AP)
+    let smsSent = false;
+    if (should_send_sms) {
+      smsSent = await sendMegaMilestoneSMS(
+        supabase,
+        agentId,
+        agentName,
+        imoId,
+        agencyId,
+        new_policy_milestone === 5,
+        new_ap_milestone === 10000,
+      );
+    }
+
+    return {
+      celebrated: true,
+      policyMilestone: new_policy_milestone || undefined,
+      apMilestone: new_ap_milestone || undefined,
+      smsSent,
+    };
+  } catch (err) {
+    console.error(
+      "[slack-policy-notification] Error in checkAndPostCelebration:",
+      err,
+    );
+    return { celebrated: false };
+  }
+}
+
+/**
+ * Send SMS blast for mega milestones (5 policies or $10k AP)
+ */
+async function sendMegaMilestoneSMS(
+  supabase: ReturnType<typeof createClient>,
+  agentId: string,
+  agentName: string,
+  imoId: string,
+  agencyId: string | null,
+  isCertifiedDemon: boolean,
+  is10kClub: boolean,
+): Promise<boolean> {
+  try {
+    console.log(
+      `[slack-policy-notification] Sending mega milestone SMS for ${agentName}`,
+    );
+
+    // Get users to notify
+    const { data: users, error: usersError } = await supabase.rpc(
+      "get_agency_users_for_sms",
+      {
+        p_agency_id: agencyId,
+        p_imo_id: imoId,
+        p_exclude_user_id: agentId,
+      },
+    );
+
+    if (usersError || !users || users.length === 0) {
+      console.log(
+        "[slack-policy-notification] No users to SMS or error:",
+        usersError,
+      );
+      return false;
+    }
+
+    // Build SMS message
+    let message: string;
+    if (isCertifiedDemon && is10kClub) {
+      message = `🚨 ${agentName} is UNREAL - 5 policies AND $10K AP! Flood the Slack channel! 🐐`;
+    } else if (isCertifiedDemon) {
+      message = `🔥 ${agentName} just hit 5 POLICIES today! Go show some love in Slack! 😈`;
+    } else {
+      message = `👑 ${agentName} crossed $10K AP today! Drop some 🔥 in Slack!`;
+    }
+
+    // Get the edge function URL for send-sms
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error("[slack-policy-notification] Missing Supabase env vars");
+      return false;
+    }
+
+    let successCount = 0;
+    const smsUrl = `${SUPABASE_URL}/functions/v1/send-sms`;
+
+    // Send SMS to each user (in parallel with a limit)
+    const sendPromises = users.slice(0, 50).map(async (user: { phone: string; first_name: string }) => {
+      if (!user.phone) return false;
+
+      try {
+        const response = await fetch(smsUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: user.phone,
+            message,
+            trigger: "mega_milestone",
+          }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          successCount++;
+          return true;
+        }
+        console.log(
+          `[slack-policy-notification] SMS failed for ${user.first_name}:`,
+          result.error,
+        );
+        return false;
+      } catch (err) {
+        console.error(`[slack-policy-notification] SMS error for ${user.first_name}:`, err);
+        return false;
+      }
+    });
+
+    await Promise.all(sendPromises);
+    console.log(
+      `[slack-policy-notification] SMS sent to ${successCount}/${users.length} users`,
+    );
+
+    return successCount > 0;
+  } catch (err) {
+    console.error("[slack-policy-notification] Error sending SMS blast:", err);
+    return false;
+  }
+}
+
 /**
  * Build the daily leaderboard with Block Kit for better formatting
  * Returns both text (fallback) and blocks
@@ -572,6 +991,23 @@ async function handleCompleteFirstSale(
     console.error(
       "[slack-policy-notification] Failed to update log:",
       updateError,
+    );
+  }
+
+  // =====================================================================
+  // Check and post milestone celebration after first sale completion
+  // =====================================================================
+  if (leaderboardOk) {
+    await checkAndPostCelebration(
+      supabase,
+      botToken,
+      log.channel_id,
+      logId,
+      pendingData.agentId,
+      pendingData.agentName,
+      pendingData.agentSlackMemberId,
+      log.imo_id,
+      integration.agency_id,
     );
   }
 
@@ -1475,6 +1911,23 @@ serve(async (req) => {
             console.error(
               "[slack-policy-notification] Failed to post new leaderboard:",
               leaderboardData.error,
+            );
+          }
+
+          // =====================================================================
+          // Check and post milestone celebration after leaderboard update
+          // =====================================================================
+          if (leaderboardOk && existingLog?.id) {
+            await checkAndPostCelebration(
+              supabase,
+              botToken,
+              integration.policy_channel_id,
+              existingLog.id,
+              agentId,
+              agentName,
+              workspaceSlackUser?.id || null,
+              imoId,
+              integration.agency_id,
             );
           }
         }
