@@ -23,7 +23,8 @@ serve(async (req) => {
     console.log("[gmail-oauth-init] Function invoked");
 
     const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    // Use custom domain if set, otherwise fall back to default Supabase URL
+    const SUPABASE_URL = Deno.env.get("CUSTOM_DOMAIN_URL") || Deno.env.get("SUPABASE_URL");
 
     if (!GOOGLE_CLIENT_ID) {
       console.error("[gmail-oauth-init] GOOGLE_CLIENT_ID not configured");

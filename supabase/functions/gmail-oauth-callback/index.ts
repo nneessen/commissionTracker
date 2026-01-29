@@ -56,7 +56,8 @@ serve(async (req) => {
     console.log("[gmail-oauth-callback] Function invoked");
 
     // Get environment variables
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    // Use custom domain if set, otherwise fall back to default Supabase URL
+    const SUPABASE_URL = Deno.env.get("CUSTOM_DOMAIN_URL") || Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
     const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");

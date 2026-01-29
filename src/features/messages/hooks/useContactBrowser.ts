@@ -11,12 +11,14 @@ import {
   getAvailableRoles,
   userHasDownlines,
   getAllTeamContacts,
+  getAllUsersContacts,
+  getPaginatedAllUsers,
   type Contact,
   type ContactFilters,
   type ContactType,
 } from "../services/contactService";
 
-export type ContactTab = "all" | "favorites" | "team" | "clients";
+export type ContactTab = "all" | "favorites" | "team" | "clients" | "all_users";
 
 interface UseContactBrowserOptions {
   pageSize?: number;
@@ -27,6 +29,9 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
   const { pageSize = 50, initialTab = "all" } = options;
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Check if user is super admin
+  const isSuperAdmin = user?.is_super_admin === true;
 
   // State
   const [activeTab, setActiveTab] = useState<ContactTab>(initialTab);
@@ -89,6 +94,16 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     queryFn: () => userHasDownlines(user!.id!),
     enabled: !!user?.id,
     staleTime: 300000,
+  });
+
+  // Query for ALL users (super-admin only)
+  const allUsersQuery = useQuery({
+    queryKey: ["contacts", "all_users", page, pageSize, search],
+    queryFn: () =>
+      getPaginatedAllUsers(page, pageSize, search.length >= 2 ? search : undefined),
+    enabled: isSuperAdmin && activeTab === "all_users",
+    staleTime: 30000,
+    placeholderData: (prev) => prev,
   });
 
   // Mutation for adding favorites
@@ -175,11 +190,26 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     return getAllTeamContacts(user.id);
   }, [user?.id]);
 
+  // Fetch all users for bulk add feature (super-admin only)
+  const fetchAllUsersContacts = useCallback(async (): Promise<Contact[]> => {
+    if (!isSuperAdmin) return [];
+    return getAllUsersContacts();
+  }, [isSuperAdmin]);
+
+  // Select data source based on active tab
+  const isAllUsersTab = activeTab === "all_users";
+
   return {
-    // Data
-    contacts: contactsQuery.data?.data || [],
-    total: contactsQuery.data?.total || 0,
-    hasMore: contactsQuery.data?.hasMore || false,
+    // Data - select from appropriate query based on tab
+    contacts: isAllUsersTab
+      ? (allUsersQuery.data?.data || [])
+      : (contactsQuery.data?.data || []),
+    total: isAllUsersTab
+      ? (allUsersQuery.data?.total || 0)
+      : (contactsQuery.data?.total || 0),
+    hasMore: isAllUsersTab
+      ? (allUsersQuery.data?.hasMore || false)
+      : (contactsQuery.data?.hasMore || false),
     roles: rolesQuery.data || [],
     hasDownlines: hasDownlinesQuery.data || false,
 
@@ -191,9 +221,12 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     page,
     pageSize,
 
+    // Super-admin flag
+    isSuperAdmin,
+
     // Loading states
-    isLoading: contactsQuery.isLoading,
-    isFetching: contactsQuery.isFetching,
+    isLoading: isAllUsersTab ? allUsersQuery.isLoading : contactsQuery.isLoading,
+    isFetching: isAllUsersTab ? allUsersQuery.isFetching : contactsQuery.isFetching,
     isLoadingRoles: rolesQuery.isLoading,
 
     // Handlers
@@ -205,6 +238,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     prevPage: handlePrevPage,
     toggleFavorite,
     fetchAllTeamContacts,
+    fetchAllUsersContacts,
 
     // Mutations loading
     isTogglingFavorite:

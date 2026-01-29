@@ -20,6 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Search,
   Star,
   Users,
@@ -29,6 +39,7 @@ import {
   ChevronRight,
   Plus,
   UserPlus,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -70,21 +81,28 @@ export function ContactBrowser({
     toggleFavorite,
     isTogglingFavorite,
     fetchAllTeamContacts,
+    isSuperAdmin,
+    fetchAllUsersContacts,
   } = useContactBrowser({ pageSize: 50 });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isAddingAll, setIsAddingAll] = useState(false);
+  const [showAllUsersConfirm, setShowAllUsersConfirm] = useState(false);
 
   // Filter out already selected contacts
   const availableContacts = contacts.filter(
     (c) => !selectedEmails.includes(c.email.toLowerCase()),
   );
 
-  // Updated tabs with correct naming
+  // Updated tabs with correct naming - include All Users for super-admins
   const tabs: { id: ContactTab; label: string; icon: typeof Users }[] = [
     { id: "all", label: "All Contacts", icon: Users },
     { id: "favorites", label: "Favorites", icon: Star },
     { id: "team", label: "My Team", icon: User },
+    // Conditionally add All Users tab for super-admins
+    ...(isSuperAdmin
+      ? [{ id: "all_users" as ContactTab, label: "All Users", icon: Globe }]
+      : []),
   ];
 
   const handleContactClick = useCallback(
@@ -117,6 +135,28 @@ export function ContactBrowser({
       setIsAddingAll(false);
     }
   }, [fetchAllTeamContacts, selectedEmails, onSelectContact]);
+
+  // Add all users handler (super-admin only) - shows confirmation first
+  const handleAddAllUsersClick = useCallback(() => {
+    setShowAllUsersConfirm(true);
+  }, []);
+
+  // Confirmed add all users
+  const handleAddAllUsersConfirmed = useCallback(async () => {
+    setShowAllUsersConfirm(false);
+    setIsAddingAll(true);
+    try {
+      const allUsers = await fetchAllUsersContacts();
+      const unselected = allUsers.filter(
+        (c) => !selectedEmails.includes(c.email.toLowerCase()),
+      );
+      unselected.forEach((contact) => {
+        onSelectContact(contact);
+      });
+    } finally {
+      setIsAddingAll(false);
+    }
+  }, [fetchAllUsersContacts, selectedEmails, onSelectContact]);
 
   // Focus search when sheet opens
   useEffect(() => {
@@ -237,6 +277,34 @@ export function ContactBrowser({
           </div>
         )}
 
+        {/* Add All Users button - only on All Users tab (super-admin only) */}
+        {activeTab === "all_users" && total > 0 && (
+          <div className="px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+            <button
+              onClick={handleAddAllUsersClick}
+              disabled={isAddingAll}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium rounded transition-colors w-full justify-center",
+                isAddingAll
+                  ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                  : "bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700",
+              )}
+            >
+              {isAddingAll ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Globe className="h-3 w-3" />
+                  Add All Users ({total})
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Contact List - Fixed height with scroll */}
         <ScrollArea className="flex-1">
           <div className="px-2 py-1 space-y-0.5">
@@ -307,6 +375,41 @@ export function ContactBrowser({
           </div>
         )}
       </SheetContent>
+
+      {/* Confirmation dialog for Add All Users */}
+      <AlertDialog open={showAllUsersConfirm} onOpenChange={setShowAllUsersConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add All Users?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  You are about to add{" "}
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {total} users
+                  </span>{" "}
+                  as recipients.
+                </p>
+                <p className="mt-2">
+                  This will send an email to every user in the system.
+                </p>
+                <p className="mt-3 text-amber-600 dark:text-amber-400 font-medium">
+                  This action is intended for system-wide announcements only.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleAddAllUsersConfirmed}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              Add All {total} Users
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
@@ -347,13 +450,25 @@ function EmptyState({
         return "No favorites yet";
       case "team":
         return "No team members under you";
+      case "all_users":
+        return "No users found";
       default:
         return "No contacts available";
     }
   };
 
+  const getIcon = () => {
+    switch (activeTab) {
+      case "all_users":
+        return <Globe className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2 mx-auto" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="text-center py-8">
+      {getIcon()}
       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
         {getMessage()}
       </p>

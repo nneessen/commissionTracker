@@ -472,6 +472,92 @@ export async function getAllTeamContacts(userId: string): Promise<Contact[]> {
 }
 
 // ============================================================================
+// ALL USERS (Super-Admin Only)
+// ============================================================================
+
+/**
+ * Get all users in the system (super-admin only, bypasses RLS).
+ * Uses admin_get_allusers RPC which is SECURITY DEFINER.
+ */
+export async function getAllUsersContacts(): Promise<Contact[]> {
+  try {
+    const { data, error } = await supabase.rpc("admin_get_allusers");
+
+    if (error) {
+      console.error("Error fetching all users:", error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Filter to only approved users with valid emails
+    const approvedUsers = (data as Array<{
+      id: string;
+      email: string;
+      first_name: string | null;
+      last_name: string | null;
+      roles: string[] | null;
+      approval_status: string;
+    }>).filter(
+      (u) => u.approval_status === "approved" && u.email,
+    );
+
+    return approvedUsers.map((u) => ({
+      id: u.id,
+      name: `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+      email: u.email,
+      type: "team" as ContactType,
+      role: Array.isArray(u.roles) ? u.roles[0] : undefined,
+    }));
+  } catch (error) {
+    console.error("Error in getAllUsersContacts:", error);
+    return [];
+  }
+}
+
+/**
+ * Get paginated all users (super-admin only).
+ * Client-side pagination since RPC returns all users.
+ */
+export async function getPaginatedAllUsers(
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<PaginatedResult<Contact>> {
+  try {
+    const allContacts = await getAllUsersContacts();
+
+    // Apply search filter if provided
+    let filtered = allContacts;
+    if (search && search.length >= 2) {
+      const searchLower = search.toLowerCase();
+      filtered = allContacts.filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchLower) ||
+          c.email.toLowerCase().includes(searchLower),
+      );
+    }
+
+    // Apply pagination
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const data = filtered.slice(start, end);
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+      hasMore: end < total,
+    };
+  } catch (error) {
+    console.error("Error in getPaginatedAllUsers:", error);
+    return { data: [], total: 0, page, pageSize, hasMore: false };
+  }
+}
+
+// ============================================================================
 // ROLE QUERIES
 // ============================================================================
 
