@@ -218,6 +218,9 @@ serve(async (req) => {
       profileId: _profileId,
       phone,
       profileData,
+      // If an existing user_profiles record was already created (e.g., from registration form),
+      // pass its ID here so the auth user is created with the same ID
+      existingProfileId,
     } = await req.json();
 
     if (!email) {
@@ -292,18 +295,33 @@ serve(async (req) => {
 
     // Create user with email_confirm=true (pre-confirmed) and a temp password
     // Then send password reset email so user can set their own password
+    // If existingProfileId is provided, use it as the auth user's ID to match user_profiles
+    const createUserParams: Parameters<
+      typeof supabaseAdmin.auth.admin.createUser
+    >[0] = {
+      email: normalizedEmail,
+      password: tempPassword,
+      email_confirm: true, // Pre-confirm email to avoid magic link issues
+      user_metadata: {
+        full_name: fullName,
+        roles: roles || [],
+        is_admin: isAdmin || false,
+        skip_pipeline: skipPipeline || false,
+      },
+    };
+
+    // If we have an existing profile ID, use it for the auth user
+    // This ensures auth.users.id matches user_profiles.id
+    if (existingProfileId) {
+      createUserParams.id = existingProfileId;
+      console.log(
+        "[create-auth-user] Using existing profile ID for auth user:",
+        existingProfileId,
+      );
+    }
+
     const { data: authUser, error: authError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: normalizedEmail,
-        password: tempPassword,
-        email_confirm: true, // Pre-confirm email to avoid magic link issues
-        user_metadata: {
-          full_name: fullName,
-          roles: roles || [],
-          is_admin: isAdmin || false,
-          skip_pipeline: skipPipeline || false,
-        },
-      });
+      await supabaseAdmin.auth.admin.createUser(createUserParams);
 
     if (authError) {
       // Provide clearer error message for common cases

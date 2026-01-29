@@ -14538,9 +14538,10 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
-      submit_recruit_registration:
-        | { Args: { p_data: Json; p_token: string }; Returns: Json }
-        | { Args: { p_data: Json; p_token: string }; Returns: Json };
+      submit_recruit_registration: {
+        Args: { p_auth_user_id?: string; p_data: Json; p_token: string };
+        Returns: Json;
+      };
       submit_recruiting_lead:
         | {
             Args: {

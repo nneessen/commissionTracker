@@ -22,7 +22,11 @@ import {
   Check,
   ArrowRight,
 } from "lucide-react";
-import { useRecruits, usePendingLeadsCount } from "./hooks";
+import {
+  useRecruits,
+  usePendingLeadsCount,
+  usePendingInvitations,
+} from "./hooks";
 import { useActiveTemplate, usePhases } from "./hooks/usePipeline";
 import { RecruitListTable } from "./components/RecruitListTable";
 import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
@@ -99,6 +103,9 @@ function RecruitingDashboardContent() {
     { enabled: !!user?.id },
   );
 
+  // Fetch pending invitations (invites sent but not yet registered)
+  const { data: pendingInvitations = [] } = usePendingInvitations();
+
   const showPreviewBanner = !isSuperAdminEmail(supabaseUser?.email);
   const { data: pendingLeadsCount } = usePendingLeadsCount();
 
@@ -144,9 +151,43 @@ function RecruitingDashboardContent() {
   };
 
   // Filter out the current user (upline) from the recruits list
-  const recruits = (
+  const registeredRecruits = (
     (recruitsData?.data || []) as RecruitWithRelations[]
   ).filter((recruit) => recruit.id !== user?.id);
+
+  // Transform pending invitations (without recruit_id) into virtual recruit entries
+  // These are invites sent but the recruit hasn't completed registration yet
+  const invitedRecruits = pendingInvitations
+    .filter((inv) => !inv.recruit_id) // Only invitations without a user yet
+    .map((inv) => ({
+      // Use invitation ID prefixed to avoid collision with real user IDs
+      id: `invitation-${inv.id}`,
+      email: inv.email,
+      first_name: inv.first_name || null,
+      last_name: inv.last_name || null,
+      phone: inv.phone || null,
+      city: inv.city || null,
+      state: inv.state || null,
+      onboarding_status: "invited",
+      created_at: inv.created_at,
+      updated_at: inv.updated_at,
+      // Mark this as an invitation for special handling
+      is_invitation: true,
+      invitation_id: inv.id,
+      invitation_status: inv.status,
+      invitation_sent_at: inv.sent_at,
+      // Recruiter is the inviter
+      recruiter_id: inv.inviter_id,
+      upline_id: inv.upline_id || inv.inviter_id,
+      // Required UserProfile fields with defaults
+      roles: ["recruit"],
+      is_admin: false,
+      imo_id: user?.imo_id || null,
+      agency_id: user?.agency_id || null,
+    })) as unknown as RecruitWithRelations[];
+
+  // Combine registered recruits with pending invitations
+  const recruits = [...invitedRecruits, ...registeredRecruits];
 
   // Auto-select recruit from URL param (deep link from trainer dashboard)
   useEffect(() => {
@@ -178,6 +219,14 @@ function RecruitingDashboardContent() {
   };
 
   const handleSelectRecruit = (recruit: UserProfile) => {
+    // Check if this is a pending invitation (not a registered recruit yet)
+    if (recruit.id.startsWith("invitation-")) {
+      toast.info("Awaiting Registration", {
+        description: `${recruit.first_name || recruit.email} hasn't completed their registration yet. They'll appear in the pipeline once they submit the registration form.`,
+        duration: 4000,
+      });
+      return;
+    }
     setSelectedRecruit(recruit);
     setDetailSheetOpen(true);
   };
@@ -310,7 +359,7 @@ function RecruitingDashboardContent() {
             variant="outline"
             onClick={() => setSendInviteDialogOpen(true)}
             className="h-6 text-[10px] px-2"
-            disabled={user?.is_admin ? false : true}
+            disabled={!user?.is_admin && !isStaffRole}
           >
             <Mail className="h-3 w-3 mr-1" />
             Send Invite
@@ -320,7 +369,7 @@ function RecruitingDashboardContent() {
             size="sm"
             onClick={() => setAddRecruitDialogOpen(true)}
             className="h-6 text-[10px] px-2"
-            disabled={user?.is_admin ? false : true}
+            disabled={!user?.is_admin && !isStaffRole}
           >
             <UserPlus className="h-3 w-3 mr-1" />
             Add Recruit

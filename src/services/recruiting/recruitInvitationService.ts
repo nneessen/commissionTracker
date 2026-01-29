@@ -354,38 +354,86 @@ export const recruitInvitationService = {
   },
 
   /**
-   * Submits the registration form data
+   * Submits the registration form data with password
    * This is called from the public registration page
+   * Creates the auth account first, then updates the profile via RPC
    */
-  async submitRegistration(
+  async submitRegistrationWithPassword(
     token: string,
-    formData: RegistrationFormData,
+    email: string,
+    password: string,
+    formData: Omit<RegistrationFormData, "password" | "confirm_password">,
   ): Promise<RegistrationResult> {
-    console.log("[submitRegistration] Submitting for token:", token);
+    console.log("[submitRegistrationWithPassword] Starting for token:", token);
 
     try {
-      // Note: Don't use .single() for RPC calls that return JSON
+      // Step 1: Create auth account with password
+      console.log("[submitRegistrationWithPassword] Creating auth account...");
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: `${formData.first_name} ${formData.last_name}`.trim(),
+            roles: ["recruit"],
+          },
+        },
+      });
+
+      if (authError) {
+        console.error(
+          "[submitRegistrationWithPassword] Auth signup failed:",
+          authError,
+        );
+        return {
+          success: false,
+          error: "auth_failed",
+          message: authError.message,
+        };
+      }
+
+      if (!authData.user?.id) {
+        console.error(
+          "[submitRegistrationWithPassword] No user ID returned from signup",
+        );
+        return {
+          success: false,
+          error: "auth_failed",
+          message: "Failed to create account. Please try again.",
+        };
+      }
+
+      console.log(
+        "[submitRegistrationWithPassword] Auth account created:",
+        authData.user.id,
+      );
+
+      // Step 2: Update profile with form data via RPC
       const { data, error } = await supabase.rpc(
         "submit_recruit_registration",
         {
           p_token: token,
           p_data: formData,
+          p_auth_user_id: authData.user.id,
         },
       );
 
-      console.log("[submitRegistration] RPC response:", { data, error });
+      console.log("[submitRegistrationWithPassword] RPC response:", {
+        data,
+        error,
+      });
 
       if (error) {
-        console.error("[submitRegistration] Error:", error);
+        console.error("[submitRegistrationWithPassword] RPC Error:", error);
         return {
           success: false,
           error: "submission_failed",
-          message: "Failed to submit registration. Please try again.",
+          message: "Failed to complete registration. Please try again.",
         };
       }
 
       if (!data) {
-        console.error("[submitRegistration] No data returned");
+        console.error("[submitRegistrationWithPassword] No data returned");
         return {
           success: false,
           error: "submission_failed",
@@ -393,10 +441,12 @@ export const recruitInvitationService = {
         };
       }
 
-      console.log("[submitRegistration] Success");
-      return data as RegistrationResult;
+      const result = data as RegistrationResult;
+      console.log("[submitRegistrationWithPassword] Success:", result);
+
+      return result;
     } catch (err) {
-      console.error("[submitRegistration] Exception:", err);
+      console.error("[submitRegistrationWithPassword] Exception:", err);
       return {
         success: false,
         error: "submission_failed",

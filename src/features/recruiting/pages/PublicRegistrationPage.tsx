@@ -3,7 +3,7 @@
 // Redesigned with split-panel layout to match Login/PublicJoinPage
 
 import { useState, useEffect } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useParams, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,7 @@ import {
   Shield,
   FileText,
   TrendingUp,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSubmitRegistration } from "../hooks/useRecruitInvitations";
-import { supabase } from "@/services/base/supabase";
-import type {
-  RegistrationFormData,
-  InvitationValidationResult,
-} from "@/types/recruiting.types";
+import {
+  useInvitationByToken,
+  useSubmitRegistrationWithPassword,
+} from "@/features/recruiting";
 import { US_STATES } from "@/constants/states";
 
 // Referral source options
@@ -48,80 +47,46 @@ const REFERRAL_SOURCES = [
 ];
 
 // Form validation schema
-const registrationSchema = z.object({
-  first_name: z.string().min(1, "First name is required"),
-  last_name: z.string().min(1, "Last name is required"),
-  phone: z.string().optional(),
-  date_of_birth: z.string().optional(),
-  street_address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
-  instagram_username: z.string().optional(),
-  linkedin_username: z.string().optional(),
-  facebook_handle: z.string().optional(),
-  personal_website: z.string().optional(),
-  referral_source: z.string().optional(),
-});
+const registrationSchema = z
+  .object({
+    first_name: z.string().min(1, "First name is required"),
+    last_name: z.string().min(1, "Last name is required"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirm_password: z.string().min(1, "Please confirm your password"),
+    phone: z.string().optional(),
+    date_of_birth: z.string().optional(),
+    street_address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zip: z.string().optional(),
+    instagram_username: z.string().optional(),
+    linkedin_username: z.string().optional(),
+    facebook_handle: z.string().optional(),
+    personal_website: z.string().optional(),
+    referral_source: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Passwords don't match",
+    path: ["confirm_password"],
+  });
 
 type FormData = z.infer<typeof registrationSchema>;
 
 export function PublicRegistrationPage() {
   const params = useParams({ strict: false }) as { token?: string };
   const token = params.token;
+  const navigate = useNavigate();
 
-  // Direct state management - bypassing hooks for public page reliability
-  const [invitation, setInvitation] =
-    useState<InvitationValidationResult | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Use hooks for invitation validation and registration submission
+  const { data: invitation, isLoading } = useInvitationByToken(token);
 
-  // Fetch invitation directly on mount
-  useEffect(() => {
-    if (!token) {
-      setIsLoading(false);
-      setInvitation({
-        valid: false,
-        error: "invitation_not_found",
-        message: "No invitation token provided.",
-      });
-      return;
-    }
-
-    // Simple fetch without cleanup guards
-    (async () => {
-      try {
-        const { data, error: rpcError } = await supabase.rpc(
-          "get_public_invitation_by_token",
-          { p_token: token },
-        );
-
-        if (rpcError) {
-          setInvitation({
-            valid: false,
-            error: "invitation_not_found",
-            message: rpcError.message || "Failed to validate invitation.",
-          });
-        } else {
-          setInvitation(data as InvitationValidationResult);
-        }
-      } catch {
-        setInvitation({
-          valid: false,
-          error: "invitation_not_found",
-          message: "An error occurred.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [token]);
+  const submitRegistration = useSubmitRegistrationWithPassword();
 
   console.log("[PublicRegistrationPage] State:", {
     isLoading,
     invitation: invitation ? "present" : "null",
   });
 
-  const submitRegistration = useSubmitRegistration();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const {
@@ -135,6 +100,8 @@ export function PublicRegistrationPage() {
     defaultValues: {
       first_name: "",
       last_name: "",
+      password: "",
+      confirm_password: "",
       phone: "",
       city: "",
       state: "",
@@ -153,16 +120,41 @@ export function PublicRegistrationPage() {
     }
   }, [invitation, setValue]);
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const onSubmit = async (data: FormData) => {
-    if (!token) return;
+    if (!token || !invitation?.email) return;
+    setSubmitError(null);
 
-    const result = await submitRegistration.mutateAsync({
-      token,
-      formData: data as RegistrationFormData,
-    });
+    console.log("[PublicRegistrationPage] Submitting registration...");
 
-    if (result.success) {
+    // Extract password and form data
+    const {
+      password,
+      confirm_password: _confirm,
+      ...formDataWithoutPassword
+    } = data;
+
+    try {
+      // Use mutation hook to create auth account and submit registration
+      const result = await submitRegistration.mutateAsync({
+        token,
+        email: invitation.email,
+        password,
+        formData: formDataWithoutPassword,
+      });
+
+      if (!result.success) {
+        console.error("[PublicRegistrationPage] Registration failed:", result);
+        setSubmitError(result.message);
+        return;
+      }
+
+      console.log("[PublicRegistrationPage] Registration complete:", result);
       setIsSubmitted(true);
+    } catch (err) {
+      console.error("[PublicRegistrationPage] Unexpected error:", err);
+      setSubmitError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -396,17 +388,41 @@ export function PublicRegistrationPage() {
                 <CheckCircle2 className="h-8 w-8 text-green-600" />
               </div>
               <h1 className="text-xl font-semibold text-foreground mb-2">
-                Registration Complete!
+                Welcome to the Team!
               </h1>
-              <p className="text-sm text-muted-foreground mb-6">
-                Thank you for completing your registration. Your recruiter will
-                be in touch with next steps.
+              <p className="text-sm text-muted-foreground mb-4">
+                Your account has been created successfully.
               </p>
+
+              {/* Next steps */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                  What happens next?
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+                  You can now log in to track your progress through the
+                  onboarding process. Your recruiter will enroll you in a
+                  pipeline, and you'll be guided through each step of becoming
+                  part of the team.
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  You'll be notified by text, email, or your upline will reach
+                  out directly when it's time to complete the next step.
+                </p>
+              </div>
+
+              {/* Login button */}
+              <Button
+                onClick={() => navigate({ to: "/login" })}
+                className="w-full mb-4"
+              >
+                Go to Login
+              </Button>
 
               {invitation.inviter && (
                 <div className="bg-muted/50 rounded-lg p-4 text-left">
                   <p className="text-xs font-medium text-muted-foreground mb-2">
-                    Your recruiter:
+                    Questions? Contact your recruiter:
                   </p>
                   <p className="text-sm font-medium text-foreground">
                     {invitation.inviter.name}
@@ -539,6 +555,58 @@ export function PublicRegistrationPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Password */}
+              <div className="p-4 border-b border-border/50">
+                <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  Create Your Password
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="password" className="text-[10px]">
+                      Password <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      {...register("password")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="Min. 8 characters"
+                    />
+                    {errors.password && (
+                      <p className="text-[10px] text-destructive mt-0.5">
+                        {errors.password.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirm_password" className="text-[10px]">
+                      Confirm Password{" "}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="confirm_password"
+                      type="password"
+                      {...register("confirm_password")}
+                      className="mt-1 h-8 text-xs"
+                      placeholder="Confirm password"
+                    />
+                    {errors.confirm_password && (
+                      <p className="text-[10px] text-destructive mt-0.5">
+                        {errors.confirm_password.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-muted-foreground mt-2">
+                  You'll use this password to log in and track your onboarding
+                  progress.
+                </p>
               </div>
 
               {/* Address */}
@@ -697,20 +765,27 @@ export function PublicRegistrationPage() {
               </div>
             </div>
 
+            {/* Error display */}
+            {submitError && (
+              <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-xs text-destructive">{submitError}</p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="mt-4">
               <Button
                 type="submit"
                 className="w-full h-9 text-sm"
-                disabled={isSubmitting || submitRegistration.isPending}
+                disabled={isSubmitting}
               >
-                {isSubmitting || submitRegistration.isPending ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Submitting...
+                    Creating Account...
                   </>
                 ) : (
-                  "Complete Registration"
+                  "Create Account & Complete Registration"
                 )}
               </Button>
             </div>

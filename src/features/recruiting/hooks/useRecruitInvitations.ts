@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { recruitInvitationService } from "@/services/recruiting/recruitInvitationService";
-import type {
-  RegistrationFormData,
-  InvitationValidationResult,
-} from "@/types/recruiting.types";
+import type { InvitationValidationResult } from "@/types/recruiting.types";
 
 // ============================================================================
 // AUTHENTICATED HOOKS (for recruiters)
@@ -402,26 +399,48 @@ export function useInvitationByToken(token: string | undefined) {
 }
 
 /**
- * Submits the registration form
+ * Submits registration with password - for public registration page
+ * Creates auth account with password, then updates profile via RPC
  */
-export function useSubmitRegistration() {
+export function useSubmitRegistrationWithPassword() {
   return useMutation({
-    mutationFn: (params: { token: string; formData: RegistrationFormData }) =>
-      recruitInvitationService.submitRegistration(
+    mutationFn: (params: {
+      token: string;
+      email: string;
+      password: string;
+      formData: {
+        first_name: string;
+        last_name: string;
+        phone?: string;
+        date_of_birth?: string;
+        street_address?: string;
+        city?: string;
+        state?: string;
+        zip?: string;
+        instagram_username?: string;
+        linkedin_username?: string;
+        facebook_handle?: string;
+        personal_website?: string;
+        referral_source?: string;
+      };
+    }) =>
+      recruitInvitationService.submitRegistrationWithPassword(
         params.token,
+        params.email,
+        params.password,
         params.formData,
       ),
     onSuccess: (data) => {
       if (data.success) {
-        toast.success("Registration submitted!", {
-          description: "Your recruiter will be in touch with next steps.",
+        toast.success("Account created!", {
+          description: "You can now log in to track your progress.",
           duration: 5000,
         });
       }
     },
     onError: (error: Error) => {
       console.error("Failed to submit registration:", error);
-      toast.error("Failed to submit registration. Please try again.");
+      toast.error("Failed to create account. Please try again.");
     },
   });
 }

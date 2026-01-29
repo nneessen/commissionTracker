@@ -184,6 +184,7 @@ export const TERMINAL_STATUS_COLORS: Record<string, string> = {
   dropped: "bg-red-100 text-red-800",
   withdrawn: "bg-gray-100 text-gray-800",
   blocked: "bg-red-100 text-red-800",
+  invited: "bg-amber-100 text-amber-800",
 };
 
 export const CHECKLIST_STATUS_COLORS: Record<string, string> = {

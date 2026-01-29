@@ -8,4 +8,8 @@ export {
   useUpdateAutomation,
   useDeleteAutomation,
 } from "./hooks/usePipelineAutomations";
+export {
+  useInvitationByToken,
+  useSubmitRegistrationWithPassword,
+} from "./hooks/useRecruitInvitations";
 export { AutomationDialog } from "./admin/AutomationDialog";
