@@ -317,16 +317,28 @@ export default function EditUserDialog({
       const switchingToRecruit = !wasRecruit && isNowRecruit;
 
       if (switchingToRecruit) {
-        // Ensure recruiter_id is set using upline_id as the source
-        const recruiterId = formData.upline_id || user.upline_id;
+        // Set recruiter_id from upline (or current user as fallback)
+        const recruiterId = formData.upline_id || user.upline_id || currentUser?.id;
         if (recruiterId) {
           updates.recruiter_id = recruiterId;
         }
 
-        // Reset onboarding fields if user was previously a completed agent
+        // Reset onboarding status if user was previously a completed agent
         if (user.onboarding_status === "completed") {
-          updates.onboarding_status = "prospect";
-          updates.current_onboarding_phase = "prospect";
+          updates.onboarding_status = null; // Reset to allow re-enrollment
+          updates.current_onboarding_phase = null;
+        }
+
+        // CRITICAL: Set onboarding_started_at so they pass the exclude_prospects filter
+        // The filter requires: onboarding_status IS NOT NULL OR onboarding_started_at IS NOT NULL
+        // Without this, recruits converted from non-agent roles are invisible in pipelines
+        if (!user.onboarding_started_at) {
+          updates.onboarding_started_at = new Date().toISOString();
+        }
+
+        // Inherit imo_id from current user if not already set
+        if (!user.imo_id && !formData.imo_id && currentUser?.imo_id) {
+          updates.imo_id = currentUser.imo_id;
         }
       }
 

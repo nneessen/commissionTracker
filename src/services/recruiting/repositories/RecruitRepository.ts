@@ -170,9 +170,13 @@ export class RecruitRepository extends BaseRepository<
     // Exclude prospects (recruits not enrolled in a pipeline)
     // Logic matches getStats(): exclude if status='prospect' OR (no status AND not started)
     // A recruit is enrolled if they have onboarding_status (not prospect) OR onboarding_started_at
+    // NOTE: .neq() doesn't handle NULL properly (NULL != 'prospect' returns UNKNOWN, not true)
+    // So we use .or() to explicitly allow NULL status, then require at least one field set
     if (filters?.exclude_prospects) {
       query = query
-        .neq("onboarding_status", "prospect")
+        // Allow NULL status OR status != 'prospect' (handles NULL comparison correctly)
+        .or("onboarding_status.is.null,onboarding_status.neq.prospect")
+        // But require at least one of status or started_at to be set
         .or("onboarding_status.not.is.null,onboarding_started_at.not.is.null");
     }
 

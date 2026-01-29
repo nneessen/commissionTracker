@@ -85,11 +85,11 @@ function RecruitingDashboardContent() {
 
     if (isStaffRole && user.imo_id) {
       // Staff roles (trainer, contracting_manager) see all recruits in their IMO
-      return { imo_id: user.imo_id };
+      return { imo_id: user.imo_id, exclude_prospects: true };
     }
 
     // Everyone else sees recruits where they are the recruiter OR the assigned upline
-    return { my_recruits_user_id: user.id };
+    return { my_recruits_user_id: user.id, exclude_prospects: true };
   })();
 
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(

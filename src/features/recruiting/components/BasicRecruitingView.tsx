@@ -61,11 +61,11 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
     if (!user?.id) return undefined;
 
     if (isStaffRole && user.imo_id) {
-      return { imo_id: user.imo_id };
+      return { imo_id: user.imo_id, exclude_prospects: true };
     }
 
     // Filter by upline_id only - users only see recruits where they are the upline
-    return { assigned_upline_id: user.id };
+    return { assigned_upline_id: user.id, exclude_prospects: true };
   })();
 
   const { data: recruitsData, isLoading } = useRecruits(recruitFilters, 1, 50, {
