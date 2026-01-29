@@ -71,7 +71,7 @@ interface AgentTableProps {
 
 // Statuses for AP calculations
 const ACTIVE_AP_STATUSES = ["active"]; // Policies that are active/in-force
-const ISSUED_AP_STATUSES = ["issued"]; // Policies that are issued (IP)
+const ISSUED_AP_STATUSES = ["active"]; // Policies that are active/in-force (IP)
 const PENDING_AP_STATUSES = ["pending", "submitted", "underwriting"]; // Pending policies
 
 // Metrics for a single agent
