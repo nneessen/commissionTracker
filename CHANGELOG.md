@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-29 13:09:39
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `supabase/migrations/20260129125124_agency_leaderboard_recursive_hierarchy.sql`
+
+### Statistics
+```
+ 2 files changed, 225 insertions(+)
+```
+
 ## [Checkpoint] - 2026-01-29 12:43:23
 
 ### Changed Files

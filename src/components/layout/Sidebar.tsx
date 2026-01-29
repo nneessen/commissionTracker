@@ -57,6 +57,7 @@ interface NavigationItem {
   public?: boolean;
   subscriptionFeature?: FeatureKey;
   subscriptionFeatures?: FeatureKey[]; // Alternative: any of these features grants access
+  superAdminOnly?: boolean; // Hide from all except super-admin
 }
 
 interface SidebarProps {
@@ -122,6 +123,7 @@ const navigationItems: NavigationItem[] = [
     href: "/leaderboard",
     permission: "nav.dashboard",
     subscriptionFeature: "hierarchy",
+    superAdminOnly: true,
   },
   {
     icon: UserPlus,
@@ -334,6 +336,9 @@ export default function Sidebar({
         : navigationItems.filter((item) => {
             // Public items always visible
             if (item.public) return true;
+
+            // Super-admin only check
+            if (item.superAdminOnly && !isSuperAdmin) return false;
 
             // Permission check (role-based visibility)
             if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
