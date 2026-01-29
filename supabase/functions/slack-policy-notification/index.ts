@@ -7,7 +7,11 @@ import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 
 interface PolicyNotificationPayload {
-  action?: "post-policy" | "update-leaderboard" | "complete-first-sale" | "complete-first-sale-batch";
+  action?:
+    | "post-policy"
+    | "update-leaderboard"
+    | "complete-first-sale"
+    | "complete-first-sale-batch";
   policyId?: string;
   policyNumber?: string;
   carrierId?: string;
@@ -16,6 +20,7 @@ interface PolicyNotificationPayload {
   clientName?: string;
   annualPremium?: number;
   effectiveDate?: string;
+  submitDate?: string; // For backdated policy filtering (defense in depth)
   status?: string;
   imoId?: string;
   agencyId?: string;
@@ -664,11 +669,7 @@ async function handleCompleteFirstSaleBatch(
 
   // Process each log with the same title
   for (const log of groupLogs) {
-    const result = await handleCompleteFirstSale(
-      supabase,
-      log.log_id,
-      title,
-    );
+    const result = await handleCompleteFirstSale(supabase, log.log_id, title);
 
     results.push({
       logId: log.log_id,
@@ -755,7 +756,10 @@ serve(async (req) => {
     if (body.action === "complete-first-sale-batch") {
       if (!body.firstSaleGroupId) {
         return new Response(
-          JSON.stringify({ ok: false, error: "Missing required field: firstSaleGroupId" }),
+          JSON.stringify({
+            ok: false,
+            error: "Missing required field: firstSaleGroupId",
+          }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -782,9 +786,33 @@ serve(async (req) => {
       agentId,
       annualPremium,
       effectiveDate,
+      submitDate,
       imoId,
       agencyId,
     } = body;
+
+    // =========================================================================
+    // DEFENSE IN DEPTH: Backup check for backdated policies
+    // The database trigger should already filter these, but we double-check here
+    // to ensure backdated policies NEVER post to Slack regardless of trigger state
+    // =========================================================================
+    const todayET = getTodayDateET();
+    if (submitDate && submitDate !== todayET) {
+      console.log(
+        `[slack-policy-notification] BACKUP CHECK: Skipping backdated policy ${policyId}: submit_date=${submitDate}, today=${todayET}`,
+      );
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          skipped: true,
+          reason: "Backdated policy - submit_date is not today",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     if (!imoId || !policyId || !agentId) {
       return new Response(
@@ -1014,7 +1042,8 @@ serve(async (req) => {
         .maybeSingle();
 
       // Check if this would be a first sale for this channel
-      const isFirstForChannel = !existingLog ||
+      const isFirstForChannel =
+        !existingLog ||
         (!existingLog.first_seller_id && !existingLog.pending_policy_data);
 
       if (isFirstForChannel) {
