@@ -221,6 +221,9 @@ serve(async (req) => {
       // If an existing user_profiles record was already created (e.g., from registration form),
       // pass its ID here so the auth user is created with the same ID
       existingProfileId,
+      // If password is provided, use it directly (for self-registration)
+      // and skip the password reset email
+      password: providedPassword,
     } = await req.json();
 
     if (!email) {
@@ -290,18 +293,25 @@ serve(async (req) => {
       }
     }
 
-    // Generate a secure random password (user will set their own via reset email)
-    const tempPassword = crypto.randomUUID() + crypto.randomUUID();
+    // Use provided password (from self-registration) or generate a temp one
+    const userPassword =
+      providedPassword || crypto.randomUUID() + crypto.randomUUID();
+    const isDirectPassword = !!providedPassword;
 
-    // Create user with email_confirm=true (pre-confirmed) and a temp password
-    // Then send password reset email so user can set their own password
+    console.log(
+      "[create-auth-user] Password mode:",
+      isDirectPassword ? "user-provided" : "temp-generated",
+    );
+
+    // Create user with email_confirm=true (pre-confirmed)
+    // If password provided directly (self-registration), use it; otherwise use temp password
     // If existingProfileId is provided, use it as the auth user's ID to match user_profiles
     const createUserParams: Parameters<
       typeof supabaseAdmin.auth.admin.createUser
     >[0] = {
       email: normalizedEmail,
-      password: tempPassword,
-      email_confirm: true, // Pre-confirm email to avoid magic link issues
+      password: userPassword,
+      email_confirm: true, // Pre-confirm email - user can log in immediately
       user_metadata: {
         full_name: fullName,
         roles: roles || [],
@@ -398,9 +408,10 @@ serve(async (req) => {
       }
     }
 
-    // Send password reset email via Mailgun (not Supabase's built-in email)
+    // Send password reset email via Mailgun ONLY if temp password was generated
+    // Skip if user provided their own password (self-registration flow)
     let emailSent = false;
-    if (authUser.user) {
+    if (authUser.user && !isDirectPassword) {
       const siteUrl =
         Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
       const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
@@ -466,11 +477,27 @@ serve(async (req) => {
           }
         }
       }
+    } else if (authUser.user && isDirectPassword) {
+      console.log(
+        "[create-auth-user] Password provided directly - skipping reset email",
+      );
     }
 
-    // Send SMS notification if phone provided and email was sent
+    // Send SMS notification if phone provided
+    // Different message based on whether this is self-registration or admin-created
     let smsSent = false;
-    if (phone && emailSent) {
+    if (phone && isDirectPassword) {
+      // Self-registration - user already knows their password
+      const smsResult = await sendSmsNotification(
+        phone,
+        "Welcome to The Standard HQ! Your account has been created. You can now log in.",
+      );
+      smsSent = smsResult.success;
+      console.log("[create-auth-user] SMS result:", {
+        success: smsSent,
+        error: smsResult.error || null,
+      });
+    } else if (phone && emailSent) {
       const smsResult = await sendSmsNotification(
         phone,
         "Welcome to The Standard HQ! Check your email to set your password. The link expires in 72 hours.",
@@ -480,7 +507,7 @@ serve(async (req) => {
         success: smsSent,
         error: smsResult.error || null,
       });
-    } else if (phone && !emailSent) {
+    } else if (phone && !emailSent && !isDirectPassword) {
       console.log("[create-auth-user] SMS skipped - email was not sent");
     }
 
@@ -490,7 +517,20 @@ serve(async (req) => {
       email: normalizedEmail,
       emailSent,
       smsSent,
+      directPassword: isDirectPassword,
     });
+
+    // Build response message based on creation mode
+    let message = "User created successfully.";
+    if (isDirectPassword) {
+      message =
+        "User created successfully. User can now log in with their password.";
+    } else if (emailSent) {
+      message = "User created successfully. Password reset email sent.";
+    } else {
+      message =
+        "User created but email could not be sent. Check edge function logs.";
+    }
 
     return new Response(
       JSON.stringify({
@@ -499,11 +539,10 @@ serve(async (req) => {
         profileUpdateError: profile
           ? null
           : "Profile update may have failed - check logs",
-        message: emailSent
-          ? "User created successfully. Password reset email sent."
-          : "User created but email could not be sent. Check edge function logs.",
+        message,
         emailSent,
         smsSent,
+        directPassword: isDirectPassword,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -356,7 +356,7 @@ export const recruitInvitationService = {
   /**
    * Submits the registration form data with password
    * This is called from the public registration page
-   * Creates the auth account first, then updates the profile via RPC
+   * Creates the auth account via edge function (Admin API), then updates the profile via RPC
    */
   async submitRegistrationWithPassword(
     token: string,
@@ -367,34 +367,69 @@ export const recruitInvitationService = {
     console.log("[submitRegistrationWithPassword] Starting for token:", token);
 
     try {
-      // Step 1: Create auth account with password
-      console.log("[submitRegistrationWithPassword] Creating auth account...");
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: `${formData.first_name} ${formData.last_name}`.trim(),
-            roles: ["recruit"],
-          },
-        },
-      });
+      // Step 1: Create auth account with password via edge function
+      // This uses the Admin API with email_confirm=true, bypassing confirmation email
+      console.log(
+        "[submitRegistrationWithPassword] Creating auth account via edge function...",
+      );
 
-      if (authError) {
+      const fullName = `${formData.first_name} ${formData.last_name}`.trim();
+
+      const { data: edgeFnData, error: edgeFnError } =
+        await supabase.functions.invoke("create-auth-user", {
+          body: {
+            email,
+            password, // User's chosen password
+            fullName,
+            roles: ["recruit"],
+            phone: formData.phone,
+            profileData: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              phone: formData.phone,
+              date_of_birth: formData.date_of_birth,
+              street_address: formData.street_address,
+              city: formData.city,
+              state: formData.state,
+              zip: formData.zip,
+              instagram_username: formData.instagram_username,
+              linkedin_username: formData.linkedin_username,
+              facebook_handle: formData.facebook_handle,
+              personal_website: formData.personal_website,
+              referral_source: formData.referral_source,
+            },
+          },
+        });
+
+      if (edgeFnError) {
         console.error(
-          "[submitRegistrationWithPassword] Auth signup failed:",
-          authError,
+          "[submitRegistrationWithPassword] Edge function failed:",
+          edgeFnError,
         );
         return {
           success: false,
           error: "auth_failed",
-          message: authError.message,
+          message: edgeFnError.message || "Failed to create account.",
         };
       }
 
-      if (!authData.user?.id) {
+      // Check for error in response body
+      if (edgeFnData?.error) {
         console.error(
-          "[submitRegistrationWithPassword] No user ID returned from signup",
+          "[submitRegistrationWithPassword] Edge function returned error:",
+          edgeFnData.error,
+        );
+        return {
+          success: false,
+          error: "auth_failed",
+          message: edgeFnData.error,
+        };
+      }
+
+      const authUserId = edgeFnData?.user?.id;
+      if (!authUserId) {
+        console.error(
+          "[submitRegistrationWithPassword] No user ID returned from edge function",
         );
         return {
           success: false,
@@ -405,16 +440,16 @@ export const recruitInvitationService = {
 
       console.log(
         "[submitRegistrationWithPassword] Auth account created:",
-        authData.user.id,
+        authUserId,
       );
 
-      // Step 2: Update profile with form data via RPC
+      // Step 2: Update profile and complete registration via RPC
       const { data, error } = await supabase.rpc(
         "submit_recruit_registration",
         {
           p_token: token,
           p_data: formData,
-          p_auth_user_id: authData.user.id,
+          p_auth_user_id: authUserId,
         },
       );
 
