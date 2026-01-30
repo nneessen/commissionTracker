@@ -77,6 +77,7 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   instagram_templates: "Instagram Templates",
   // Team features
   hierarchy: "Team Hierarchy",
+  team_analytics: "Team Analytics Dashboard",
   recruiting: "Recruiting Pipeline",
   overrides: "Override Tracking",
   downline_reports: "Downline Reports",

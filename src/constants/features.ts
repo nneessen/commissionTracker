@@ -115,6 +115,12 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     description: "View and manage team structure",
     category: "team",
   },
+  team_analytics: {
+    key: "team_analytics",
+    displayName: "Team Analytics Dashboard",
+    description: "Advanced analytics for your team's performance",
+    category: "team",
+  },
   recruiting: {
     key: "recruiting",
     displayName: "Recruiting Pipeline",

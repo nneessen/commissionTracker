@@ -5,6 +5,9 @@ import { Download, UserPlus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMyDownlines, useMyHierarchyStats } from "@/hooks";
 import { useCurrentUserProfile } from "@/hooks/admin";
+import { useFeatureAccess } from "@/hooks/subscription/useFeatureAccess";
+import { OWNER_EMAILS } from "@/hooks/subscription/useOwnerDownlineAccess";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SendInvitationModal } from "./components/SendInvitationModal";
 import { TeamMetricsCard } from "./components/TeamMetricsCard";
@@ -34,6 +37,12 @@ export function HierarchyDashboardCompact() {
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
     useMyDownlines();
   const { data: currentUserProfile } = useCurrentUserProfile();
+  const { user } = useAuth();
+  const { hasAccess: hasTeamAnalyticsAccess } = useFeatureAccess("team_analytics");
+
+  // Owner (super-admin) always has access to team analytics
+  const isOwner = OWNER_EMAILS.map(e => e.toLowerCase()).includes(user?.email?.toLowerCase() ?? "");
+  const canViewTeamAnalytics = isOwner || hasTeamAnalyticsAccess;
 
   // Timeframe state
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
@@ -203,8 +212,8 @@ export function HierarchyDashboardCompact() {
             dateRange={{ start: startDate, end: endDate }}
           />
 
-          {/* Team Analytics Dashboard */}
-          {downlines.length > 0 && (
+          {/* Team Analytics Dashboard - Premium Feature (Team tier or Owner) */}
+          {downlines.length > 0 && canViewTeamAnalytics && (
             <TeamAnalyticsDashboard
               startDate={startDate}
               endDate={endDate}

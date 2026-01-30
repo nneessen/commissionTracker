@@ -7,6 +7,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Sparkles,
   Check,
@@ -287,6 +288,11 @@ export function SubscriptionAnnouncementDialog({
                     { icon: MessageCircle, label: "SMS Messaging" },
                     { icon: Network, label: "Team Hierarchy" },
                     {
+                      icon: BarChart3,
+                      label: "Team Analytics Dashboard",
+                      isNew: true,
+                    },
+                    {
                       icon: Users,
                       label: "Recruiting Pipeline",
                       isHighlighted: true,
@@ -377,6 +383,7 @@ interface TierFeature {
   label: string;
   isIncluded?: boolean;
   isHighlighted?: boolean;
+  isNew?: boolean;
 }
 
 interface TierCardProps {
@@ -450,21 +457,33 @@ function TierCard({
             className={`flex items-center gap-2 text-xs ${
               feature.isHighlighted
                 ? "text-amber-600 dark:text-amber-400 font-medium"
-                : feature.isIncluded
-                  ? "text-muted-foreground"
-                  : "text-foreground"
+                : feature.isNew
+                  ? "text-violet-600 dark:text-violet-400 font-medium"
+                  : feature.isIncluded
+                    ? "text-muted-foreground"
+                    : "text-foreground"
             }`}
           >
             <feature.icon
               className={`h-3.5 w-3.5 flex-shrink-0 ${
                 feature.isHighlighted
                   ? "text-amber-500"
-                  : feature.isIncluded
-                    ? "text-muted-foreground"
-                    : "text-muted-foreground"
+                  : feature.isNew
+                    ? "text-violet-500"
+                    : feature.isIncluded
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground"
               }`}
             />
             <span>{feature.label}</span>
+            {feature.isNew && (
+              <Badge
+                variant="outline"
+                className="text-[9px] px-1 py-0 h-3.5 text-violet-600 border-violet-300 dark:text-violet-400 dark:border-violet-700"
+              >
+                NEW
+              </Badge>
+            )}
           </div>
         ))}
       </div>

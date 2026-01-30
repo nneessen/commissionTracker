@@ -855,6 +855,7 @@ class AdminSubscriptionService {
         instagram_templates: false,
         // Team features
         hierarchy: false,
+        team_analytics: false,
         recruiting: false,
         overrides: false,
         downline_reports: false,

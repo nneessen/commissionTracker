@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 12:03:34
+
+### Changed Files
+- `src/components/subscription/SubscriptionAnnouncementDialog.tsx`
+- `src/constants/features.ts`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `supabase/migrations/20260130115116_add_team_analytics_feature.sql`
+
+### Statistics
+```
+ 7 files changed, 57 insertions(+), 8 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 10:00:16
 
 ### Changed Files

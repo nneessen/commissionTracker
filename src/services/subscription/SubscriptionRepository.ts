@@ -41,6 +41,7 @@ export interface SubscriptionFeatures {
   instagram_templates: boolean;
   // Team features
   hierarchy: boolean;
+  team_analytics: boolean;
   recruiting: boolean;
   overrides: boolean;
   downline_reports: boolean;
