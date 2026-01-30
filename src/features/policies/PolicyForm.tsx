@@ -56,6 +56,8 @@ interface PolicyFormProps {
   onClose: () => void;
   addPolicy: (form: NewPolicyForm) => Promise<Policy | null>;
   updatePolicy: (id: string, updates: Partial<NewPolicyForm>) => Promise<void>;
+  /** External validation errors from service layer (e.g., duplicate policy number) */
+  externalErrors?: Record<string, string>;
 }
 
 export const PolicyForm: React.FC<PolicyFormProps> = ({
@@ -64,6 +66,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   onClose,
   addPolicy,
   updatePolicy,
+  externalErrors = {},
 }) => {
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
@@ -153,6 +156,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Merge internal validation errors with external errors (e.g., from service layer)
+  // External errors take precedence as they come from authoritative validation
+  const displayErrors = { ...errors, ...externalErrors };
+
   const [showContactDetails, setShowContactDetails] = useState(
     !!(
       policyId &&
@@ -390,7 +398,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         : value,
     }));
 
-    // Clear error when user types
+    // Clear internal error when user types
+    // Note: external errors are managed by parent component and will be cleared on next save attempt
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -447,7 +456,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       }));
     }
 
-    // Clear error when user changes
+    // Clear internal error when user changes
+    // Note: external errors are managed by parent component and will be cleared on next save attempt
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -578,12 +588,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="clientName"
                 value={formData.clientName}
                 onChange={handleInputChange}
-                className={`h-8 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 ${errors.clientName ? "border-destructive" : ""}`}
+                className={`h-8 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 ${displayErrors.clientName ? "border-destructive" : ""}`}
                 placeholder="John Smith"
               />
-              {errors.clientName && (
+              {displayErrors.clientName && (
                 <span className="text-[10px] text-destructive">
-                  {errors.clientName}
+                  {displayErrors.clientName}
                 </span>
               )}
             </div>
@@ -604,7 +614,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 >
                   <SelectTrigger
                     id="clientState"
-                    className={`h-8 text-[11px] ${errors.clientState ? "border-destructive" : "border-input"}`}
+                    className={`h-8 text-[11px] ${displayErrors.clientState ? "border-destructive" : "border-input"}`}
                   >
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
@@ -616,9 +626,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.clientState && (
+                {displayErrors.clientState && (
                   <span className="text-[10px] text-destructive">
-                    {errors.clientState}
+                    {displayErrors.clientState}
                   </span>
                 )}
               </div>
@@ -636,12 +646,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   onChange={(value) =>
                     setFormData((prev) => ({ ...prev, clientDOB: value }))
                   }
-                  error={!!errors.clientDOB}
+                  error={!!displayErrors.clientDOB}
                   className="h-8 text-[11px]"
                 />
-                {errors.clientDOB && (
+                {displayErrors.clientDOB && (
                   <span className="text-[10px] text-destructive">
-                    {errors.clientDOB}
+                    {displayErrors.clientDOB}
                   </span>
                 )}
               </div>
@@ -776,7 +786,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               >
                 <SelectTrigger
                   id="carrierId"
-                  className={`h-8 text-[11px] ${errors.carrierId ? "border-destructive" : "border-input"}`}
+                  className={`h-8 text-[11px] ${displayErrors.carrierId ? "border-destructive" : "border-input"}`}
                 >
                   <SelectValue placeholder="Select Carrier" />
                 </SelectTrigger>
@@ -788,9 +798,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.carrierId && (
+              {displayErrors.carrierId && (
                 <span className="text-[10px] text-destructive">
-                  {errors.carrierId}
+                  {displayErrors.carrierId}
                 </span>
               )}
             </div>
@@ -811,7 +821,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               >
                 <SelectTrigger
                   id="productId"
-                  className={`h-8 text-[11px] ${errors.productId ? "border-destructive" : "border-input"}`}
+                  className={`h-8 text-[11px] ${displayErrors.productId ? "border-destructive" : "border-input"}`}
                 >
                   <SelectValue
                     placeholder={
@@ -835,9 +845,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.productId && (
+              {displayErrors.productId && (
                 <span className="text-[10px] text-destructive">
-                  {errors.productId}
+                  {displayErrors.productId}
                 </span>
               )}
               {formData.carrierId &&
@@ -869,7 +879,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   >
                     <SelectTrigger
                       id="termLength"
-                      className={`h-8 text-[11px] ${errors.termLength ? "border-destructive" : "border-input"}`}
+                      className={`h-8 text-[11px] ${displayErrors.termLength ? "border-destructive" : "border-input"}`}
                     >
                       <SelectValue placeholder="Select term length" />
                     </SelectTrigger>
@@ -888,9 +898,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                       })}
                     </SelectContent>
                   </Select>
-                  {errors.termLength && (
+                  {displayErrors.termLength && (
                     <span className="text-[10px] text-destructive">
-                      {errors.termLength}
+                      {displayErrors.termLength}
                     </span>
                   )}
                 </div>
@@ -939,15 +949,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="policyNumber"
                 value={formData.policyNumber}
                 onChange={handleInputChange}
-                className={`h-8 text-[11px] ${errors.policyNumber ? "border-destructive" : "border-input"}`}
+                className={`h-8 text-[11px] ${displayErrors.policyNumber ? "border-destructive" : "border-input"}`}
                 placeholder="POL-123456"
               />
               <span className="text-[10px] text-muted-foreground">
                 Optional - leave blank if not yet assigned
               </span>
-              {errors.policyNumber && (
+              {displayErrors.policyNumber && (
                 <span className="text-[10px] text-destructive">
-                  {errors.policyNumber}
+                  {displayErrors.policyNumber}
                 </span>
               )}
             </div>
@@ -966,11 +976,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   name="submitDate"
                   value={formData.submitDate}
                   onChange={handleInputChange}
-                  className={`h-8 text-[11px] ${errors.submitDate ? "border-destructive" : "border-input"}`}
+                  className={`h-8 text-[11px] ${displayErrors.submitDate ? "border-destructive" : "border-input"}`}
                 />
-                {errors.submitDate && (
+                {displayErrors.submitDate && (
                   <span className="text-[10px] text-destructive">
-                    {errors.submitDate}
+                    {displayErrors.submitDate}
                   </span>
                 )}
               </div>
@@ -988,11 +998,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   name="effectiveDate"
                   value={formData.effectiveDate}
                   onChange={handleInputChange}
-                  className={`h-8 text-[11px] ${errors.effectiveDate ? "border-destructive" : "border-input"}`}
+                  className={`h-8 text-[11px] ${displayErrors.effectiveDate ? "border-destructive" : "border-input"}`}
                 />
-                {errors.effectiveDate && (
+                {displayErrors.effectiveDate && (
                   <span className="text-[10px] text-destructive">
-                    {errors.effectiveDate}
+                    {displayErrors.effectiveDate}
                   </span>
                 )}
               </div>
@@ -1012,14 +1022,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                   name="premium"
                   value={formData.premium || ""}
                   onChange={handleInputChange}
-                  className={`h-8 text-[11px] ${errors.premium ? "border-destructive" : "border-input"}`}
+                  className={`h-8 text-[11px] ${displayErrors.premium ? "border-destructive" : "border-input"}`}
                   placeholder="250.00"
                   step="0.01"
                   min="0"
                 />
-                {errors.premium && (
+                {displayErrors.premium && (
                   <span className="text-[10px] text-destructive">
-                    {errors.premium}
+                    {displayErrors.premium}
                   </span>
                 )}
               </div>

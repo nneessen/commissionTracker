@@ -14,6 +14,8 @@ interface PolicyDialogProps {
   policyId?: string;
   policy?: Policy | null;
   isLoadingPolicy?: boolean;
+  /** External validation errors to display on form fields (e.g., duplicate policy number) */
+  externalErrors?: Record<string, string>;
 }
 
 /**
@@ -27,6 +29,7 @@ export function PolicyDialog({
   policyId,
   policy,
   isLoadingPolicy = false,
+  externalErrors = {},
 }: PolicyDialogProps) {
   const handleClose = () => onOpenChange(false);
 
@@ -80,6 +83,7 @@ export function PolicyDialog({
                 // For updates, pass the formData through onSave which handles both create and update
                 await onSave(updates as NewPolicyForm);
               }}
+              externalErrors={externalErrors}
             />
           )}
         </div>

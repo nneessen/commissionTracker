@@ -19,8 +19,8 @@ import { useDashboardFeatures } from "../../hooks/dashboard";
 import { TimePeriod } from "../../utils/dateRange";
 import { toast } from "sonner";
 import type { CreateExpenseData } from "../../types/expense.types";
-import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
-import { parseLocalDate } from "@/lib/date";
+import type { NewPolicyForm } from "../../types/policy.types";
+import { transformFormToCreateData } from "../policies/utils/policyFormTransformer";
 
 // Components
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
@@ -52,6 +52,7 @@ import {
   getPeriodSuffix,
 } from "../../utils/dashboardCalculations";
 import { useCreateOrFindClient } from "@/hooks/clients";
+import { ValidationError } from "@/errors/ServiceErrors";
 
 export const DashboardHome: React.FC = () => {
   const navigate = useNavigate();
@@ -63,6 +64,9 @@ export const DashboardHome: React.FC = () => {
   const [activeDialog, setActiveDialog] = useState<"policy" | "expense" | null>(
     null,
   );
+
+  // Field-level validation errors from service layer (e.g., duplicate policy number)
+  const [policyFormErrors, setPolicyFormErrors] = useState<Record<string, string>>({});
 
   // Handler to change time period and reset offset to current period
   const handleTimePeriodChange = (newPeriod: TimePeriod) => {
@@ -227,6 +231,9 @@ export const DashboardHome: React.FC = () => {
   };
 
   const handleAddPolicy = async (formData: NewPolicyForm) => {
+    // Clear previous validation errors on new save attempt
+    setPolicyFormErrors({});
+
     try {
       if (!user?.id) {
         throw new Error("You must be logged in to create a policy");
@@ -243,56 +250,33 @@ export const DashboardHome: React.FC = () => {
             city: formData.clientCity || undefined,
             zipCode: formData.clientZipCode || undefined,
           }),
+          date_of_birth: formData.clientDOB,
         },
         userId: user.id,
       });
 
-      const monthlyPremium =
-        formData.paymentFrequency === "annual"
-          ? (formData.annualPremium || 0) / 12
-          : formData.paymentFrequency === "semi-annual"
-            ? (formData.annualPremium || 0) / 6
-            : formData.paymentFrequency === "quarterly"
-              ? (formData.annualPremium || 0) / 3
-              : (formData.annualPremium || 0) / 12;
-
-      const commissionPercent = formData.commissionPercentage || 0;
-      if (commissionPercent < 0 || commissionPercent > 999.99) {
-        toast.error("Commission percentage must be between 0 and 999.99");
-        throw new Error("Commission percentage must be between 0 and 999.99");
-      }
-
-      const policyData: CreatePolicyData = {
-        policyNumber: formData.policyNumber,
-        status: formData.status,
-        clientId: client.id,
-        userId: user.id,
-        carrierId: formData.carrierId,
-        productId: formData.productId,
-        product: formData.product,
-        submitDate: formData.submitDate
-          ? parseLocalDate(formData.submitDate)
-          : parseLocalDate(formData.effectiveDate),
-        effectiveDate: parseLocalDate(formData.effectiveDate),
-        termLength: formData.termLength,
-        expirationDate: formData.expirationDate
-          ? parseLocalDate(formData.expirationDate)
-          : undefined,
-        annualPremium: formData.annualPremium || 0,
-        monthlyPremium,
-        paymentFrequency: formData.paymentFrequency,
-        commissionPercentage: commissionPercent / 100,
-        notes: formData.notes || undefined,
-      };
+      // Use shared transformer for consistent data handling
+      const policyData = transformFormToCreateData(formData, client.id, user.id);
 
       const result = await createPolicy.mutateAsync(policyData);
       toast.success(`Policy ${result.policyNumber} created successfully!`);
       setActiveDialog(null);
       return result;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
-    } catch (error: any) {
+    } catch (error) {
+      // Extract field-level errors from ValidationError
+      if (error instanceof ValidationError && error.validationErrors) {
+        const fieldErrors: Record<string, string> = {};
+        error.validationErrors.forEach((ve) => {
+          fieldErrors[ve.field] = ve.message;
+        });
+        setPolicyFormErrors(fieldErrors);
+      } else {
+        // Clear any previous field errors if this is a different type of error
+        setPolicyFormErrors({});
+      }
+
       const errorMessage =
-        error?.message || "Failed to create policy. Please try again.";
+        error instanceof Error ? error.message : "Failed to create policy. Please try again.";
       toast.error(errorMessage);
       console.error("Error creating policy:", error);
       throw error;
@@ -390,8 +374,14 @@ export const DashboardHome: React.FC = () => {
 
       <PolicyDialog
         open={activeDialog === "policy"}
-        onOpenChange={(open) => setActiveDialog(open ? "policy" : null)}
+        onOpenChange={(open) => {
+          setActiveDialog(open ? "policy" : null);
+          if (!open) {
+            setPolicyFormErrors({}); // Clear validation errors when dialog closes
+          }
+        }}
         onSave={handleAddPolicy}
+        externalErrors={policyFormErrors}
       />
     </>
   );

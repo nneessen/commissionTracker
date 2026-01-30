@@ -1,7 +1,9 @@
 {
   "notes": [
-    { "id": "2026-01-28-gameplan", "type": "feat", "text": "Added GamePlan dashboard with actionable goal tracking" },
-    { "id": "2026-01-28-slack-hierarchy", "type": "fix", "text": "Fixed Slack notifications for agency hierarchy" },
-    { "id": "2026-01-27-forecast", "type": "improve", "text": "Improved forecast chart responsiveness" }
+    {
+      "id": "2026-01-30",
+      "type": "feat",
+      "text": "Fixed quick action add policy submit date issue and added error handling for duplicate policy numbers not being allowed"
+    }
   ]
 }

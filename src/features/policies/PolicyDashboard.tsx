@@ -24,6 +24,7 @@ import {
 } from "./utils/policyFormTransformer";
 import type { NewPolicyForm } from "../../types/policy.types";
 import { toast } from "sonner";
+import { ValidationError } from "@/errors/ServiceErrors";
 
 // Type for unified first-sale group (single dialog for all channels)
 interface PendingFirstSaleGroup {
@@ -52,6 +53,9 @@ export const PolicyDashboard: React.FC = () => {
   // Lead source attribution dialog state
   const [pendingLeadSource, setPendingLeadSource] =
     useState<PendingLeadSource | null>(null);
+
+  // Field-level validation errors from service layer (e.g., duplicate policy number)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Ref to track active polling and allow cancellation
   const pollingAbortRef = useRef<AbortController | null>(null);
@@ -224,9 +228,13 @@ export const PolicyDashboard: React.FC = () => {
           setIsPolicyFormOpen(open);
           if (!open) {
             setEditingPolicyId(undefined);
+            setFormErrors({}); // Clear validation errors when dialog closes
           }
         }}
         onSave={async (formData: NewPolicyForm) => {
+          // Clear previous validation errors on new save attempt
+          setFormErrors({});
+
           if (!user?.id) {
             toast.error("You must be logged in");
             return null;
@@ -288,6 +296,18 @@ export const PolicyDashboard: React.FC = () => {
               return result;
             }
           } catch (error) {
+            // Extract field-level errors from ValidationError
+            if (error instanceof ValidationError && error.validationErrors) {
+              const fieldErrors: Record<string, string> = {};
+              error.validationErrors.forEach((ve) => {
+                fieldErrors[ve.field] = ve.message;
+              });
+              setFormErrors(fieldErrors);
+            } else {
+              // Clear any previous field errors if this is a different type of error
+              setFormErrors({});
+            }
+
             const message =
               error instanceof Error ? error.message : "Operation failed";
             toast.error(message);
@@ -297,6 +317,7 @@ export const PolicyDashboard: React.FC = () => {
         policyId={editingPolicyId}
         policy={editingPolicy}
         isLoadingPolicy={isEditingPolicyLoading}
+        externalErrors={formErrors}
       />
     </div>
   );
