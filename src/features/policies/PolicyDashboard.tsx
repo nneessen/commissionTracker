@@ -178,25 +178,19 @@ export const PolicyDashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
       <PolicyList
         onEditPolicy={handleEditPolicy}
         onNewPolicy={() => setIsPolicyFormOpen(true)}
       />
 
-      {/* Lead Source Dialog - shown after policy creation, before FirstSellerNamingDialog */}
-      {/* Only show if no first sale dialog is pending (prevents dialog overlap) */}
       {pendingLeadSource && !pendingFirstSaleGroup && (
         <LeadSourceDialog
           open={true}
-          onOpenChange={() => {
-            // Not used - LeadSourceDialog calls onComplete directly
-          }}
+          onOpenChange={() => {}}
           policyId={pendingLeadSource.policyId}
           policyNumber={pendingLeadSource.policyNumber}
           onComplete={() => {
-            // Lead source recorded or skipped - proceed to first seller check
-            // Only check if no first sale dialog is already pending
             setPendingLeadSource(null);
             if (user?.id && !pendingFirstSaleGroup) {
               checkFirstSeller(user.id);
@@ -228,11 +222,10 @@ export const PolicyDashboard: React.FC = () => {
           setIsPolicyFormOpen(open);
           if (!open) {
             setEditingPolicyId(undefined);
-            setFormErrors({}); // Clear validation errors when dialog closes
+            setFormErrors({});
           }
         }}
         onSave={async (formData: NewPolicyForm) => {
-          // Clear previous validation errors on new save attempt
           setFormErrors({});
 
           if (!user?.id) {
@@ -241,7 +234,6 @@ export const PolicyDashboard: React.FC = () => {
           }
 
           try {
-            // Create or find the client with real DOB
             const clientResult = await clientService.createOrFind(
               {
                 name: formData.clientName,
