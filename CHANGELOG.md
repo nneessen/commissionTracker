@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 12:39:00
+
+### Changed Files
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/hooks/index.ts`
+- `src/features/policies/hooks/useDeletePolicy.ts`
+- `src/hooks/policies/index.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260130122606_fix_policy_client_cascade_deletion.sql`
+- `supabase/migrations/20260130122627_add_agent_policy_delete_rls.sql`
+
+### Statistics
+```
+ 9 files changed, 304 insertions(+), 15430 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 12:03:34
 
 ### Changed Files

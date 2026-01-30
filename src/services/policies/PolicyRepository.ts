@@ -773,6 +773,54 @@ export class PolicyRepository extends BaseRepository<
     }
   }
 
+  /**
+   * Count how many policies share the same client_id
+   * Used for pre-delete warnings when multiple policies share a client
+   * @param clientId - The client ID to check
+   * @returns Count of policies with this client_id
+   */
+  async countPoliciesByClientId(clientId: string): Promise<number> {
+    try {
+      const { count, error } = await this.client
+        .from(this.tableName)
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", clientId);
+
+      if (error) {
+        throw this.handleError(error, "countPoliciesByClientId");
+      }
+
+      return count || 0;
+    } catch (error) {
+      throw this.wrapError(error, "countPoliciesByClientId");
+    }
+  }
+
+  /**
+   * Get client_id for a specific policy
+   * Used to check if client is shared before deletion
+   */
+  async getClientIdForPolicy(policyId: string): Promise<string | null> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("client_id")
+        .eq("id", policyId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return null; // Not found
+        }
+        throw this.handleError(error, "getClientIdForPolicy");
+      }
+
+      return data?.client_id || null;
+    } catch (error) {
+      throw this.wrapError(error, "getClientIdForPolicy");
+    }
+  }
+
   async getMonthlyMetrics(
     year: number,
     month: number,

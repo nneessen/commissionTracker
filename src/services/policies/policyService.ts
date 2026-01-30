@@ -276,6 +276,36 @@ class PolicyService {
   }
 
   /**
+   * Check if a policy shares its client with other policies
+   * Returns info about shared client for pre-delete warnings
+   *
+   * @param policyId - Policy ID to check
+   * @returns Object with shared status and count of other policies
+   */
+  async checkSharedClient(
+    policyId: string,
+  ): Promise<{ isShared: boolean; otherPoliciesCount: number }> {
+    // Get the client_id for this policy
+    const clientId = await this.repository.getClientIdForPolicy(policyId);
+
+    if (!clientId) {
+      // No client_id means no shared client issue
+      return { isShared: false, otherPoliciesCount: 0 };
+    }
+
+    // Count how many policies share this client
+    const totalCount = await this.repository.countPoliciesByClientId(clientId);
+
+    // Subtract 1 to exclude the current policy
+    const otherPoliciesCount = Math.max(0, totalCount - 1);
+
+    return {
+      isShared: otherPoliciesCount > 0,
+      otherPoliciesCount,
+    };
+  }
+
+  /**
    * Get policies filtered by various criteria
    * CRITICAL: Filters to only current user's policies
    * Note: For simple filters, prefer using this method for server-side filtering

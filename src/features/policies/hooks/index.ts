@@ -17,7 +17,7 @@ export { useCreatePolicy } from "./useCreatePolicy";
 export { useUpdatePolicy } from "./useUpdatePolicy";
 export type { UpdatePolicyParams } from "./useUpdatePolicy";
 export { useUpdatePolicyLeadSource } from "./useUpdatePolicyLeadSource";
-export { useDeletePolicy } from "./useDeletePolicy";
+export { useDeletePolicy, useCheckSharedClient } from "./useDeletePolicy";
 
 // Calculation hooks
 export { usePolicySummary } from "./usePolicySummary";

@@ -64,6 +64,7 @@ import {
   useUpdatePolicy,
   useDeletePolicy,
   usePoliciesPaginated,
+  useCheckSharedClient,
 } from "../../hooks/policies";
 import type { SortConfig } from "./hooks/usePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
@@ -186,7 +187,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const { data: commissions = [] } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
   const { mutate: updatePolicy } = useUpdatePolicy();
-  const { mutate: deletePolicy } = useDeletePolicy();
+  const { mutate: deletePolicy, isPending: isDeleting } = useDeletePolicy();
+  const { mutateAsync: checkSharedClient } = useCheckSharedClient();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
 
   // Check if user has access to commission data (dashboard feature gates this)
@@ -257,9 +259,27 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const handleDeletePolicy = (policyId: string) => {
-    if (window.confirm("Are you sure you want to delete this policy?")) {
-      deletePolicy(policyId);
+  const handleDeletePolicy = async (policyId: string, clientName: string) => {
+    // Check if client is shared with other policies first
+    try {
+      const { isShared, otherPoliciesCount } =
+        await checkSharedClient(policyId);
+
+      let message = "Are you sure you want to delete this policy?";
+      if (isShared) {
+        message = `This client "${clientName}" has ${otherPoliciesCount} other ${otherPoliciesCount === 1 ? "policy" : "policies"}. Only this policy will be deleted. Continue?`;
+      } else {
+        message = `Are you sure you want to delete this policy? The client "${clientName}" will also be removed since this is their only policy.`;
+      }
+
+      if (window.confirm(message)) {
+        deletePolicy(policyId);
+      }
+    } catch {
+      // If check fails, fall back to simple confirmation
+      if (window.confirm("Are you sure you want to delete this policy?")) {
+        deletePolicy(policyId);
+      }
     }
   };
 
@@ -1056,7 +1076,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                           )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => handleDeletePolicy(policy.id)}
+                            onClick={() =>
+                              handleDeletePolicy(policy.id, policy.client.name)
+                            }
+                            disabled={isDeleting}
                             className="text-red-600 dark:text-red-400 text-[11px]"
                           >
                             <Trash2 className="mr-2 h-3.5 w-3.5" />

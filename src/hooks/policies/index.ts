@@ -9,6 +9,7 @@ export {
   useCreatePolicy,
   useUpdatePolicy,
   useDeletePolicy,
+  useCheckSharedClient,
   usePolicySummary,
 } from '../../features/policies/hooks';
 
