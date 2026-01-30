@@ -93,7 +93,8 @@ function RecruitingDashboardContent() {
     }
 
     // Everyone else sees recruits where they are the recruiter OR the assigned upline
-    return { my_recruits_user_id: user.id, exclude_prospects: true };
+    // Note: Don't exclude prospects for personal view - recruiters need to see their newly created recruits
+    return { my_recruits_user_id: user.id, exclude_prospects: false };
   })();
 
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
