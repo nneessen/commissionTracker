@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 10:00:16
+
+### Changed Files
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/TeamAnalyticsDashboard.tsx`
+- `src/features/hierarchy/components/analytics/TeamAgentSegments.tsx`
+- `src/features/hierarchy/components/analytics/TeamCarriersProductsBreakdown.tsx`
+- `src/features/hierarchy/components/analytics/TeamCommissionPipeline.tsx`
+- `src/features/hierarchy/components/analytics/TeamGamePlan.tsx`
+- `src/features/hierarchy/components/analytics/TeamGeographicAnalysis.tsx`
+- `src/features/hierarchy/components/analytics/TeamPaceMetrics.tsx`
+- `src/features/hierarchy/components/analytics/TeamPolicyStatusBreakdown.tsx`
+- `src/features/hierarchy/components/analytics/TeamPredictiveAnalytics.tsx`
+- `src/features/hierarchy/components/analytics/TeamProductMatrix.tsx`
+- `src/features/hierarchy/components/analytics/index.ts`
+- `src/features/recruiting/hooks/useRecruitInvitations.ts`
+- `src/hooks/analytics/index.ts`
+- `src/hooks/analytics/useTeamAnalyticsData.ts`
+- `src/services/analytics/index.ts`
+- `src/services/analytics/teamAnalyticsService.ts`
+- `src/types/database.types.ts`
+- `src/types/team-analytics.types.ts`
+- `supabase/migrations/20260130093141_add_team_analytics_function.sql`
+
+### Statistics
+```
+ 20 files changed, 3339 insertions(+), 42 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 09:15:18
 
 ### Changed Files

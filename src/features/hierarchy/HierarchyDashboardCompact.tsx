@@ -12,6 +12,7 @@ import { AgentTable } from "./components/AgentTable";
 import { InvitationsList } from "./components/InvitationsList";
 import { PendingInvitationBanner } from "./components/PendingInvitationBanner";
 import { TeamActivityFeed } from "./components/TeamActivityFeed";
+import { TeamAnalyticsDashboard } from "./components/TeamAnalyticsDashboard";
 import { toast } from "sonner";
 import { downloadCSV } from "@/utils/exportHelpers";
 import type { UserProfile } from "@/types/hierarchy.types";
@@ -200,6 +201,14 @@ export function HierarchyDashboardCompact() {
             isLoading={isLoading}
             dateRange={{ start: startDate, end: endDate }}
           />
+
+          {/* Team Analytics Dashboard - All 9 analytics sections */}
+          {downlines.length > 0 && (
+            <TeamAnalyticsDashboard
+              startDate={startDate}
+              endDate={endDate}
+            />
+          )}
 
           {/* Bottom Grid: Invitations and Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabase } from "@/services/base/supabase";
 import { recruitInvitationService } from "@/services/recruiting/recruitInvitationService";
 import type { InvitationValidationResult } from "@/types/recruiting.types";
 
@@ -45,17 +46,12 @@ export function useCreateRecruitWithInvitation() {
         // Get current user info for email
         const {
           data: { user },
-        } = await import("@/services/base/supabase").then((m) =>
-          m.supabase.auth.getUser(),
-        );
-        const { data: profile } = await import("@/services/base/supabase").then(
-          (m) =>
-            m.supabase
-              .from("user_profiles")
-              .select("first_name, last_name, email, phone")
-              .eq("id", user?.id || "")
-              .single(),
-        );
+        } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("first_name, last_name, email, phone")
+          .eq("id", user?.id || "")
+          .single();
 
         if (profile) {
           const inviterName =
@@ -129,27 +125,19 @@ export function useCreateInvitation() {
       if (sendEmail && result.invitation_id && result.token) {
         const {
           data: { user },
-        } = await import("@/services/base/supabase").then((m) =>
-          m.supabase.auth.getUser(),
-        );
-        const { data: profile } = await import("@/services/base/supabase").then(
-          (m) =>
-            m.supabase
-              .from("user_profiles")
-              .select("first_name, last_name, email, phone")
-              .eq("id", user?.id || "")
-              .single(),
-        );
+        } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("first_name, last_name, email, phone")
+          .eq("id", user?.id || "")
+          .single();
 
         // Get recruit info
-        const { data: recruit } = await import("@/services/base/supabase").then(
-          (m) =>
-            m.supabase
-              .from("user_profiles")
-              .select("first_name, last_name")
-              .eq("id", recruitId)
-              .single(),
-        );
+        const { data: recruit } = await supabase
+          .from("user_profiles")
+          .select("first_name, last_name")
+          .eq("id", recruitId)
+          .single();
 
         if (profile) {
           const inviterName =
@@ -214,17 +202,12 @@ export function useResendInvitation() {
       // Send email with new token
       const {
         data: { user },
-      } = await import("@/services/base/supabase").then((m) =>
-        m.supabase.auth.getUser(),
-      );
-      const { data: profile } = await import("@/services/base/supabase").then(
-        (m) =>
-          m.supabase
-            .from("user_profiles")
-            .select("first_name, last_name, email, phone")
-            .eq("id", user?.id || "")
-            .single(),
-      );
+      } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("first_name, last_name, email, phone")
+        .eq("id", user?.id || "")
+        .single();
 
       if (profile) {
         const inviterName =

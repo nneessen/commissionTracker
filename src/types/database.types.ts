@@ -13818,6 +13818,14 @@ export type Database = {
         }[]
       }
       get_sync_webhook_secret: { Args: never; Returns: string }
+      get_team_analytics_data: {
+        Args: {
+          p_end_date: string
+          p_start_date: string
+          p_team_user_ids: string[]
+        }
+        Returns: Json
+      }
       get_team_comparison_report: {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: {

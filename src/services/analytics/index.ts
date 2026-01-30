@@ -9,3 +9,6 @@ export * from './segmentationService';
 export * from './forecastService';
 export * from './attributionService';
 export * from './policyStatusService';
+
+// Team analytics
+export { teamAnalyticsService } from './teamAnalyticsService';
