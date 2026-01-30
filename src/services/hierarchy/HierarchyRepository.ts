@@ -48,6 +48,14 @@ export class HierarchyRepository extends BaseRepository<
   }
 
   /**
+   * Escape special characters in LIKE patterns to prevent SQL injection
+   * and unintended wildcard matching (%, _, \)
+   */
+  private escapeLikePattern(pattern: string): string {
+    return pattern.replace(/[%_\\]/g, "\\$&");
+  }
+
+  /**
    * Transform database record to entity
    */
   protected transformFromDB(
@@ -90,10 +98,13 @@ export class HierarchyRepository extends BaseRepository<
     agencyId?: string,
     approvedOnly: boolean = true,
   ): Promise<HierarchyBaseEntity[]> {
+    // Escape special LIKE characters to prevent injection/unintended matches
+    const escapedPath = this.escapeLikePattern(hierarchyPath);
+
     let query = this.client
       .from(this.tableName)
       .select("*")
-      .like("hierarchy_path", `${hierarchyPath}.%`);
+      .like("hierarchy_path", `${escapedPath}.%`);
 
     // Only return approved agents (not recruits still in pipeline)
     if (approvedOnly) {
@@ -114,14 +125,15 @@ export class HierarchyRepository extends BaseRepository<
     query = query.order(orderBy, { ascending });
 
     // Apply pagination
-    if (options?.limit) {
+    if (options?.limit !== undefined && options?.offset !== undefined) {
+      // Both limit and offset: use range for proper pagination
+      query = query.range(options.offset, options.offset + options.limit - 1);
+    } else if (options?.limit !== undefined) {
+      // Only limit: simple limit
       query = query.limit(options.limit);
-    }
-    if (options?.offset) {
-      query = query.range(
-        options.offset,
-        options.offset + (options.limit || 10) - 1,
-      );
+    } else if (options?.offset !== undefined) {
+      // Only offset without limit: skip first N rows
+      query = query.range(options.offset, options.offset + 999);
     }
 
     const { data, error } = await query;
@@ -131,22 +143,6 @@ export class HierarchyRepository extends BaseRepository<
     }
 
     return data?.map((item) => this.transformFromDB(item)) || [];
-  }
-
-  /**
-   * Get downlines within the same agency as the caller
-   * This is the preferred method for multi-agency systems
-   *
-   * @param hierarchyPath - The hierarchy path prefix to match
-   * @param agencyId - The agency ID to filter by
-   * @param options - Query options
-   */
-  async findDownlinesByHierarchyPathInAgency(
-    hierarchyPath: string,
-    agencyId: string,
-    options?: QueryOptions,
-  ): Promise<HierarchyBaseEntity[]> {
-    return this.findDownlinesByHierarchyPath(hierarchyPath, options, agencyId);
   }
 
   /**
@@ -178,17 +174,6 @@ export class HierarchyRepository extends BaseRepository<
     }
 
     return (data as DirectReportProfile[]) || [];
-  }
-
-  /**
-   * Get direct reports within the same agency
-   * This is the preferred method for multi-agency systems
-   */
-  async findDirectReportsInAgency(
-    uplineId: string,
-    agencyId: string,
-  ): Promise<DirectReportProfile[]> {
-    return this.findDirectReportsByUplineId(uplineId, agencyId);
   }
 
   /**

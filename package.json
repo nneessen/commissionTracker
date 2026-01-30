@@ -25,6 +25,7 @@
     "generate:types": "supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz --schema public > src/types/database.types.ts",
     "email:dev": "email dev --dir supabase/email-src --port 3001",
     "email:build": "email export --dir supabase/email-src --outDir supabase/templates",
+    "slack:leaderboard": "node scripts/invoke-slack-leaderboard.js",
     "prepare": "husky && husky install"
   },
   "dependencies": {

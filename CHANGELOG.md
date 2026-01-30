@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 17:42:05
+
+### Changed Files
+- `package.json`
+- `scripts/invoke-slack-leaderboard.js`
+- `src/services/hierarchy/HierarchyRepository.ts`
+- `src/services/users/UserRepository.ts`
+
+### Statistics
+```
+ 4 files changed, 119 insertions(+), 40 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 16:36:04
 
 ### Changed Files

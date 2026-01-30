@@ -1,6 +1,4 @@
 // src/services/users/UserRepository.ts
-// Repository for user_profiles table data access
-// Extends BaseRepository for standard CRUD operations
 
 import {
   BaseRepository,
@@ -27,9 +25,8 @@ export interface UserFilters {
 
 /**
  * Repository for user_profiles data access
- * Extends BaseRepository for standard CRUD operations
  *
- * Note: Most operations respect RLS policies. Admin operations use
+ * NOTE: Most operations respect RLS policies. Admin operations use
  * dedicated RPC functions that have their own permission checks.
  */
 export class UserRepository extends BaseRepository<
@@ -56,7 +53,7 @@ export class UserRepository extends BaseRepository<
   ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
-    // Map all valid fields, preserving undefined vs null distinction
+    // NOTE: are all fields listed below suppose to be here?
     const fields = [
       "first_name",
       "last_name",
