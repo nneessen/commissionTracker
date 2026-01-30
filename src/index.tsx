@@ -66,17 +66,14 @@ window.addEventListener("vite:preloadError", () => {
         initialVersion = currentVersion;
         sessionStorage.setItem("app-version", currentVersion);
 
-        // Only show dialog if there are new notes the user hasn't seen
-        if (newNotes.length > 0) {
-          console.log("[Version Check] New notes to show:", newNotes.length);
-          window.dispatchEvent(
-            new CustomEvent("version-update-available", {
-              detail: { notes: newNotes },
-            }),
-          );
-        } else {
-          console.log("[Version Check] No new notes to show");
-        }
+        // ALWAYS show dialog on new deploy (user requirement)
+        // Pass any new notes if available, dialog shows regardless
+        console.log("[Version Check] Showing update dialog, notes:", newNotes.length);
+        window.dispatchEvent(
+          new CustomEvent("version-update-available", {
+            detail: { notes: newNotes },
+          }),
+        );
       }
     } catch (_e) {
       // Silently ignore - version.json might not exist in dev

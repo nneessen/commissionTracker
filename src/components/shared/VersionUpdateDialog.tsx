@@ -43,10 +43,8 @@ export function VersionUpdateDialog() {
     const handleVersionUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<{ notes: ReleaseNote[] }>;
       const newNotes = customEvent.detail?.notes || [];
-      if (newNotes.length > 0) {
-        setNotes(newNotes);
-        setIsOpen(true);
-      }
+      setNotes(newNotes);
+      setIsOpen(true); // Always open on version change
     };
 
     window.addEventListener(

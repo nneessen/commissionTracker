@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 13:10:48
+
+### Changed Files
+- `src/components/shared/VersionUpdateDialog.tsx`
+- `src/index.tsx`
+
+### Statistics
+```
+ 2 files changed, 10 insertions(+), 15 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 12:39:00
 
 ### Changed Files
