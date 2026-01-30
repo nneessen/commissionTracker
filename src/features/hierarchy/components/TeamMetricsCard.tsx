@@ -76,8 +76,9 @@ export function TeamMetricsCard({
   }
 
   // Calculate additional metrics
+  // Use agentCount (from useMyDownlines) as source of truth for total downlines
   const directAgents = stats?.direct_downlines || 0;
-  const indirectAgents = (stats?.total_downlines || 0) - directAgents;
+  const indirectAgents = agentCount - directAgents;
   const mtdOverride = stats?.total_override_income_mtd || 0;
   const ytdOverride = stats?.total_override_income_ytd || 0;
   const qtdOverride = mtdOverride; // Would need actual QTD calculation
@@ -134,7 +135,7 @@ export function TeamMetricsCard({
                   Total Agents
                 </span>
                 <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                  {stats?.total_downlines || 0}
+                  {agentCount + 1}
                 </span>
               </div>
               <div className="flex justify-between text-[11px]">

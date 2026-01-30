@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 09:15:18
+
+### Changed Files
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/TeamMetricsCard.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `supabase/migrations/20260130085131_fix_hierarchy_path_on_insert.sql`
+
+### Statistics
+```
+ 4 files changed, 180 insertions(+), 4 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-29 18:04:04
 
 ### Changed Files

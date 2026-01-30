@@ -715,7 +715,7 @@ export function AgentTable({
           <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30">
             <div className="flex items-center gap-4">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Total: {totalRootAgents} agent{totalRootAgents !== 1 ? "s" : ""}
+                Total: {agents.length + (owner ? 1 : 0)} agent{agents.length + (owner ? 1 : 0) !== 1 ? "s" : ""}
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400">

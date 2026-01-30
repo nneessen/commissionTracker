@@ -845,7 +845,7 @@ class HierarchyService {
         dayOfYear > 0 ? (teamYearlyAPForPace / dayOfYear) * daysInYear : 0;
 
       const result: HierarchyStats = {
-        // Agent counts - only approved agents
+        // Agent counts - ALL approved agents (not archived)
         total_agents: downlines.length + 1, // approved downlines + self
         total_downlines: downlines.length, // approved downlines only
         direct_downlines: directDownlines.length, // approved direct reports only
