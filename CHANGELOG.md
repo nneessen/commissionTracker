@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-30 16:17:39
+
+### Changed Files
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/policies/utils/policyFormTransformer.ts`
+- `src/types/database.types.ts`
+- `src/types/policy.types.ts`
+- `src/utils/dataMigration.ts`
+- `supabase/migrations/20260130160840_require_submit_date.sql`
+
+### Statistics
+```
+ 6 files changed, 14129 insertions(+), 14109 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 13:10:48
 
 ### Changed Files

@@ -234,6 +234,9 @@ class DataMigrationService {
           userId: userId,
           carrierId: policy.carrierId,
           product: policy.product,
+          submitDate: policy.submitDate
+            ? new Date(policy.submitDate)
+            : new Date(policy.effectiveDate),
           effectiveDate: new Date(policy.effectiveDate),
           termLength: policy.termLength,
           expirationDate: policy.expirationDate

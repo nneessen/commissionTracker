@@ -54,6 +54,14 @@ export function transformFormToCreateData(
   clientId: string,
   userId: string,
 ): CreatePolicyData {
+  // Validate required fields
+  if (!form.submitDate) {
+    throw new Error("Submit date is required");
+  }
+  if (!form.effectiveDate) {
+    throw new Error("Effective date is required");
+  }
+
   // Validate commission percentage
   const commissionPercent = form.commissionPercentage || 0;
   validateCommissionPercentage(commissionPercent);
@@ -72,7 +80,7 @@ export function transformFormToCreateData(
     carrierId: form.carrierId,
     productId: form.productId || undefined,
     product: form.product,
-    submitDate: form.submitDate ? parseLocalDate(form.submitDate) : undefined,
+    submitDate: parseLocalDate(form.submitDate),
     effectiveDate: parseLocalDate(form.effectiveDate),
     termLength: form.termLength,
     expirationDate: form.expirationDate

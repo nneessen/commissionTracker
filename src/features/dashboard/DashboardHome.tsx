@@ -268,7 +268,11 @@ export const DashboardHome: React.FC = () => {
         clientId: client.id,
         userId: user.id,
         carrierId: formData.carrierId,
+        productId: formData.productId,
         product: formData.product,
+        submitDate: formData.submitDate
+          ? parseLocalDate(formData.submitDate)
+          : parseLocalDate(formData.effectiveDate),
         effectiveDate: parseLocalDate(formData.effectiveDate),
         termLength: formData.termLength,
         expirationDate: formData.expirationDate
