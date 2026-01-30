@@ -8,7 +8,6 @@ import type {
   TeamAnalyticsRawData,
   AgentPerformanceData,
   AgentSegmentationSummary,
-  TeamGamePlanMetrics,
   TeamPaceMetrics,
   TeamPolicyStatusBreakdown,
   TeamGeographicBreakdown,
@@ -20,9 +19,15 @@ import type {
  * Query key factory for team analytics
  */
 export const teamAnalyticsKeys = {
-  all: ['team-analytics'] as const,
+  all: ["team-analytics"] as const,
   data: (userIds: string[], startDate?: string, endDate?: string) =>
-    [...teamAnalyticsKeys.all, 'data', userIds.sort().join(','), startDate, endDate] as const,
+    [
+      ...teamAnalyticsKeys.all,
+      "data",
+      userIds.sort().join(","),
+      startDate,
+      endDate,
+    ] as const,
 };
 
 /**
@@ -40,7 +45,6 @@ export interface UseTeamAnalyticsDataResult {
   // Computed metrics
   agentMetrics: AgentPerformanceData[];
   agentSegmentation: AgentSegmentationSummary | null;
-  teamGamePlan: TeamGamePlanMetrics | null;
   teamPace: TeamPaceMetrics | null;
   policyStatus: TeamPolicyStatusBreakdown | null;
   geographicBreakdown: TeamGeographicBreakdown[];
@@ -60,24 +64,31 @@ export interface UseTeamAnalyticsDataResult {
  * @returns Comprehensive team analytics data object
  */
 export function useTeamAnalyticsData(
-  options?: UseTeamAnalyticsDataOptions
+  options?: UseTeamAnalyticsDataOptions,
 ): UseTeamAnalyticsDataResult {
   const {
     startDate: startDateOption,
     endDate: endDateOption,
     enabled = true,
+    teamUserIds: providedTeamUserIds,
   } = options || {};
 
-  // Get current user and their downlines
+  // Get current user and their downlines (only if teamUserIds not provided)
   const { data: currentUser, isLoading: userLoading } = useCurrentUserProfile();
-  const { data: downlines = [], isLoading: downlinesLoading } = useMyDownlines();
+  const { data: downlines = [], isLoading: downlinesLoading } = useMyDownlines({
+    enabled: !providedTeamUserIds, // Skip if teamUserIds provided externally
+  });
 
-  // Build team user IDs array (current user + all downlines)
-  // React 19.1 optimizes this automatically
+  // Build team user IDs array (use provided IDs or build from current user + downlines)
   const teamUserIds = (() => {
+    // If teamUserIds provided externally, use them directly
+    if (providedTeamUserIds && providedTeamUserIds.length > 0) {
+      return providedTeamUserIds;
+    }
+    // Otherwise build from current user + downlines
     if (!currentUser) return [];
     const ids = [currentUser.id];
-    downlines.forEach(d => {
+    downlines.forEach((d) => {
       if (!ids.includes(d.id)) {
         ids.push(d.id);
       }
@@ -88,7 +99,15 @@ export function useTeamAnalyticsData(
   // Default date range if not provided (current month)
   const now = new Date();
   const defaultStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const defaultEndDate = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
 
   const startDate = startDateOption || defaultStartDate;
   const endDate = endDateOption || defaultEndDate;
@@ -103,16 +122,23 @@ export function useTeamAnalyticsData(
     queryKey: teamAnalyticsKeys.data(
       teamUserIds,
       startDate.toISOString(),
-      endDate.toISOString()
+      endDate.toISOString(),
     ),
     queryFn: () =>
-      teamAnalyticsService.getTeamAnalyticsData(teamUserIds, startDate, endDate),
-    enabled: enabled && teamUserIds.length > 0 && !userLoading && !downlinesLoading,
+      teamAnalyticsService.getTeamAnalyticsData(
+        teamUserIds,
+        startDate,
+        endDate,
+      ),
+    enabled:
+      enabled &&
+      teamUserIds.length > 0 &&
+      (providedTeamUserIds ? true : !userLoading && !downlinesLoading),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 20 * 60 * 1000, // 20 minutes garbage collection
   });
 
-  // Calculate derived metrics (React 19.1 optimizes automatically)
+  // Calculate derived metrics
   const agentMetrics = rawData
     ? teamAnalyticsService.calculateAgentPerformance(rawData)
     : [];
@@ -121,20 +147,23 @@ export function useTeamAnalyticsData(
     ? teamAnalyticsService.segmentAgents(agentMetrics)
     : null;
 
-  const teamGamePlan = rawData
-    ? teamAnalyticsService.calculateTeamGamePlan(rawData, agentMetrics)
-    : null;
-
   // Determine time period label
   const getTimePeriodLabel = () => {
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-    if (daysDiff <= 31) return 'monthly';
-    if (daysDiff <= 92) return 'quarterly';
-    return 'yearly';
+    const daysDiff = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000),
+    );
+    if (daysDiff <= 31) return "monthly";
+    if (daysDiff <= 92) return "quarterly";
+    return "yearly";
   };
 
   const teamPace = rawData
-    ? teamAnalyticsService.calculateTeamPace(rawData, startDate, endDate, getTimePeriodLabel())
+    ? teamAnalyticsService.calculateTeamPace(
+        rawData,
+        startDate,
+        endDate,
+        getTimePeriodLabel(),
+      )
     : null;
 
   const policyStatus = rawData
@@ -149,7 +178,10 @@ export function useTeamAnalyticsData(
     ? teamAnalyticsService.calculateCarrierBreakdown(rawData)
     : [];
 
-  const isLoading = userLoading || downlinesLoading || dataLoading;
+  // Loading state: skip downlinesLoading if we have providedTeamUserIds
+  const isLoading = providedTeamUserIds
+    ? dataLoading
+    : userLoading || downlinesLoading || dataLoading;
 
   return {
     isLoading,
@@ -158,7 +190,6 @@ export function useTeamAnalyticsData(
     rawData,
     agentMetrics,
     agentSegmentation,
-    teamGamePlan,
     teamPace,
     policyStatus,
     geographicBreakdown,

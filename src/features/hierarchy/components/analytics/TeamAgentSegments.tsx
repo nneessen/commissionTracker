@@ -2,10 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import type {
-  AgentSegmentationSummary,
-  AgentPerformanceData,
-} from "@/types/team-analytics.types";
+import type { AgentSegmentationSummary } from "@/types/team-analytics.types";
 import {
   Table,
   TableBody,
@@ -105,7 +102,8 @@ export function TeamAgentSegments({ data, isLoading }: TeamAgentSegmentsProps) {
             Agent Segments
           </div>
           <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
-            {data.totalAgents} agents • {formatCurrency(data.totalTeamAP)} total AP
+            {data.totalAgents} agents • {formatCurrency(data.totalTeamAP)} total
+            AP
           </div>
         </div>
         <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
@@ -132,17 +130,20 @@ export function TeamAgentSegments({ data, isLoading }: TeamAgentSegmentsProps) {
               className={cn(
                 "p-2 rounded border",
                 getColorClass(segment.color, "bg"),
-                getColorClass(segment.color, "border")
+                getColorClass(segment.color, "border"),
               )}
             >
               <div className="flex items-center gap-1 mb-1">
                 <Icon
-                  className={cn("h-3 w-3", getColorClass(segment.color, "text"))}
+                  className={cn(
+                    "h-3 w-3",
+                    getColorClass(segment.color, "text"),
+                  )}
                 />
                 <span
                   className={cn(
                     "text-[10px] font-medium",
-                    getColorClass(segment.color, "text")
+                    getColorClass(segment.color, "text"),
                   )}
                 >
                   {segment.label}
@@ -152,7 +153,7 @@ export function TeamAgentSegments({ data, isLoading }: TeamAgentSegmentsProps) {
                 <span
                   className={cn(
                     "font-mono font-bold text-sm",
-                    getColorClass(segment.color, "text")
+                    getColorClass(segment.color, "text"),
                   )}
                 >
                   {segment.data.agentCount}
@@ -162,78 +163,90 @@ export function TeamAgentSegments({ data, isLoading }: TeamAgentSegmentsProps) {
                 </span>
               </div>
               <div className="text-[9px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                {formatCurrency(segment.data.totalAP)} ({percentOfAP}% of team AP)
+                {formatCurrency(segment.data.totalAP)} ({percentOfAP}% of team
+                AP)
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Top 5 Performers Table */}
-      {data.topPerformers.agents.length > 0 && (
-        <>
-          <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-            Top 5 Agents
-          </div>
-          <Table className="text-[11px]">
-            <TableHeader>
-              <TableRow className="h-7 border-b border-zinc-200 dark:border-zinc-800">
-                <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50">
-                  Agent
-                </TableHead>
-                <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
-                  Policies
-                </TableHead>
-                <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
-                  AP
-                </TableHead>
-                <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
-                  Persist
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.topPerformers.agents.slice(0, 5).map((agent, idx) => (
-                <TableRow
-                  key={agent.agentId}
-                  className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                >
-                  <TableCell className="p-1.5">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-zinc-400 dark:text-zinc-500">
-                        #{idx + 1}
-                      </span>
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate max-w-[120px]">
-                        {agent.agentName}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
-                    {agent.policyCount}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(agent.totalAP)}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right">
-                    <span
-                      className={cn(
-                        "font-mono",
-                        agent.persistencyRate >= 80
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : agent.persistencyRate >= 60
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-red-600 dark:text-red-400"
-                      )}
-                    >
-                      {agent.persistencyRate.toFixed(0)}%
-                    </span>
-                  </TableCell>
+      {/* Top 5 Agents Table - Combined from all segments, sorted by AP */}
+      {(() => {
+        // Combine all agents from all segments and sort by AP
+        const allAgents = [
+          ...data.topPerformers.agents,
+          ...data.solidPerformers.agents,
+          ...data.needsAttention.agents,
+        ].sort((a, b) => b.totalAP - a.totalAP);
+
+        if (allAgents.length === 0) return null;
+
+        return (
+          <>
+            <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+              Top 5 Agents
+            </div>
+            <Table className="text-[11px]">
+              <TableHeader>
+                <TableRow className="h-7 border-b border-zinc-200 dark:border-zinc-800">
+                  <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50">
+                    Agent
+                  </TableHead>
+                  <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                    Policies
+                  </TableHead>
+                  <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                    AP
+                  </TableHead>
+                  <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                    Persist
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </>
-      )}
+              </TableHeader>
+              <TableBody>
+                {allAgents.slice(0, 5).map((agent, idx) => (
+                  <TableRow
+                    key={agent.agentId}
+                    className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  >
+                    <TableCell className="p-1.5">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-zinc-400 dark:text-zinc-500">
+                          #{idx + 1}
+                        </span>
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate max-w-[120px]">
+                          {agent.agentName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
+                      {agent.policyCount}
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(agent.totalAP)}
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right">
+                      <span
+                        className={cn(
+                          "font-mono",
+                          agent.persistencyRate >= 80
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : agent.persistencyRate >= 60
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-red-600 dark:text-red-400",
+                        )}
+                      >
+                        {agent.persistencyRate.toFixed(0)}%
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        );
+      })()}
     </div>
   );
 }

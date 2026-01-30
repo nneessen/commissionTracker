@@ -16,9 +16,11 @@ import { TeamAnalyticsDashboard } from "./components/TeamAnalyticsDashboard";
 import { toast } from "sonner";
 import { downloadCSV } from "@/utils/exportHelpers";
 import type { UserProfile } from "@/types/hierarchy.types";
-import { TimePeriodSwitcher } from "@/features/dashboard/components/TimePeriodSwitcher";
-import { PeriodNavigator } from "@/features/dashboard/components/PeriodNavigator";
-import { DateRangeDisplay } from "@/features/dashboard/components/DateRangeDisplay";
+import {
+  TimePeriodSwitcher,
+  PeriodNavigator,
+  DateRangeDisplay,
+} from "@/features/dashboard";
 import { getDateRange, type TimePeriod } from "@/utils/dateRange";
 
 // Extended agent type with additional fields
@@ -27,7 +29,6 @@ interface Agent extends UserProfile {
   is_active?: boolean;
   parent_agent_id?: string | null;
 }
-
 
 export function HierarchyDashboardCompact() {
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
@@ -202,11 +203,16 @@ export function HierarchyDashboardCompact() {
             dateRange={{ start: startDate, end: endDate }}
           />
 
-          {/* Team Analytics Dashboard - All 9 analytics sections */}
+          {/* Team Analytics Dashboard */}
           {downlines.length > 0 && (
             <TeamAnalyticsDashboard
               startDate={startDate}
               endDate={endDate}
+              teamUserIds={
+                owner
+                  ? [owner.id, ...downlines.map((d) => d.id)]
+                  : downlines.map((d) => d.id)
+              }
             />
           )}
 

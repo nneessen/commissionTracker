@@ -2,6 +2,9 @@
 -- Team Analytics RPC Function
 -- Provides server-side aggregation for team analytics dashboard
 
+-- Drop existing function if exists
+DROP FUNCTION IF EXISTS get_team_analytics_data(uuid[], timestamptz, timestamptz);
+
 -- Function to get team analytics data
 -- Returns policies, commissions, and agent targets for a set of user IDs
 CREATE OR REPLACE FUNCTION get_team_analytics_data(
@@ -21,8 +24,7 @@ BEGIN
   -- Get the calling user's ID for security check
   v_caller_id := auth.uid();
 
-  -- Security check: Verify caller is in the team list or has access to view these users
-  -- The caller must either be in the list themselves or be an admin
+  -- Security check: Verify caller is authenticated
   IF v_caller_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
@@ -33,98 +35,116 @@ BEGIN
       SELECT json_agg(row_to_json(p))
       FROM (
         SELECT
-          id,
-          user_id,
-          status,
-          annual_premium,
-          effective_date,
-          product,
-          carrier_id,
-          client_id,
-          policy_number,
-          created_at,
-          lapse_date,
-          commission_percentage,
-          term_length
-        FROM policies
-        WHERE user_id = ANY(p_team_user_ids)
-          AND created_at >= p_start_date
-          AND created_at <= p_end_date
+          pol.id,
+          pol.user_id,
+          pol.status,
+          pol.annual_premium,
+          pol.effective_date,
+          pol.product,
+          pol.carrier_id,
+          pol.client_id,
+          pol.policy_number,
+          pol.created_at,
+          pol.cancellation_date,
+          pol.commission_percentage,
+          pol.term_length,
+          -- Handle both JSON and plain text formats for address
+          -- Some records have JSON like {"state":"MI"}, others have plain "MI"
+          CASE
+            WHEN cl.address IS NULL THEN 'Unknown'
+            WHEN cl.address LIKE '{%' THEN COALESCE((cl.address::jsonb)->>'state', 'Unknown')
+            ELSE cl.address  -- Plain text state abbreviation
+          END AS client_state
+        FROM policies pol
+        LEFT JOIN clients cl ON cl.id = pol.client_id
+        WHERE pol.user_id = ANY(p_team_user_ids)
+          AND pol.created_at >= p_start_date
+          AND pol.created_at <= p_end_date
       ) p
     ), '[]'::json),
     'commissions', COALESCE((
       SELECT json_agg(row_to_json(c))
       FROM (
         SELECT
-          id,
-          user_id,
-          policy_id,
-          amount AS commission_amount,
-          commission_type,
-          status AS payment_status,
-          effective_date,
-          carrier_id,
-          product_type,
-          earned_amount,
-          unearned_amount,
-          months_paid,
-          advance_months,
-          chargeback_amount,
-          chargeback_date,
-          payment_date,
-          created_at
-        FROM commissions
-        WHERE user_id = ANY(p_team_user_ids)
-          AND effective_date >= p_start_date
-          AND effective_date <= p_end_date
+          c.id,
+          c.user_id,
+          c.policy_id,
+          c.amount AS commission_amount,
+          c.type AS commission_type,
+          c.status AS payment_status,
+          COALESCE(c.payment_date, c.created_at::date) AS effective_date,
+          p.carrier_id,
+          p.product AS product_type,
+          c.earned_amount,
+          c.unearned_amount,
+          c.months_paid,
+          c.advance_months,
+          c.chargeback_amount,
+          c.chargeback_date,
+          c.payment_date,
+          c.created_at
+        FROM commissions c
+        LEFT JOIN policies p ON p.id = c.policy_id
+        WHERE c.user_id = ANY(p_team_user_ids)
+          AND c.created_at >= p_start_date
+          AND c.created_at <= p_end_date
       ) c
     ), '[]'::json),
     'all_policies', COALESCE((
       SELECT json_agg(row_to_json(ap))
       FROM (
         SELECT
-          id,
-          user_id,
-          status,
-          annual_premium,
-          effective_date,
-          product,
-          carrier_id,
-          client_id,
-          policy_number,
-          created_at,
-          lapse_date,
-          updated_at,
-          commission_percentage,
-          term_length
-        FROM policies
-        WHERE user_id = ANY(p_team_user_ids)
+          pol.id,
+          pol.user_id,
+          pol.status,
+          pol.annual_premium,
+          pol.effective_date,
+          pol.product,
+          pol.carrier_id,
+          pol.client_id,
+          pol.policy_number,
+          pol.created_at,
+          pol.cancellation_date,
+          pol.updated_at,
+          pol.commission_percentage,
+          pol.term_length,
+          -- Handle both JSON and plain text formats for address
+          -- Some records have JSON like {"state":"MI"}, others have plain "MI"
+          CASE
+            WHEN cl.address IS NULL THEN 'Unknown'
+            WHEN cl.address LIKE '{%' THEN COALESCE((cl.address::jsonb)->>'state', 'Unknown')
+            ELSE cl.address  -- Plain text state abbreviation
+          END AS client_state
+        FROM policies pol
+        LEFT JOIN clients cl ON cl.id = pol.client_id
+        WHERE pol.user_id = ANY(p_team_user_ids)
       ) ap
     ), '[]'::json),
     'all_commissions', COALESCE((
       SELECT json_agg(row_to_json(ac))
       FROM (
         SELECT
-          id,
-          user_id,
-          policy_id,
-          amount AS commission_amount,
-          commission_type,
-          status AS payment_status,
-          effective_date,
-          carrier_id,
-          product_type,
-          earned_amount,
-          unearned_amount,
-          months_paid,
-          advance_months,
-          chargeback_amount,
-          chargeback_date,
-          payment_date,
-          created_at,
-          last_payment_date
-        FROM commissions
-        WHERE user_id = ANY(p_team_user_ids)
+          c.id,
+          c.user_id,
+          c.policy_id,
+          c.amount AS commission_amount,
+          c.type AS commission_type,
+          c.status AS payment_status,
+          COALESCE(c.payment_date, c.created_at::date) AS effective_date,
+          p.carrier_id,
+          p.product AS product_type,
+          c.earned_amount,
+          c.unearned_amount,
+          c.months_paid,
+          c.advance_months,
+          c.chargeback_amount,
+          c.chargeback_date,
+          c.payment_date,
+          c.created_at,
+          c.last_payment_date
+        FROM commissions c
+        LEFT JOIN policies p ON p.id = c.policy_id
+        WHERE c.user_id = ANY(p_team_user_ids)
       ) ac
     ), '[]'::json),
     'agent_targets', COALESCE((
@@ -157,8 +177,7 @@ BEGIN
       FROM (
         SELECT DISTINCT ON (clients.id)
           clients.id,
-          clients.name,
-          clients.state
+          clients.name
         FROM clients
         INNER JOIN policies ON policies.client_id = clients.id
         WHERE policies.user_id = ANY(p_team_user_ids)
@@ -173,8 +192,9 @@ BEGIN
           last_name,
           email,
           contract_level,
-          role,
-          approval_status
+          roles,
+          approval_status,
+          COALESCE(state, resident_state) AS state
         FROM user_profiles
         WHERE id = ANY(p_team_user_ids)
       ) u

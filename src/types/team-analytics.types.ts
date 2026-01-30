@@ -15,10 +15,12 @@ export interface TeamPolicyRow {
   client_id: string | null;
   policy_number: string | null;
   created_at: string;
-  lapse_date: string | null;
+  cancellation_date: string | null;
   updated_at?: string;
   commission_percentage: number | null;
   term_length: number | null;
+  /** Client's state from the address JSONB field */
+  client_state: string | null;
 }
 
 /**
@@ -71,7 +73,6 @@ export interface TeamCarrierRow {
 export interface TeamClientRow {
   id: string;
   name: string | null;
-  state: string | null;
 }
 
 /**
@@ -83,8 +84,9 @@ export interface TeamAgentProfileRow {
   last_name: string | null;
   email: string;
   contract_level: number | null;
-  role: string | null;
+  roles: string[] | null;
   approval_status: string | null;
+  state: string | null;
 }
 
 /**
@@ -104,7 +106,10 @@ export interface TeamAnalyticsRawData {
 /**
  * Agent performance tier for segmentation
  */
-export type AgentPerformanceTier = 'top_performer' | 'solid_performer' | 'needs_attention';
+export type AgentPerformanceTier =
+  | "top_performer"
+  | "solid_performer"
+  | "needs_attention";
 
 /**
  * Individual agent performance data
@@ -146,38 +151,6 @@ export interface AgentSegmentationSummary {
   totalAgents: number;
   totalTeamAP: number;
   avgAgentAP: number;
-}
-
-/**
- * Team game plan metrics
- */
-export interface TeamGamePlanMetrics {
-  // Monthly targets and actuals
-  teamMonthlyTarget: number;
-  teamMTDActual: number;
-  teamMonthlyGap: number;
-  teamMonthlyProgressPercent: number;
-
-  // Yearly targets and actuals
-  teamYearlyTarget: number;
-  teamYTDActual: number;
-  teamYearlyGap: number;
-  teamYearlyProgressPercent: number;
-
-  // Team composition
-  totalAgents: number;
-  agentsWithTargets: number;
-  agentsOnTrack: number;
-  agentsBehind: number;
-
-  // Performance breakdown
-  topContributors: AgentPerformanceData[];
-  underperformers: AgentPerformanceData[];
-
-  // Context
-  daysRemainingInMonth: number;
-  monthsRemainingInYear: number;
-  currentMonth: string;
 }
 
 /**
@@ -253,4 +226,9 @@ export interface UseTeamAnalyticsDataOptions {
   startDate?: Date;
   endDate?: Date;
   enabled?: boolean;
+  /**
+   * Optional array of team user IDs to use instead of fetching via useMyDownlines.
+   * Pass this to ensure consistency with other components that display the same agents.
+   */
+  teamUserIds?: string[];
 }
