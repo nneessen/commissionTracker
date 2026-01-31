@@ -1,5 +1,6 @@
 // scripts/invoke-slack-leaderboard.js
 // Manually triggers refresh of all Slack leaderboards for today
+// Also auto-completes any pending first sales
 //
 // Usage:
 //   npm run slack:leaderboard
@@ -13,7 +14,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function main() {
-  console.log("📊 Refreshing Slack leaderboards...\n");
+  console.log("📊 Slack Leaderboard Manager\n");
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     console.error("❌ Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env");
@@ -21,15 +22,93 @@ async function main() {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  const functionUrl = `${SUPABASE_URL}/functions/v1/slack-policy-notification`;
 
   // Get today's date in ET (same format the function uses)
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "America/New_York",
   });
 
-  console.log(`Looking for leaderboards from: ${today}\n`);
+  console.log(`Date: ${today}\n`);
 
-  // Get today's daily_sales_logs that have a leaderboard message posted
+  // =========================================================================
+  // STEP 1: Check for and complete any pending first sales
+  // =========================================================================
+  console.log("🔍 Checking for pending first sales...\n");
+
+  const { data: pendingLogs, error: pendingError } = await supabase
+    .from("daily_sales_logs")
+    .select(`
+      id,
+      first_sale_group_id,
+      slack_integrations!inner (
+        team_name,
+        policy_channel_name
+      )
+    `)
+    .eq("log_date", today)
+    .not("pending_policy_data", "is", null);
+
+  if (pendingError) {
+    console.error("❌ Error checking pending:", pendingError.message);
+  } else if (pendingLogs && pendingLogs.length > 0) {
+    console.log(`Found ${pendingLogs.length} pending first sale(s) - auto-completing...\n`);
+
+    // Group by first_sale_group_id to avoid duplicate processing
+    const processedGroups = new Set();
+
+    for (const log of pendingLogs) {
+      const groupId = log.first_sale_group_id || log.id;
+      const channelName = log.slack_integrations?.policy_channel_name || "unknown";
+      const teamName = log.slack_integrations?.team_name || "Unknown";
+
+      if (processedGroups.has(groupId)) {
+        continue;
+      }
+      processedGroups.add(groupId);
+
+      console.log(`   Completing: ${teamName} #${channelName}...`);
+
+      try {
+        // Use batch completion if there's a group, otherwise single
+        const action = log.first_sale_group_id
+          ? "complete-first-sale-batch"
+          : "complete-first-sale";
+
+        const payload = log.first_sale_group_id
+          ? { action, firstSaleGroupId: log.first_sale_group_id }
+          : { action, logId: log.id };
+
+        const response = await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+          console.log(`   ✅ Posted to Slack`);
+        } else {
+          console.log(`   ❌ Failed: ${data.error || JSON.stringify(data)}`);
+        }
+      } catch (err) {
+        console.log(`   ❌ Error: ${err.message}`);
+      }
+    }
+    console.log("");
+  } else {
+    console.log("   No pending first sales found.\n");
+  }
+
+  // =========================================================================
+  // STEP 2: Refresh existing leaderboards
+  // =========================================================================
+  console.log("🔄 Refreshing existing leaderboards...\n");
+
   const { data: logs, error: logsError } = await supabase
     .from("daily_sales_logs")
     .select(`
@@ -51,42 +130,39 @@ async function main() {
   }
 
   if (!logs || logs.length === 0) {
-    console.log("No leaderboards found for today. Post a policy first to create a leaderboard.");
-    process.exit(0);
-  }
+    console.log("   No posted leaderboards found for today.\n");
+  } else {
+    console.log(`   Found ${logs.length} leaderboard(s) to refresh\n`);
 
-  console.log(`Found ${logs.length} leaderboard(s) to refresh\n`);
+    for (const log of logs) {
+      const channelName = log.slack_integrations?.policy_channel_name || log.channel_id;
+      const teamName = log.slack_integrations?.team_name || "Unknown";
 
-  const functionUrl = `${SUPABASE_URL}/functions/v1/slack-policy-notification`;
+      console.log(`   Refreshing: ${teamName} #${channelName}...`);
 
-  for (const log of logs) {
-    const channelName = log.slack_integrations?.policy_channel_name || log.channel_id;
-    const teamName = log.slack_integrations?.team_name || "Unknown";
+      try {
+        const response = await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+          body: JSON.stringify({
+            action: "update-leaderboard",
+            logId: log.id,
+          }),
+        });
 
-    console.log(`Refreshing: ${teamName} #${channelName}...`);
+        const data = await response.json();
 
-    try {
-      const response = await fetch(functionUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-        },
-        body: JSON.stringify({
-          action: "update-leaderboard",
-          logId: log.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.ok && data.updated) {
-        console.log(`   ✅ Updated`);
-      } else {
-        console.log(`   ❌ Failed: ${data.error || JSON.stringify(data)}`);
+        if (data.ok && data.updated) {
+          console.log(`   ✅ Updated`);
+        } else {
+          console.log(`   ❌ Failed: ${data.error || JSON.stringify(data)}`);
+        }
+      } catch (err) {
+        console.log(`   ❌ Error: ${err.message}`);
       }
-    } catch (err) {
-      console.log(`   ❌ Error: ${err.message}`);
     }
   }
 

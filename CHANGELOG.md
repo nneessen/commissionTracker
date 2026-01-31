@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-31 12:08:53
+
+### Changed Files
+- `.serena/memories/MIGRATION_WORKFLOW_ALWAYS_RUN.md`
+- `.serena/memories/NEVER_ASK_USER_TO_RUN_COMMANDS.md`
+- `package.json`
+- `scripts/invoke-slack-auto-complete.js`
+- `scripts/invoke-slack-leaderboard.js`
+- `src/features/messages/services/emailService.ts`
+- `src/services/clients/client/ClientService.ts`
+- `src/services/compGuide/compGuideService.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/slack-auto-complete-first-sale/index.ts`
+- `supabase/migrations/20260131113838_agent_view_team_contacts.sql`
+- `supabase/migrations/20260131113937_email_cost_tracking.sql`
+- `supabase/migrations/20260131120353_slack_auto_complete_first_sale_cron.sql`
+
+### Statistics
+```
+ 14 files changed, 814 insertions(+), 64 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-31 11:04:18
 
 ### Changed Files

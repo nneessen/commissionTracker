@@ -367,12 +367,27 @@ class ClientServiceClass {
       );
 
       if (existing) {
-        // Update existing client with any new data (date_of_birth, address, etc.)
+        // Update existing client with all provided fields
+        // Note: Name changes create new client (lookup is by name), so name is not updated here
         const updates: Record<string, unknown> = {};
-        if (data.date_of_birth && !existing.date_of_birth) {
-          updates.date_of_birth = data.date_of_birth;
+
+        // Always update email if provided (including setting to null)
+        if (data.email !== undefined) {
+          updates.email = data.email || null;
         }
-        if (data.address) {
+
+        // Always update phone if provided (including setting to null)
+        if (data.phone !== undefined) {
+          updates.phone = data.phone || null;
+        }
+
+        // Always update date_of_birth if provided (allow overwriting existing values)
+        if (data.date_of_birth !== undefined) {
+          updates.date_of_birth = data.date_of_birth || null;
+        }
+
+        // Always update address if provided
+        if (data.address !== undefined) {
           updates.address = data.address;
         }
 

@@ -190,7 +190,7 @@ class CompGuideService {
       .ilike("carriers.name", `%${carrierName}%`)
       .eq("product_type", productType)
       .eq("comp_level", compLevel)
-      .gte("effective_date", new Date().toISOString().split("T")[0])
+      .lte("effective_date", new Date().toISOString().split("T")[0])
       .or(
         "expiration_date.is.null,expiration_date.gte." +
           new Date().toISOString().split("T")[0],
@@ -206,7 +206,9 @@ class CompGuideService {
       throw new Error(`Failed to fetch commission rate: ${error.message}`);
     }
 
-    return data ? data.commission_percentage * 100 : null; // Convert to percentage
+    // Return as-is - database stores decimals (e.g., 0.95 = 95%)
+    // CommissionCalculationService expects decimal format for calculations
+    return data ? data.commission_percentage : null;
   }
 
   /**

@@ -79,6 +79,54 @@ function getEmailDomain(source: EmailSource = "personal"): string {
   return EMAIL_DOMAINS[source];
 }
 
+// Cost per email in cents for Mailgun
+const MAILGUN_COST_PER_EMAIL_CENTS = 1;
+
+/**
+ * Get a system setting value by key
+ */
+async function getSystemSetting(key: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`[getSystemSetting] Error fetching ${key}:`, error);
+    return null;
+  }
+
+  return data?.value || null;
+}
+
+/**
+ * Get the monthly Mailgun spend in cents for a user
+ */
+async function getMonthlyMailgunSpend(userId: string): Promise<number> {
+  const firstOfMonth = new Date();
+  firstOfMonth.setDate(1);
+  const monthStart = firstOfMonth.toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("email_quota_tracking")
+    .select("emails_sent, cost_cents")
+    .eq("user_id", userId)
+    .eq("provider", "mailgun")
+    .gte("date", monthStart);
+
+  if (error) {
+    console.error("[getMonthlyMailgunSpend] Error:", error);
+    return 0;
+  }
+
+  // Sum up the total cost (emails_sent * cost_cents for each day)
+  return (data || []).reduce(
+    (sum, d) => sum + (d.emails_sent || 0) * (d.cost_cents || MAILGUN_COST_PER_EMAIL_CENTS),
+    0,
+  );
+}
+
 export async function sendEmail(
   params: SendEmailParams,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
@@ -107,6 +155,21 @@ export async function sendEmail(
     const hasGmail = await gmailService.hasActiveIntegration(userId);
     console.log("[sendEmail] hasGmailIntegration:", hasGmail);
 
+    // Bulk email restriction for non-Gmail users
+    // Users without connected Gmail can only send to 5 recipients max via Mailgun
+    const BULK_THRESHOLD = 5;
+    const recipientCount = to.length + (cc?.length || 0) + (bcc?.length || 0);
+
+    if (!hasGmail && !fromOverride && recipientCount > BULK_THRESHOLD) {
+      console.log(
+        `[sendEmail] Bulk send blocked - ${recipientCount} recipients exceeds threshold of ${BULK_THRESHOLD}`,
+      );
+      return {
+        success: false,
+        error: `Sending to more than ${BULK_THRESHOLD} recipients requires a connected Gmail account. Please connect your Gmail in Settings → Integrations, or reduce the number of recipients.`,
+      };
+    }
+
     if (hasGmail && !fromOverride) {
       // Gmail integration is active - use Gmail API
       // Note: fromOverride bypasses Gmail to use system addresses
@@ -119,10 +182,31 @@ export async function sendEmail(
     // No Gmail or explicit fromOverride - use Mailgun
     console.log("[sendEmail] Using Mailgun provider");
 
-    // Check quota first
+    // Check quota first (daily and monthly limits)
     const quota = await getEmailQuota(userId);
     if (quota.dailyUsed >= quota.dailyLimit) {
-      return { success: false, error: "Daily email limit reached" };
+      return { success: false, error: "Daily email limit reached. Limit resets at midnight." };
+    }
+    if (quota.monthlyUsed >= quota.monthlyLimit) {
+      return { success: false, error: "Monthly email limit reached. Limit resets on the 1st of next month." };
+    }
+
+    // Check Mailgun cost budget (if configured)
+    const budgetSetting = await getSystemSetting("mailgun_monthly_budget_cents");
+    const budgetCents = budgetSetting ? parseInt(budgetSetting, 10) : 0;
+
+    if (budgetCents > 0) {
+      const monthlySpend = await getMonthlyMailgunSpend(userId);
+      if (monthlySpend >= budgetCents) {
+        const budgetDollars = (budgetCents / 100).toFixed(2);
+        console.log(
+          `[sendEmail] Budget cap reached - spend: ${monthlySpend} cents, budget: ${budgetCents} cents`,
+        );
+        return {
+          success: false,
+          error: `Monthly email budget exceeded ($${budgetDollars}). Connect your Gmail account in Settings → Integrations to continue sending emails.`,
+        };
+      }
     }
 
     // Get user's email address for from field
@@ -434,36 +518,48 @@ export async function sendEmail(
 export async function getEmailQuota(userId: string): Promise<EmailQuota> {
   const today = new Date().toISOString().split("T")[0];
 
-  const { data, error } = await supabase
-    .from("email_quota_tracking")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("date", today)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Error fetching quota:", error);
-  }
-
   // Default limits (conservative for single-user app)
   const defaultDailyLimit = 50;
   const defaultMonthlyLimit = 500;
 
-  if (!data) {
-    return {
-      dailyLimit: defaultDailyLimit,
-      dailyUsed: 0,
-      monthlyLimit: defaultMonthlyLimit,
-      monthlyUsed: 0,
-      resetAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
-    };
+  // Get today's quota record
+  const { data: dailyData, error: dailyError } = await supabase
+    .from("email_quota_tracking")
+    .select("emails_sent")
+    .eq("user_id", userId)
+    .eq("date", today)
+    .maybeSingle();
+
+  if (dailyError) {
+    console.error("[getEmailQuota] Error fetching daily quota:", dailyError);
   }
+
+  // Calculate monthly usage by aggregating all days in current month
+  const firstOfMonth = new Date();
+  firstOfMonth.setDate(1);
+  const monthStart = firstOfMonth.toISOString().split("T")[0];
+
+  const { data: monthlyData, error: monthlyError } = await supabase
+    .from("email_quota_tracking")
+    .select("emails_sent")
+    .eq("user_id", userId)
+    .gte("date", monthStart);
+
+  if (monthlyError) {
+    console.error("[getEmailQuota] Error fetching monthly quota:", monthlyError);
+  }
+
+  const dailyUsed = dailyData?.emails_sent || 0;
+  const monthlyUsed = (monthlyData || []).reduce(
+    (sum, d) => sum + (d.emails_sent || 0),
+    0,
+  );
 
   return {
     dailyLimit: defaultDailyLimit,
-    dailyUsed: data.emails_sent || 0,
+    dailyUsed,
     monthlyLimit: defaultMonthlyLimit,
-    monthlyUsed: data.emails_sent || 0, // Would need to aggregate for monthly
+    monthlyUsed,
     resetAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
   };
 }

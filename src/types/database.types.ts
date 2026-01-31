@@ -2247,6 +2247,7 @@ export type Database = {
       }
       email_quota_tracking: {
         Row: {
+          cost_cents: number
           date: string
           emails_sent: number | null
           id: string
@@ -2254,6 +2255,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cost_cents?: number
           date?: string
           emails_sent?: number | null
           id?: string
@@ -2261,6 +2263,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cost_cents?: number
           date?: string
           emails_sent?: number | null
           id?: string
@@ -8206,6 +8209,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
       }
       training_documents: {
         Row: {

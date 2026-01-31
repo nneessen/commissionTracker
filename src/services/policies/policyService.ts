@@ -156,12 +156,23 @@ class PolicyService {
       });
       console.log(`Commission created for policy ${policy.id}`);
     } catch (error) {
-      // Log but don't fail policy creation if commission creation fails
+      // Log commission creation errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Failed to create commission for policy:", error);
       logger.error(
         "PolicyService.create",
         error instanceof Error ? error : new Error(String(error)),
       );
+
+      // Rethrow comp_guide configuration errors so user is notified
+      // These indicate missing commission rate data that needs to be configured
+      if (
+        errorMessage.includes("comp_guide") ||
+        errorMessage.includes("No comp_guide entry found")
+      ) {
+        throw error;
+      }
+      // Other commission errors are logged but don't block policy creation
     }
 
     // Emit policy created event
