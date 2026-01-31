@@ -956,7 +956,7 @@ async function handleCompleteFirstSale(
 
   // Track policy post result - but DON'T return early on failure
   // pending_policy_data is already cleared, so dialog will close regardless
-  let policyOk = policyResult.ok;
+  const policyOk = policyResult.ok;
   if (!policyOk) {
     console.error(
       "[slack-policy-notification] Failed to post policy to Slack:",
