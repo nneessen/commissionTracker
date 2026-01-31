@@ -6,6 +6,7 @@ import { useSubscription } from "./useSubscription";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { usePermissionCheck } from "@/hooks/permissions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImo } from "@/contexts/ImoContext";
 import type {
   SubscriptionFeatures,
   SubscriptionPlan,
@@ -16,6 +17,7 @@ import {
 } from "./useOwnerDownlineAccess";
 import { useTemporaryAccessConfig } from "./useSubscriptionSettings";
 import { subscriptionSettingsService } from "@/services/subscription";
+import { isSuperAdminEmail } from "@/lib/temporaryAccess";
 
 // Roles that bypass subscription checks (staff roles)
 // Note: trainer and contracting_manager removed - they should have limited access
@@ -148,6 +150,10 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   const { data: tempAccessConfig, isLoading: isLoadingTempAccess } =
     useTemporaryAccessConfig();
 
+  // Check if user is super admin (bypasses ALL feature gating)
+  const { isSuperAdmin } = useImo();
+  const isSuperAdminUser = isSuperAdmin || isSuperAdminEmail(userEmail);
+
   return useMemo(() => {
     // Dynamically determine required plan from database
     const requiredPlan = plans?.length
@@ -155,16 +161,32 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
       : FEATURE_DISPLAY_NAMES[feature]; // Fallback to feature name if plans not loaded
 
     // While loading, assume no access (will update once loaded)
+    // EXCEPTION: Super admin always gets immediate access
     if (
-      isLoading ||
-      isLoadingDownlineCheck ||
-      isLoadingRoles ||
-      isLoadingTempAccess
+      !isSuperAdminUser &&
+      (isLoading ||
+        isLoadingDownlineCheck ||
+        isLoadingRoles ||
+        isLoadingTempAccess)
     ) {
       return {
         hasAccess: false,
         isLoading: true,
         currentPlan: "Loading...",
+        requiredPlan,
+        upgradeRequired: false,
+        featureName: FEATURE_DISPLAY_NAMES[feature],
+        isGrandfathered: false,
+        grandfatherDaysRemaining: 0,
+      };
+    }
+
+    // Super admin bypass - full access to ALL features, no exceptions
+    if (isSuperAdminUser) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        currentPlan: "Super Admin",
         requiredPlan,
         upgradeRequired: false,
         featureName: FEATURE_DISPLAY_NAMES[feature],
@@ -229,6 +251,7 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     isLoadingTempAccess,
     isDirectDownlineOfOwner,
     hasStaffBypass,
+    isSuperAdminUser,
     feature,
     isGrandfathered,
     grandfatherDaysRemaining,
@@ -259,7 +282,21 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
   const { data: tempAccessConfig, isLoading: isLoadingTempAccess } =
     useTemporaryAccessConfig();
 
+  // Check if user is super admin (bypasses ALL feature gating)
+  const { isSuperAdmin } = useImo();
+  const isSuperAdminUser = isSuperAdmin || isSuperAdminEmail(userEmail);
+
   return useMemo(() => {
+    // Super admin bypass - immediate access, no loading wait
+    if (isSuperAdminUser) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        accessibleFeatures: features,
+        lockedFeatures: [],
+      };
+    }
+
     if (
       isLoading ||
       isLoadingDownlineCheck ||
@@ -325,6 +362,7 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
     isLoadingTempAccess,
     isDirectDownlineOfOwner,
     hasStaffBypass,
+    isSuperAdminUser,
     features,
     userEmail,
     tempAccessConfig,
@@ -350,7 +388,20 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
   const { data: tempAccessConfig, isLoading: isLoadingTempAccess } =
     useTemporaryAccessConfig();
 
+  // Check if user is super admin (bypasses ALL feature gating)
+  const { isSuperAdmin } = useImo();
+  const isSuperAdminUser = isSuperAdmin || isSuperAdminEmail(userEmail);
+
   return useMemo(() => {
+    // Super admin bypass - immediate access, no loading wait
+    if (isSuperAdminUser) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        missingFeatures: [],
+      };
+    }
+
     if (
       isLoading ||
       isLoadingDownlineCheck ||
@@ -407,6 +458,7 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
     isLoadingTempAccess,
     isDirectDownlineOfOwner,
     hasStaffBypass,
+    isSuperAdminUser,
     features,
     userEmail,
     tempAccessConfig,

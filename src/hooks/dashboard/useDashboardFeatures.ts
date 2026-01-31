@@ -9,10 +9,10 @@ import {
 } from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
-import { isTemporaryFreeAccessPeriod } from "@/lib/temporaryAccess";
-
-// Admin emails that bypass all gating
-const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
+import {
+  isTemporaryFreeAccessPeriod,
+  isSuperAdminEmail,
+} from "@/lib/temporaryAccess";
 
 export interface DashboardFeatures {
   // Expense-related features (Pro+)
@@ -48,7 +48,7 @@ export interface DashboardFeatures {
  * Direct downlines of owners get Team-tier features
  */
 export function useDashboardFeatures(): DashboardFeatures {
-  const { subscription, isLoading } = useSubscription();
+  const { subscription, isLoading, isActive } = useSubscription();
   const { supabaseUser } = useAuth();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
@@ -59,16 +59,16 @@ export function useDashboardFeatures(): DashboardFeatures {
   } = useImo();
 
   return useMemo(() => {
-    // Check if user is admin (bypass all gating)
+    // Check if user is super admin (bypasses ALL gating)
     const userEmail = supabaseUser?.email;
-    const isAdmin = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
+    const isSuperAdminUser = isSuperAdmin || isSuperAdminEmail(userEmail);
 
     // Organization roles from ImoContext
-    const isImoAdmin = isSuperAdmin || imoAdminFlag;
+    const isImoAdmin = isSuperAdminUser || imoAdminFlag;
     const isAgencyOwner = agencyOwnerFlag;
 
-    // If admin, grant full access
-    if (isAdmin) {
+    // Super admin bypass - full access to all features
+    if (isSuperAdminUser) {
       return {
         canViewExpenses: true,
         canAddExpense: true,
@@ -103,8 +103,9 @@ export function useDashboardFeatures(): DashboardFeatures {
 
     // Helper to check feature access (subscription OR owner downline OR temporary access)
     const hasFeature = (feature: string): boolean => {
-      // Check subscription plan
+      // Check subscription plan - ONLY if subscription is active
       if (
+        isActive &&
         subscription?.plan?.features?.[
           feature as keyof typeof subscription.plan.features
         ]
@@ -156,6 +157,7 @@ export function useDashboardFeatures(): DashboardFeatures {
   }, [
     subscription,
     isLoading,
+    isActive,
     downlineLoading,
     isDirectDownlineOfOwner,
     supabaseUser?.email,

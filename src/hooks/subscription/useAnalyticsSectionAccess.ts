@@ -6,6 +6,9 @@
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
 import { useOwnerDownlineAccess } from "./useOwnerDownlineAccess";
+import { useImo } from "@/contexts/ImoContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdminEmail } from "@/lib/temporaryAccess";
 
 // Analytics section identifiers that match database analytics_sections array
 export type AnalyticsSectionKey =
@@ -80,7 +83,23 @@ export function useAnalyticsSectionAccess(
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
 
+  // Check if user is super admin (bypasses ALL feature gating)
+  const { isSuperAdmin } = useImo();
+  const { user } = useAuth();
+  const isSuperAdminUser = isSuperAdmin || isSuperAdminEmail(user?.email);
+
   return useMemo(() => {
+    // Super admin bypass - immediate access, no loading wait
+    if (isSuperAdminUser) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        currentPlan: "Super Admin",
+        requiredPlan: ANALYTICS_SECTION_TIERS[section],
+        sectionName: ANALYTICS_SECTION_NAMES[section],
+      };
+    }
+
     if (isLoading || downlineLoading) {
       return {
         hasAccess: false,
@@ -119,6 +138,7 @@ export function useAnalyticsSectionAccess(
     isLoading,
     downlineLoading,
     isDirectDownlineOfOwner,
+    isSuperAdminUser,
     section,
     tierName,
   ]);
@@ -141,6 +161,11 @@ export function useAccessibleAnalyticsSections(): {
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
 
+  // Check if user is super admin (bypasses ALL feature gating)
+  const { isSuperAdmin } = useImo();
+  const { user } = useAuth();
+  const isSuperAdminUser = isSuperAdmin || isSuperAdminEmail(user?.email);
+
   return useMemo(() => {
     const allSections: AnalyticsSectionKey[] = [
       "pace_metrics",
@@ -153,6 +178,16 @@ export function useAccessibleAnalyticsSections(): {
       "commission_pipeline",
       "predictive_analytics",
     ];
+
+    // Super admin bypass - immediate access to all sections
+    if (isSuperAdminUser) {
+      return {
+        accessibleSections: allSections,
+        lockedSections: [],
+        isLoading: false,
+        tierName: "Super Admin",
+      };
+    }
 
     if (isLoading || downlineLoading) {
       return {
@@ -195,6 +230,7 @@ export function useAccessibleAnalyticsSections(): {
     isLoading,
     downlineLoading,
     isDirectDownlineOfOwner,
+    isSuperAdminUser,
     tierName,
   ]);
 }
