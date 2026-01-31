@@ -45,8 +45,6 @@ import {
 } from "@/features/training-hub";
 import type { Contact } from "../../services/contactService";
 
-// Super admin email - all admin-sent emails come from this address
-const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
 
 interface ComposeDialogProps {
   open: boolean;
@@ -135,9 +133,9 @@ export function ComposeDialog({
         scheduledFor: scheduledDate,
         trackOpens: true,
         trackClicks: true,
-        // Admins always send from the super admin email
+        // Gmail is primary provider when connected, Mailgun is fallback
         source: "owner",
-        fromOverride: isAdmin ? SUPER_ADMIN_EMAIL : undefined,
+        fromOverride: undefined,
         // Include attachments from training documents
         trainingDocuments: attachments.length > 0 ? attachments : undefined,
       });
@@ -425,12 +423,6 @@ export function ComposeDialog({
                   {scheduledDate ? "Schedule" : "Send"}
                 </Button>
 
-                {/* Show admin indicator when sending as super admin */}
-                {isAdmin && (
-                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    as {SUPER_ADMIN_EMAIL}
-                  </span>
-                )}
 
                 <Button
                   size="sm"

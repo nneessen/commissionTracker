@@ -103,7 +103,9 @@ export async function sendEmail(
 
   try {
     // Check if user has Gmail connected - route through Gmail API if so
+    console.log("[sendEmail] Provider check - userId:", userId, "fromOverride:", fromOverride);
     const hasGmail = await gmailService.hasActiveIntegration(userId);
+    console.log("[sendEmail] hasGmailIntegration:", hasGmail);
 
     if (hasGmail && !fromOverride) {
       // Gmail integration is active - use Gmail API

@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-31 09:28:54
+
+### Changed Files
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/services/emailService.ts`
+
+### Statistics
+```
+ 2 files changed, 4 insertions(+), 10 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-30 18:21:59
 
 ### Changed Files
