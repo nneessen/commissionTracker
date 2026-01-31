@@ -6,6 +6,7 @@ import { useCarriers } from "../../hooks/carriers";
 import { useProducts } from "../../hooks/products/useProducts";
 import { NewPolicyForm, Policy } from "../../types/policy.types";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -29,6 +30,10 @@ interface PolicyFormProps {
   updatePolicy: (id: string, updates: Partial<NewPolicyForm>) => Promise<void>;
   /** External validation errors from service layer (e.g., duplicate policy number) */
   externalErrors?: Record<string, string>;
+  /** Parent mutation pending state */
+  isPending?: boolean;
+  /** Callback to notify parent when form submission state changes */
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 export const PolicyForm: React.FC<PolicyFormProps> = ({
@@ -38,8 +43,21 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   addPolicy,
   updatePolicy,
   externalErrors = {},
+  isPending = false,
+  onSubmittingChange,
 }) => {
   const { user } = useAuth();
+
+  // LOCAL submission state - becomes true IMMEDIATELY on click, before any async work
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Combined loading state - true if either local or parent says we're loading
+  const isLoading = isSubmitting || isPending;
+
+  // Notify parent when submission state changes
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
   const { data: carriers = [] } = useCarriers();
 
   const userContractLevel = useUserContractLevel(
@@ -170,9 +188,18 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // GUARD: Prevent any submission if already in progress
+    if (isLoading) {
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
+
+    // Set local state IMMEDIATELY - before any async work
+    // This prevents double-clicks even before the mutation isPending kicks in
+    setIsSubmitting(true);
 
     const annualPremium = calculateAnnualPremium(
       formData.premium,
@@ -196,6 +223,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       toast.error(
         error instanceof Error ? error.message : "Failed to save policy",
       );
+    } finally {
+      // Always reset local state, even on error
+      setIsSubmitting(false);
     }
   };
 
@@ -252,15 +282,24 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           variant="ghost"
           size="sm"
           className="h-8 text-xs"
+          disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           type="submit"
           size="sm"
-          className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white"
+          disabled={isLoading}
+          className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {policyId ? "Update Policy" : "Add Policy"}
+          {isLoading ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              {policyId ? "Saving..." : "Creating..."}
+            </>
+          ) : (
+            policyId ? "Update Policy" : "Add Policy"
+          )}
         </Button>
       </div>
     </form>

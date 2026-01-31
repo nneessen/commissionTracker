@@ -381,6 +381,7 @@ export const PolicyDashboard: React.FC = () => {
         policy={editingPolicy}
         isLoadingPolicy={isEditingPolicyLoading}
         externalErrors={formErrors}
+        isPending={createPolicyMutation.isPending || updatePolicyMutation.isPending}
       />
     </div>
   );

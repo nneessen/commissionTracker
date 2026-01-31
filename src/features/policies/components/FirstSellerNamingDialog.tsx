@@ -211,7 +211,7 @@ export function FirstSellerNamingDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50 shadow-2xl">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-card border border-border/50 shadow-2xl">
         {/* Decorative header with gradient and pattern */}
         <div className="relative bg-foreground px-6 py-8 overflow-hidden">
           {/* Subtle grid pattern */}

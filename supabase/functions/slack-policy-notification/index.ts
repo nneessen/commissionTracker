@@ -895,6 +895,32 @@ async function handleCompleteFirstSale(
     agentId: string;
   };
 
+  // ========================================================================
+  // CRITICAL FIX: Clear pending_policy_data IMMEDIATELY
+  // This ensures the dialog dismisses regardless of what happens next
+  // (Slack failures, timeouts, etc. will NOT leave the dialog stuck)
+  // ========================================================================
+  const { error: clearError } = await supabase
+    .from("daily_sales_logs")
+    .update({
+      pending_policy_data: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", logId);
+
+  if (clearError) {
+    console.error(
+      "[slack-policy-notification] CRITICAL: Failed to clear pending_policy_data:",
+      clearError,
+    );
+    // Continue anyway - we'll try to post and the cron job is a backup
+  } else {
+    console.log(
+      "[slack-policy-notification] Cleared pending_policy_data for log:",
+      logId,
+    );
+  }
+
   // Get the Slack integration
   const { data: integration, error: intError } = await supabase
     .from("slack_integrations")
@@ -928,12 +954,16 @@ async function handleCompleteFirstSale(
     postAsUserOptions,
   );
 
-  if (!policyResult.ok) {
+  // Track policy post result - but DON'T return early on failure
+  // pending_policy_data is already cleared, so dialog will close regardless
+  let policyOk = policyResult.ok;
+  if (!policyOk) {
     console.error(
-      "[slack-policy-notification] Failed to post policy:",
+      "[slack-policy-notification] Failed to post policy to Slack:",
       policyResult.error,
     );
-    return { ok: false, error: "Failed to post policy notification" };
+    // Dialog will still close - we cleared pending_policy_data above
+    // Slack notification is lost, but app functionality is preserved
   }
 
   // Only post leaderboard if the integration has it enabled
@@ -977,21 +1007,23 @@ async function handleCompleteFirstSale(
     leaderboardMessageTs = leaderboardResult.ts || null;
   }
 
-  // Update the log: clear pending_policy_data, save leaderboard message_ts (if any)
-  const { error: updateError } = await supabase
-    .from("daily_sales_logs")
-    .update({
-      pending_policy_data: null,
-      leaderboard_message_ts: leaderboardMessageTs,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", logId);
+  // Update the log with leaderboard message_ts if we have one
+  // (pending_policy_data was already cleared at the start of this function)
+  if (leaderboardMessageTs) {
+    const { error: updateError } = await supabase
+      .from("daily_sales_logs")
+      .update({
+        leaderboard_message_ts: leaderboardMessageTs,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", logId);
 
-  if (updateError) {
-    console.error(
-      "[slack-policy-notification] Failed to update log:",
-      updateError,
-    );
+    if (updateError) {
+      console.error(
+        "[slack-policy-notification] Failed to update leaderboard_message_ts:",
+        updateError,
+      );
+    }
   }
 
   // =====================================================================
@@ -1011,10 +1043,12 @@ async function handleCompleteFirstSale(
     );
   }
 
-  console.log("[slack-policy-notification] First sale completed successfully");
+  console.log(
+    `[slack-policy-notification] First sale completed: policyOk=${policyOk}, leaderboardOk=${leaderboardOk}`,
+  );
   return {
-    ok: true,
-    policyOk: policyResult.ok,
+    ok: policyOk, // Consider it "ok" if policy posted successfully
+    policyOk,
     leaderboardOk,
   };
 }

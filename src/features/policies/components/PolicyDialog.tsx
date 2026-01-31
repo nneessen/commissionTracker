@@ -1,6 +1,6 @@
 // src/features/policies/components/PolicyDialog.tsx
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileText, X } from "lucide-react";
@@ -16,6 +16,8 @@ interface PolicyDialogProps {
   isLoadingPolicy?: boolean;
   /** External validation errors to display on form fields (e.g., duplicate policy number) */
   externalErrors?: Record<string, string>;
+  /** Parent mutation pending state */
+  isPending?: boolean;
 }
 
 /**
@@ -30,14 +32,46 @@ export function PolicyDialog({
   policy,
   isLoadingPolicy = false,
   externalErrors = {},
+  isPending = false,
 }: PolicyDialogProps) {
-  const handleClose = () => onOpenChange(false);
+  // Track form submission state locally (from PolicyForm callback)
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+
+  // Combined loading state - true if either form is submitting or mutation is pending
+  const isLoading = isFormSubmitting || isPending;
+
+  // Block dialog close during submission
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      // If trying to close while loading, block it
+      if (!newOpen && isLoading) {
+        return; // Do nothing - don't close
+      }
+      onOpenChange(newOpen);
+    },
+    [isLoading, onOpenChange],
+  );
+
+  const handleClose = () => {
+    if (isLoading) return; // Block close during submission
+    onOpenChange(false);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="p-0 gap-0 overflow-hidden bg-background border-0 shadow-2xl ring-0 outline-none max-w-3xl"
         hideCloseButton
+        // Block ESC key and click-outside during submission
+        onPointerDownOutside={(e) => {
+          if (isLoading) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isLoading) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isLoading) e.preventDefault();
+        }}
       >
         <DialogTitle className="sr-only">
           {policyId ? "Edit Policy" : "New Policy"}
@@ -57,6 +91,7 @@ export function PolicyDialog({
               size="icon"
               className="h-7 w-7"
               onClick={handleClose}
+              disabled={isLoading}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -84,6 +119,8 @@ export function PolicyDialog({
                 await onSave(updates as NewPolicyForm);
               }}
               externalErrors={externalErrors}
+              isPending={isPending}
+              onSubmittingChange={setIsFormSubmitting}
             />
           )}
         </div>
