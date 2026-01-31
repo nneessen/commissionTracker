@@ -156,7 +156,8 @@ class PolicyService {
       });
       console.log(`Commission created for policy ${policy.id}`);
     } catch (error) {
-      // Log commission creation errors
+      // CRITICAL: Commission creation MUST succeed for policy to be valid
+      // Never silently fail - always notify user so they can take action
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Failed to create commission for policy:", error);
       logger.error(
@@ -164,15 +165,31 @@ class PolicyService {
         error instanceof Error ? error : new Error(String(error)),
       );
 
-      // Rethrow comp_guide configuration errors so user is notified
-      // These indicate missing commission rate data that needs to be configured
+      // ALWAYS rethrow commission errors - silent failures cause data integrity issues
+      // The policy was created but has no commission, which breaks all metrics
+      // User-friendly messages for common errors:
+      if (errorMessage.includes("Contract comp level not found")) {
+        throw new Error(
+          "Commission calculation failed: Your contract level is not configured. " +
+            "Please contact your administrator to set up your contract level, then try again. " +
+            `(Policy ${policy.policyNumber || policy.id} was created but needs commission added manually.)`,
+        );
+      }
       if (
         errorMessage.includes("comp_guide") ||
         errorMessage.includes("No comp_guide entry found")
       ) {
-        throw error;
+        throw new Error(
+          "Commission calculation failed: No commission rate found for this carrier/product combination. " +
+            "Please contact your administrator to configure the comp guide. " +
+            `(Policy ${policy.policyNumber || policy.id} was created but needs commission added manually.)`,
+        );
       }
-      // Other commission errors are logged but don't block policy creation
+      // Generic commission error
+      throw new Error(
+        `Commission creation failed: ${errorMessage}. ` +
+          `Policy ${policy.policyNumber || policy.id} was created but needs commission added manually.`,
+      );
     }
 
     // Emit policy created event

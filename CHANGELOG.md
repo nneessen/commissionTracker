@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-31 12:54:30
+
+### Changed Files
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/services/policies/policyService.ts`
+- `supabase/functions/slack-auto-complete-first-sale/index.ts`
+
+### Statistics
+```
+ 3 files changed, 90 insertions(+), 8 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-31 12:08:53
 
 ### Changed Files

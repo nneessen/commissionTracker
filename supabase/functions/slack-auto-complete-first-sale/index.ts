@@ -35,13 +35,20 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Find pending first sales older than AUTO_COMPLETE_AFTER_MINUTES
+    // CRITICAL: Only process TODAY's logs to prevent posting old policy notifications
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - AUTO_COMPLETE_AFTER_MINUTES);
 
+    // Get today's date in Eastern Time (same as the main notification system)
+    const todayET = new Date().toLocaleDateString("en-CA", {
+      timeZone: "America/New_York",
+    });
+
     const { data: pendingLogs, error: queryError } = await supabase
       .from("daily_sales_logs")
-      .select("id, first_sale_group_id, created_at")
+      .select("id, first_sale_group_id, created_at, log_date")
       .not("pending_policy_data", "is", null)
+      .eq("log_date", todayET) // ONLY process today's logs
       .lt("created_at", cutoffTime.toISOString())
       .order("created_at", { ascending: true });
 

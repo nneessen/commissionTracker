@@ -41,8 +41,11 @@ interface PendingLeadSource {
 }
 
 // Polling configuration for first-seller check
-const FIRST_SELLER_POLL_MAX_ATTEMPTS = 6;
-const FIRST_SELLER_POLL_INTERVAL_MS = 500;
+// Increased to handle edge function cold starts (can take 5-10 seconds)
+const FIRST_SELLER_POLL_MAX_ATTEMPTS = 15;
+const FIRST_SELLER_POLL_INTERVAL_MS = 1000;
+// Background check interval to catch missed first sales (e.g., user returned to page)
+const FIRST_SELLER_BACKGROUND_CHECK_INTERVAL_MS = 30000; // 30 seconds
 
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
@@ -70,6 +73,61 @@ export const PolicyDashboard: React.FC = () => {
       }
     };
   }, []);
+
+  // Background check for pending first sales on mount and periodically
+  // This catches cases where user missed the dialog or returned to the page
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Check immediately on mount (handles page refresh, navigation back, etc.)
+    const checkOnMount = async () => {
+      // Don't interfere if LeadSourceDialog or FirstSellerNamingDialog is open
+      if (pendingLeadSource || pendingFirstSaleGroup) return;
+
+      try {
+        const { data, error } = await supabase.rpc(
+          "check_first_seller_naming_unified",
+          { p_user_id: user.id },
+        );
+
+        if (error) {
+          console.error("Background first seller check error:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const groupData = data[0];
+          if (groupData.needs_naming || groupData.has_pending_notification) {
+            console.log(
+              "Background check found pending first sale:",
+              groupData.first_sale_group_id,
+            );
+            setPendingFirstSaleGroup({
+              groupId: groupData.first_sale_group_id,
+              agencyName: groupData.agency_name,
+              totalChannels: groupData.total_channels,
+              channelNames: groupData.channel_names || [],
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Background first seller check failed:", err);
+      }
+    };
+
+    // Initial check on mount
+    checkOnMount();
+
+    // Periodic background check to catch missed first sales
+    const intervalId = setInterval(() => {
+      // Only check if no dialogs are open
+      if (!pendingLeadSource && !pendingFirstSaleGroup) {
+        checkOnMount();
+      }
+    }, FIRST_SELLER_BACKGROUND_CHECK_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [user?.id, pendingLeadSource, pendingFirstSaleGroup]);
 
   const checkFirstSeller = async (userId: string) => {
     // Cancel any existing polling before starting new one
