@@ -288,6 +288,21 @@ export const PolicyDashboard: React.FC = () => {
               return result;
             }
           } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+
+            // Detect network errors and show friendly message
+            if (
+              errorMessage.toLowerCase().includes("failed to fetch") ||
+              errorMessage.toLowerCase().includes("network")
+            ) {
+              toast.error(
+                "Network error occurred. Please check your connection and try again.",
+                { duration: 5000 },
+              );
+              throw error;
+            }
+
             // Extract field-level errors from ValidationError
             if (error instanceof ValidationError && error.validationErrors) {
               const fieldErrors: Record<string, string> = {};
@@ -300,9 +315,7 @@ export const PolicyDashboard: React.FC = () => {
               setFormErrors({});
             }
 
-            const message =
-              error instanceof Error ? error.message : "Operation failed";
-            toast.error(message);
+            toast.error(errorMessage);
             throw error;
           }
         }}

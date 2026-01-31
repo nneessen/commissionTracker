@@ -1,7 +1,7 @@
 // src/features/settings/billing/components/PlanComparisonTable.tsx
 // Displays a comparison table of all subscription plans
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Check, X, Layers } from "lucide-react";
 import {
   Table,
@@ -13,47 +13,31 @@ import {
 } from "@/components/ui/table";
 import { useSubscriptionPlans, useSubscription } from "@/hooks/subscription";
 import { cn } from "@/lib/utils";
+import {
+  FEATURE_REGISTRY,
+  FEATURE_CATEGORIES,
+  getFeaturesByCategory,
+  type FeatureCategory,
+  type FeatureDefinition,
+} from "@/constants/features";
 
 // Utility function for formatting price
 const formatPrice = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
 
-// Feature definitions
-const featureGroups = [
-  {
-    name: "Core",
-    features: [
-      { key: "dashboard", label: "Dashboard" },
-      { key: "policies", label: "Unlimited Policies" },
-      { key: "comp_guide", label: "Compensation Guide" },
-      { key: "connect_upline", label: "Connect to Upline" },
-    ],
-  },
-  {
-    name: "Business Intelligence",
-    features: [
-      { key: "expenses", label: "Expense Tracking" },
-      { key: "targets_basic", label: "Basic Targets" },
-      { key: "targets_full", label: "Full Targets + Persistency" },
-      { key: "reports_view", label: "Reports (View)" },
-      { key: "reports_export", label: "Reports (Export)" },
-    ],
-  },
-  {
-    name: "Communication",
-    features: [
-      { key: "email", label: "Email Sending", showEmailLimit: true },
-      { key: "sms", label: "SMS (Usage-Based)" },
-    ],
-  },
-  {
-    name: "Team & Recruiting",
-    features: [
-      { key: "hierarchy", label: "Team Visibility" },
-      { key: "recruiting", label: "Recruiting Pipeline" },
-      { key: "overrides", label: "Override Tracking" },
-      { key: "downline_reports", label: "Downline Reports" },
-    ],
-  },
+// Features to exclude from display (universal to all plans)
+const EXCLUDED_FEATURES = new Set(["settings"]);
+
+// Features that show email limit
+const EMAIL_LIMIT_FEATURES = new Set(["email"]);
+
+// Category display order
+const CATEGORY_ORDER: FeatureCategory[] = [
+  "core",
+  "tracking",
+  "reports",
+  "team",
+  "messaging",
+  "branding",
 ];
 
 // Analytics sections available by tier (3-tier system)
@@ -63,11 +47,30 @@ const analyticsCountByTier: Record<string, number> = {
   team: 9,
 };
 
+interface FeatureGroup {
+  category: FeatureCategory;
+  label: string;
+  features: FeatureDefinition[];
+}
+
 export function PlanComparisonTable() {
   const { plans, isLoading } = useSubscriptionPlans();
   const { subscription } = useSubscription();
 
   const currentPlanName = subscription?.plan?.name || "free";
+
+  // Build feature groups dynamically from registry
+  const featureGroups = useMemo<FeatureGroup[]>(() => {
+    const byCategory = getFeaturesByCategory();
+
+    return CATEGORY_ORDER.map((category) => ({
+      category,
+      label: FEATURE_CATEGORIES[category].label,
+      features: byCategory[category].filter(
+        (f) => !EXCLUDED_FEATURES.has(f.key)
+      ),
+    })).filter((group) => group.features.length > 0);
+  }, []);
 
   if (isLoading) {
     return (
@@ -104,7 +107,7 @@ export function PlanComparisonTable() {
                   className={cn(
                     "text-[11px] font-semibold text-center min-w-[80px]",
                     plan.name === currentPlanName &&
-                      "bg-zinc-100 dark:bg-zinc-800",
+                      "bg-zinc-100 dark:bg-zinc-800"
                   )}
                 >
                   <div className="flex flex-col items-center gap-0.5">
@@ -137,7 +140,7 @@ export function PlanComparisonTable() {
                   className={cn(
                     "text-[11px] text-center font-medium",
                     plan.name === currentPlanName &&
-                      "bg-zinc-100/50 dark:bg-zinc-800/50",
+                      "bg-zinc-100/50 dark:bg-zinc-800/50"
                   )}
                 >
                   {analyticsCountByTier[plan.name] || 0}/9
@@ -147,14 +150,14 @@ export function PlanComparisonTable() {
 
             {/* Feature Groups */}
             {featureGroups.map((group) => (
-              <React.Fragment key={group.name}>
+              <React.Fragment key={group.category}>
                 {/* Group Header */}
                 <TableRow className="bg-zinc-100/50 dark:bg-zinc-800/50 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50">
                   <TableCell
                     colSpan={plans.length + 1}
                     className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide py-1"
                   >
-                    {group.name}
+                    {group.label}
                   </TableCell>
                 </TableRow>
 
@@ -162,7 +165,7 @@ export function PlanComparisonTable() {
                 {group.features.map((feature) => (
                   <TableRow key={feature.key}>
                     <TableCell className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                      {feature.label}
+                      {feature.displayName}
                     </TableCell>
                     {plans.map((plan) => {
                       const hasFeature =
@@ -170,7 +173,8 @@ export function PlanComparisonTable() {
                           feature.key as keyof typeof plan.features
                         ];
                       const emailLimit =
-                        feature.showEmailLimit && plan.email_limit > 0
+                        EMAIL_LIMIT_FEATURES.has(feature.key) &&
+                        plan.email_limit > 0
                           ? plan.email_limit
                           : null;
 
@@ -180,7 +184,7 @@ export function PlanComparisonTable() {
                           className={cn(
                             "text-center",
                             plan.name === currentPlanName &&
-                              "bg-zinc-100/50 dark:bg-zinc-800/50",
+                              "bg-zinc-100/50 dark:bg-zinc-800/50"
                           )}
                         >
                           {hasFeature ? (

@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-01-31 11:04:18
+
+### Changed Files
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/services/clients/client/ClientRepository.ts`
+- `src/services/underwriting/__tests__/approval-scoring.test.ts`
+- `src/services/underwriting/__tests__/decisionEngine.test.ts`
+- `src/services/underwriting/__tests__/eligibility-filter.test.ts`
+- `src/services/underwriting/__tests__/product-evaluation.test.ts`
+- `src/services/underwriting/approval-scoring.ts`
+- `src/services/underwriting/decision-engine.types.ts`
+- `src/services/underwriting/decisionEngine.ts`
+- `src/services/underwriting/eligibility-filter.ts`
+- `src/services/underwriting/premium-calculator.ts`
+- `src/services/underwriting/product-evaluation.ts`
+- `src/services/underwriting/recommendation-utils.ts`
+- `src/services/underwriting/rule-engine-v2.ts`
+- `src/utils/retry.ts`
+- `supabase/migrations/20260131103758_fix_default_subscription_to_free.sql`
+
+### Statistics
+```
+ 18 files changed, 3538 insertions(+), 1898 deletions(-)
+```
+
 ## [Checkpoint] - 2026-01-31 09:28:54
 
 ### Changed Files

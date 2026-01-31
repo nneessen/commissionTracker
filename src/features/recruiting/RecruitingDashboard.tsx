@@ -353,7 +353,6 @@ function RecruitingDashboardContent() {
             variant="outline"
             onClick={() => setSendInviteDialogOpen(true)}
             className="h-6 text-[10px] px-2"
-            disabled={!user?.is_admin && !isStaffRole}
           >
             <Mail className="h-3 w-3 mr-1" />
             Send Invite
@@ -363,7 +362,6 @@ function RecruitingDashboardContent() {
             size="sm"
             onClick={() => setAddRecruitDialogOpen(true)}
             className="h-6 text-[10px] px-2"
-            disabled={!user?.is_admin && !isStaffRole}
           >
             <UserPlus className="h-3 w-3 mr-1" />
             Add Recruit

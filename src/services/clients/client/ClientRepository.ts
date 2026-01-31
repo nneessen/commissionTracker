@@ -1,5 +1,7 @@
 // src/services/clients/client/ClientRepository.ts
 import { BaseRepository, BaseEntity } from "../../base/BaseRepository";
+import { withRetry } from "@/utils/retry";
+import { logger } from "../../base/logger";
 import type {
   Client,
   CreateClientData,
@@ -155,27 +157,42 @@ export class ClientRepository extends BaseRepository<
 
   /**
    * Find client by name and user
+   * Includes retry logic to handle transient network failures
    */
   async findByNameAndUser(
     name: string,
     userId: string,
   ): Promise<ClientBaseEntity | null> {
-    const { data, error } = await this.client
-      .from(this.tableName)
-      .select("*")
-      .eq("name", name)
-      .eq("user_id", userId)
-      .limit(1);
+    return withRetry(
+      async () => {
+        const { data, error } = await this.client
+          .from(this.tableName)
+          .select("*")
+          .eq("name", name)
+          .eq("user_id", userId)
+          .limit(1);
 
-    if (error) {
-      throw this.handleError(error, "findByNameAndUser");
-    }
+        if (error) {
+          throw this.handleError(error, "findByNameAndUser");
+        }
 
-    if (data && data.length > 0) {
-      return this.transformFromDB(data[0]);
-    }
+        if (data && data.length > 0) {
+          return this.transformFromDB(data[0]);
+        }
 
-    return null;
+        return null;
+      },
+      {
+        maxAttempts: 3,
+        delayMs: 500,
+        onRetry: (attempt, error) => {
+          logger.warn(`Retrying findByNameAndUser (attempt ${attempt})`, {
+            name,
+            error: error.message,
+          });
+        },
+      },
+    );
   }
 
   /**

@@ -43,6 +43,7 @@ function isRetryable(
         message.includes("connection") ||
         message.includes("econnrefused") ||
         message.includes("enotfound") ||
+        message.includes("failed to fetch") ||
         message.includes("50") // 500-level errors
       );
     }

@@ -8,62 +8,12 @@
 // - Fallback to longest available term when none specified
 
 import { describe, it, expect } from "vitest";
+import { getMaxFaceAmountForAgeTerm } from "../eligibility-filter";
+import type { ProductMetadata } from "../decision-engine.types";
 
 // =============================================================================
 // Test: getMaxFaceAmountForAgeTerm helper function
 // =============================================================================
-
-/**
- * Recreate the helper function logic for isolated testing.
- * This mirrors the implementation in decisionEngine.ts
- */
-interface ProductMetadata {
-  ageTieredFaceAmounts?: {
-    tiers: Array<{
-      minAge: number;
-      maxAge: number;
-      maxFaceAmount: number;
-      termRestrictions?: Array<{
-        termYears: number;
-        maxFaceAmount: number;
-      }>;
-    }>;
-  };
-}
-
-function getMaxFaceAmountForAgeTerm(
-  metadata: ProductMetadata | null | undefined,
-  productMaxFace: number | null | undefined,
-  clientAge: number,
-  termYears: number | null | undefined,
-): number {
-  let maxFace = productMaxFace ?? Number.MAX_SAFE_INTEGER;
-
-  if (!metadata?.ageTieredFaceAmounts?.tiers) {
-    return maxFace;
-  }
-
-  for (const tier of metadata.ageTieredFaceAmounts.tiers) {
-    if (clientAge >= tier.minAge && clientAge <= tier.maxAge) {
-      // Start with the tier's base max face amount
-      let tierMax = tier.maxFaceAmount;
-
-      // Check for term-specific restrictions within this tier
-      if (termYears && tier.termRestrictions) {
-        for (const termRestriction of tier.termRestrictions) {
-          if (termRestriction.termYears === termYears) {
-            // Use the more restrictive term-specific limit
-            tierMax = Math.min(tierMax, termRestriction.maxFaceAmount);
-          }
-        }
-      }
-
-      maxFace = Math.min(maxFace, tierMax);
-    }
-  }
-
-  return maxFace;
-}
 
 describe("Fix 3: Term Determined Before Eligibility", () => {
   describe("getMaxFaceAmountForAgeTerm", () => {
