@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-01 15:37:09
+
+### Changed Files
+- `src/services/hierarchy/HierarchyRepository.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260201150609_fix_agent_count_filtering.sql`
+- `supabase/migrations/20260201150823_fix_graduate_rpc_preserve_roles.sql`
+
+### Statistics
+```
+ 4 files changed, 1462 insertions(+), 38 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-01 14:47:29
 
 ### Changed Files

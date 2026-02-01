@@ -12631,28 +12631,47 @@ export type Database = {
           name: string
         }[]
       }
-      get_agency_dashboard_metrics: {
-        Args: {
-          p_agency_id?: string
-          p_end_date?: string
-          p_start_date?: string
-        }
-        Returns: {
-          active_policies: number
-          agency_id: string
-          agency_name: string
-          agent_count: number
-          avg_production_per_agent: number
-          imo_id: string
-          top_producer_id: string
-          top_producer_name: string
-          top_producer_premium: number
-          total_annual_premium: number
-          total_commissions_ytd: number
-          total_earned_ytd: number
-          total_unearned: number
-        }[]
-      }
+      get_agency_dashboard_metrics:
+        | {
+            Args: { p_agency_id?: string }
+            Returns: {
+              active_policies: number
+              agency_id: string
+              agency_name: string
+              agent_count: number
+              avg_production_per_agent: number
+              imo_id: string
+              top_producer_id: string
+              top_producer_name: string
+              top_producer_premium: number
+              total_annual_premium: number
+              total_commissions_ytd: number
+              total_earned_ytd: number
+              total_unearned: number
+            }[]
+          }
+        | {
+            Args: {
+              p_agency_id?: string
+              p_end_date?: string
+              p_start_date?: string
+            }
+            Returns: {
+              active_policies: number
+              agency_id: string
+              agency_name: string
+              agent_count: number
+              avg_production_per_agent: number
+              imo_id: string
+              top_producer_id: string
+              top_producer_name: string
+              top_producer_premium: number
+              total_annual_premium: number
+              total_commissions_ytd: number
+              total_earned_ytd: number
+              total_unearned: number
+            }[]
+          }
       get_agency_descendants: {
         Args: { p_agency_id: string }
         Returns: {
@@ -13201,21 +13220,37 @@ export type Database = {
           total_contracts: number
         }[]
       }
-      get_imo_dashboard_metrics: {
-        Args: { p_end_date?: string; p_start_date?: string }
-        Returns: {
-          agency_count: number
-          agent_count: number
-          avg_production_per_agent: number
-          imo_id: string
-          imo_name: string
-          total_active_policies: number
-          total_annual_premium: number
-          total_commissions_ytd: number
-          total_earned_ytd: number
-          total_unearned: number
-        }[]
-      }
+      get_imo_dashboard_metrics:
+        | {
+            Args: never
+            Returns: {
+              agency_count: number
+              agent_count: number
+              avg_production_per_agent: number
+              imo_id: string
+              imo_name: string
+              total_active_policies: number
+              total_annual_premium: number
+              total_commissions_ytd: number
+              total_earned_ytd: number
+              total_unearned: number
+            }[]
+          }
+        | {
+            Args: { p_end_date?: string; p_start_date?: string }
+            Returns: {
+              agency_count: number
+              agent_count: number
+              avg_production_per_agent: number
+              imo_id: string
+              imo_name: string
+              total_active_policies: number
+              total_annual_premium: number
+              total_commissions_ytd: number
+              total_earned_ytd: number
+              total_unearned: number
+            }[]
+          }
       get_imo_expense_by_category: {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
@@ -14333,6 +14368,7 @@ export type Database = {
           success: boolean
         }[]
       }
+      invoke_slack_auto_complete_first_sale: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_admin_user:
         | { Args: never; Returns: boolean }

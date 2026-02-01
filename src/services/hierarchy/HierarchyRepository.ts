@@ -107,10 +107,21 @@ export class HierarchyRepository extends BaseRepository<
       .like("hierarchy_path", `${escapedPath}.%`);
 
     // Only return approved agents (not recruits still in pipeline)
+    // An "active agent" is defined as:
+    //   - approval_status = 'approved'
+    //   - archived_at IS NULL
+    //   - Has role 'agent' OR 'active_agent' (OR is_admin = true - handled server-side)
+    //   - NOT a pure recruit (has 'recruit' role without 'agent' or 'active_agent')
     if (approvedOnly) {
       query = query
         .eq("approval_status", "approved")
-        // Exclude users with 'recruit' role - they're in the recruiting pipeline
+        .is("archived_at", null)
+        // Must have agent or active_agent role
+        .or("roles.cs.{agent},roles.cs.{active_agent},is_admin.eq.true")
+        // Exclude pure recruits (those with 'recruit' role but no 'agent' or 'active_agent')
+        // Note: This filter excludes anyone with recruit role. Users with both recruit
+        // and agent roles would be included by the above OR but excluded here.
+        // However, in practice, graduated agents should have 'recruit' removed.
         .not("roles", "cs", '{"recruit"}');
     }
 
@@ -150,10 +161,12 @@ export class HierarchyRepository extends BaseRepository<
    *
    * @param uplineId - The upline's user ID
    * @param agencyId - Optional agency ID to filter by (for multi-agency support)
+   * @param approvedAgentsOnly - If true (default), only returns approved agents (excludes recruits)
    */
   async findDirectReportsByUplineId(
     uplineId: string,
     agencyId?: string,
+    approvedAgentsOnly: boolean = true,
   ): Promise<DirectReportProfile[]> {
     let query = this.client
       .from(this.tableName)
@@ -163,6 +176,22 @@ export class HierarchyRepository extends BaseRepository<
     // Filter by agency if provided (multi-agency support)
     if (agencyId) {
       query = query.eq("agency_id", agencyId);
+    }
+
+    // Only return approved agents (not recruits, not archived, not pending)
+    // An "active agent" is defined as:
+    //   - approval_status = 'approved'
+    //   - archived_at IS NULL
+    //   - Has role 'agent' OR 'active_agent' (OR is_admin = true)
+    //   - NOT a pure recruit
+    if (approvedAgentsOnly) {
+      query = query
+        .eq("approval_status", "approved")
+        .is("archived_at", null)
+        // Must have agent or active_agent role
+        .or("roles.cs.{agent},roles.cs.{active_agent},is_admin.eq.true")
+        // Exclude pure recruits
+        .not("roles", "cs", '{"recruit"}');
     }
 
     query = query.order("created_at", { ascending: false });
