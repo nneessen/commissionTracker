@@ -39,6 +39,7 @@ export const OWNER_DOWNLINE_GRANTED_FEATURES = [
   "recruiting",
   "overrides",
   "downline_reports",
+  "team_analytics",
 ] as const;
 
 export type OwnerDownlineGrantedFeature =

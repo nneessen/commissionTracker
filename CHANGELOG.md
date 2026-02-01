@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-01 14:47:29
+
+### Changed Files
+- `src/hooks/subscription/useOwnerDownlineAccess.ts`
+
+### Statistics
+```
+ 1 file changed, 1 insertion(+)
+```
+
 ## [Checkpoint] - 2026-02-01 13:37:05
 
 ### Changed Files
