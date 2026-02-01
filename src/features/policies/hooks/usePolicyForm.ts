@@ -9,7 +9,7 @@ import {
   Policy,
 } from "../../../types/policy.types";
 import { ProductType } from "../../../types/commission.types";
-import { formatDateForDB } from "../../../lib/date";
+import { formatDateForDB, parseLocalDate } from "../../../lib/date";
 import {
   calculatePaymentAmount,
   validatePremium,
@@ -134,7 +134,16 @@ export function validatePolicyForm(
     newErrors.termLength = "Term length is required for term life products";
   }
 
-  if (!formData.submitDate) newErrors.submitDate = "Submit date is required";
+  if (!formData.submitDate) {
+    newErrors.submitDate = "Submit date is required";
+  } else {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const submitDate = parseLocalDate(formData.submitDate);
+    if (submitDate > today) {
+      newErrors.submitDate = "Submit date cannot be in the future";
+    }
+  }
   if (!formData.effectiveDate)
     newErrors.effectiveDate = "Effective date is required";
 
