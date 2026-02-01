@@ -145,31 +145,31 @@ export type CommissionType =
   | "override";
 
 /**
- * Commission Status Lifecycle
+ * Commission Status Lifecycle (matches database enum: commission_status)
  *
  * USER-CONTROLLABLE STATUSES (Normal lifecycle):
- * - pending: Policy not active yet, no commission owed
- * - earned: Policy active, commission earned but not paid yet (money not received)
- * - paid: Money actually received in bank account
+ * - pending: Policy not active yet, commission not paid
+ * - paid: Policy is active, commission has been paid
  *
  * AUTOMATIC TERMINAL STATUSES (Set by database triggers only):
- * - charged_back: Chargeback applied when policy lapses/cancels before fully earned (AUTOMATIC)
- * - cancelled: Commission cancelled when policy cancelled/lapsed (AUTOMATIC)
- * - clawback: Commission was paid but later clawed back (AUTOMATIC)
+ * - reversed: Commission reversed (carrier decision)
+ * - disputed: Commission under dispute
+ * - clawback: Commission was paid but later clawed back
+ * - charged_back: Chargeback applied when policy lapses/cancels
  *
  * IMPORTANT:
- * - charged_back, cancelled, and clawback should NEVER be set manually via UI
- * - These statuses are set automatically by database triggers when policies lapse/cancel
+ * - Terminal statuses (reversed, disputed, clawback, charged_back) should NOT be set manually via UI
+ * - They are set automatically by database triggers when policies lapse/cancel
  * - User should use policy action buttons (Cancel Policy, Mark as Lapsed) instead
  * - Commission status FOLLOWS policy status, not vice versa
  */
 export type CommissionStatus =
   | "pending"
-  | "earned"
   | "paid"
+  | "reversed"
+  | "disputed"
   | "clawback"
-  | "charged_back"
-  | "cancelled";
+  | "charged_back";
 export type CalculationBasis = "premium" | "fixed" | "tiered";
 
 export interface Commission {

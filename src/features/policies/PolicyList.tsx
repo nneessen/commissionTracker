@@ -291,12 +291,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     updateCommissionStatus(
       {
         commissionId: commission.id,
-        status: newStatus as
-          | "pending"
-          | "earned"
-          | "paid"
-          | "charged_back"
-          | "cancelled",
+        status: newStatus as "pending" | "paid" | "charged_back",
         policyId: policy.id,
       },
       {
@@ -927,7 +922,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             "bg-red-500/10 text-red-600 dark:text-red-400",
                           policy.status === "cancelled" &&
                             "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
-                          policy.status === "matured" &&
+                          policy.status === "expired" &&
                             "bg-blue-500/10 text-blue-600 dark:text-blue-400",
                         )}
                       >
@@ -960,12 +955,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       <TableCell className="py-1.5 px-2 text-center">
                         {policyCommission ? (
                           <Select
-                            value={
-                              policyCommission.status === "charged_back" ||
-                              policyCommission.status === "earned"
-                                ? "cancelled"
-                                : policyCommission.status
-                            }
+                            value={policyCommission.status}
                             onValueChange={(value) =>
                               handleStatusChange(
                                 policyCommission,
@@ -981,8 +971,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                                   "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
                                 policyCommission.status === "pending" &&
                                   "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-                                (policyCommission.status === "cancelled" ||
-                                  policyCommission.status === "charged_back") &&
+                                policyCommission.status === "charged_back" &&
                                   "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
                               )}
                             >
@@ -991,8 +980,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             <SelectContent>
                               <SelectItem value="pending">Pending</SelectItem>
                               <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="cancelled">
-                                Cancelled
+                              <SelectItem value="charged_back">
+                                Charged Back
                               </SelectItem>
                             </SelectContent>
                           </Select>

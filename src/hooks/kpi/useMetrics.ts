@@ -178,7 +178,7 @@ export function useMetrics() {
       active: activePolicies,
       lapsed: lapsedPolicies,
       cancelled: cancelledPolicies,
-      matured: policies.filter((p) => p.status === "matured").length,
+      expired: policies.filter((p) => p.status === "expired").length,
     };
 
     // Premium by product

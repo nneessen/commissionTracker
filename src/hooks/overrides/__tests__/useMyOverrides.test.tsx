@@ -132,7 +132,7 @@ describe('useMyOverrides', () => {
   });
 
   it('should cache results with correct queryKey including filters', async () => {
-    const filters = { status: 'earned' as const };
+    const filters = { status: 'paid' as const };
     vi.mocked(overrideService.getMyOverrides).mockResolvedValue(mockOverrides);
 
     const { result } = renderHook(() => useMyOverrides({ filters }), { wrapper });
@@ -148,8 +148,8 @@ describe('useMyOverrides', () => {
   it('should handle overrides with different statuses', async () => {
     const mixedStatusOverrides: OverrideCommissionWithAgents[] = [
       { ...mockOverrides[0], id: 'override-1', status: 'pending' },
-      { ...mockOverrides[0], id: 'override-2', status: 'earned' },
-      { ...mockOverrides[0], id: 'override-3', status: 'paid' },
+      { ...mockOverrides[0], id: 'override-2', status: 'paid' },
+      { ...mockOverrides[0], id: 'override-3', status: 'charged_back' },
     ];
 
     vi.mocked(overrideService.getMyOverrides).mockResolvedValue(mixedStatusOverrides);

@@ -29,12 +29,13 @@ export type LeadSourceType = Database["public"]["Enums"]["lead_source_type"];
 // APP-LEVEL TYPES (CamelCase for React components)
 // =============================================================================
 
+/** Policy status matching database enum: policy_status */
 export type PolicyStatus =
   | "pending"
   | "active"
   | "lapsed"
   | "cancelled"
-  | "matured";
+  | "expired";
 export type PaymentFrequency =
   | "annual"
   | "semi-annual"

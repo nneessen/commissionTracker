@@ -203,7 +203,7 @@ export function useMetricsWithDateRange(
 
   const periodCommissions = (() => {
     const earned = filteredCommissions
-      .filter((c) => c.status === "earned" || c.status === "paid")
+      .filter((c) => c.status === "paid")
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
     const paid = filteredCommissions
@@ -400,8 +400,8 @@ export function useMetricsWithDateRange(
     // Filter to only include commissions from policies that are still valid
     const pendingPipeline = commissions
       .filter((c) => {
-        // Only include if commission is pending/earned
-        if (c.status !== "pending" && c.status !== "earned") return false;
+        // Only include if commission is pending
+        if (c.status !== "pending") return false;
 
         // Find the related policy
         const policy = policies.find((p) => p.id === c.policyId);

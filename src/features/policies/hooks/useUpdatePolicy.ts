@@ -4,9 +4,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { policyService } from "@/services/policies/policyService";
 import { commissionService } from "@/services/commissions/commissionService";
+import { supabase } from "@/services/base/supabase";
 import { policyKeys } from "../queries";
-import type { CreatePolicyData, Policy } from "@/types/policy.types";
-import type { Commission } from "@/types/commission.types";
+import type { CreatePolicyData, Policy, PolicyStatus } from "@/types/policy.types";
+import type { Commission, CommissionStatus } from "@/types/commission.types";
+import { POLICY_TO_COMMISSION_STATUS } from "@/constants/status.constants";
 
 // Basic update params
 interface BasicUpdateParams {
@@ -100,6 +102,64 @@ function hasCarrierOrProductChange(
 }
 
 /**
+ * Syncs commission status when policy status changes
+ * Uses the POLICY_TO_COMMISSION_STATUS mapping
+ */
+async function syncCommissionStatus(
+  policyId: string,
+  newPolicyStatus: PolicyStatus,
+): Promise<void> {
+  const newCommissionStatus = POLICY_TO_COMMISSION_STATUS[
+    newPolicyStatus
+  ] as CommissionStatus;
+
+  // Fetch the commission for this policy
+  const { data: commissions, error: fetchError } = await supabase
+    .from("commissions")
+    .select("id, status, advance_months")
+    .eq("policy_id", policyId)
+    .limit(1);
+
+  if (fetchError || !commissions || commissions.length === 0) {
+    return; // No commission found, nothing to sync
+  }
+
+  const commission = commissions[0];
+
+  // Only update if status is different
+  if (commission.status === newCommissionStatus) {
+    return;
+  }
+
+  // Prepare update data based on the new status
+  const updateData: Record<string, unknown> = {
+    status: newCommissionStatus,
+    updated_at: new Date().toISOString(),
+  };
+
+  // If policy becomes active (pending -> active), mark commission as paid
+  if (newPolicyStatus === "active" && commission.status === "pending") {
+    updateData.months_paid = commission.advance_months || 9;
+    updateData.payment_date = new Date().toISOString();
+    updateData.chargeback_amount = 0;
+    updateData.chargeback_date = null;
+    updateData.chargeback_reason = null;
+  }
+
+  // If policy becomes pending, reset commission to pending
+  if (newPolicyStatus === "pending") {
+    updateData.months_paid = 0;
+    updateData.payment_date = null;
+    updateData.chargeback_amount = 0;
+    updateData.chargeback_date = null;
+    updateData.chargeback_reason = null;
+  }
+
+  // Update the commission
+  await supabase.from("commissions").update(updateData).eq("id", commission.id);
+}
+
+/**
  * Update a policy - handles all update types including status changes
  *
  * For basic field updates:
@@ -161,6 +221,18 @@ export function useUpdatePolicy() {
         policyKeys.detail(updatedPolicy.id),
         updatedPolicy,
       );
+
+      // Sync commission status when policy status changes via basic update
+      if (isBasicUpdateParams(params) && params.updates.status) {
+        try {
+          await syncCommissionStatus(
+            updatedPolicy.id,
+            params.updates.status as PolicyStatus,
+          );
+        } catch {
+          // Don't throw - commission sync failure shouldn't fail the policy update
+        }
+      }
 
       // If premium, carrier, or product changed, recalculate the commission
       if (

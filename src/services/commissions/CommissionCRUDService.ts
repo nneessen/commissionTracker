@@ -223,9 +223,9 @@ class CommissionCRUDService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
       const commission = await this.repository.create(data as any);
 
-      // Emit commission earned event if this is an earned commission
+      // Emit commission earned event if this is a paid commission
       if (
-        commission.status === "earned" ||
+        commission.status === "paid" ||
         (commission.advanceAmount && commission.advanceAmount > 0)
       ) {
         await workflowEventEmitter.emit(WORKFLOW_EVENTS.COMMISSION_EARNED, {
@@ -312,14 +312,14 @@ class CommissionCRUDService {
         throw new NotFoundError("Commission", id);
       }
 
-      // Validate commission status is 'earned'
-      if (commission.status !== "earned") {
+      // Validate commission status is 'pending' (can be marked as paid)
+      if (commission.status !== "pending") {
         throw new ValidationError(
-          `Cannot mark commission as paid. Current status is ${commission.status}, must be earned.`,
+          `Cannot mark commission as paid. Current status is ${commission.status}, must be pending.`,
           [
             {
               field: "status",
-              message: `Current status is ${commission.status}, must be earned`,
+              message: `Current status is ${commission.status}, must be pending`,
               value: commission.status,
             },
           ],

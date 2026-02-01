@@ -7,7 +7,7 @@ import { supabase } from "../../services/base/supabase";
 
 interface UpdateCommissionStatusParams {
   commissionId: string;
-  status: "pending" | "earned" | "paid" | "charged_back" | "cancelled";
+  status: "pending" | "paid" | "charged_back";
   policyId?: string;
 }
 
@@ -15,9 +15,9 @@ interface UpdateCommissionStatusParams {
  * Commission Status Architecture
  *
  * This hook handles manual commission status updates for the normal lifecycle:
- * - pending → earned → paid
+ * - pending → paid
  *
- * IMPORTANT: Terminal states (charged_back, cancelled, clawback) should NOT be set manually.
+ * IMPORTANT: Terminal states (reversed, disputed, clawback, charged_back) should NOT be set manually.
  * They are set automatically by database triggers when policies lapse/cancel.
  *
  * To cancel/lapse a policy, use policy action buttons which trigger database automation.
@@ -78,9 +78,9 @@ export const useUpdateCommissionStatus = () => {
         updateData.chargeback_date = null;
         updateData.chargeback_reason = null;
         updateData.payment_date = null;
-      } else if (status === "cancelled") {
-        // For cancelled status, the policy cancel/lapse handlers should calculate chargebacks
-        // But if manually setting to cancelled, reset to 0 months paid
+      } else if (status === "charged_back") {
+        // For charged_back status, the policy cancel/lapse handlers should calculate chargebacks
+        // But if manually setting to charged_back, reset to 0 months paid
         updateData.months_paid = 0;
       }
 
@@ -113,8 +113,8 @@ export const useUpdateCommissionStatus = () => {
       if (policyId) {
         let policyStatus = "active"; // default
 
-        if (status === "cancelled") {
-          policyStatus = "cancelled";
+        if (status === "charged_back") {
+          policyStatus = "lapsed";
         } else if (status === "paid") {
           policyStatus = "active";
         } else if (status === "pending") {
