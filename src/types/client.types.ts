@@ -35,6 +35,10 @@ export interface CreateClientData {
   date_of_birth?: string; // ISO date string
   notes?: string;
   status?: ClientStatus;
+  // Multi-tenant fields (for data isolation)
+  user_id?: string; // Owner of the client
+  imo_id?: string | null;
+  agency_id?: string | null;
 }
 
 // Data for updating an existing client (all fields optional)

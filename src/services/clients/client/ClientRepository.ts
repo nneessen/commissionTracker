@@ -66,6 +66,12 @@ export class ClientRepository extends BaseRepository<
     if ("status" in data && data.status !== undefined)
       result.status = data.status;
 
+    // Multi-tenant fields
+    if ("user_id" in data && data.user_id !== undefined)
+      result.user_id = data.user_id;
+    if ("imo_id" in data) result.imo_id = data.imo_id;
+    if ("agency_id" in data) result.agency_id = data.agency_id;
+
     return result;
   }
 
@@ -235,7 +241,7 @@ export class ClientRepository extends BaseRepository<
    */
   async findDownlineWithStats(): Promise<DownlineClientWithStats[]> {
     const { data, error } = await this.client.rpc(
-      "get_downline_clients_with_stats"
+      "get_downline_clients_with_stats",
     );
 
     if (error) {

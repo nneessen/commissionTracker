@@ -314,6 +314,8 @@ class ChargebackService {
         : null,
       chargeback_date: formatDateForDB(data.chargebackDate),
       status: data.status || "pending",
+      // Multi-tenant fields
+      imo_id: data.imoId,
     };
   }
 }

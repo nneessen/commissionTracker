@@ -54,6 +54,8 @@ export interface CreateOverrideData {
   policy_premium: number;
   status?: string;
   advance_months?: number | null;
+  // Multi-tenant field (note: DB trigger also sets from base_agent's profile)
+  imo_id?: string | null;
 }
 
 export interface UpdateOverrideData {
@@ -148,6 +150,9 @@ export class OverrideRepository extends BaseRepository<
     if (data.status !== undefined) dbData.status = data.status;
     if (data.advance_months !== undefined)
       dbData.advance_months = data.advance_months;
+
+    // Multi-tenant field (note: DB trigger also sets from base_agent's profile)
+    if (data.imo_id !== undefined) dbData.imo_id = data.imo_id;
 
     return dbData;
   }

@@ -12,3 +12,9 @@ export {
   type ListResponse,
   type ValidationRule,
 } from "./BaseService";
+export {
+  getCurrentTenantContext,
+  getTenantContextSafe,
+  getTenantFields,
+  type TenantContext,
+} from "./TenantContext";

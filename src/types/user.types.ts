@@ -204,6 +204,8 @@ export interface CreateChargebackData {
   policyLapseDate?: Date;
   chargebackDate: Date;
   status?: "pending" | "processed" | "disputed" | "resolved";
+  // Multi-tenant fields (for data isolation)
+  imoId?: string | null;
 }
 
 // =============================================================================

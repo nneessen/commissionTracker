@@ -53,6 +53,9 @@ export interface CreateExpenseData {
   is_tax_deductible?: boolean;
   receipt_url?: string | null;
   notes?: string | null;
+  // Multi-tenant fields (defense-in-depth - also set by DB trigger)
+  imo_id?: string | null;
+  agency_id?: string | null;
 }
 
 /**

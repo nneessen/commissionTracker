@@ -525,6 +525,9 @@ export class CommissionRepository extends BaseRepository<
 
     if (data.notes !== undefined) dbData.notes = data.notes;
 
+    // Multi-tenant fields
+    if (data.imoId !== undefined) dbData.imo_id = data.imoId;
+
     return dbData;
   }
 }

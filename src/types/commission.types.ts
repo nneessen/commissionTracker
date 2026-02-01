@@ -239,6 +239,9 @@ export interface Commission {
 
   // Additional
   notes?: string;
+
+  // Multi-tenant fields (for data isolation)
+  imoId?: string | null; // Maps to DB 'imo_id' - auto-populated if not provided
 }
 
 export type { ProductType } from "./product.types";

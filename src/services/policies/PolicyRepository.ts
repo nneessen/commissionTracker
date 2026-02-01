@@ -1148,6 +1148,10 @@ export class PolicyRepository extends BaseRepository<
     if (data.leadSourceType !== undefined)
       dbData.lead_source_type = data.leadSourceType;
 
+    // Multi-tenant fields (defense-in-depth - also set by DB trigger)
+    if (data.imoId !== undefined) dbData.imo_id = data.imoId;
+    if (data.agencyId !== undefined) dbData.agency_id = data.agencyId;
+
     return dbData;
   }
 }

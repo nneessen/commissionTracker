@@ -208,6 +208,9 @@ export interface CreatePolicyData {
   // Lead source tracking
   leadPurchaseId?: string | null;
   leadSourceType?: LeadSourceType | null;
+  // Multi-tenant fields (defense-in-depth - also set by DB trigger)
+  imoId?: string | null;
+  agencyId?: string | null;
 }
 
 export type UpdatePolicyData = Partial<CreatePolicyData>;

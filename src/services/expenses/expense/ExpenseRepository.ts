@@ -88,6 +88,10 @@ export class ExpenseRepository extends BaseRepository<
     if ("receipt_url" in data) result.receipt_url = data.receipt_url ?? null;
     if ("notes" in data) result.notes = data.notes ?? null;
 
+    // Multi-tenant fields (defense-in-depth - also set by DB trigger)
+    if ("imo_id" in data) result.imo_id = data.imo_id;
+    if ("agency_id" in data) result.agency_id = data.agency_id;
+
     return result;
   }
 
