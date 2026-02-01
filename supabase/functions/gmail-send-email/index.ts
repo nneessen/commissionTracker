@@ -543,17 +543,83 @@ function base64UrlEncode(str: string): string {
 // =========================================================================
 // Helper: Strip HTML tags for plain text version
 // =========================================================================
+
+/**
+ * Safely decode a numeric HTML entity to a character
+ * SECURITY: Filters out control characters and bidi override characters
+ * that could be used for text spoofing or injection attacks
+ */
+function safeDecodeEntity(codePoint: number): string {
+  // Block ASCII control characters (except tab, newline, carriage return)
+  if (codePoint < 32 && codePoint !== 9 && codePoint !== 10 && codePoint !== 13) {
+    return "";
+  }
+  // Block DEL character
+  if (codePoint === 127) {
+    return "";
+  }
+  // Block Unicode bidirectional override characters (text spoofing)
+  // LRE, RLE, PDF, LRO, RLO
+  if (codePoint >= 0x202a && codePoint <= 0x202e) {
+    return "";
+  }
+  // Block Unicode bidirectional isolate characters
+  // LRI, RLI, FSI, PDI
+  if (codePoint >= 0x2066 && codePoint <= 0x2069) {
+    return "";
+  }
+  // Block zero-width characters that could be used for spoofing
+  if (
+    codePoint === 0x200b || // Zero-width space
+    codePoint === 0x200c || // Zero-width non-joiner
+    codePoint === 0x200d || // Zero-width joiner
+    codePoint === 0xfeff    // Zero-width no-break space (BOM)
+  ) {
+    return "";
+  }
+  // Block invalid Unicode (surrogate pairs when used directly)
+  if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+    return "";
+  }
+  // Block code points beyond valid Unicode range
+  if (codePoint > 0x10ffff) {
+    return "";
+  }
+
+  try {
+    return String.fromCodePoint(codePoint);
+  } catch {
+    return ""; // Invalid code point
+  }
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\/div>/gi, "\n")
     .replace(/<[^>]*>/g, "")
+    // Named entities (order matters: &amp; must be decoded last to handle double-encoding)
     .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#8217;/g, "'") // Right single quotation mark (')
+    .replace(/&#8216;/g, "'") // Left single quotation mark (')
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&#8220;/g, '"') // Left double quotation mark (")
+    .replace(/&#8221;/g, '"') // Right double quotation mark (")
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+    // Decode remaining numeric entities with validation
+    .replace(/&#(\d+);/g, (_, dec) => safeDecodeEntity(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => safeDecodeEntity(parseInt(hex, 16)))
+    // Decode &amp; last to handle double-encoded entities like &amp;#39;
+    .replace(/&amp;/g, "&")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

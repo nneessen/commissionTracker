@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-01 16:21:02
+
+### Changed Files
+- `src/features/email/services/__tests__/sanitizationService.test.ts`
+- `src/features/email/services/sanitizationService.ts`
+- `src/features/policies/hooks/__tests__/usePolicyForm.test.ts`
+- `supabase/functions/gmail-send-email/index.ts`
+
+### Statistics
+```
+ 4 files changed, 683 insertions(+), 80 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-01 15:47:15
 
 ### Changed Files

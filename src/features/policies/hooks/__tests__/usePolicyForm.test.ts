@@ -19,6 +19,11 @@ vi.mock("sonner", () => ({
 // Mock date utility
 vi.mock("../../../../lib/date", () => ({
   formatDateForDB: vi.fn(() => "2024-01-15"),
+  parseLocalDate: vi.fn((dateString: string) => {
+    if (!dateString) return new Date();
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day, 0, 0, 0, 0);
+  }),
 }));
 
 describe("createInitialFormData", () => {
@@ -224,6 +229,33 @@ describe("validatePolicyForm", () => {
   it("validates required submit date", () => {
     const errors = validatePolicyForm({ ...validFormData, submitDate: "" }, products);
     expect(errors.submitDate).toBe("Submit date is required");
+  });
+
+  it("validates submit date cannot be in the future", () => {
+    const futureYear = new Date().getFullYear() + 1;
+    const errors = validatePolicyForm(
+      { ...validFormData, submitDate: `${futureYear}-06-15` },
+      products
+    );
+    expect(errors.submitDate).toBe("Submit date cannot be in the future");
+  });
+
+  it("allows today's date as submit date", () => {
+    const today = new Date();
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const errors = validatePolicyForm(
+      { ...validFormData, submitDate: todayString },
+      products
+    );
+    expect(errors.submitDate).toBeUndefined();
+  });
+
+  it("allows past dates as submit date", () => {
+    const errors = validatePolicyForm(
+      { ...validFormData, submitDate: "2020-01-15" },
+      products
+    );
+    expect(errors.submitDate).toBeUndefined();
   });
 
   it("validates required effective date", () => {
