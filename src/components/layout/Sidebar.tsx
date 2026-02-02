@@ -123,7 +123,11 @@ const navigationItems: NavigationItem[] = [
     label: "Leaderboard",
     href: "/leaderboard",
     subscriptionFeature: "hierarchy",
-    allowedEmails: ["nickneessen@thestandardhq.com", "kerryglass.ffl@gmail.com"],
+    allowedEmails: [
+      "nickneessen@thestandardhq.com",
+      "kerryglass.ffl@gmail.com",
+      "teagkeys@gmail.com",
+    ],
   },
   {
     icon: UserPlus,
@@ -155,7 +159,11 @@ const staffNavigationItems: NavigationItem[] = [
     icon: Trophy,
     label: "Leaderboard",
     href: "/leaderboard",
-    allowedEmails: ["nickneessen@thestandardhq.com", "kerryglass.ffl@gmail.com"],
+    allowedEmails: [
+      "nickneessen@thestandardhq.com",
+      "kerryglass.ffl@gmail.com",
+      "teagkeys@gmail.com",
+    ],
   },
   {
     icon: GraduationCap,

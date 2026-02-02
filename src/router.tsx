@@ -171,6 +171,7 @@ const leaderboardRoute = createRoute({
       allowedEmails={[
         "nickneessen@thestandardhq.com",
         "kerryglass.ffl@gmail.com",
+        "teagkeys@gmail.com",
       ]}
     >
       <LeaderboardPage />
