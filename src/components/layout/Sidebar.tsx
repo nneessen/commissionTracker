@@ -362,20 +362,12 @@ export default function Sidebar({
             // Super-admin only check
             if (item.superAdminOnly && !isSuperAdmin) return false;
 
-            // Email whitelist check (super admin bypasses)
-            if (item.allowedEmails && !isSuperAdmin) {
-              if (!isEmailAllowed(item.allowedEmails)) return false;
-              // If email is allowed and no permission required, show it
-              if (!item.permission) {
-                // Still check subscription features
-                if (
-                  item.subscriptionFeature &&
-                  !hasFeature(item.subscriptionFeature)
-                ) {
-                  return false;
-                }
-                return true;
+            // Email whitelist check - if email is allowed, show item (skip other checks)
+            if (item.allowedEmails) {
+              if (isEmailAllowed(item.allowedEmails)) {
+                return true; // Email is whitelisted, show the item
               }
+              return false; // Has whitelist but email not in it, hide
             }
 
             // Permission check (role-based visibility)
