@@ -8,10 +8,13 @@ import type {
   AgentLeaderboardEntry,
   AgencyLeaderboardEntry,
   TeamLeaderboardEntry,
+  SubmitLeaderboardEntry,
   AgentLeaderboardResponse,
   AgencyLeaderboardResponse,
   TeamLeaderboardResponse,
+  SubmitLeaderboardResponse,
   LeaderboardTotals,
+  SubmitLeaderboardTotals,
   TeamLeader,
   DateRange,
   LeaderboardTimePeriod,
@@ -26,6 +29,8 @@ type TeamLeaderboardRow =
   Database["public"]["Functions"]["get_team_leaderboard_data"]["Returns"][number];
 type TeamLeaderRow =
   Database["public"]["Functions"]["get_team_leaders_for_leaderboard"]["Returns"][number];
+type SubmitLeaderboardRow =
+  Database["public"]["Functions"]["get_submit_leaderboard"]["Returns"][number];
 
 /**
  * Calculate date range from a time period filter
@@ -144,6 +149,25 @@ function transformTeamEntry(row: TeamLeaderboardRow): TeamLeaderboardEntry {
 }
 
 /**
+ * Transform database row to SubmitLeaderboardEntry
+ */
+function transformSubmitEntry(
+  row: SubmitLeaderboardRow,
+): SubmitLeaderboardEntry {
+  return {
+    agentId: row.agent_id,
+    agentName: row.agent_name,
+    agentEmail: row.agent_email,
+    profilePhotoUrl: row.profile_photo_url,
+    agencyId: row.agency_id,
+    agencyName: row.agency_name,
+    apTotal: Number(row.ap_total),
+    policyCount: Number(row.policy_count),
+    rankOverall: Number(row.rank_overall),
+  };
+}
+
+/**
  * Calculate aggregate totals from agent entries
  */
 function calculateAgentTotals(
@@ -230,6 +254,25 @@ function calculateTeamTotals(
     avgIpPerEntry,
     totalProspects,
     totalPipeline,
+  };
+}
+
+/**
+ * Calculate aggregate totals from submit leaderboard entries
+ */
+function calculateSubmitTotals(
+  entries: SubmitLeaderboardEntry[],
+): SubmitLeaderboardTotals {
+  const totalEntries = entries.length;
+  const totalAp = entries.reduce((sum, e) => sum + e.apTotal, 0);
+  const totalPolicies = entries.reduce((sum, e) => sum + e.policyCount, 0);
+  const avgApPerEntry = totalEntries > 0 ? totalAp / totalEntries : 0;
+
+  return {
+    totalEntries,
+    totalAp,
+    totalPolicies,
+    avgApPerEntry,
   };
 }
 
@@ -321,6 +364,31 @@ export const leaderboardService = {
 
     const entries = (data || []).map(transformTeamEntry);
     const totals = calculateTeamTotals(entries);
+
+    return { entries, totals };
+  },
+
+  /**
+   * Fetch submit leaderboard (rankings by AP for submitted policies)
+   */
+  async getSubmitLeaderboard(
+    filters: LeaderboardFilters,
+  ): Promise<SubmitLeaderboardResponse> {
+    const { timePeriod, startDate, endDate } = filters;
+    const dateRange = calculateDateRange(timePeriod, startDate, endDate);
+
+    const { data, error } = await supabase.rpc("get_submit_leaderboard", {
+      p_start_date: dateRange.start,
+      p_end_date: dateRange.end,
+    });
+
+    if (error) {
+      console.error("Error fetching submit leaderboard:", error);
+      throw new Error(`Failed to fetch submit leaderboard: ${error.message}`);
+    }
+
+    const entries = (data || []).map(transformSubmitEntry);
+    const totals = calculateSubmitTotals(entries);
 
     return { entries, totals };
   },

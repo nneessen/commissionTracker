@@ -9,6 +9,7 @@ import type {
   AgentLeaderboardResponse,
   AgencyLeaderboardResponse,
   TeamLeaderboardResponse,
+  SubmitLeaderboardResponse,
 } from "../../types/leaderboard.types";
 
 interface UseLeaderboardOptions {
@@ -94,6 +95,26 @@ export const useTeamLeaderboard = (options: UseLeaderboardOptions) => {
 };
 
 /**
+ * Hook to fetch submit leaderboard data (rankings by AP for submitted policies)
+ */
+export const useSubmitLeaderboard = (options: UseLeaderboardOptions) => {
+  const {
+    filters,
+    enabled = true,
+    staleTime = 60_000,
+    gcTime = 5 * 60_000,
+  } = options;
+
+  return useQuery<SubmitLeaderboardResponse, Error>({
+    queryKey: leaderboardKeys.submit(filters),
+    queryFn: () => leaderboardService.getSubmitLeaderboard(filters),
+    staleTime,
+    gcTime,
+    enabled,
+  });
+};
+
+/**
  * Combined hook that fetches the appropriate leaderboard based on scope
  * Returns a unified interface regardless of the scope type
  */
@@ -123,7 +144,21 @@ export const useLeaderboard = (options: UseLeaderboardOptions) => {
     gcTime,
   });
 
+  const submitQuery = useSubmitLeaderboard({
+    filters,
+    enabled: enabled && scope === "submit",
+    staleTime,
+    gcTime,
+  });
+
   // Return the active query based on scope
+  if (scope === "submit") {
+    return {
+      ...submitQuery,
+      scope: "submit" as const,
+    };
+  }
+
   if (scope === "agency") {
     return {
       ...agencyQuery,

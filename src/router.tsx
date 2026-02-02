@@ -160,17 +160,13 @@ const analyticsRoute = createRoute({
   ),
 });
 
-// Leaderboard route - requires approval, blocks recruits and staff roles, requires hierarchy subscription
+// Leaderboard route - requires approval, blocks recruits, requires hierarchy subscription
+// Trainers and contracting managers have access (staff bypass subscription checks)
 const leaderboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "leaderboard",
   component: () => (
-    <RouteGuard
-      permission="nav.dashboard"
-      noRecruits
-      noStaffRoles
-      subscriptionFeature="hierarchy"
-    >
+    <RouteGuard noRecruits subscriptionFeature="hierarchy">
       <LeaderboardPage />
     </RouteGuard>
   ),

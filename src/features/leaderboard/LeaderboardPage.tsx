@@ -2,7 +2,14 @@
 // Main leaderboard page - data-dense brutalist design
 
 import { useState } from "react";
-import { Trophy, Users, Building2, Calendar, TrendingUp } from "lucide-react";
+import {
+  Trophy,
+  Users,
+  Building2,
+  Calendar,
+  TrendingUp,
+  FileText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +24,7 @@ import {
   useAgentLeaderboard,
   useAgencyLeaderboard,
   useTeamLeaderboard,
+  useSubmitLeaderboard,
 } from "@/hooks/leaderboard";
 import { LeaderboardTable } from "./components/LeaderboardTable";
 import { MetricsHelpPopover } from "./components/MetricsHelpPopover";
@@ -36,6 +44,7 @@ const timePeriods: { value: LeaderboardTimePeriod; label: string }[] = [
 ];
 
 const scopes: { value: LeaderboardScope; label: string }[] = [
+  { value: "submit", label: "Submit" },
   { value: "all", label: "Agents" },
   { value: "agency", label: "Agencies" },
   { value: "team", label: "Teams" },
@@ -74,13 +83,20 @@ export function LeaderboardPage() {
     enabled: queryEnabled && filters.scope === "team",
   });
 
+  const submitQuery = useSubmitLeaderboard({
+    filters,
+    enabled: queryEnabled && filters.scope === "submit",
+  });
+
   // Get the active query data
   const activeQuery =
-    filters.scope === "agency"
-      ? agencyQuery
-      : filters.scope === "team"
-        ? teamQuery
-        : agentQuery;
+    filters.scope === "submit"
+      ? submitQuery
+      : filters.scope === "agency"
+        ? agencyQuery
+        : filters.scope === "team"
+          ? teamQuery
+          : agentQuery;
 
   const { data, isLoading, error } = activeQuery;
   const totals = data?.totals;
@@ -102,11 +118,13 @@ export function LeaderboardPage() {
 
   // Determine label based on scope
   const entryLabel =
-    filters.scope === "agency"
-      ? "agencies"
-      : filters.scope === "team"
-        ? "teams"
-        : "agents";
+    filters.scope === "submit"
+      ? "agents"
+      : filters.scope === "agency"
+        ? "agencies"
+        : filters.scope === "team"
+          ? "teams"
+          : "agents";
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
@@ -120,7 +138,9 @@ export function LeaderboardPage() {
               Leaderboard
             </h1>
             <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-              Rankings by Issued Premium (IP)
+              {filters.scope === "submit"
+                ? "Rankings by Submitted Premium (AP)"
+                : "Rankings by Issued Premium (IP)"}
             </p>
           </div>
           <MetricsHelpPopover />
@@ -143,6 +163,7 @@ export function LeaderboardPage() {
                 )}
                 onClick={() => updateFilter("scope", s.value)}
               >
+                {s.value === "submit" && <FileText className="h-3 w-3 mr-1" />}
                 {s.value === "all" && <Users className="h-3 w-3 mr-1" />}
                 {s.value === "agency" && <Building2 className="h-3 w-3 mr-1" />}
                 {s.value === "team" && <TrendingUp className="h-3 w-3 mr-1" />}
@@ -233,14 +254,24 @@ export function LeaderboardPage() {
                   {entryLabel}
                 </span>
               </div>
+              {/* Show IP only for non-submit scopes */}
+              {filters.scope !== "submit" && "totalIp" in totals && (
+                <div className="flex items-center gap-1">
+                  <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+                    {formatCompactCurrency(totals.totalIp)}
+                  </span>
+                  <span className="text-zinc-400 dark:text-zinc-500">IP</span>
+                </div>
+              )}
               <div className="flex items-center gap-1">
-                <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
-                  {formatCompactCurrency(totals.totalIp)}
-                </span>
-                <span className="text-zinc-400 dark:text-zinc-500">IP</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-zinc-600 dark:text-zinc-300">
+                <span
+                  className={cn(
+                    "font-mono",
+                    filters.scope === "submit"
+                      ? "font-semibold text-amber-600 dark:text-amber-400"
+                      : "text-zinc-600 dark:text-zinc-300",
+                  )}
+                >
                   {formatCompactCurrency(totals.totalAp)}
                 </span>
                 <span className="text-zinc-400 dark:text-zinc-500">AP</span>
@@ -250,7 +281,7 @@ export function LeaderboardPage() {
                   {totals.totalPolicies}
                 </span>
                 <span className="text-zinc-400 dark:text-zinc-500">
-                  policies
+                  {filters.scope === "submit" ? "submitted" : "policies"}
                 </span>
               </div>
             </>

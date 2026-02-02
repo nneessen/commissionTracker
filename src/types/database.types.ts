@@ -13882,6 +13882,20 @@ export type Database = {
           recruit_id: string
         }[]
       }
+      get_submit_leaderboard: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          agency_id: string
+          agency_name: string
+          agent_email: string
+          agent_id: string
+          agent_name: string
+          ap_total: number
+          policy_count: number
+          profile_photo_url: string
+          rank_overall: number
+        }[]
+      }
       get_sync_webhook_secret: { Args: never; Returns: string }
       get_team_analytics_data: {
         Args: {

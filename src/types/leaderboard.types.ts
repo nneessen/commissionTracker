@@ -11,8 +11,9 @@ export type LeaderboardTimePeriod = "daily" | "mtd" | "ytd" | "custom";
  * - all: Individual agent rankings
  * - agency: Agency rankings (combined metrics for all agents in agency)
  * - team: Team rankings (combined metrics for leader + downlines)
+ * - submit: Submit leaderboard (rankings by AP for submitted policies)
  */
-export type LeaderboardScope = "all" | "agency" | "team";
+export type LeaderboardScope = "all" | "agency" | "team" | "submit";
 
 /**
  * Configurable team threshold values (minimum downlines to qualify as team)
@@ -91,12 +92,29 @@ export interface TeamLeaderboardEntry {
 }
 
 /**
+ * Single entry in the submit leaderboard
+ * Simplified metrics: only AP and policy count for submitted policies
+ */
+export interface SubmitLeaderboardEntry {
+  agentId: string;
+  agentName: string;
+  agentEmail: string;
+  profilePhotoUrl: string | null;
+  agencyId: string | null;
+  agencyName: string | null;
+  apTotal: number;
+  policyCount: number;
+  rankOverall: number;
+}
+
+/**
  * Union type for any leaderboard entry
  */
 export type LeaderboardEntry =
   | AgentLeaderboardEntry
   | AgencyLeaderboardEntry
-  | TeamLeaderboardEntry;
+  | TeamLeaderboardEntry
+  | SubmitLeaderboardEntry;
 
 /**
  * Team leader option for the filter dropdown (unchanged)
@@ -146,12 +164,31 @@ export interface TeamLeaderboardResponse {
 }
 
 /**
+ * Simplified totals for submit leaderboard (no IP/prospects/pipeline)
+ */
+export interface SubmitLeaderboardTotals {
+  totalEntries: number;
+  totalAp: number;
+  totalPolicies: number;
+  avgApPerEntry: number;
+}
+
+/**
+ * Response from the submit leaderboard service
+ */
+export interface SubmitLeaderboardResponse {
+  entries: SubmitLeaderboardEntry[];
+  totals: SubmitLeaderboardTotals;
+}
+
+/**
  * Union type for any leaderboard response
  */
 export type LeaderboardResponse =
   | AgentLeaderboardResponse
   | AgencyLeaderboardResponse
-  | TeamLeaderboardResponse;
+  | TeamLeaderboardResponse
+  | SubmitLeaderboardResponse;
 
 /**
  * Date range calculated from a time period filter
@@ -186,4 +223,14 @@ export function isTeamEntry(
   entry: LeaderboardEntry,
 ): entry is TeamLeaderboardEntry {
   return "leaderId" in entry;
+}
+
+/**
+ * Type guard to check if entry is a submit leaderboard entry
+ */
+export function isSubmitEntry(
+  entry: LeaderboardEntry,
+): entry is SubmitLeaderboardEntry {
+  // SubmitEntry has agentId but NOT ipTotal (which AgentLeaderboardEntry has)
+  return "agentId" in entry && !("ipTotal" in entry);
 }

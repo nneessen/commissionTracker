@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-02 11:34:52
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/leaderboard/LeaderboardPage.tsx`
+- `src/features/leaderboard/components/LeaderboardTable.tsx`
+- `src/hooks/leaderboard/index.ts`
+- `src/hooks/leaderboard/leaderboardKeys.ts`
+- `src/hooks/leaderboard/useLeaderboard.ts`
+- `src/router.tsx`
+- `src/services/leaderboard/leaderboardService.ts`
+- `src/types/database.types.ts`
+- `src/types/leaderboard.types.ts`
+- `supabase/migrations/20260202105355_daily_submits_leaderboard.sql`
+
+### Statistics
+```
+ 11 files changed, 520 insertions(+), 75 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-01 16:21:02
 
 ### Changed Files

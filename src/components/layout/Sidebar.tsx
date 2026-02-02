@@ -121,9 +121,7 @@ const navigationItems: NavigationItem[] = [
     icon: Trophy,
     label: "Leaderboard",
     href: "/leaderboard",
-    permission: "nav.dashboard",
     subscriptionFeature: "hierarchy",
-    superAdminOnly: true,
   },
   {
     icon: UserPlus,
@@ -150,6 +148,12 @@ const staffNavigationItems: NavigationItem[] = [
     label: "Dashboard",
     href: "/trainer-dashboard",
     public: true, // Staff dashboard - landing page for trainers
+  },
+  {
+    icon: Trophy,
+    label: "Leaderboard",
+    href: "/leaderboard",
+    public: true, // Staff can view leaderboard
   },
   {
     icon: GraduationCap,

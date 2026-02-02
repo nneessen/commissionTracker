@@ -32,6 +32,12 @@ export const leaderboardKeys = {
     [...leaderboardKeys.all, "teams", filters] as const,
 
   /**
+   * Key for submit leaderboard data
+   */
+  submit: (filters: LeaderboardFilters) =>
+    [...leaderboardKeys.all, "submit", filters] as const,
+
+  /**
    * Key for team leaders dropdown query
    * @param threshold - Minimum downline count threshold
    */
