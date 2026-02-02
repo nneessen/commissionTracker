@@ -1,0 +1,194 @@
+// src/features/the-standard-team/components/WritingNumbersTable.tsx
+
+import { useState, useMemo, useCallback } from "react";
+import { Input } from "@/components/ui/input";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { TheStandardAgent } from "../hooks/useTheStandardAgents";
+import type { Carrier } from "@/types/carrier.types";
+import type { Database } from "@/types/database.types";
+
+type AgentWritingNumber =
+  Database["public"]["Tables"]["agent_writing_numbers"]["Row"];
+
+interface WritingNumbersTableProps {
+  agents: TheStandardAgent[];
+  carriers: Carrier[];
+  writingNumbers: AgentWritingNumber[];
+  isLoading?: boolean;
+  onUpsertWritingNumber: (params: {
+    agentId: string;
+    carrierId: string;
+    writingNumber: string;
+    existingId?: string;
+  }) => void;
+}
+
+export function WritingNumbersTable({
+  agents,
+  carriers,
+  writingNumbers,
+  onUpsertWritingNumber,
+}: WritingNumbersTableProps) {
+  const [editingCell, setEditingCell] = useState<{
+    agentId: string;
+    carrierId: string;
+  } | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  // Build a lookup map for quick access
+  const writingNumberMap = useMemo(() => {
+    const map = new Map<string, AgentWritingNumber>();
+    writingNumbers.forEach((wn) => {
+      map.set(`${wn.agent_id}-${wn.carrier_id}`, wn);
+    });
+    return map;
+  }, [writingNumbers]);
+
+  const getWritingNumber = useCallback(
+    (agentId: string, carrierId: string) => {
+      return writingNumberMap.get(`${agentId}-${carrierId}`);
+    },
+    [writingNumberMap],
+  );
+
+  const handleCellClick = (agentId: string, carrierId: string) => {
+    const existing = getWritingNumber(agentId, carrierId);
+    setEditingCell({ agentId, carrierId });
+    setEditValue(existing?.writing_number || "");
+  };
+
+  const handleSave = () => {
+    if (!editingCell) return;
+
+    const existing = getWritingNumber(
+      editingCell.agentId,
+      editingCell.carrierId,
+    );
+    const trimmedValue = editValue.trim();
+
+    if (trimmedValue) {
+      onUpsertWritingNumber({
+        agentId: editingCell.agentId,
+        carrierId: editingCell.carrierId,
+        writingNumber: trimmedValue,
+        existingId: existing?.id,
+      });
+    }
+
+    setEditingCell(null);
+    setEditValue("");
+  };
+
+  const handleCancel = () => {
+    setEditingCell(null);
+    setEditValue("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
+
+  return (
+    <div className="min-w-max">
+      <table className="w-full border-collapse">
+        <thead className="sticky top-0 z-10">
+          <tr className="bg-zinc-100 dark:bg-zinc-800">
+            <th className="sticky left-0 z-20 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-left px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[160px]">
+              Agent
+            </th>
+            {carriers.map((carrier) => (
+              <th
+                key={carrier.id}
+                className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-center px-2 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[100px]"
+              >
+                {carrier.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {agents.map((agent, idx) => (
+            <tr
+              key={agent.id}
+              className={cn(
+                "hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                idx % 2 === 0
+                  ? "bg-white dark:bg-zinc-900"
+                  : "bg-zinc-50/50 dark:bg-zinc-900/50",
+              )}
+            >
+              <td className="sticky left-0 z-10 bg-inherit text-[11px] font-medium text-zinc-900 dark:text-zinc-100 px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800">
+                {agent.first_name} {agent.last_name}
+              </td>
+              {carriers.map((carrier) => {
+                const isEditing =
+                  editingCell?.agentId === agent.id &&
+                  editingCell?.carrierId === carrier.id;
+                const writingNumber = getWritingNumber(agent.id, carrier.id);
+
+                return (
+                  <td
+                    key={carrier.id}
+                    className={cn(
+                      "text-[11px] text-center px-1 py-1 border-b border-zinc-100 dark:border-zinc-800",
+                      !isEditing &&
+                        "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700/50",
+                    )}
+                    onClick={() =>
+                      !isEditing && handleCellClick(agent.id, carrier.id)
+                    }
+                  >
+                    {isEditing ? (
+                      <div className="flex items-center gap-1 px-1">
+                        <Input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          className="h-6 text-[11px] w-full min-w-[60px]"
+                          autoFocus
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSave();
+                          }}
+                          className="p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                        >
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancel();
+                          }}
+                          className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/50"
+                        >
+                          <X className="h-3.5 w-3.5 text-red-600" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        className={cn(
+                          writingNumber?.writing_number
+                            ? "text-zinc-900 dark:text-zinc-100"
+                            : "text-zinc-300 dark:text-zinc-600",
+                        )}
+                      >
+                        {writingNumber?.writing_number || "—"}
+                      </span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

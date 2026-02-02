@@ -39,6 +39,8 @@ interface RouteGuardProps {
   requireEmail?: string;
   /** Whitelist of emails that can access this route (super admins always bypass) */
   allowedEmails?: string[];
+  /** Restrict route to users belonging to a specific agency ID */
+  allowedAgencyId?: string;
   /** Required subscription feature to access this route (single) */
   subscriptionFeature?: FeatureKey;
   /** Multiple subscription features - ANY grants access (like Sidebar) */
@@ -85,6 +87,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   staffOnly = false,
   requireEmail,
   allowedEmails,
+  allowedAgencyId,
   subscriptionFeature,
   subscriptionFeatures,
   fallback,
@@ -152,6 +155,11 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     if (!emailAllowed) {
       return <>{fallback || <PermissionDenied />}</>;
     }
+  }
+
+  // Check agency ID restriction - only users from specified agency can access
+  if (allowedAgencyId && profile?.agency_id !== allowedAgencyId) {
+    return <>{fallback || <PermissionDenied />}</>;
   }
 
   // Role checks

@@ -52,6 +52,7 @@ import { LeaderboardNamingPage } from "./features/messages/components/slack/Lead
 import { TermsPage, PrivacyPage } from "./features/legal";
 import { WorkflowAdminPage } from "./features/workflows";
 import { LeaderboardPage } from "./features/leaderboard";
+import { TheStandardTeamPage } from "./features/the-standard-team";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -602,6 +603,30 @@ const privacyRoute = createRoute({
   component: PrivacyPage,
 });
 
+// The Standard Team route - restricted to The Standard agency only
+// Supports tab search param: ?tab=writing-numbers or ?tab=state-licenses
+const theStandardTeamRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "the-standard-team",
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
+  component: TheStandardTeamRouteComponent,
+});
+
+function TheStandardTeamRouteComponent() {
+  const { tab } = theStandardTeamRoute.useSearch();
+  return (
+    <RouteGuard
+      noRecruits
+      noStaffRoles
+      allowedAgencyId="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    >
+      <TheStandardTeamPage initialTab={tab} />
+    </RouteGuard>
+  );
+}
+
 // Create the route tree - all routes are already linked via getParentRoute
 // Note: publicJoinAltRoute is at the end as a catch-all for /join-* URLs
 const routeTree = rootRoute.addChildren([
@@ -646,6 +671,7 @@ const routeTree = rootRoute.addChildren([
   slackNameLeaderboardRoute,
   termsRoute,
   privacyRoute,
+  theStandardTeamRoute,
   publicJoinAltRoute, // Catch-all for /join-* pattern - must be last
 ]);
 

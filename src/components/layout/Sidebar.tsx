@@ -59,6 +59,7 @@ interface NavigationItem {
   subscriptionFeatures?: FeatureKey[]; // Alternative: any of these features grants access
   superAdminOnly?: boolean; // Hide from all except super-admin
   allowedEmails?: string[]; // Whitelist of emails that can see this item
+  allowedAgencyId?: string; // Restrict to users in a specific agency
 }
 
 interface SidebarProps {
@@ -117,6 +118,13 @@ const navigationItems: NavigationItem[] = [
     href: "/hierarchy",
     permission: "nav.team_dashboard",
     subscriptionFeature: "hierarchy",
+  },
+  {
+    icon: Users,
+    label: "Licenses/Writing #'s",
+    href: "/the-standard-team",
+    public: true,
+    allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   },
   {
     icon: Trophy,
@@ -343,6 +351,13 @@ export default function Sidebar({
     );
   };
 
+  // Helper to check if user is in allowed agency
+  const isAgencyAllowed = (allowedAgencyId?: string) => {
+    if (!allowedAgencyId) return true; // No restriction
+    if (isSuperAdmin) return true; // Super admin can access all
+    return agency?.id === allowedAgencyId;
+  };
+
   // Navigation logic:
   // - Recruits: Show ONLY recruit navigation
   // - Staff (trainer/contracting_manager only): Show staff navigation (trainer dashboard, training hub, messages, settings)
@@ -366,7 +381,15 @@ export default function Sidebar({
       : isPending
         ? navigationItems // Show all items for pending users (will be rendered as locked)
         : navigationItems.filter((item) => {
-            // Public items always visible
+            // Agency restriction check - must pass first if specified
+            if (
+              item.allowedAgencyId &&
+              !isAgencyAllowed(item.allowedAgencyId)
+            ) {
+              return false;
+            }
+
+            // Public items visible (after agency check passes)
             if (item.public) return true;
 
             // Super-admin only check
