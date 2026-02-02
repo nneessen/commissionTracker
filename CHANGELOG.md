@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-02 11:46:54
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+
+### Statistics
+```
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-02 11:43:56
 
 ### Changed Files

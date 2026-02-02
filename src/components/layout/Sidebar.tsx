@@ -342,14 +342,13 @@ export default function Sidebar({
     ? recruitNavigationItems
     : isTrainerOnly
       ? staffNavigationItems.filter((item) => {
-          // Check email whitelist first (super admin bypasses)
-          if (item.allowedEmails && !isSuperAdmin) {
-            if (!isEmailAllowed(item.allowedEmails)) return false;
-          }
+          // Public items always visible for staff
           if (item.public) return true;
-          // Items with allowedEmails but no permission are shown if email matches
-          if (item.allowedEmails && isEmailAllowed(item.allowedEmails))
-            return true;
+          // Email whitelist check - show if user's email is in the list
+          if (item.allowedEmails) {
+            return isEmailAllowed(item.allowedEmails);
+          }
+          // Permission-based items
           if (!item.permission) return false;
           if (isLoading) return false;
           return can(item.permission);
