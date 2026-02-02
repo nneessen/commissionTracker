@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-02 18:55:08
+
+### Changed Files
+- `.serena/memories/ALWAYS_RUN_DB_COMMANDS.md`
+- `src/types/database.types.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20260202184953_slack_wtd_mtd_functions.sql`
+- `supabase/migrations/20260202185104_fix_orphaned_policy_commissions.sql`
+
+### Statistics
+```
+ 5 files changed, 14775 insertions(+), 14307 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-02 15:32:37
 
 ### Changed Files

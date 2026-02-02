@@ -40,6 +40,28 @@ interface DailyProductionEntry {
   policy_count: number;
 }
 
+interface LeaderboardEntryWithPeriods {
+  agent_id: string;
+  agent_name: string;
+  agent_email: string;
+  slack_member_id: string | null;
+  today_ap: number;
+  today_policies: number;
+  wtd_ap: number;
+  wtd_policies: number;
+  mtd_ap: number;
+  mtd_policies: number;
+}
+
+interface AgencySubmitTotals {
+  agency_id: string;
+  agency_name: string;
+  wtd_ap: number;
+  wtd_policies: number;
+  mtd_ap: number;
+  mtd_policies: number;
+}
+
 /**
  * Get today's date in US Eastern timezone (YYYY-MM-DD format)
  * This ensures consistent date handling for US business operations
@@ -721,6 +743,8 @@ async function sendMegaMilestoneSMS(
 /**
  * Build the daily leaderboard with Block Kit for better formatting
  * Returns both text (fallback) and blocks
+ *
+ * @deprecated Use buildLeaderboardWithPeriods for WTD/MTD support
  */
 function buildLeaderboard(
   title: string,
@@ -815,6 +839,194 @@ function buildLeaderboard(
       type: "mrkdwn",
       text: `*💰 Total: ${formatCurrency(totalAP)}*`,
     },
+  });
+
+  return { text, blocks };
+}
+
+/**
+ * Build the enhanced daily leaderboard with WTD/MTD sections
+ * Format:
+ * 1. Daily leaderboard (ranked by today's AP)
+ * 2. Today Total
+ * 3. Agent WTD/MTD progress
+ * 4. Agency comparison (all agencies WTD/MTD)
+ * 5. Disclaimer
+ */
+function buildLeaderboardWithPeriods(
+  title: string,
+  entries: LeaderboardEntryWithPeriods[],
+  agencyTotals: AgencySubmitTotals[] | null,
+): { text: string; blocks: unknown[] } {
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    timeZone: "America/New_York",
+  });
+
+  // Calculate today's total
+  const todayTotalAP = entries.reduce((sum, e) => sum + (e.today_ap || 0), 0);
+  const todayTotalPolicies = entries.reduce((sum, e) => sum + (e.today_policies || 0), 0);
+
+  // Build fallback text (shown in notifications/previews)
+  let text = `${title} - ${today}\n`;
+  entries.forEach((entry, index) => {
+    const rank = index + 1;
+    text += `${rank}. ${entry.agent_name || "Unknown"} - ${formatCurrency(entry.today_ap)}\n`;
+  });
+  text += `Total: ${formatCurrency(todayTotalAP)}`;
+
+  // Build Block Kit blocks for rich display
+  const blocks: unknown[] = [];
+
+  // =====================================================
+  // SECTION 1: Header with title and date
+  // =====================================================
+  blocks.push({
+    type: "header",
+    text: {
+      type: "plain_text",
+      text: title,
+      emoji: true,
+    },
+  });
+
+  blocks.push({
+    type: "context",
+    elements: [
+      {
+        type: "mrkdwn",
+        text: `📅 ${today}`,
+      },
+    ],
+  });
+
+  blocks.push({ type: "divider" });
+
+  // =====================================================
+  // SECTION 2: Daily Leaderboard (same format as original)
+  // =====================================================
+  if (entries.length === 0) {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "_No sales yet today_",
+      },
+    });
+  } else {
+    // Build leaderboard entries - AP first for natural alignment
+    const maxApLen = Math.max(
+      ...entries.map((e) => formatCurrency(e.today_ap).length),
+    );
+
+    const dailyLines = entries.map((entry, index) => {
+      const rank = index + 1;
+      const rankEmoji = getRankDisplay(rank);
+      const name = entry.agent_name || "Unknown";
+      const ap = formatCurrency(entry.today_ap).padStart(maxApLen);
+      const policies = entry.today_policies;
+      const policyText = policies === 1 ? "policy" : "policies";
+
+      return `${rankEmoji} ${ap}  ·  *${name}*  _(${policies} ${policyText})_`;
+    });
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: dailyLines.join("\n"),
+      },
+    });
+  }
+
+  blocks.push({ type: "divider" });
+
+  // Today Total
+  const totalPolicyText = todayTotalPolicies === 1 ? "policy" : "policies";
+  blocks.push({
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: `*💰 Today: ${formatCurrency(todayTotalAP)}* _(${todayTotalPolicies} ${totalPolicyText})_`,
+    },
+  });
+
+  // =====================================================
+  // SECTION 3: Agent WTD/MTD Progress
+  // =====================================================
+  if (entries.length > 0) {
+    blocks.push({ type: "divider" });
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "*📈 Agent Progress*",
+      },
+    });
+
+    // Show WTD and MTD for each agent
+    const agentProgressLines = entries.map((entry) => {
+      const name = entry.agent_name || "Unknown";
+      const wtd = formatCurrency(entry.wtd_ap);
+      const mtd = formatCurrency(entry.mtd_ap);
+      return `*${name}*: WTD ${wtd} · MTD ${mtd}`;
+    });
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: agentProgressLines.join("\n"),
+      },
+    });
+  }
+
+  // =====================================================
+  // SECTION 4: Agency Comparison (all agencies)
+  // =====================================================
+  if (agencyTotals && agencyTotals.length > 0) {
+    blocks.push({ type: "divider" });
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "*🏢 Agency Comparison*",
+      },
+    });
+
+    // Show WTD and MTD for each agency
+    const agencyLines = agencyTotals.map((agency) => {
+      const wtd = formatCurrency(agency.wtd_ap);
+      const mtd = formatCurrency(agency.mtd_ap);
+      return `*${agency.agency_name}*: WTD ${wtd} · MTD ${mtd}`;
+    });
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: agencyLines.join("\n"),
+      },
+    });
+  }
+
+  // =====================================================
+  // SECTION 5: Disclaimer
+  // =====================================================
+  blocks.push({ type: "divider" });
+
+  blocks.push({
+    type: "context",
+    elements: [
+      {
+        type: "mrkdwn",
+        text: "_* Submit totals may be temporarily off until all users update policies with correct submit dates_",
+      },
+    ],
   });
 
   return { text, blocks };
@@ -985,20 +1197,19 @@ async function handleCompleteFirstSale(
   let leaderboardMessageTs: string | null = null;
 
   if (integration.include_leaderboard_with_policy) {
-    // Get today's production for leaderboard
-    const { data: productionData } = await supabase.rpc(
-      "get_daily_production_by_agent",
-      {
+    // Get today's production for leaderboard with WTD/MTD data
+    const [{ data: leaderboardData }, { data: agencyData }] = await Promise.all([
+      supabase.rpc("get_slack_leaderboard_with_periods", {
         p_imo_id: log.imo_id,
         p_agency_id: integration.agency_id,
-      },
-    );
+      }),
+      supabase.rpc("get_all_agencies_submit_totals", {
+        p_imo_id: log.imo_id,
+      }),
+    ]);
 
-    const production: DailyProductionEntry[] = productionData || [];
-    const totalAP = production.reduce(
-      (sum, e) => sum + (e.total_annual_premium || 0),
-      0,
-    );
+    const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
+    const agencyTotals: AgencySubmitTotals[] = agencyData || [];
 
     // Build leaderboard with the title (use override, then log title, then default)
     // Sanitize user-provided title to prevent Slack injection
@@ -1007,7 +1218,7 @@ async function handleCompleteFirstSale(
       : log.title
         ? sanitizeSlackTitle(log.title)
         : getDefaultDailyTitle();
-    const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(title, production, totalAP);
+    const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals);
 
     // Post the leaderboard with Block Kit (use workspace logo if configured)
     const leaderboardResult = await postSlackMessage(
@@ -1135,27 +1346,26 @@ async function handleUpdateLeaderboard(
   // Decrypt bot token
   const botToken = await decrypt(integration.bot_token_encrypted);
 
-  // Get today's production for leaderboard
-  const { data: productionData } = await supabase.rpc(
-    "get_daily_production_by_agent",
-    {
+  // Get today's production for leaderboard with WTD/MTD data
+  const [{ data: leaderboardData }, { data: agencyData }] = await Promise.all([
+    supabase.rpc("get_slack_leaderboard_with_periods", {
       p_imo_id: log.imo_id,
       p_agency_id: integration.agency_id,
-    },
-  );
+    }),
+    supabase.rpc("get_all_agencies_submit_totals", {
+      p_imo_id: log.imo_id,
+    }),
+  ]);
 
-  const production: DailyProductionEntry[] = productionData || [];
-  const totalAP = production.reduce(
-    (sum, e) => sum + (e.total_annual_premium || 0),
-    0,
-  );
+  const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
+  const agencyTotals: AgencySubmitTotals[] = agencyData || [];
 
   // Build leaderboard with the title from database (which was just updated)
   // Sanitize user-provided title to prevent Slack injection
   const title = log.title
     ? sanitizeSlackTitle(log.title)
     : getDefaultDailyTitle();
-  const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(title, production, totalAP);
+  const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals);
 
   // Update the Slack message with Block Kit
   const updateResult = await updateSlackMessage(
@@ -1750,24 +1960,23 @@ serve(async (req) => {
           .eq("log_date", todayDate)
           .maybeSingle();
 
-        // Get today's production for leaderboard
+        // Get today's production for leaderboard with WTD/MTD data
         // Use integration's agency_id so each level shows appropriate scope:
         // - The Standard's scoreboard shows only The Standard's sales
         // - Self Made's scoreboard shows Self Made + all child agencies
         const integrationAgencyId = integration.agency_id;
-        const { data: productionData } = await supabase.rpc(
-          "get_daily_production_by_agent",
-          {
+        const [{ data: leaderboardData }, { data: agencyData }] = await Promise.all([
+          supabase.rpc("get_slack_leaderboard_with_periods", {
             p_imo_id: imoId,
             p_agency_id: integrationAgencyId,
-          },
-        );
+          }),
+          supabase.rpc("get_all_agencies_submit_totals", {
+            p_imo_id: imoId,
+          }),
+        ]);
 
-        const production: DailyProductionEntry[] = productionData || [];
-        const totalAP = production.reduce(
-          (sum, e) => sum + (e.total_annual_premium || 0),
-          0,
-        );
+        const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
+        const agencyTotals: AgencySubmitTotals[] = agencyData || [];
 
         // Detect if this is effectively the first sale of the day
         // More robust check: if log exists, verify the first_seller still has production
@@ -1780,7 +1989,7 @@ serve(async (req) => {
             (p) => p.agent_id === existingLog.first_seller_id,
           );
           const firstSellerHasProduction =
-            firstSellerProduction && firstSellerProduction.policy_count > 0;
+            firstSellerProduction && firstSellerProduction.today_policies > 0;
 
           // If first seller has no production, their policies were deleted - reset
           if (!firstSellerHasProduction) {
@@ -1910,12 +2119,12 @@ serve(async (req) => {
           // Subsequent sale - delete old leaderboard and post fresh one
           // This ensures leaderboard always appears AFTER the latest policy notification
           // Sanitize user-provided title to prevent Slack injection
-          const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(
+          const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(
             existingLog.title
               ? sanitizeSlackTitle(existingLog.title)
               : getDefaultDailyTitle(),
             production,
-            totalAP,
+            agencyTotals,
           );
 
           // Delete old leaderboard message if it exists (ignore errors - message may be gone)
