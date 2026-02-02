@@ -37,6 +37,8 @@ interface RouteGuardProps {
   staffOnly?: boolean;
   /** Required email for super-admin routes */
   requireEmail?: string;
+  /** Whitelist of emails that can access this route (super admins always bypass) */
+  allowedEmails?: string[];
   /** Required subscription feature to access this route (single) */
   subscriptionFeature?: FeatureKey;
   /** Multiple subscription features - ANY grants access (like Sidebar) */
@@ -82,6 +84,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   noStaffRoles = false,
   staffOnly = false,
   requireEmail,
+  allowedEmails,
   subscriptionFeature,
   subscriptionFeatures,
   fallback,
@@ -139,6 +142,16 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   // Check email requirement for super-admin routes
   if (requireEmail && currentEmail !== requireEmail) {
     return <>{fallback || <PermissionDenied />}</>;
+  }
+
+  // Check email whitelist - only specified emails can access
+  if (allowedEmails && allowedEmails.length > 0) {
+    const emailAllowed = allowedEmails.some(
+      (email) => email.toLowerCase() === currentEmail?.toLowerCase(),
+    );
+    if (!emailAllowed) {
+      return <>{fallback || <PermissionDenied />}</>;
+    }
   }
 
   // Role checks

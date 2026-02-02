@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-02 11:43:56
+
+### Changed Files
+- `src/components/auth/RouteGuard.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/router.tsx`
+
+### Statistics
+```
+ 3 files changed, 58 insertions(+), 4 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-02 11:34:52
 
 ### Changed Files

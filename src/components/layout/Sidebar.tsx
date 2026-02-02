@@ -58,6 +58,7 @@ interface NavigationItem {
   subscriptionFeature?: FeatureKey;
   subscriptionFeatures?: FeatureKey[]; // Alternative: any of these features grants access
   superAdminOnly?: boolean; // Hide from all except super-admin
+  allowedEmails?: string[]; // Whitelist of emails that can see this item
 }
 
 interface SidebarProps {
@@ -122,6 +123,7 @@ const navigationItems: NavigationItem[] = [
     label: "Leaderboard",
     href: "/leaderboard",
     subscriptionFeature: "hierarchy",
+    allowedEmails: ["nickneessen@thestandardhq.com", "kerryglass.ffl@gmail.com"],
   },
   {
     icon: UserPlus,
@@ -153,7 +155,7 @@ const staffNavigationItems: NavigationItem[] = [
     icon: Trophy,
     label: "Leaderboard",
     href: "/leaderboard",
-    public: true, // Staff can view leaderboard
+    allowedEmails: ["nickneessen@thestandardhq.com", "kerryglass.ffl@gmail.com"],
   },
   {
     icon: GraduationCap,
@@ -321,6 +323,16 @@ export default function Sidebar({
     );
   };
 
+  // Helper to check if user email is in allowed list
+  const currentUserEmail = supabaseUser?.email?.toLowerCase();
+  const isEmailAllowed = (allowedEmails?: string[]) => {
+    if (!allowedEmails || allowedEmails.length === 0) return true; // No restriction
+    if (!currentUserEmail) return false;
+    return allowedEmails.some(
+      (email) => email.toLowerCase() === currentUserEmail,
+    );
+  };
+
   // Navigation logic:
   // - Recruits: Show ONLY recruit navigation
   // - Staff (trainer/contracting_manager only): Show staff navigation (trainer dashboard, training hub, messages, settings)
@@ -330,7 +342,14 @@ export default function Sidebar({
     ? recruitNavigationItems
     : isTrainerOnly
       ? staffNavigationItems.filter((item) => {
+          // Check email whitelist first (super admin bypasses)
+          if (item.allowedEmails && !isSuperAdmin) {
+            if (!isEmailAllowed(item.allowedEmails)) return false;
+          }
           if (item.public) return true;
+          // Items with allowedEmails but no permission are shown if email matches
+          if (item.allowedEmails && isEmailAllowed(item.allowedEmails))
+            return true;
           if (!item.permission) return false;
           if (isLoading) return false;
           return can(item.permission);
@@ -343,6 +362,22 @@ export default function Sidebar({
 
             // Super-admin only check
             if (item.superAdminOnly && !isSuperAdmin) return false;
+
+            // Email whitelist check (super admin bypasses)
+            if (item.allowedEmails && !isSuperAdmin) {
+              if (!isEmailAllowed(item.allowedEmails)) return false;
+              // If email is allowed and no permission required, show it
+              if (!item.permission) {
+                // Still check subscription features
+                if (
+                  item.subscriptionFeature &&
+                  !hasFeature(item.subscriptionFeature)
+                ) {
+                  return false;
+                }
+                return true;
+              }
+            }
 
             // Permission check (role-based visibility)
             if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
