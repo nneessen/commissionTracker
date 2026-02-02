@@ -69,6 +69,7 @@ import type {
   PolicyPostChannel,
   SlackWebhook,
 } from "@/types/slack.types";
+import { WorkspaceLogoUpload } from "./WorkspaceLogoUpload";
 
 // ============================================================================
 // Sub-component: Single Workspace Card
@@ -339,14 +340,24 @@ function WorkspaceCard({
           )}
         </div>
 
-        {/* Workspace Icon */}
-        <div
-          className={`p-1.5 rounded ${!isActive ? "bg-amber-100 dark:bg-amber-900/30" : "bg-purple-100 dark:bg-purple-900/30"}`}
-        >
-          <Building2
-            className={`h-4 w-4 ${!isActive ? "text-amber-600 dark:text-amber-400" : "text-purple-600 dark:text-purple-400"}`}
-          />
-        </div>
+        {/* Workspace Icon/Logo */}
+        {integration.workspace_logo_url ? (
+          <div className="w-7 h-7 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700 flex-shrink-0">
+            <img
+              src={integration.workspace_logo_url}
+              alt={integration.display_name || integration.team_name}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ) : (
+          <div
+            className={`p-1.5 rounded ${!isActive ? "bg-amber-100 dark:bg-amber-900/30" : "bg-purple-100 dark:bg-purple-900/30"}`}
+          >
+            <Building2
+              className={`h-4 w-4 ${!isActive ? "text-amber-600 dark:text-amber-400" : "text-purple-600 dark:text-purple-400"}`}
+            />
+          </div>
+        )}
 
         {/* Workspace Info */}
         <div className="flex-1 min-w-0">
@@ -644,6 +655,20 @@ function WorkspaceCard({
               </div>
             )}
           </div>
+
+          {/* Workspace Branding - Admin Only */}
+          {isAdmin && (
+            <div className="space-y-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+              <h5 className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">
+                Workspace Branding
+              </h5>
+              <WorkspaceLogoUpload
+                integrationId={integration.id}
+                currentLogoUrl={integration.workspace_logo_url}
+                disabled={!isActive}
+              />
+            </div>
+          )}
 
           {/* Your Preferences for this Workspace */}
           {!channelsLoading && availableChannels.length > 0 && (

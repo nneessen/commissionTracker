@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-02 15:32:37
+
+### Changed Files
+- `src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx`
+- `src/features/settings/integrations/components/slack/WorkspaceLogoUpload.tsx`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `src/hooks/integrations/index.ts`
+- `src/hooks/integrations/useSlackWorkspaceLogo.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/slack-daily-leaderboard/index.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/functions/slack-test-connection/index.ts`
+- `supabase/migrations/20260202142045_slack_workspace_logo.sql`
+- `supabase/migrations/20260202152642_user_slack_member_overrides.sql`
+
+### Statistics
+```
+ 11 files changed, 645 insertions(+), 27 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-02 13:51:26
 
 ### Changed Files

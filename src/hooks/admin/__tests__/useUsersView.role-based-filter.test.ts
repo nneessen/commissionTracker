@@ -72,6 +72,7 @@ describe("useUsersView role-based filtering logic", () => {
     agency_id: null,
     imo_id: null,
     uw_wizard_enabled: false,
+    slack_member_overrides: null,
 
     // Apply overrides
     ...overrides,

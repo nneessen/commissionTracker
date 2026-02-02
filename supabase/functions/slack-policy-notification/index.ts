@@ -935,11 +935,11 @@ async function handleCompleteFirstSale(
     );
   }
 
-  // Get the Slack integration
+  // Get the Slack integration (including workspace logo for leaderboard posts)
   const { data: integration, error: intError } = await supabase
     .from("slack_integrations")
     .select(
-      "id, bot_token_encrypted, agency_id, include_leaderboard_with_policy",
+      "id, bot_token_encrypted, agency_id, include_leaderboard_with_policy, workspace_logo_url",
     )
     .eq("id", log.slack_integration_id)
     .single();
@@ -1009,12 +1009,15 @@ async function handleCompleteFirstSale(
         : getDefaultDailyTitle();
     const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboard(title, production, totalAP);
 
-    // Post the leaderboard with Block Kit
+    // Post the leaderboard with Block Kit (use workspace logo if configured)
     const leaderboardResult = await postSlackMessage(
       botToken,
       log.channel_id,
       leaderboardText,
-      { blocks: leaderboardBlocks },
+      {
+        blocks: leaderboardBlocks,
+        icon_url: integration.workspace_logo_url || undefined,
+      },
     );
 
     leaderboardOk = leaderboardResult.ok;
@@ -1114,10 +1117,10 @@ async function handleUpdateLeaderboard(
     return { ok: false, error: "No Slack message to update" };
   }
 
-  // Get the Slack integration
+  // Get the Slack integration (including workspace logo)
   const { data: integration, error: intError } = await supabase
     .from("slack_integrations")
-    .select("id, bot_token_encrypted, agency_id")
+    .select("id, bot_token_encrypted, agency_id, workspace_logo_url")
     .eq("id", log.slack_integration_id)
     .single();
 
@@ -1528,7 +1531,7 @@ serve(async (req) => {
         .maybeSingle(),
       supabase
         .from("user_profiles")
-        .select("first_name, last_name, email")
+        .select("first_name, last_name, email, slack_member_overrides")
         .eq("id", agentId)
         .maybeSingle(),
       carrierId
@@ -1558,6 +1561,10 @@ serve(async (req) => {
         agentResult.data.email
       : "Unknown";
     const agentEmail = agentResult.data?.email || null;
+    const slackMemberOverrides = (agentResult.data?.slack_member_overrides || {}) as Record<
+      string,
+      { slack_member_id: string; display_name: string; avatar_url: string }
+    >;
 
     const carrierName = carrierResult.data?.name || "Unknown";
 
@@ -1647,10 +1654,10 @@ serve(async (req) => {
 
     for (const integration of hierarchyIntegrations) {
       try {
-        // Get bot token
+        // Get bot token and workspace logo
         const { data: fullIntegration } = await supabase
           .from("slack_integrations")
-          .select("bot_token_encrypted")
+          .select("bot_token_encrypted, workspace_logo_url")
           .eq("id", integration.integration_id)
           .single();
 
@@ -1673,10 +1680,23 @@ serve(async (req) => {
         // Look up Slack user FOR THIS SPECIFIC WORKSPACE
         // Slack user IDs are workspace-specific, so we must look up per-workspace
         // We get the full user info (id, name, avatar) to post as that user
+        // First check for manual overrides (for users with different emails per workspace)
         // =====================================================================
         let workspaceSlackUser: SlackUserInfo | null = null;
 
-        if (agentEmail) {
+        // Check for manual override first
+        const override = slackMemberOverrides[integration.integration_id];
+        if (override) {
+          workspaceSlackUser = {
+            id: override.slack_member_id,
+            displayName: override.display_name,
+            avatarUrl: override.avatar_url,
+          };
+          console.log(
+            `[slack-policy-notification] Using override for ${agentName} in ${integration.team_name}: ${workspaceSlackUser.displayName} (${workspaceSlackUser.id})`,
+          );
+        } else if (agentEmail) {
+          // Fall back to email lookup
           workspaceSlackUser = await lookupSlackMemberByEmail(
             botToken,
             agentEmail,
@@ -1931,11 +1951,15 @@ serve(async (req) => {
           }
 
           // Always post fresh leaderboard after the policy notification with Block Kit
+          // Use workspace logo as bot icon if configured
           const leaderboardData = await postSlackMessage(
             botToken,
             integration.policy_channel_id,
             leaderboardText,
-            { blocks: leaderboardBlocks },
+            {
+              blocks: leaderboardBlocks,
+              icon_url: fullIntegration?.workspace_logo_url || undefined,
+            },
           );
           leaderboardOk = leaderboardData.ok;
 

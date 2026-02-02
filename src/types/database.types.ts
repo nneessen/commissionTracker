@@ -7520,6 +7520,7 @@ export type Database = {
           team_name: string
           token_type: string | null
           updated_at: string | null
+          workspace_logo_url: string | null
         }
         Insert: {
           access_token_encrypted: string
@@ -7552,6 +7553,7 @@ export type Database = {
           team_name: string
           token_type?: string | null
           updated_at?: string | null
+          workspace_logo_url?: string | null
         }
         Update: {
           access_token_encrypted?: string
@@ -7584,6 +7586,7 @@ export type Database = {
           team_name?: string
           token_type?: string | null
           updated_at?: string | null
+          workspace_logo_url?: string | null
         }
         Relationships: [
           {
@@ -9850,6 +9853,7 @@ export type Database = {
           referral_source: string | null
           resident_state: string | null
           roles: string[] | null
+          slack_member_overrides: Json | null
           state: string | null
           street_address: string | null
           subscription_tier: string
@@ -9907,6 +9911,7 @@ export type Database = {
           referral_source?: string | null
           resident_state?: string | null
           roles?: string[] | null
+          slack_member_overrides?: Json | null
           state?: string | null
           street_address?: string | null
           subscription_tier?: string
@@ -9964,6 +9969,7 @@ export type Database = {
           referral_source?: string | null
           resident_state?: string | null
           roles?: string[] | null
+          slack_member_overrides?: Json | null
           state?: string | null
           street_address?: string | null
           subscription_tier?: string

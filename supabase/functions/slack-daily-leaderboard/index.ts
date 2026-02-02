@@ -159,10 +159,10 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get Slack integration with channel settings
+    // Get Slack integration with channel settings (including workspace logo)
     const { data: integration, error: integrationError } = await supabase
       .from("slack_integrations")
-      .select("*")
+      .select("*, workspace_logo_url")
       .eq("imo_id", imoId)
       .eq("is_active", true)
       .eq("connection_status", "connected")
@@ -276,6 +276,18 @@ serve(async (req) => {
     // Decrypt bot token
     const botToken = await decrypt(integration.bot_token_encrypted);
 
+    // Build message payload with optional workspace logo as icon
+    const messagePayload: Record<string, unknown> = {
+      channel: integration.leaderboard_channel_id,
+      text: leaderboardText,
+      blocks: leaderboardBlocks,
+    };
+
+    // Use workspace logo as bot icon if configured
+    if (integration.workspace_logo_url) {
+      messagePayload.icon_url = integration.workspace_logo_url;
+    }
+
     // Send to configured leaderboard channel
     const response = await fetch("https://slack.com/api/chat.postMessage", {
       method: "POST",
@@ -283,11 +295,7 @@ serve(async (req) => {
         Authorization: `Bearer ${botToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        channel: integration.leaderboard_channel_id,
-        text: leaderboardText,
-        blocks: leaderboardBlocks,
-      }),
+      body: JSON.stringify(messagePayload),
     });
 
     const data = await response.json();

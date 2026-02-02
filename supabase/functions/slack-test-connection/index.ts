@@ -42,7 +42,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { imoId, integrationId } = body;
+    const { imoId, integrationId, testEmail } = body;
 
     if (!imoId && !integrationId) {
       return new Response(
@@ -109,11 +109,88 @@ serve(async (req) => {
         `[slack-test-connection] Connection verified for IMO ${imoId}`,
       );
 
+      // If testEmail provided, also test email lookup and search users
+      let emailLookup = null;
+      let userSearch = null;
+      if (testEmail) {
+        try {
+          const lookupResponse = await fetch(
+            `https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(testEmail)}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${botToken}`,
+              },
+            },
+          );
+          const lookupData = await lookupResponse.json();
+          if (lookupData.ok && lookupData.user) {
+            emailLookup = {
+              found: true,
+              id: lookupData.user.id,
+              displayName: lookupData.user.profile?.display_name || lookupData.user.profile?.real_name || lookupData.user.real_name,
+              email: lookupData.user.profile?.email,
+              avatarUrl: lookupData.user.profile?.image_72 || lookupData.user.profile?.image_48,
+            };
+          } else {
+            emailLookup = {
+              found: false,
+              error: lookupData.error,
+            };
+          }
+        } catch (lookupErr) {
+          emailLookup = {
+            found: false,
+            error: lookupErr instanceof Error ? lookupErr.message : "Lookup failed",
+          };
+        }
+
+        // If email lookup failed, search all users for matching name
+        if (!emailLookup.found) {
+          try {
+            const searchName = testEmail.split("@")[0].toLowerCase();
+            const listResponse = await fetch(
+              "https://slack.com/api/users.list?limit=200",
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${botToken}`,
+                },
+              },
+            );
+            const listData = await listResponse.json();
+            if (listData.ok && listData.members) {
+              const matches = listData.members
+                .filter((m: { deleted?: boolean; is_bot?: boolean; name?: string; real_name?: string; profile?: { display_name?: string; email?: string } }) =>
+                  !m.deleted && !m.is_bot && (
+                    m.name?.toLowerCase().includes(searchName) ||
+                    m.real_name?.toLowerCase().includes("nick") ||
+                    m.profile?.display_name?.toLowerCase().includes("nick")
+                  )
+                )
+                .map((m: { id: string; name: string; real_name?: string; profile?: { display_name?: string; email?: string; image_72?: string } }) => ({
+                  id: m.id,
+                  name: m.name,
+                  realName: m.real_name,
+                  displayName: m.profile?.display_name,
+                  email: m.profile?.email,
+                  avatar: m.profile?.image_72,
+                }));
+              userSearch = { totalUsers: listData.members.length, matches };
+            }
+          } catch (searchErr) {
+            userSearch = { error: searchErr instanceof Error ? searchErr.message : "Search failed" };
+          }
+        }
+      }
+
       return new Response(
         JSON.stringify({
           ok: true,
           team: data.team,
           user: data.user,
+          emailLookup,
+          userSearch,
         }),
         {
           status: 200,
