@@ -170,6 +170,7 @@ const leaderboardRoute = createRoute({
       subscriptionFeature="hierarchy"
       allowedEmails={[
         "nickneessen@thestandardhq.com",
+        "nick@nickneessen.com",
         "kerryglass.ffl@gmail.com",
         "teagkeys@gmail.com",
       ]}
