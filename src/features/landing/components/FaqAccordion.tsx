@@ -16,7 +16,7 @@ interface FaqItemRowProps {
   onToggle: () => void;
   primaryColor: string;
   isVisible: boolean;
-  isLast: boolean;
+  _isLast: boolean;
 }
 
 function FaqItemRow({
@@ -26,7 +26,7 @@ function FaqItemRow({
   onToggle,
   primaryColor,
   isVisible,
-  isLast,
+  _isLast,
 }: FaqItemRowProps) {
   return (
     <div
@@ -193,7 +193,7 @@ export function FaqAccordion({ theme }: FaqAccordionProps) {
               onToggle={() => handleToggle(index)}
               primaryColor={theme.primary_color}
               isVisible={isVisible}
-              isLast={index === theme.faq_items.length - 1}
+              _isLast={index === theme.faq_items.length - 1}
             />
           ))}
         </div>

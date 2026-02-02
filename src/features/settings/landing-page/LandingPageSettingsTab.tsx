@@ -17,23 +17,20 @@ import {
   Globe,
   Save,
   RotateCcw,
-  ExternalLink,
   Eye,
-  GripVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { toast } from 'react-hot-toast';
 import { useImo } from '@/hooks/imo';
-import { useLandingPageOperations } from '@/features/landing/hooks';
-import { DEFAULT_LANDING_PAGE_THEME } from '@/features/landing/types';
+import {
+  useLandingPageOperations,
+  DEFAULT_LANDING_PAGE_THEME,
+} from '@/features/landing';
 import type {
   LandingPageSettingsInput,
   LandingPageTheme,
@@ -44,8 +41,7 @@ import type {
   RequirementItem,
   TechFeature,
   GalleryImage,
-  SectionId,
-} from '@/features/landing/types';
+} from '@/features/landing';
 
 // Section config for the sidebar
 const SECTIONS = [
@@ -112,7 +108,7 @@ export function LandingPageSettingsTab() {
     try {
       await save(formData);
       setHasChanges(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation
     }
   };
@@ -123,7 +119,7 @@ export function LandingPageSettingsTab() {
       try {
         await reset();
         setHasChanges(false);
-      } catch (error) {
+      } catch (_error) {
         // Error handled by mutation
       }
     }

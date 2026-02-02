@@ -26,9 +26,8 @@ import {
 import { VendorCombobox } from "./VendorCombobox";
 import { PolicySelector } from "./PolicySelector";
 import { useLeadVendors } from "@/hooks/lead-purchases";
-import { usePoliciesByLeadPurchase } from "@/features/policies/hooks";
+import { usePoliciesByLeadPurchase, policyKeys } from "@/features/policies";
 import { useQueryClient } from "@tanstack/react-query";
-import { policyKeys } from "@/features/policies/queries";
 import { leadPurchaseKeys } from "@/hooks/lead-purchases";
 import { useAuth } from "@/contexts/AuthContext";
 import type {

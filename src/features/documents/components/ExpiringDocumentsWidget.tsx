@@ -1,5 +1,5 @@
 // src/features/documents/components/ExpiringDocumentsWidget.tsx
-import { useExpiringDocuments } from "@/hooks/documents/useDocumentExpiration";
+import { useExpiringDocuments } from "@/hooks";
 import {
   DOCUMENT_TYPE_LABELS,
   type InsuranceDocumentType,

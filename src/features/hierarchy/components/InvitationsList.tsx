@@ -17,7 +17,7 @@ import {
   useSentInvitations,
   useResendInvitation,
   useCancelInvitation,
-} from "@/hooks/hierarchy/useInvitations";
+} from "@/hooks";
 
 export function InvitationsList() {
   const { data: invitationsRaw, isLoading } = useSentInvitations("pending");

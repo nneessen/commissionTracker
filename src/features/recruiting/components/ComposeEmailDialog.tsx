@@ -8,9 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { EmailComposer } from "@/features/email";
-import { TemplatePicker } from "@/features/email/components/TemplatePicker";
-import { blocksToHtml } from "@/features/email/components/block-builder";
+import { EmailComposer, TemplatePicker, blocksToHtml } from "@/features/email";
 import { useSendEmail } from "../hooks/useRecruitEmails";
 import type { SendEmailRequest } from "@/services/email";
 import type { EmailTemplate } from "@/types/email.types";

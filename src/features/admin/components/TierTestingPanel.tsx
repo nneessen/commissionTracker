@@ -17,7 +17,7 @@ import {
   useAdminSubscriptionPlans,
   useChangeUserPlan,
   useUserSubscriptionAdmin,
-} from "@/hooks/admin/useAdminSubscription";
+} from "@/hooks";
 import { useAllUsers } from "@/hooks/admin";
 import type { UserProfile } from "@/types/user.types";
 import { cn } from "@/lib/utils";

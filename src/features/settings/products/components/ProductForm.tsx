@@ -49,7 +49,7 @@ import { useImo } from "@/contexts/ImoContext";
 import { useAllActiveImos } from "@/hooks/imo";
 import { UnderwritingConstraintsEditor } from "./UnderwritingConstraintsEditor";
 import { ProductBuildChartSelector } from "./ProductBuildTableEditor";
-import type { ProductUnderwritingConstraints } from "@/features/underwriting/types/product-constraints.types";
+import type { ProductUnderwritingConstraints } from "@/features/underwriting";
 import {
   VALID_TERM_LENGTHS,
   type TermCommissionModifiers,

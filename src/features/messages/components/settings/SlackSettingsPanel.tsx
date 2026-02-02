@@ -21,7 +21,7 @@ import {
   useUserSlackPreferences,
   useToggleAutoPost,
   useSetDefaultSlackChannel,
-} from "@/hooks/slack/useUserSlackPreferences";
+} from "@/hooks";
 import type { SlackChannel } from "@/types/slack.types";
 import { NotConnectedState } from "./NotConnectedState";
 

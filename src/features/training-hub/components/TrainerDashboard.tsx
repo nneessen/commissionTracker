@@ -36,8 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatDistanceToNow, format, subDays, startOfMonth } from "date-fns";
-// eslint-disable-next-line no-restricted-imports
-import { useContractStats } from "@/features/contracting/hooks/useContracts";
+import { useContractStats } from "@/features/contracting";
 import { cn } from "@/lib/utils";
 import { hasStaffRole } from "@/constants/roles";
 import { AgencyPipelineOverview } from "./AgencyPipelineOverview";

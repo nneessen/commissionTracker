@@ -1,7 +1,6 @@
 // src/features/admin/components/AddonTierEditor.tsx
 // Editor for configuring usage-based tiers for add-ons like UW Wizard
 
-import { useState } from "react";
 import { Plus, Trash2, GripVertical, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

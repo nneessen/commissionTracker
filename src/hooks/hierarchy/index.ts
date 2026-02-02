@@ -38,6 +38,7 @@ export {
   useAcceptInvitation,
   useDenyInvitation,
   useCancelInvitation,
+  useResendInvitation,
   invitationKeys,
 } from "./useInvitations";
 

@@ -57,7 +57,7 @@ import {
   type CreateExpenseWithLeadData,
 } from "./components/ExpenseDialogCompact";
 import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";
-import { useMetricsWithDateRange } from "@/hooks/kpi/useMetricsWithDateRange";
+import { useMetricsWithDateRange } from "@/hooks";
 import { useCreateLeadPurchase } from "@/hooks/lead-purchases";
 
 export function ExpenseDashboardCompact() {

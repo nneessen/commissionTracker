@@ -32,7 +32,7 @@ import {
 import {
   useScheduleInstagramMessage,
   useInstagramTemplates,
-} from "@/hooks/instagram/useInstagramIntegration";
+} from "@/hooks";
 import type {
   InstagramConversation,
   InstagramScheduledMessage,

@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Download, ChevronUp, ChevronDown } from "lucide-react";
 import { DrillDownRecord, DrillDownContext } from "@/types/reports.types";
-import { useDrillDown } from "@/hooks/reports/useDrillDown";
+import { useDrillDown } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 interface DrillDownDrawerProps {

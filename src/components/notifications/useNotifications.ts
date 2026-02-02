@@ -1,6 +1,6 @@
 // src/components/notifications/useNotifications.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService } from "@/services/notifications";
+import { notificationService } from "@/services";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Notification } from "@/types/notification.types";
 

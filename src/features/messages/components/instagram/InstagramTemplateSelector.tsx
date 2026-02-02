@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import {
   useInstagramTemplates,
   useInstagramTemplateCategories,
-} from "@/hooks/instagram/useInstagramIntegration";
+} from "@/hooks";
 import {
   MESSAGE_STAGE_LABELS,
   PROSPECT_TYPE_LABELS,

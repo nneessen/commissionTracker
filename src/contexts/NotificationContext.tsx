@@ -7,7 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
+import { supabase } from "@/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationKeys } from "@/components/notifications/useNotifications";
 import type { Notification } from "@/types/notification.types";

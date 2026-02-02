@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
-import { useMetricsWithDateRange } from "@/hooks/kpi/useMetricsWithDateRange";
+import { useMetricsWithDateRange } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 /**

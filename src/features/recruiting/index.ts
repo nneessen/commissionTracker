@@ -14,3 +14,7 @@ export {
   useCancelInvitation,
 } from "./hooks/useRecruitInvitations";
 export { AutomationDialog } from "./admin/AutomationDialog";
+
+// Components
+export { RecruitDetailPanel } from "./components/RecruitDetailPanel";
+export { AddRecruitDialog } from "./components/AddRecruitDialog";

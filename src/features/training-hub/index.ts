@@ -7,6 +7,13 @@ export { EmailTemplatesTab } from "./components/EmailTemplatesTab";
 export { DocumentsTab } from "./components/DocumentsTab";
 export { DocumentBrowserSheet } from "./components/DocumentBrowserSheet";
 
+// Hooks
+export {
+  usePipelinePhases,
+  usePipelinePhaseOptions,
+} from "./hooks/usePipelinePhases";
+export type { PipelinePhaseOption } from "./hooks/usePipelinePhases";
+
 // Types
 export type {
   TrainingDocument,

@@ -9,7 +9,7 @@ import { Search, FileText, Plus, Loader2 } from "lucide-react";
 import {
   useUnlinkedRecentPolicies,
   useUpdatePolicyLeadSource,
-} from "@/features/policies/hooks";
+} from "@/features/policies";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Policy } from "@/types/policy.types";

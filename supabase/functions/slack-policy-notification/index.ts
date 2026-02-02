@@ -303,9 +303,9 @@ async function updateSlackMessage(
 // MILESTONE CELEBRATION SYSTEM
 // ============================================================================
 
-// Milestone thresholds
-const POLICY_MILESTONES = [2, 3, 5] as const;
-const AP_MILESTONES = [2500, 5000, 7500, 10000] as const;
+// Milestone thresholds (prefixed as they document the threshold values used in FLAVOR_TEXT keys)
+const _POLICY_MILESTONES = [2, 3, 5] as const;
+const _AP_MILESTONES = [2500, 5000, 7500, 10000] as const;
 
 // Flavor text pools - randomized for variety
 const FLAVOR_TEXT = {
@@ -379,7 +379,7 @@ function buildCelebrationBlocks(
   let title: string;
   let achievement: string;
   let flavor: string;
-  let color: string;
+  let _color: string;
 
   if (isDual) {
     // Combined mega-celebration
@@ -397,7 +397,7 @@ function buildCelebrationBlocks(
       policyMilestone === 3
         ? `trifecta + big money? ${getFlavorText("dual")}`
         : getFlavorText("dual");
-    color = "#FFD700"; // Gold
+    _color = "#FFD700"; // Gold
   } else if (policyMilestone) {
     // Policy milestone
     switch (policyMilestone) {
@@ -406,28 +406,28 @@ function buildCelebrationBlocks(
         title = "HEATING UP";
         achievement = `${mention} just locked in policy #2 today`;
         flavor = getFlavorText("policy", 2);
-        color = "#FF6B35";
+        _color = "#FF6B35";
         break;
       case 3:
         emoji = "🎯";
         title = "TRIFECTA";
         achievement = `${mention} just hit their 3rd policy today`;
         flavor = getFlavorText("policy", 3);
-        color = "#4ECDC4";
+        _color = "#4ECDC4";
         break;
       case 5:
         emoji = "😈";
         title = "CERTIFIED DEMON";
         achievement = `${mention} locked in 5 policies today`;
         flavor = getFlavorText("policy", 5);
-        color = "#9B59B6";
+        _color = "#9B59B6";
         break;
       default:
         emoji = "🔥";
         title = "ON FIRE";
         achievement = `${mention} is crushing it`;
         flavor = "let's go!";
-        color = "#FF6B35";
+        _color = "#FF6B35";
     }
   } else if (apMilestone) {
     // AP milestone
@@ -438,35 +438,35 @@ function buildCelebrationBlocks(
         title = "$2.5K DAY";
         achievement = `${mention} crossed $2,500 AP today`;
         flavor = getFlavorText("ap", 2500);
-        color = "#CD7F32"; // Bronze
+        _color = "#CD7F32"; // Bronze
         break;
       case 5000:
         emoji = "🚀";
         title = "$5K DAY";
         achievement = `${mention} crossed $5,000 AP today`;
         flavor = getFlavorText("ap", 5000);
-        color = "#C0C0C0"; // Silver
+        _color = "#C0C0C0"; // Silver
         break;
       case 7500:
         emoji = "💰";
         title = "$7.5K DAY";
         achievement = `${mention} crossed $7,500 AP today`;
         flavor = getFlavorText("ap", 7500);
-        color = "#FFD700"; // Gold
+        _color = "#FFD700"; // Gold
         break;
       case 10000:
         emoji = "👑";
         title = "$10K CLUB";
         achievement = `${mention} crossed $10,000 AP today`;
         flavor = getFlavorText("ap", 10000);
-        color = "#E5E4E2"; // Platinum
+        _color = "#E5E4E2"; // Platinum
         break;
       default:
         emoji = "💰";
         title = `${apFormatted} DAY`;
         achievement = `${mention} crossed ${apFormatted} AP`;
         flavor = "big moves!";
-        color = "#FFD700";
+        _color = "#FFD700";
     }
   } else {
     // Fallback (shouldn't happen)
@@ -474,7 +474,7 @@ function buildCelebrationBlocks(
     title = "CELEBRATION";
     achievement = `${mention} is doing great!`;
     flavor = "keep it up!";
-    color = "#3498DB";
+    _color = "#3498DB";
   }
 
   const text = `${emoji} ${title} ${emoji}\n${achievement}\n${flavor}`;
@@ -823,7 +823,7 @@ function buildLeaderboard(
 /**
  * Build the daily leaderboard text (simple text format) - kept for backwards compatibility
  */
-function buildLeaderboardText(
+function _buildLeaderboardText(
   title: string,
   entries: DailyProductionEntry[],
   totalAP: number,
@@ -896,14 +896,28 @@ async function handleCompleteFirstSale(
   };
 
   // ========================================================================
-  // CRITICAL FIX: Clear pending_policy_data IMMEDIATELY
+  // CRITICAL FIX: Clear pending_policy_data AND set title IMMEDIATELY
   // This ensures the dialog dismisses regardless of what happens next
   // (Slack failures, timeouts, etc. will NOT leave the dialog stuck)
+  //
+  // BUG FIX: We MUST set the title here, not just clear pending_policy_data.
+  // The RPC check_first_seller_naming_unified returns logs where:
+  //   title IS NULL OR pending_policy_data IS NOT NULL
+  // If we only clear pending_policy_data but leave title NULL, the dialog
+  // will keep reappearing on the next background check.
   // ========================================================================
+  const effectiveTitle = overrideTitle
+    ? sanitizeSlackTitle(overrideTitle)
+    : log.title
+      ? sanitizeSlackTitle(log.title)
+      : getDefaultDailyTitle();
+
   const { error: clearError } = await supabase
     .from("daily_sales_logs")
     .update({
       pending_policy_data: null,
+      title: effectiveTitle,
+      title_set_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", logId);

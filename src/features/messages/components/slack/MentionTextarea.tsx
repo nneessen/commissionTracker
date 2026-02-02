@@ -17,7 +17,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Loader2 } from "lucide-react";
-import { useSlackChannelMembers } from "@/hooks/slack/useSlackIntegration";
+import { useSlackChannelMembers } from "@/hooks";
 import type { SlackUser } from "@/types/slack.types";
 
 interface MentionTextareaProps {

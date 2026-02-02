@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { WorkflowAction } from "@/types/workflow.types";
-import { useEmailTemplates } from "@/features/email/hooks/useEmailTemplates";
+import { useEmailTemplates } from "@/features/email";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ActionConfigPanelProps {

@@ -67,7 +67,7 @@ export function useUpsertLandingPageSettings() {
   return useMutation({
     mutationFn: ({ imoId, input }: { imoId: string; input: LandingPageSettingsInput }) =>
       landingPageService.upsertSettings(imoId, input),
-    onSuccess: (data, { imoId }) => {
+    onSuccess: (_data, { imoId }) => {
       // Invalidate both admin and public queries
       queryClient.invalidateQueries({ queryKey: landingPageKeys.adminByImo(imoId) });
       queryClient.invalidateQueries({ queryKey: landingPageKeys.public() });

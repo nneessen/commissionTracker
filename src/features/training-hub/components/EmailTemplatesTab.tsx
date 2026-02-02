@@ -67,14 +67,12 @@ import {
   useDeleteEmailTemplate,
   useDuplicateEmailTemplate,
   useToggleTemplateActive,
-} from "@/features/email/hooks/useEmailTemplates";
-import { usePermissionCheck } from "@/hooks/permissions";
-import { useAuthorizationStatus } from "@/hooks/admin";
-import { EmailBlockBuilder } from "@/features/email/components/block-builder";
-import {
+  EmailBlockBuilder,
   EMAIL_TEMPLATE_CATEGORIES,
   TEMPLATE_PREVIEW_VARIABLES,
-} from "@/features/email/constants";
+} from "@/features/email";
+import { usePermissionCheck } from "@/hooks/permissions";
+import { useAuthorizationStatus } from "@/hooks/admin";
 import type {
   EmailTemplate,
   EmailBlock,

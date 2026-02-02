@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Lock, Users, UserPlus, Bell } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { HierarchyStats } from "@/types/hierarchy.types";
-import type { RecruitingStats } from "@/hooks/recruiting/useRecruitingStats";
+import type { RecruitingStats } from "@/hooks";
 import {
   useActiveTemplate,
   usePhases,

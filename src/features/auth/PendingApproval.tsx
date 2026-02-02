@@ -28,7 +28,7 @@ import {
   useJoinRequestEligibility,
   useMyPendingJoinRequest,
 } from "@/hooks/join-request";
-import { JoinRequestForm } from "@/features/settings/join-request/components/JoinRequestForm";
+import { JoinRequestForm } from "@/features/settings";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface PendingApprovalProps {

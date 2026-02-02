@@ -30,6 +30,8 @@ export {
   // Reactions
   useAddSlackReaction,
   useRemoveSlackReaction,
+  // Channel members
+  useSlackChannelMembers,
 } from "./useSlackIntegration";
 
 export {

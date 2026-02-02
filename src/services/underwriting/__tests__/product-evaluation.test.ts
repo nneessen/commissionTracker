@@ -10,7 +10,7 @@ import { describe, it, expect } from "vitest";
 
 import { calculateScore } from "../product-evaluation";
 
-import type { ScoreComponents, EligibilityStatus } from "@/features/underwriting";
+import type { ScoreComponents } from "@/features/underwriting";
 
 // =============================================================================
 // Test Helper: Calculate final score from components

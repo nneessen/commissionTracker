@@ -31,8 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RecruitDetailPanel } from "@/features/recruiting/components/RecruitDetailPanel";
-import { AddRecruitDialog } from "@/features/recruiting/components/AddRecruitDialog";
+import { RecruitDetailPanel, AddRecruitDialog } from "@/features/recruiting";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/types/user.types";
 import { hasStaffRole } from "@/constants/roles";

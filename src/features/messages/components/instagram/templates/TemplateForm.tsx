@@ -37,7 +37,7 @@ import {
   useCreateInstagramTemplate,
   useUpdateInstagramTemplate,
   useInstagramTemplateCategories,
-} from "@/hooks/instagram/useInstagramIntegration";
+} from "@/hooks";
 import {
   PROSPECT_TYPE_LABELS,
   MESSAGE_STAGE_LABELS,

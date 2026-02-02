@@ -3,12 +3,9 @@
 // Handles product fetching, batch optimization, scoring, and single product evaluation.
 
 import { supabase } from "@/services/base";
-import pLimit from "p-limit";
 import type {
   ProductCandidate,
   ProductMetadata,
-  ClientProfile,
-  CoverageRequest,
   DecisionEngineInput,
   EvaluatedProduct,
   BuildChartInfo,
@@ -17,8 +14,8 @@ import type {
   ExtractedCriteria,
   HealthClass,
 } from "./decision-engine.types";
+import type { EligibilityStatus } from "@/features/underwriting";
 import type {
-  EligibilityStatus,
   ScoreComponents,
   BuildTableType,
   BuildTableData,

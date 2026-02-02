@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Globe, Plus, Loader2 } from "lucide-react";
-import { useMyCustomDomains } from "@/hooks/custom-domains/useCustomDomains";
+import { useMyCustomDomains } from "@/hooks";
 import { DomainCard } from "./DomainCard";
 import { AddDomainForm } from "./AddDomainForm";
 

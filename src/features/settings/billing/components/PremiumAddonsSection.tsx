@@ -20,8 +20,7 @@ import {
   type AddonTierConfig,
   type AddonTier,
 } from "@/hooks/admin";
-import { useUnderwritingFeatureFlag } from "@/features/underwriting";
-import { useUWWizardUsage } from "@/features/underwriting/hooks/useUWWizardUsage";
+import { useUnderwritingFeatureFlag, useUWWizardUsage } from "@/features/underwriting";
 
 interface TierWithAddon extends AddonTier {
   addonId: string;

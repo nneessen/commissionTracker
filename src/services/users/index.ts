@@ -22,3 +22,13 @@ export type {
   ApprovalStatus,
   UserProfileRow,
 } from "../../types/user.types";
+
+// User search
+export {
+  searchUsersForAssignment,
+  getUserDisplayName,
+} from "./userSearchService";
+export type {
+  UserSearchResult,
+  SearchUsersParams,
+} from "./userSearchService";

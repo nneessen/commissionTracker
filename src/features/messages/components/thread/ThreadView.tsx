@@ -39,7 +39,7 @@ import {
 import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getInitialsFromEmail } from "@/lib/string";
-import { sanitizeHtml } from "@/features/email/services/sanitizationService";
+import { sanitizeHtml } from "@/features/email";
 
 interface ThreadViewProps {
   threadId: string;

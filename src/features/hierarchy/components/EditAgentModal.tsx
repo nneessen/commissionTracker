@@ -3,8 +3,7 @@
 import React from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
-import { invalidateHierarchyForNode } from "@/hooks/hierarchy";
+import { hierarchyKeys, invalidateHierarchyForNode } from "@/hooks";
 import {
   Dialog,
   DialogContent,

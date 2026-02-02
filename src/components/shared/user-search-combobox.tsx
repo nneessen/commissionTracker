@@ -19,8 +19,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useSearchUsers, useUserById } from "@/hooks/users/useUserSearch";
-import { getUserDisplayName } from "@/services/users/userSearchService";
+import { useSearchUsers, useUserById } from "@/hooks";
+import { getUserDisplayName } from "@/services";
 
 interface UserSearchComboboxProps {
   /** Currently selected user ID */

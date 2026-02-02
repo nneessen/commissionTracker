@@ -12,9 +12,7 @@ import type {
 } from "@/features/underwriting";
 import type {
   GenderType,
-  TobaccoClass,
   RateableHealthClass,
-  TermYears,
   AlternativeQuote,
   PremiumMatrix,
 } from "./premiumMatrixService";

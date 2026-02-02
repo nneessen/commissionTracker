@@ -37,13 +37,13 @@ import {
 import {
   useHealthConditions,
   groupConditionsByCategory,
-} from "@/features/underwriting/hooks/useHealthConditions";
+  formatCurrency,
+} from "@/features/underwriting";
 import type {
   ProductUnderwritingConstraints,
   AgeTier,
   FullUnderwritingAgeBand,
-} from "@/features/underwriting/types/product-constraints.types";
-import { formatCurrency } from "@/features/underwriting/utils/formatters";
+} from "@/features/underwriting";
 import { cn } from "@/lib/utils";
 
 interface UnderwritingConstraintsEditorProps {

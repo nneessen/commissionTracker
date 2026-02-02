@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { Loader2, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCreateCustomDomain } from "@/hooks/custom-domains/useCustomDomains";
+import { useCreateCustomDomain } from "@/hooks";
 import { DnsInstructions } from "./DnsInstructions";
 
 interface AddDomainFormProps {

@@ -32,7 +32,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { SlackChannel, SlackUser } from "@/types/slack.types";
 import { getEmoji, processEmojiShortcodes } from "@/lib/emoji";
 import { MentionTextarea } from "./MentionTextarea";
-import { useSlackChannelMembers } from "@/hooks/slack/useSlackIntegration";
+import { useSlackChannelMembers } from "@/hooks";
 
 // Emoji-to-Slack-name mapping for common emojis
 // This maps unicode emoji to Slack's emoji names

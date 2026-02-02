@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Package, Gift, HelpCircle, Plus, Loader2, Check } from "lucide-react";
 import { LeadPurchaseSelector } from "./LeadPurchaseSelector";
-import { ManageLeadPurchaseDialog } from "@/features/expenses/leads/ManageLeadPurchaseDialog";
+import { ManageLeadPurchaseDialog } from "@/features/expenses";
 import { useUpdatePolicyLeadSource } from "../hooks";
 import {
   useCreateLeadPurchase,

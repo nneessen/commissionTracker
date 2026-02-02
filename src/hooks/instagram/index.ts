@@ -31,6 +31,11 @@ export {
   useCreateInstagramTemplate,
   useUpdateInstagramTemplate,
   useDeleteInstagramTemplate,
+  // Template category hooks
+  useInstagramTemplateCategories,
+  useCreateTemplateCategory,
+  useUpdateTemplateCategory,
+  useDeleteTemplateCategory,
   // Scheduled message hooks
   useInstagramScheduledMessages,
   useCancelInstagramScheduledMessage,

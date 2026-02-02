@@ -84,8 +84,9 @@ export function useApprovalStats() {
 
 /**
  * Hook to check if current user is admin
+ * @deprecated Use useIsAdmin from @/hooks/permissions instead
  */
-export function useIsAdmin() {
+export function useIsAdminQuery() {
   return useQuery({
     queryKey: userApprovalKeys.isAdmin(),
     queryFn: () => userApprovalService.isCurrentUserAdmin(),

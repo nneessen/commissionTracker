@@ -56,4 +56,15 @@ export {
   useDeleteEmailTemplate,
   useDuplicateEmailTemplate,
   useToggleTemplateActive,
+  useUserTemplateStatus,
+  useGroupedEmailTemplates,
 } from "./hooks/useEmailTemplates";
+
+// Template Picker
+export { TemplatePicker } from "./components/TemplatePicker";
+
+// Constants
+export {
+  EMAIL_TEMPLATE_CATEGORIES,
+  TEMPLATE_PREVIEW_VARIABLES,
+} from "./constants";

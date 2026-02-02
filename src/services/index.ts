@@ -15,6 +15,16 @@ export * from "./imo";
 export * from "./agency";
 export * from "./agency-request";
 export * from "./join-request";
+export * from "./notifications";
+export * from "./audit";
+export * from "./hierarchy";
+export * from "./email";
+export * from "./subscription";
+export * from "./recruiting";
+export * from "./underwriting";
+export * from "./documents";
+export * from "./leads";
+export * from "./clients";
 
 // Individual service exports for backward compatibility
 export { carrierService } from "./settings/carriers";

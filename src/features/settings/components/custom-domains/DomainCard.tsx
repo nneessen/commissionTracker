@@ -18,7 +18,7 @@ import {
   useProvisionCustomDomain,
   useDeleteCustomDomain,
   useCheckDomainStatus,
-} from "@/hooks/custom-domains/useCustomDomains";
+} from "@/hooks";
 import { DnsInstructions } from "./DnsInstructions";
 import type { CustomDomain } from "@/types/custom-domain.types";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types/custom-domain.types";

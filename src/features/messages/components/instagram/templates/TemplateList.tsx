@@ -19,7 +19,7 @@ import {
   type MessageStage,
   type InstagramMessageTemplate,
 } from "@/types/instagram.types";
-import { useInstagramTemplateCategories } from "@/hooks/instagram/useInstagramIntegration";
+import { useInstagramTemplateCategories } from "@/hooks";
 import { TemplateDeleteDialog } from "./TemplateDeleteDialog";
 
 interface TemplateListProps {

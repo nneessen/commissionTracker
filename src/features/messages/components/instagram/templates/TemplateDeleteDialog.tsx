@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useDeleteInstagramTemplate } from "@/hooks/instagram/useInstagramIntegration";
+import { useDeleteInstagramTemplate } from "@/hooks";
 import type { InstagramMessageTemplate } from "@/types/instagram.types";
 
 interface TemplateDeleteDialogProps {

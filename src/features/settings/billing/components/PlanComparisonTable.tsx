@@ -14,7 +14,6 @@ import {
 import { useSubscriptionPlans, useSubscription } from "@/hooks/subscription";
 import { cn } from "@/lib/utils";
 import {
-  FEATURE_REGISTRY,
   FEATURE_CATEGORIES,
   getFeaturesByCategory,
   type FeatureCategory,

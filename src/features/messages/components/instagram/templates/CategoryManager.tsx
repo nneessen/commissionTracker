@@ -35,7 +35,7 @@ import {
   useCreateTemplateCategory,
   useUpdateTemplateCategory,
   useDeleteTemplateCategory,
-} from "@/hooks/instagram/useInstagramIntegration";
+} from "@/hooks";
 import {
   PROSPECT_TYPE_LABELS,
   BUILT_IN_PROSPECT_TYPES,

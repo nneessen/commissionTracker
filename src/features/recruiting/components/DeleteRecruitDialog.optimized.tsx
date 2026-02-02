@@ -18,7 +18,7 @@ import { enhancedRecruitingService } from "@/services/recruiting/recruitingServi
 import { supabase } from "@/services/base/supabase";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
+import { hierarchyKeys } from "@/hooks";
 import { UserSearchCombobox } from "@/components/shared/user-search-combobox";
 
 interface DeleteRecruitDialogProps {

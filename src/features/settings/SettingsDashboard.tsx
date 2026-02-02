@@ -31,8 +31,7 @@ import { JoinRequestPage } from "./join-request";
 import { NotificationsSettingsPage } from "./notifications";
 import { IntegrationsTab } from "./integrations";
 import { AuditTrailPage } from "@/features/audit";
-// eslint-disable-next-line no-restricted-imports -- Legacy import, needs refactor
-import { UnderwritingSettingsTab } from "@/features/underwriting/components/UnderwritingSettingsTab";
+import { UnderwritingSettingsTab } from "@/features/underwriting";
 import { LandingPageSettingsTab } from "./landing-page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";

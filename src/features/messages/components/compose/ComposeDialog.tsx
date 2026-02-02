@@ -73,7 +73,7 @@ export function ComposeDialog({
   const { data: userProfile } = useCurrentUserProfile();
 
   // Check if user is admin (super admin always sends from the business email)
-  const isAdmin = userProfile?.is_admin || false;
+  const _isAdmin = userProfile?.is_admin || false;
 
   // Form state
   const [to, setTo] = useState<string[]>(replyTo ? [replyTo.to] : []);

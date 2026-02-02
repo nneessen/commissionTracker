@@ -53,8 +53,8 @@ export function TeamGeographicAnalysis({
   // Take top 10 states
   const topStates = data.slice(0, 10);
 
-  // Calculate average premium per state for comparison
-  const avgPremiumPerState = data.length > 0 ? totalPremium / data.length : 0;
+  // Calculate average premium per state for comparison (prefixed as unused)
+  const _avgPremiumPerState = data.length > 0 ? totalPremium / data.length : 0;
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">

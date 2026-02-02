@@ -58,7 +58,7 @@ import {
 } from "@/hooks/workflows";
 import WorkflowWizard from "./WorkflowWizard";
 import EventTypeManager from "./EventTypeManager";
-import { EmailTemplatesTab } from "@/features/training-hub/components/EmailTemplatesTab";
+import { EmailTemplatesTab } from "@/features/training-hub";
 import type { Workflow } from "@/types/workflow.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";

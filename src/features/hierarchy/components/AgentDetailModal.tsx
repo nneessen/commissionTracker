@@ -38,11 +38,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
-import { useAgentDetails } from "@/hooks/hierarchy/useAgentDetails";
-import { useAgentPolicies } from "@/hooks/hierarchy/useAgentPolicies";
-import { useAgentCommissions } from "@/hooks/hierarchy/useAgentCommissions";
-import { useAgentOverrides } from "@/hooks/hierarchy/useAgentOverrides";
-import { useTeamComparison } from "@/hooks/hierarchy/useTeamComparison";
+import {
+  useAgentDetails,
+  useAgentPolicies,
+  useAgentCommissions,
+  useAgentOverrides,
+  useTeamComparison,
+} from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { HierarchyNode } from "@/types/hierarchy.types";
 import {

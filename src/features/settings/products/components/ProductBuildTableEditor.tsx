@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Ruler, AlertCircle } from "lucide-react";
 import { useBuildChartOptions } from "@/features/settings/carriers/hooks/useBuildChartOptions";
-import { BUILD_TABLE_TYPE_LABELS } from "@/features/underwriting/types/build-table.types";
+import { BUILD_TABLE_TYPE_LABELS } from "@/features/underwriting";
 
 interface ProductBuildChartSelectorProps {
   carrierId: string | null;

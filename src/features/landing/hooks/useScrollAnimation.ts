@@ -91,7 +91,7 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>(
  * Hook for staggered animations on multiple elements
  */
 export function useStaggeredAnimation(
-  itemCount: number,
+  _itemCount: number,
   options: UseScrollAnimationOptions & { staggerDelay?: number } = {}
 ): {
   containerRef: React.RefObject<HTMLDivElement | null>;

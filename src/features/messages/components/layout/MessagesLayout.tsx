@@ -3,7 +3,7 @@
 
 import { ReactNode } from "react";
 import { ResizablePanel } from "@/components/ui/resizable-panel";
-import { useResizableSidebar } from "@/hooks/ui/useResizableSidebar";
+import { useResizableSidebar } from "@/hooks";
 
 interface MessagesLayoutProps {
   list: ReactNode;

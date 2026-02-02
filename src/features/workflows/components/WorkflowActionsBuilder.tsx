@@ -43,8 +43,8 @@ import {
   RECIPIENT_TYPE_LABELS,
   AVAILABLE_ROLES,
 } from "@/types/workflow-recipients.types";
-import { useEmailTemplates } from "@/features/email/hooks/useEmailTemplates";
-import { usePipelinePhaseOptions } from "@/features/training-hub/hooks/usePipelinePhases";
+import { useEmailTemplates } from "@/features/email";
+import { usePipelinePhaseOptions } from "@/features/training-hub";
 import {
   getRecommendedRecipients,
   isRecommendedRecipient,

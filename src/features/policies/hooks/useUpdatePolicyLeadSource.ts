@@ -4,7 +4,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { policyService } from "@/services/policies/policyService";
 import { policyKeys } from "../queries";
-import { leadPurchaseKeys } from "@/hooks/lead-purchases/useLeadPurchases";
+import { leadPurchaseKeys } from "@/hooks";
 import type { LeadSourceType } from "@/types/policy.types";
 import type { Policy } from "@/types/policy.types";
 

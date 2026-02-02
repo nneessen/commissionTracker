@@ -6,6 +6,96 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-02 13:51:26
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/components/notifications/useNotifications.ts`
+- `src/components/shared/user-search-combobox.tsx`
+- `src/contexts/NotificationContext.tsx`
+- `src/features/admin/components/AddonTierEditor.tsx`
+- `src/features/admin/components/TierTestingPanel.tsx`
+- `src/features/analytics/components/PaceMetrics.tsx`
+- `src/features/auth/PendingApproval.tsx`
+- `src/features/dashboard/components/TeamRecruitingSection.tsx`
+- `src/features/documents/components/ExpiringDocumentsWidget.tsx`
+- `src/features/email/index.ts`
+- `src/features/expenses/ExpenseDashboardCompact.tsx`
+- `src/features/expenses/index.ts`
+- `src/features/expenses/leads/ManageLeadPurchaseDialog.tsx`
+- `src/features/expenses/leads/PolicySelector.tsx`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentDetailModal.tsx`
+- `src/features/hierarchy/components/EditAgentModal.tsx`
+- `src/features/hierarchy/components/InvitationsList.tsx`
+- `src/features/hierarchy/components/InviteDownline.tsx`
+- `src/features/hierarchy/components/analytics/TeamGeographicAnalysis.tsx`
+- `src/features/landing/components/FaqAccordion.tsx`
+- `src/features/landing/hooks/useLandingPageSettings.ts`
+- `src/features/landing/hooks/useScrollAnimation.ts`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/instagram/InstagramScheduleDialog.tsx`
+- `src/features/messages/components/instagram/InstagramTemplateSelector.tsx`
+- `src/features/messages/components/instagram/templates/CategoryManager.tsx`
+- `src/features/messages/components/instagram/templates/InstagramTemplatesSettings.tsx`
+- `src/features/messages/components/instagram/templates/TemplateDeleteDialog.tsx`
+- `src/features/messages/components/instagram/templates/TemplateForm.tsx`
+- `src/features/messages/components/instagram/templates/TemplateList.tsx`
+- `src/features/messages/components/layout/MessagesLayout.tsx`
+- `src/features/messages/components/settings/SlackSettingsPanel.tsx`
+- `src/features/messages/components/slack/MentionTextarea.tsx`
+- `src/features/messages/components/slack/SlackChannelView.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/policies/components/LeadPurchaseLinkDialog.tsx`
+- `src/features/policies/components/LeadSourceDialog.tsx`
+- `src/features/policies/hooks/useUpdatePolicyLeadSource.ts`
+- `src/features/policies/index.ts`
+- `src/features/recruiting/components/ComposeEmailDialog.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.optimized.tsx`
+- `src/features/recruiting/components/UploadDocumentDialog.tsx`
+- `src/features/recruiting/index.ts`
+- `src/features/reports/components/drill-down/DrillDownDrawer.tsx`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/PremiumAddonsSection.tsx`
+- `src/features/settings/components/custom-domains/AddDomainForm.tsx`
+- `src/features/settings/components/custom-domains/CustomDomainManager.tsx`
+- `src/features/settings/components/custom-domains/DomainCard.tsx`
+- `src/features/settings/index.ts`
+- `src/features/settings/landing-page/LandingPageSettingsTab.tsx`
+- `src/features/settings/products/components/ProductBuildTableEditor.tsx`
+- `src/features/settings/products/components/ProductForm.tsx`
+- `src/features/settings/products/components/UnderwritingConstraintsEditor.tsx`
+- `src/features/training-hub/components/EmailTemplatesTab.tsx`
+- `src/features/training-hub/components/RecruitingTab.tsx`
+- `src/features/training-hub/components/TrainerDashboard.tsx`
+- `src/features/training-hub/index.ts`
+- `src/features/underwriting/index.ts`
+- `src/features/workflows/components/ActionConfigPanel.tsx`
+- `src/features/workflows/components/WorkflowActionsBuilder.tsx`
+- `src/features/workflows/components/WorkflowManager.tsx`
+- `src/hooks/admin/useUserApproval.ts`
+- `src/hooks/custom-domains/index.ts`
+- `src/hooks/hierarchy/index.ts`
+- `src/hooks/index.ts`
+- `src/hooks/instagram/index.ts`
+- `src/hooks/messaging/index.ts`
+- `src/hooks/settings/index.ts`
+- `src/hooks/slack/index.ts`
+- `src/hooks/users/index.ts`
+- `src/services/index.ts`
+- `src/services/underwriting/__tests__/product-evaluation.test.ts`
+- `src/services/underwriting/decision-engine.types.ts`
+- `src/services/underwriting/product-evaluation.ts`
+- `src/services/users/index.ts`
+- `supabase/functions/send-password-reset/index.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+
+### Statistics
+```
+ 81 files changed, 277 insertions(+), 119 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-02 11:50:42
 
 ### Changed Files

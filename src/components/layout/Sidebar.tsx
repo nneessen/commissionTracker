@@ -125,6 +125,7 @@ const navigationItems: NavigationItem[] = [
     subscriptionFeature: "hierarchy",
     allowedEmails: [
       "nickneessen@thestandardhq.com",
+      "nick@nickneessen.com",
       "kerryglass.ffl@gmail.com",
       "teagkeys@gmail.com",
     ],
@@ -161,6 +162,7 @@ const staffNavigationItems: NavigationItem[] = [
     href: "/leaderboard",
     allowedEmails: [
       "nickneessen@thestandardhq.com",
+      "nick@nickneessen.com",
       "kerryglass.ffl@gmail.com",
       "teagkeys@gmail.com",
     ],

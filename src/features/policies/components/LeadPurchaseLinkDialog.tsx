@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, Check, Loader2 } from "lucide-react";
 import { useLeadPurchases } from "@/hooks/lead-purchases";
-import { useUpdatePolicyLeadSource } from "@/features/policies/hooks";
+import { useUpdatePolicyLeadSource } from "@/features/policies";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Policy } from "@/types/policy.types";

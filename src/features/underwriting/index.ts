@@ -133,3 +133,26 @@ export type {
   RuleProvenance,
   AcceptanceDecision as UWAcceptanceDecision,
 } from "./types/underwriting.types";
+
+// UW Wizard Usage Hook
+export {
+  useUWWizardUsage,
+  getUsageStatus,
+  getDaysRemaining,
+  uwWizardUsageKeys,
+} from "./hooks/useUWWizardUsage";
+export type { UWWizardUsage } from "./hooks/useUWWizardUsage";
+
+// Product Constraints Types
+export type {
+  AgeTier,
+  AgeTieredFaceAmounts,
+  KnockoutConditions,
+  FullUnderwritingAgeBand,
+  FullUnderwritingThreshold,
+  ProductUnderwritingConstraints,
+  ProductWithConstraints,
+  ProductEligibilityResult,
+  EligibilityClientProfile,
+  EligibilityFilterResult,
+} from "./types/product-constraints.types";

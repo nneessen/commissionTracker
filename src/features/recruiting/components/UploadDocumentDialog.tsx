@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, Loader2, FileText, X, Calendar } from "lucide-react";
 import { useUploadDocument } from "../hooks/useRecruitDocuments";
-import { DocumentTypeCategorySelector } from "@/features/documents/components/DocumentTypeCategorySelector";
+import { DocumentTypeCategorySelector } from "@/features/documents";
 import type { InsuranceDocumentType } from "@/types/documents.types";
 
 interface UploadDocumentDialogProps {
