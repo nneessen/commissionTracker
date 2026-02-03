@@ -1,7 +1,7 @@
 // Domain Card
 // Displays a single custom domain with status and actions
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle2,
   AlertCircle,
@@ -20,6 +20,7 @@ import {
   useCheckDomainStatus,
 } from "@/hooks";
 import { DnsInstructions } from "./DnsInstructions";
+import { DomainProgressIndicator } from "./DomainProgressIndicator";
 import type { CustomDomain } from "@/types/custom-domain.types";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types/custom-domain.types";
 
@@ -172,6 +173,13 @@ export function DomainCard({ domain }: DomainCardProps) {
         )}
       </div>
 
+      {/* Progress Indicator - show for in-progress statuses */}
+      {domain.status !== "active" && domain.status !== "error" && (
+        <div className="mt-2 flex justify-center">
+          <DomainProgressIndicator status={domain.status} />
+        </div>
+      )}
+
       {/* Error Message */}
       {domain.last_error && (
         <div className="mt-2 flex items-start gap-2 rounded bg-red-50 p-2">
@@ -206,21 +214,50 @@ export function DomainCard({ domain }: DomainCardProps) {
         </div>
       )}
 
-      {/* Provisioning Progress */}
+      {/* Enhanced Provisioning Progress */}
       {domain.status === "provisioning" && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>SSL certificate is being provisioned...</span>
-          {!isPolling && (
+        <div className="mt-3 space-y-2">
+          <div className="rounded-md border border-purple-200 bg-purple-50 p-2">
+            <div className="flex items-start gap-2">
+              <Loader2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 animate-spin text-purple-600" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-purple-800">
+                  Provisioning SSL Certificate
+                </p>
+                <p className="mt-1 text-[10px] text-purple-700">
+                  Vercel is generating your SSL certificate. This typically
+                  takes <span className="font-medium">1-15 minutes</span> but
+                  can occasionally take up to 30 minutes for new domains.
+                </p>
+                <p className="mt-1.5 text-[10px] text-purple-600">
+                  You can leave this page — the process continues in the
+                  background.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            {isPolling ? (
+              <span className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-500" />
+                Auto-checking status...
+              </span>
+            ) : (
+              <span className="text-[10px] text-zinc-400">
+                Auto-check paused
+              </span>
+            )}
             <button
               onClick={handleCheckStatus}
               disabled={isLoading}
-              className="ml-auto flex items-center gap-1 text-zinc-600 hover:text-zinc-900"
+              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50"
             >
-              <RefreshCw className="h-3 w-3" />
+              <RefreshCw
+                className={`h-3 w-3 ${checkStatus.isPending ? "animate-spin" : ""}`}
+              />
               Check Status
             </button>
-          )}
+          </div>
         </div>
       )}
 

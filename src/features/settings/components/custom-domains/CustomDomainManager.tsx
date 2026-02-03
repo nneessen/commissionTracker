@@ -6,6 +6,7 @@ import { Globe, Plus, Loader2 } from "lucide-react";
 import { useMyCustomDomains } from "@/hooks";
 import { DomainCard } from "./DomainCard";
 import { AddDomainForm } from "./AddDomainForm";
+import { DomainSetupGuide } from "./DomainSetupGuide";
 
 export function CustomDomainManager() {
   const { data: domains, isLoading, error } = useMyCustomDomains();
@@ -60,6 +61,9 @@ export function CustomDomainManager() {
         Connect your own subdomain (e.g., join.yourdomain.com) to your
         recruiting page. Visitors will see your custom URL in their browser.
       </p>
+
+      {/* Setup Guide - expanded by default when no domains exist */}
+      <DomainSetupGuide defaultOpen={!domains || domains.length === 0} />
 
       {/* Domain List */}
       {domains && domains.length > 0 ? (
