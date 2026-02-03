@@ -126,11 +126,13 @@ async function fetchAllAgentMetrics(
     // Filter policies for this agent
     const agentPolicies = allPolicies.filter((p) => p.user_id === agentId);
 
-    // Filter by date range (using created_at)
+    // Filter by date range (using submit_date for accurate MTD metrics)
     const mtdPolicies = agentPolicies.filter((p) => {
-      if (!p.created_at) return false;
-      const createdDate = new Date(p.created_at);
-      return createdDate >= startOfMonth && createdDate <= endOfMonth;
+      // Use submit_date for filtering; fall back to created_at only if submit_date is null
+      const dateStr = p.submit_date || p.created_at;
+      if (!dateStr) return false;
+      const policyDate = new Date(dateStr);
+      return policyDate >= startOfMonth && policyDate <= endOfMonth;
     });
 
     // Calculate AP metrics
