@@ -492,13 +492,32 @@ function RecruitingDashboardContent() {
 }
 
 export function RecruitingDashboard() {
-  // Check feature access levels
+  // Get user info to check roles
+  const { user } = useAuth();
+
+  // Check if user is a staff role (trainer or contracting_manager)
+  // Staff roles bypass subscription gating and always see the enhanced recruiting dashboard
+  const isStaffRole =
+    user?.roles?.some((role) =>
+      STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
+    ) ?? false;
+
+  // Check feature access levels (only needed for non-staff users)
   const { hasAccess: hasCustomPipeline, isLoading: loadingCustomPipeline } =
     useFeatureAccess("recruiting_custom_pipeline");
   const { hasAccess: hasBasicRecruiting, isLoading: loadingBasicRecruiting } =
     useFeatureAccess("recruiting_basic");
 
-  // Show loading state while checking feature access
+  // Staff roles bypass all feature checks - show full dashboard immediately
+  if (isStaffRole) {
+    return (
+      <RecruitingErrorBoundary>
+        <RecruitingDashboardContent />
+      </RecruitingErrorBoundary>
+    );
+  }
+
+  // Show loading state while checking feature access (non-staff users only)
   if (loadingCustomPipeline || loadingBasicRecruiting) {
     return (
       <div className="flex items-center justify-center h-64 text-[11px] text-zinc-500">
