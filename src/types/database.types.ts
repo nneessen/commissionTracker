@@ -12953,6 +12953,17 @@ export type Database = {
           metric: string
         }[]
       }
+      get_all_agencies_submit_totals: {
+        Args: { p_imo_id: string }
+        Returns: {
+          agency_id: string
+          agency_name: string
+          mtd_ap: number
+          mtd_policies: number
+          wtd_ap: number
+          wtd_policies: number
+        }[]
+      }
       get_all_expense_categories: {
         Args: never
         Returns: {
@@ -13961,6 +13972,21 @@ export type Database = {
           policy_channel_name: string
           team_id: string
           team_name: string
+        }[]
+      }
+      get_slack_leaderboard_with_periods: {
+        Args: { p_agency_id?: string; p_imo_id: string }
+        Returns: {
+          agent_email: string
+          agent_id: string
+          agent_name: string
+          mtd_ap: number
+          mtd_policies: number
+          slack_member_id: string
+          today_ap: number
+          today_policies: number
+          wtd_ap: number
+          wtd_policies: number
         }[]
       }
       get_stale_phase_recruits: {

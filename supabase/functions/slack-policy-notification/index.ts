@@ -845,13 +845,12 @@ function buildLeaderboard(
 }
 
 /**
- * Build the enhanced daily leaderboard with WTD/MTD sections
+ * Build the daily leaderboard with WTD/MTD aggregate totals and agency rankings
  * Format:
- * 1. Daily leaderboard (ranked by today's AP)
- * 2. Today Total
- * 3. Agent WTD/MTD progress
- * 4. Agency comparison (all agencies WTD/MTD)
- * 5. Disclaimer
+ * 1. Daily leaderboard (ranked by today's AP) - same as original
+ * 2. Total, WTD, MTD aggregate totals
+ * 3. Agency Rankings (all agencies WTD/MTD)
+ * 4. Disclaimer
  */
 function buildLeaderboardWithPeriods(
   title: string,
@@ -865,9 +864,10 @@ function buildLeaderboardWithPeriods(
     timeZone: "America/New_York",
   });
 
-  // Calculate today's total
+  // Calculate aggregate totals
   const todayTotalAP = entries.reduce((sum, e) => sum + (e.today_ap || 0), 0);
-  const todayTotalPolicies = entries.reduce((sum, e) => sum + (e.today_policies || 0), 0);
+  const wtdTotalAP = entries.reduce((sum, e) => sum + (e.wtd_ap || 0), 0);
+  const mtdTotalAP = entries.reduce((sum, e) => sum + (e.mtd_ap || 0), 0);
 
   // Build fallback text (shown in notifications/previews)
   let text = `${title} - ${today}\n`;
@@ -943,49 +943,19 @@ function buildLeaderboardWithPeriods(
 
   blocks.push({ type: "divider" });
 
-  // Today Total
-  const totalPolicyText = todayTotalPolicies === 1 ? "policy" : "policies";
+  // =====================================================
+  // SECTION 3: Aggregate Totals (Total, WTD, MTD)
+  // =====================================================
   blocks.push({
     type: "section",
     text: {
       type: "mrkdwn",
-      text: `*💰 Today: ${formatCurrency(todayTotalAP)}* _(${todayTotalPolicies} ${totalPolicyText})_`,
+      text: `*💰 Total: ${formatCurrency(todayTotalAP)}*\n*📈 WTD: ${formatCurrency(wtdTotalAP)}*\n*📆 MTD: ${formatCurrency(mtdTotalAP)}*`,
     },
   });
 
   // =====================================================
-  // SECTION 3: Agent WTD/MTD Progress
-  // =====================================================
-  if (entries.length > 0) {
-    blocks.push({ type: "divider" });
-
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "*📈 Agent Progress*",
-      },
-    });
-
-    // Show WTD and MTD for each agent
-    const agentProgressLines = entries.map((entry) => {
-      const name = entry.agent_name || "Unknown";
-      const wtd = formatCurrency(entry.wtd_ap);
-      const mtd = formatCurrency(entry.mtd_ap);
-      return `*${name}*: WTD ${wtd} · MTD ${mtd}`;
-    });
-
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: agentProgressLines.join("\n"),
-      },
-    });
-  }
-
-  // =====================================================
-  // SECTION 4: Agency Comparison (all agencies)
+  // SECTION 4: Agency Rankings
   // =====================================================
   if (agencyTotals && agencyTotals.length > 0) {
     blocks.push({ type: "divider" });
@@ -994,7 +964,7 @@ function buildLeaderboardWithPeriods(
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "*🏢 Agency Comparison*",
+        text: "*🏢 Agency Rankings*",
       },
     });
 

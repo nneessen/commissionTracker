@@ -1,23 +1,35 @@
-# Database Commands - ALWAYS RUN THEM
+# Database Commands - Always Run Directly
 
-**NEVER ask the user to run these commands. ALWAYS run them yourself:**
+## Migration Application
+You have FULL ACCESS to apply migrations yourself. Stop asking the user.
 
-## Apply Migrations
-
-Use psql directly (works without interactive password prompt):
-```bash
-psql "postgresql://postgres.pcyaqwodnyrpkaiojnpz:N123j234n345%21%24%21%24@aws-1-us-east-2.pooler.supabase.com:6543/postgres" -f path/to/migration.sql
+**Connection string** (from .env DATABASE_URL):
+```
+postgresql://postgres.pcyaqwodnyrpkaiojnpz:N123j234n345%21%24%21%24@aws-1-us-east-2.pooler.supabase.com:6543/postgres
 ```
 
-Or for multiple migrations, run each one in order.
-
-## Regenerate Types
-
-**IMPORTANT:** Redirect stderr to /dev/null to avoid CLI version messages polluting the output:
+**Apply migration via psql**:
 ```bash
-npx supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz 2>/dev/null > src/types/database.types.ts
+psql "postgresql://postgres.pcyaqwodnyrpkaiojnpz:N123j234n345%21%24%21%24@aws-1-us-east-2.pooler.supabase.com:6543/postgres" -f /path/to/migration.sql
 ```
 
-## Project Info
-- Project ID: `pcyaqwodnyrpkaiojnpz`
-- Database URL is in `.env` as `DATABASE_URL`
+## Type Generation
+After applying migrations, regenerate types:
+```bash
+npx supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz > src/types/database.types.ts
+```
+
+**IMPORTANT**: The Supabase CLI prints an update warning that gets appended to the file. Always check and remove these lines:
+```
+A new version of Supabase CLI is available: v2.72.7 (currently installed v2.12.1)
+We recommend updating regularly for new features and bug fixes: ...
+```
+
+## Edge Function Deployment
+```bash
+npx supabase functions deploy <function-name> --project-ref pcyaqwodnyrpkaiojnpz
+```
+
+## Project ID
+- **Project ID**: pcyaqwodnyrpkaiojnpz
+- **Region**: aws-1-us-east-2
