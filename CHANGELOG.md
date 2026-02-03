@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-03 18:06:33
+
+### Changed Files
+- `src/constants/auth.constants.ts`
+- `src/features/auth/AuthCallback.tsx`
+- `src/features/auth/ResetPassword.tsx`
+- `src/index.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `supabase/functions/send-password-reset/index.ts`
+
+### Statistics
+```
+ 6 files changed, 229 insertions(+), 29 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-03 11:52:08
 
 ### Changed Files

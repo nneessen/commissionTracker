@@ -2,6 +2,9 @@
 
 export const SESSION_STORAGE_KEYS = {
   VERIFICATION_EMAIL: "pendingVerificationEmail",
+  RECOVERY_HASH: "recovery_hash",
+  RECOVERY_META: "recovery_capture_meta",
+  PASSWORD_RESET_ERROR: "password_reset_error",
 } as const;
 
 export const RESEND_COOLDOWN_SECONDS = 60;

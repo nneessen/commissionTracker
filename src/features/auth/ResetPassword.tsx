@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { logger } from "../../services/base/logger";
 import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
 import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { ArrowLeft, KeyRound, Mail } from "lucide-react";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
+import { SESSION_STORAGE_KEYS } from "../../constants/auth.constants";
 
 /**
  * ResetPassword - Handle password reset after user clicks email link
@@ -18,9 +19,25 @@ import { LogoSpinner } from "@/components/ui/logo-spinner";
  * This component is accessed when a user clicks the password reset link
  * from their email. It allows them to set a new password.
  */
+/**
+ * Get user-friendly error message based on Supabase error codes
+ */
+function getErrorMessage(code: string | null, description: string | null): string {
+  if (code === "otp_expired") {
+    return "This password reset link has expired. Please request a new one below.";
+  }
+  if (code === "access_denied" || description?.includes("invalid")) {
+    return "This link is invalid. It may have already been used (links work only once). Please request a new one below.";
+  }
+  if (description) {
+    return `${description}. Please request a new link below.`;
+  }
+  return "There was a problem with your link. Please request a new one below.";
+}
+
 export const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
-  const { updatePassword, session, loading: authLoading } = useAuth();
+  const { updatePassword, resetPassword, session, loading: authLoading } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,10 +45,41 @@ export const ResetPassword: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [checkedAuth, setCheckedAuth] = useState(false);
+  // Retry form state
+  const [showRetryForm, setShowRetryForm] = useState(false);
+  const [retryEmail, setRetryEmail] = useState("");
+  const [retryLoading, setRetryLoading] = useState(false);
+  const [retrySuccess, setRetrySuccess] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   useEffect(() => {
     // Wait for auth to finish loading before checking
     if (authLoading) {
+      return;
+    }
+
+    // Check for error state from AuthCallback redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("error") === "true") {
+      const storedError = sessionStorage.getItem(SESSION_STORAGE_KEYS.PASSWORD_RESET_ERROR);
+      if (storedError) {
+        try {
+          const errorInfo = JSON.parse(storedError);
+          sessionStorage.removeItem(SESSION_STORAGE_KEYS.PASSWORD_RESET_ERROR);
+          const errorMessage = getErrorMessage(errorInfo.code, errorInfo.description);
+          setError(errorMessage);
+          setShowRetryForm(true);
+          setCheckedAuth(true);
+          logger.auth("Password reset error from AuthCallback", errorInfo);
+          return;
+        } catch (e) {
+          logger.error("Failed to parse password reset error", e as Error, "Auth");
+        }
+      }
+      // Fallback error message if no stored error
+      setError("There was a problem with your password reset link. Please request a new one below.");
+      setShowRetryForm(true);
+      setCheckedAuth(true);
       return;
     }
 
@@ -42,13 +90,13 @@ export const ResetPassword: React.FC = () => {
 
     // Fallback: Check sessionStorage for recovery hash (stored by index.tsx before Supabase could clear it)
     if (!accessToken || !type) {
-      const storedHash = sessionStorage.getItem("recovery_hash");
+      const storedHash = sessionStorage.getItem(SESSION_STORAGE_KEYS.RECOVERY_HASH);
       if (storedHash) {
         const storedParams = new URLSearchParams(storedHash.substring(1));
         accessToken = storedParams.get("access_token");
         type = storedParams.get("type");
         // Clear stored hash after reading
-        sessionStorage.removeItem("recovery_hash");
+        sessionStorage.removeItem(SESSION_STORAGE_KEYS.RECOVERY_HASH);
         logger.auth("Using stored recovery hash from sessionStorage");
       }
     }
@@ -63,12 +111,10 @@ export const ResetPassword: React.FC = () => {
     } else {
       logger.auth("No valid recovery token or session found");
       setError(
-        "Invalid or expired password reset link. Please request a new one.",
+        "Invalid or expired password reset link. Please request a new one below.",
       );
+      setShowRetryForm(true);
       setCheckedAuth(true);
-      setTimeout(() => {
-        navigate({ to: "/login" });
-      }, 3000);
     }
   }, [navigate, session, authLoading]);
 
@@ -83,6 +129,31 @@ export const ResetPassword: React.FC = () => {
       return "Passwords do not match";
     }
     return null;
+  };
+
+  const handleRetryRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!retryEmail) {
+      setRetryError("Please enter your email address");
+      return;
+    }
+
+    setRetryError(null);
+    setRetryLoading(true);
+    setRetrySuccess(false);
+
+    try {
+      await resetPassword(retryEmail);
+      setRetrySuccess(true);
+      logger.auth("Password reset retry email sent", { email: retryEmail });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to send reset email";
+      setRetryError(errorMessage);
+      logger.error("Password reset retry error", errorMessage, "Auth");
+    } finally {
+      setRetryLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -277,7 +348,7 @@ export const ResetPassword: React.FC = () => {
             </div>
 
             {/* Form */}
-            {hasToken && !success && (
+            {hasToken && !success && !showRetryForm && (
               <form className="space-y-3" onSubmit={handleSubmit}>
                 {/* Password Input */}
                 <div className="space-y-1.5">
@@ -335,6 +406,76 @@ export const ResetPassword: React.FC = () => {
                   )}
                 </Button>
               </form>
+            )}
+
+            {/* Retry Form - Request new reset link */}
+            {showRetryForm && !retrySuccess && (
+              <form className="space-y-4" onSubmit={handleRetryRequest}>
+                <p className="text-sm text-muted-foreground">
+                  Enter your email to receive a new password reset link:
+                </p>
+                <div className="space-y-1.5">
+                  <Label htmlFor="retryEmail" className="text-sm font-medium">
+                    Email address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="retryEmail"
+                      type="email"
+                      value={retryEmail}
+                      onChange={(e) => setRetryEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      required
+                      disabled={retryLoading}
+                      autoComplete="email"
+                      className="h-9 pl-10"
+                    />
+                  </div>
+                </div>
+                {retryError && (
+                  <AuthErrorDisplay
+                    error={retryError}
+                    mode="signin"
+                    onSwitchToSignup={() => {}}
+                  />
+                )}
+                <Button
+                  type="submit"
+                  variant="warning"
+                  disabled={retryLoading}
+                  className="w-full h-9 text-sm font-medium"
+                >
+                  {retryLoading ? (
+                    <>
+                      <LogoSpinner size="sm" className="mr-2" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send New Reset Link"
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {/* Retry Success Message */}
+            {retrySuccess && (
+              <div className="space-y-4">
+                <AuthSuccessMessage message="New password reset link sent! Check your email inbox." />
+                <p className="text-xs text-muted-foreground text-center">
+                  Didn't receive it? Check your spam folder or{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRetrySuccess(false);
+                      setRetryEmail("");
+                    }}
+                    className="text-primary hover:underline"
+                  >
+                    try again
+                  </button>
+                </p>
+              </div>
             )}
 
             {/* Back to login */}

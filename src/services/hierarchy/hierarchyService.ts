@@ -536,11 +536,12 @@ class HierarchyService {
         const policies = policiesByUserId.get(userId) || [];
 
         // Filter PENDING policies within the selected date range
+        // Use submit_date (when policy was submitted) not created_at (DB record creation)
         const pendingPolicies = policies.filter((p) => {
-          const createdDate = new Date(p.created_at || "");
+          const submitDate = new Date(p.submit_date || p.created_at || "");
           return (
-            createdDate >= rangeStart &&
-            createdDate <= rangeEnd &&
+            submitDate >= rangeStart &&
+            submitDate <= rangeEnd &&
             p.status === "pending"
           );
         });
@@ -554,11 +555,12 @@ class HierarchyService {
         teamPendingPoliciesCount += pendingPolicies.length;
 
         // Aggregate active policies for entire team including owner
+        // Use submit_date (when policy was submitted) not created_at (DB record creation)
         const periodPolicies = policies.filter((p) => {
-          const createdDate = new Date(p.created_at || "");
+          const submitDate = new Date(p.submit_date || p.created_at || "");
           return (
-            createdDate >= rangeStart &&
-            createdDate <= rangeEnd &&
+            submitDate >= rangeStart &&
+            submitDate <= rangeEnd &&
             p.status === "active"
           );
         });
@@ -701,9 +703,10 @@ class HierarchyService {
         const policies = policiesByUserId.get(userId) || [];
 
         // Filter YTD active policies
+        // Use submit_date (when policy was submitted) not created_at (DB record creation)
         const ytdPolicies = policies.filter((p) => {
-          const createdDate = new Date(p.created_at || "");
-          return createdDate >= ytdRangeStart && p.status === "active";
+          const submitDate = new Date(p.submit_date || p.created_at || "");
+          return submitDate >= ytdRangeStart && p.status === "active";
         });
 
         const ytdAP = ytdPolicies.reduce(
@@ -727,21 +730,23 @@ class HierarchyService {
         const policies = policiesByUserId.get(userId) || [];
 
         // Filter MTD active policies (current month only)
+        // Use submit_date (when policy was submitted) not created_at (DB record creation)
         const mtdActivePolicies = policies.filter((p) => {
-          const createdDate = new Date(p.created_at || "");
+          const submitDate = new Date(p.submit_date || p.created_at || "");
           return (
-            createdDate >= mtdRangeStart &&
-            createdDate <= mtdRangeEnd &&
+            submitDate >= mtdRangeStart &&
+            submitDate <= mtdRangeEnd &&
             p.status === "active"
           );
         });
 
         // Filter MTD pending policies (current month only)
+        // Use submit_date (when policy was submitted) not created_at (DB record creation)
         const mtdPendingPolicies = policies.filter((p) => {
-          const createdDate = new Date(p.created_at || "");
+          const submitDate = new Date(p.submit_date || p.created_at || "");
           return (
-            createdDate >= mtdRangeStart &&
-            createdDate <= mtdRangeEnd &&
+            submitDate >= mtdRangeStart &&
+            submitDate <= mtdRangeEnd &&
             p.status === "pending"
           );
         });

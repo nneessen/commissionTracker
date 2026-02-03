@@ -30,6 +30,32 @@ export const AuthCallback: React.FC = () => {
         const errorCode = hashParams.get("error_code");
         const errorDescription = hashParams.get("error_description");
 
+        // Log all params for debugging (redact tokens)
+        const allHashParams = Object.fromEntries(hashParams.entries());
+        logger.auth("[AuthCallback] Hash received:", {
+          ...allHashParams,
+          access_token: allHashParams.access_token ? "[REDACTED]" : undefined,
+          refresh_token: allHashParams.refresh_token ? "[REDACTED]" : undefined,
+        });
+
+        // For recovery errors, route to ResetPassword with error context
+        if ((errorCode || errorDescription) && type === AUTH_CALLBACK_TYPES.RECOVERY) {
+          logger.auth("[AuthCallback] Recovery error detected, routing to reset password", {
+            errorCode,
+            errorDescription: errorDescription?.substring(0, 100),
+          });
+          sessionStorage.setItem(
+            SESSION_STORAGE_KEYS.PASSWORD_RESET_ERROR,
+            JSON.stringify({
+              code: errorCode,
+              description: errorDescription,
+              timestamp: new Date().toISOString(),
+            }),
+          );
+          window.location.href = "/auth/reset-password?error=true";
+          return;
+        }
+
         if (errorCode || errorDescription) {
           throw new Error(
             errorDescription || `Authentication error: ${errorCode}`,

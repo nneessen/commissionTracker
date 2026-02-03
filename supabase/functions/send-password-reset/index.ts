@@ -32,6 +32,12 @@ serve(async (req) => {
     const SITE_URL =
       Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
 
+    // Normalize to canonical URL (always use www for consistency)
+    const normalizedSiteUrl = SITE_URL.replace(
+      "://thestandardhq.com",
+      "://www.thestandardhq.com",
+    );
+
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error("[send-password-reset] Missing Supabase credentials");
       return new Response(
@@ -81,7 +87,11 @@ serve(async (req) => {
       );
     }
 
+    // Determine the redirect URL - use provided or default to normalized site URL
+    const effectiveRedirectTo =
+      redirectTo || `${normalizedSiteUrl}/auth/callback`;
     console.log("[send-password-reset] Generating recovery link for:", email);
+    console.log("[send-password-reset] Using redirect URL:", effectiveRedirectTo);
 
     // Generate password reset link using Supabase Admin SDK
     // Use /auth/callback as redirect - it's whitelisted and handles recovery type
@@ -90,7 +100,7 @@ serve(async (req) => {
         type: "recovery",
         email: email,
         options: {
-          redirectTo: redirectTo || `${SITE_URL}/auth/callback`,
+          redirectTo: effectiveRedirectTo,
           expiresIn: 259200, // 72 hours in seconds
         },
       });

@@ -107,12 +107,27 @@ window.addEventListener("vite:preloadError", () => {
 // This must run before any other imports to prevent race conditions
 (function handleRecoveryRedirect() {
   const hash = window.location.hash;
+  const search = window.location.search; // Some flows use query params
   const pathname = window.location.pathname;
 
-  // Check if hash contains recovery tokens
-  if (hash && hash.includes("type=recovery")) {
-    // Store the hash in sessionStorage as backup (Supabase may clear it)
-    sessionStorage.setItem("recovery_hash", hash);
+  const hasRecoveryInHash = hash && hash.includes("type=recovery");
+  const hasRecoveryInSearch = search && search.includes("type=recovery");
+
+  if (hasRecoveryInHash || hasRecoveryInSearch) {
+    const tokenSource = hasRecoveryInHash ? hash : search;
+
+    // Store with metadata for debugging
+    sessionStorage.setItem("recovery_hash", tokenSource);
+    sessionStorage.setItem(
+      "recovery_capture_meta",
+      JSON.stringify({
+        capturedAt: new Date().toISOString(),
+        pathname,
+        source: hasRecoveryInHash ? "hash" : "search",
+        hasHash: !!hash,
+        hasSearch: !!search,
+      }),
+    );
 
     // If not already on the reset-password page or callback page, redirect immediately
     if (
@@ -120,7 +135,7 @@ window.addEventListener("vite:preloadError", () => {
       !pathname.includes("/auth/callback")
     ) {
       // Use replace to avoid back-button issues - this will reload the page
-      window.location.replace("/auth/reset-password" + hash);
+      window.location.replace("/auth/reset-password" + tokenSource);
       return; // Stop execution (page will reload)
     }
   }
