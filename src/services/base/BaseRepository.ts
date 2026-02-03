@@ -277,6 +277,7 @@ export abstract class BaseRepository<
    * Wrap any error with additional context
    */
   protected wrapError(error: unknown, operation: string): Error {
+    console.error(`[${this.tableName}.${operation}]`, error);
     if (error instanceof Error) {
       return error;
     }

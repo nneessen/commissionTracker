@@ -1,6 +1,6 @@
 // src/features/policies/PolicyForm.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCarriers } from "../../hooks/carriers";
 import { useProducts } from "../../hooks/products/useProducts";
@@ -100,8 +100,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
   }, [formData.carrierId, productQueryCarrierId]);
 
-  const carrierProducts = products.filter(
-    (p) => p.carrier_id === formData.carrierId,
+  const carrierProducts = useMemo(
+    () => products.filter((p) => p.carrier_id === formData.carrierId),
+    [products, formData.carrierId],
   );
 
   // Get commission data
@@ -297,8 +298,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
               {policyId ? "Saving..." : "Creating..."}
             </>
+          ) : policyId ? (
+            "Update Policy"
           ) : (
-            policyId ? "Update Policy" : "Add Policy"
+            "Add Policy"
           )}
         </Button>
       </div>

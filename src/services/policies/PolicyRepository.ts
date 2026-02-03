@@ -1084,10 +1084,19 @@ export class PolicyRepository extends BaseRepository<
       effectiveDate: dbRecord.effective_date,
       termLength: dbRecord.term_length,
       expirationDate: dbRecord.expiration_date || undefined,
-      annualPremium: parseFloat(dbRecord.annual_premium || "0"),
-      monthlyPremium: parseFloat(dbRecord.monthly_premium || "0"),
+      annualPremium:
+        dbRecord.annual_premium != null
+          ? parseFloat(String(dbRecord.annual_premium))
+          : 0,
+      monthlyPremium:
+        dbRecord.monthly_premium != null
+          ? parseFloat(String(dbRecord.monthly_premium))
+          : 0,
       paymentFrequency: dbRecord.payment_frequency,
-      commissionPercentage: parseFloat(dbRecord.commission_percentage || "0"),
+      commissionPercentage:
+        dbRecord.commission_percentage != null
+          ? parseFloat(String(dbRecord.commission_percentage))
+          : 0,
       createdAt: dbRecord.created_at,
       updatedAt: dbRecord.updated_at,
       created_at: dbRecord.created_at,
