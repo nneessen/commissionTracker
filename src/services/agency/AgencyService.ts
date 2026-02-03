@@ -54,6 +54,7 @@ class AgencyService {
 
   /**
    * Get the current user's agency
+   * @deprecated Use getMyAgencyForUser(userId) instead to avoid redundant auth calls
    */
   async getMyAgency(): Promise<Agency | null> {
     try {
@@ -67,15 +68,32 @@ class AgencyService {
         return null;
       }
 
+      return this.getMyAgencyForUser(user.id);
+    } catch (error) {
+      logger.error(
+        "Failed to get user agency",
+        error instanceof Error ? error : new Error(String(error)),
+        "AgencyService",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get the agency for a specific user by their userId
+   * Preferred over getMyAgency() when userId is already available from AuthContext
+   */
+  async getMyAgencyForUser(userId: string): Promise<Agency | null> {
+    try {
       // Get user's agency_id
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
         .select("agency_id")
-        .eq("id", user.id)
+        .eq("id", userId)
         .single();
 
       if (profileError || !profile?.agency_id) {
-        logger.warn("User has no agency", { userId: user.id }, "AgencyService");
+        logger.warn("User has no agency", { userId }, "AgencyService");
         return null;
       }
 

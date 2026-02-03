@@ -52,6 +52,7 @@ class ImoService {
 
   /**
    * Get the current user's IMO
+   * @deprecated Use getMyImoForUser(userId) instead to avoid redundant auth calls
    */
   async getMyImo(): Promise<Imo | null> {
     try {
@@ -65,15 +66,32 @@ class ImoService {
         return null;
       }
 
+      return this.getMyImoForUser(user.id);
+    } catch (error) {
+      logger.error(
+        "Failed to get user IMO",
+        error instanceof Error ? error : new Error(String(error)),
+        "ImoService",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get the IMO for a specific user by their userId
+   * Preferred over getMyImo() when userId is already available from AuthContext
+   */
+  async getMyImoForUser(userId: string): Promise<Imo | null> {
+    try {
       // Get user's imo_id
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
         .select("imo_id")
-        .eq("id", user.id)
+        .eq("id", userId)
         .single();
 
       if (profileError || !profile?.imo_id) {
-        logger.warn("User has no IMO", { userId: user.id }, "ImoService");
+        logger.warn("User has no IMO", { userId }, "ImoService");
         return null;
       }
 

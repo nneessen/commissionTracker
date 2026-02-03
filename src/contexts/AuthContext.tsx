@@ -180,28 +180,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Initialize the ref with current user ID
         previousUserIdRef.current = session.user.id;
 
-        // Fetch full profile from database in background (non-blocking)
-        (async () => {
-          try {
-            const { data: dbProfile } = await supabase
-              .from("user_profiles")
-              .select("*")
-              .eq("id", session.user.id)
-              .single();
-            if (dbProfile) {
-              setUser((prev) => ({ ...prev, ...dbProfile }));
-            }
-          } catch (err: unknown) {
-            logger.warn(
-              "Could not fetch full user profile",
-              err instanceof Error ? err : String(err),
-              "Auth",
-            );
+        // Await full profile from database before completing load
+        // This ensures user.is_super_admin and user.roles are available
+        // before ImoContext or other consumers run their queries
+        try {
+          const { data: dbProfile } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+          if (dbProfile) {
+            setUser((prev) => ({ ...prev, ...dbProfile }));
           }
-        })();
+        } catch (err: unknown) {
+          logger.warn(
+            "Could not fetch full user profile",
+            err instanceof Error ? err : String(err),
+            "Auth",
+          );
+        }
 
         logger.auth("Existing session found", { email: session.user.email });
-        await refreshSession();
+        // Removed: await refreshSession() - unnecessary since session is already validated
+        // and it triggers extra auth state events
       } else {
         setUser(null);
         previousUserIdRef.current = null;

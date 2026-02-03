@@ -12,16 +12,9 @@ import React, {
 import { useAuth } from "./AuthContext";
 import { imoService } from "../services/imo";
 import { agencyService } from "../services/agency";
-import { supabase } from "../services/base/supabase";
 import { logger } from "../services/base/logger";
 import type { Imo, Agency, ImoContextType } from "../types/imo.types";
 import { hasImoAdminRole, hasImoOwnerRole } from "../types/imo.types";
-
-// User role info from database
-interface UserRoleInfo {
-  roles: string[];
-  is_super_admin: boolean | null;
-}
 
 // Create the context
 const ImoContext = createContext<ImoContextType | undefined>(undefined);
@@ -86,19 +79,14 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
   // State
   const [imo, setImo] = useState<Imo | null>(null);
   const [agency, setAgency] = useState<Agency | null>(null);
-  const [userRoles, setUserRoles] = useState<UserRoleInfo>({
-    roles: [],
-    is_super_admin: false,
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   // Fetch IMO and Agency data
   const fetchImoData = useCallback(async () => {
-    if (!user) {
+    if (!user?.id) {
       setImo(null);
       setAgency(null);
-      setUserRoles({ roles: [], is_super_admin: false });
       setLoading(false);
       setError(null);
       return;
@@ -111,17 +99,12 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      // Fetch IMO, Agency, and user roles in parallel using allSettled
-      // This ensures partial failures don't break the entire context
+      // Fetch IMO and Agency in parallel using allSettled
+      // Pass userId directly to avoid redundant getUser() calls in services
+      // User roles are now available from AuthContext (user.roles, user.is_super_admin)
       const results = await Promise.allSettled([
-        imoService.getMyImo(),
-        agencyService.getMyAgency(),
-        supabase
-          .from("user_profiles")
-          .select("roles, is_super_admin")
-          .eq("id", user.id)
-          .single()
-          .then(({ data }) => data as UserRoleInfo | null),
+        imoService.getMyImoForUser(currentUserId),
+        agencyService.getMyAgencyForUser(currentUserId),
       ]);
 
       // Guard against stale responses using ref (not closure)
@@ -134,8 +117,6 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
         results[0].status === "fulfilled" ? results[0].value : null;
       const agencyData =
         results[1].status === "fulfilled" ? results[1].value : null;
-      const roleData =
-        results[2].status === "fulfilled" ? results[2].value : null;
 
       // Log any failures but don't throw
       if (results[0].status === "rejected") {
@@ -152,17 +133,9 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
           "ImoContext",
         );
       }
-      if (results[2].status === "rejected") {
-        logger.warn(
-          "Failed to fetch user roles",
-          { error: results[2].reason },
-          "ImoContext",
-        );
-      }
 
       setImo(imoData);
       setAgency(agencyData);
-      setUserRoles(roleData ?? { roles: [], is_super_admin: false });
     } catch (err) {
       // Guard against stale error using ref
       if (userRef.current?.id !== currentUserId) {
@@ -178,19 +151,20 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
         setLoading(false);
       }
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Fetch data when user changes
   useEffect(() => {
     fetchImoData();
   }, [fetchImoData]);
 
-  // Derive role flags from fetched user roles (MEDIUM-1: using centralized role helpers)
-  const roles = userRoles.roles ?? [];
+  // Derive role flags from AuthContext user data (avoids redundant DB query)
+  // user.roles and user.is_super_admin are now available after AuthContext awaits full profile
+  const roles = user?.roles ?? [];
   const isImoOwner = hasImoOwnerRole(roles);
   const isImoAdmin = hasImoAdminRole(roles);
   const isAgencyOwner = agency?.owner_id === user?.id;
-  const isSuperAdmin = userRoles.is_super_admin === true;
+  const isSuperAdmin = user?.is_super_admin === true;
 
   // Context value
   const value: ImoContextType = {
