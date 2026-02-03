@@ -50,6 +50,37 @@ if [ $? -eq 0 ]; then
     echo -e "\n${GREEN}========================================${NC}"
     echo -e "${GREEN}   ✅ Migration Applied Successfully!${NC}"
     echo -e "${GREEN}========================================${NC}\n"
+
+    # Auto-track the migration in schema_migrations
+    FILENAME=$(basename "$MIGRATION_FILE" .sql)
+
+    # Parse version and name from filename
+    # New format: YYYYMMDDHHMMSS_description
+    # Old format: YYYYMMDD_NNN_description
+    if [[ "$FILENAME" =~ ^([0-9]{14})_(.+)$ ]]; then
+        # New format
+        VERSION="${BASH_REMATCH[1]}"
+        NAME="${BASH_REMATCH[2]}"
+    elif [[ "$FILENAME" =~ ^([0-9]{8})_([0-9]{3}_.+)$ ]]; then
+        # Old format
+        VERSION="${BASH_REMATCH[1]}"
+        NAME="${BASH_REMATCH[2]}"
+    else
+        echo -e "${YELLOW}Warning: Could not parse migration filename for tracking${NC}"
+        VERSION=""
+        NAME=""
+    fi
+
+    if [ -n "$VERSION" ] && [ -n "$NAME" ]; then
+        echo -e "${BLUE}Tracking migration in schema_migrations...${NC}"
+        psql "${CONN_STR}" -c "INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('${VERSION}', '${NAME}') ON CONFLICT (version) DO NOTHING;" 2>/dev/null
+
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ Migration tracked: version=${VERSION}, name=${NAME}${NC}\n"
+        else
+            echo -e "${YELLOW}⚠ Could not track migration (may already exist)${NC}\n"
+        fi
+    fi
 else
     echo -e "\n${RED}========================================${NC}"
     echo -e "${RED}   ✗ Migration Failed!${NC}"

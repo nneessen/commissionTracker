@@ -1,6 +1,36 @@
 Insurance Sales KPI & Recruiting & Agency Management System
 React 19.1 • TypeScript • Supabase/Postgres
 
+═══════════════════════════════════════════════════════════════════════════════
+MANDATORY MIGRATION RULES - READ FIRST - NEVER VIOLATE
+═══════════════════════════════════════════════════════════════════════════════
+
+**NEVER run psql directly for migrations or function changes.**
+**ALWAYS use the migration runner script.**
+
+```bash
+# ✅ CORRECT - Always use this for migrations
+./scripts/migrations/run-migration.sh supabase/migrations/YYYYMMDDHHMMSS_name.sql
+
+# ❌ WRONG - NEVER do this
+psql $DATABASE_URL -f supabase/migrations/whatever.sql
+source .env && psql "${DATABASE_URL}" -f migration.sql
+```
+
+| Task | Command |
+|------|---------|
+| Apply migration | `./scripts/migrations/run-migration.sh supabase/migrations/FILE.sql` |
+| Run a query | `./scripts/migrations/run-sql.sh "SELECT ..."` |
+| Interactive psql | `./scripts/migrations/run-sql.sh --interactive` |
+| Create timestamp | `date +%Y%m%d%H%M%S` |
+| Verify tracking | `./scripts/migrations/verify-tracking.sh` |
+| Audit functions | `./scripts/migrations/audit-critical-functions.sh` |
+
+WHY: On Feb 3, 2026, direct psql usage caused old migrations to silently overwrite
+fixed functions. The runner script blocks downgrades and tracks everything.
+
+═══════════════════════════════════════════════════════════════════════════════
+
 MACHINE RULES (TOP-LEVEL CHECKLIST)
 
 These rules must be followed for every task.
@@ -111,27 +141,53 @@ DEVELOPMENT STANDARDS
 
 1. Schema & Migrations
 
+**MANDATORY: Use the migration runner script for ALL migrations:**
+```bash
+./scripts/migrations/run-migration.sh supabase/migrations/YYYYMMDDHHMMSS_name.sql
+```
+
+DO NOT use `psql` directly for migrations. The runner script:
+- Tracks migrations in schema_migrations
+- Tracks function versions in function_versions
+- BLOCKS downgrades (prevents older migrations from overwriting newer functions)
+- Validates filename format
+
+For arbitrary SQL queries (not migrations), use:
+```bash
+./scripts/migrations/run-sql.sh "SELECT * FROM users;"
+./scripts/migrations/run-sql.sh -f /path/to/script.sql
+./scripts/migrations/run-sql.sh --interactive
+```
+
+Migration file format: YYYYMMDDHHMMSS_description.sql
+Generate timestamp: `date +%Y%m%d%H%M%S`
+
 Only one directory: supabase/migrations/
 
-File format: YYYYMMDDHHMMSS_description.sql (timestamp to the second for uniqueness)
-
-CRITICAL: Supabase tracks migrations by the numeric prefix ONLY. The old format
-YYYYMMDD_NNN_description.sql was WRONG - migrations like 20260102_001 and 20260102_002
-are seen as the SAME version. Use full timestamps: 20260102143022_description.sql
-
-To generate correct timestamp: date +%Y%m%d%H%M%S
-
 After migration:
-
-Regenerate database.types.ts
-
-Fix type errors
-
-Run npm run build
-
-Verify migration applied: npx supabase migration list
+1. Regenerate database.types.ts
+2. Fix type errors
+3. Run npm run build
 
 No CHECK constraints on enums; enforce via TypeScript.
+
+CRITICAL: Function Version Protection
+
+The system tracks function versions in `supabase_migrations.function_versions`.
+When a migration contains CREATE FUNCTION, the runner:
+1. Checks if function exists with a NEWER version
+2. BLOCKS the migration if it would downgrade
+3. Updates function_versions after successful apply
+
+This prevents the bug where old migrations silently overwrite newer function code.
+
+To verify function versions:
+```bash
+./scripts/migrations/verify-tracking.sh
+./scripts/migrations/audit-critical-functions.sh
+```
+
+See memory: MIGRATION_VERSIONING_PROBLEM for full details.
 
 2. Supabase Data Rules
 
@@ -287,4 +343,27 @@ No speculative abstractions
 Always functional, testable, type-safe code
 
 - add to memory: place active session files in plans/active/... not the root dir.
+
+═══════════════════════════════════════════════════════════════════════════════
+REMINDER: MANDATORY MIGRATION RULES - NEVER VIOLATE
+═══════════════════════════════════════════════════════════════════════════════
+
+**NEVER run psql directly for migrations or function changes.**
+
+```bash
+# ✅ CORRECT
+./scripts/migrations/run-migration.sh supabase/migrations/YYYYMMDDHHMMSS_name.sql
+
+# ❌ WRONG
+psql $DATABASE_URL -f migration.sql
+```
+
+| Task | Command |
+|------|---------|
+| Apply migration | `./scripts/migrations/run-migration.sh supabase/migrations/FILE.sql` |
+| Run a query | `./scripts/migrations/run-sql.sh "SELECT ..."` |
+| Interactive psql | `./scripts/migrations/run-sql.sh --interactive` |
+| Verify tracking | `./scripts/migrations/verify-tracking.sh` |
+
+═══════════════════════════════════════════════════════════════════════════════
 

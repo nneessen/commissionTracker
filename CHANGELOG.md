@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-03 11:52:08
+
+### Changed Files
+- `.serena/memories/MIGRATION_RULES_MANDATORY.md`
+- `.serena/memories/MIGRATION_VERSIONING_PROBLEM.md`
+- `CLAUDE.md`
+- `scripts/migrations/apply-migration.sh`
+- `scripts/migrations/audit-critical-functions.sh`
+- `scripts/migrations/backfill-tracking.sql`
+- `scripts/migrations/run-migration.sh`
+- `scripts/migrations/run-sql.sh`
+- `scripts/migrations/verify-tracking.sh`
+- `supabase/.temp/cli-latest`
+- `supabase/migrations/20260203111935_fix_slack_leaderboard_submit_date_only.sql`
+
+### Statistics
+```
+ 11 files changed, 1095 insertions(+), 12 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-03 09:39:30
 
 ### Changed Files
