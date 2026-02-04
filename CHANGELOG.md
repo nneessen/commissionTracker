@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-04 13:20:23
+
+### Changed Files
+- `supabase/migrations/20260204130617_fix_agency_agent_count_hierarchy.sql`
+- `supabase/migrations/20260204130712_fix_orphan_hierarchy.sql`
+- `supabase/migrations/20260204131453_fix_leaderboard_hierarchy_traversal.sql`
+
+### Statistics
+```
+ 3 files changed, 735 insertions(+)
+```
+
 ## [Checkpoint] - 2026-02-04 12:32:02
 
 ### Changed Files
