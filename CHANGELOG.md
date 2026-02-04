@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-04 08:50:46
+
+### Changed Files
+- `supabase/migrations/20260204083006_fix_leaderboard_submit_date.sql`
+- `supabase/migrations/20260204083724_fix_leaderboard_ip_effective_date.sql`
+
+### Statistics
+```
+ 2 files changed, 1180 insertions(+)
+```
+
 ## [Checkpoint] - 2026-02-03 18:11:37
 
 ### Changed Files
