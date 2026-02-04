@@ -14,13 +14,14 @@ import {
   calculateExpectedCommission,
 } from "../../utils/policyCalculations";
 
-import { usePolicyForm, createInitialFormData } from "./hooks/usePolicyForm";
+import { usePolicyForm, createInitialFormData, isToday } from "./hooks/usePolicyForm";
 import {
   usePolicyCommission,
   useUserContractLevel,
 } from "./hooks/usePolicyCommission";
 import { PolicyFormClientSection } from "./components/PolicyFormClientSection";
 import { PolicyFormPolicySection } from "./components/PolicyFormPolicySection";
+import { SubmitDateConfirmDialog } from "./components/SubmitDateConfirmDialog";
 
 interface PolicyFormProps {
   policyId?: string;
@@ -50,6 +51,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   // LOCAL submission state - becomes true IMMEDIATELY on click, before any async work
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Submit date confirmation dialog state
+  const [showDateConfirm, setShowDateConfirm] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState<NewPolicyForm | null>(null);
 
   // Combined loading state - true if either local or parent says we're loading
   const isLoading = isSubmitting || isPending;
@@ -186,6 +191,38 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   const displayErrors = { ...errors, ...externalErrors };
 
+  // Execute the actual policy submission
+  const executeSubmission = async (submissionData: NewPolicyForm) => {
+    setIsSubmitting(true);
+
+    const annualPremium = calculateAnnualPremium(
+      submissionData.premium,
+      submissionData.paymentFrequency,
+    );
+
+    const dataWithPremium = {
+      ...submissionData,
+      annualPremium,
+    };
+
+    try {
+      if (policyId) {
+        await updatePolicy(policyId, dataWithPremium);
+        onClose();
+      } else {
+        await addPolicy(dataWithPremium);
+        onClose();
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save policy",
+      );
+    } finally {
+      setIsSubmitting(false);
+      setPendingSubmission(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -198,36 +235,34 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       return;
     }
 
-    // Set local state IMMEDIATELY - before any async work
-    // This prevents double-clicks even before the mutation isPending kicks in
-    setIsSubmitting(true);
-
-    const annualPremium = calculateAnnualPremium(
-      formData.premium,
-      formData.paymentFrequency,
-    );
-
-    const submissionData = {
-      ...formData,
-      annualPremium,
-    };
-
-    try {
-      if (policyId) {
-        await updatePolicy(policyId, submissionData);
-        onClose();
-      } else {
-        await addPolicy(submissionData);
-        onClose();
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save policy",
-      );
-    } finally {
-      // Always reset local state, even on error
-      setIsSubmitting(false);
+    // For NEW policies with today's date, show confirmation dialog
+    if (!policyId && isToday(formData.submitDate)) {
+      setPendingSubmission(formData);
+      setShowDateConfirm(true);
+      return;
     }
+
+    // Otherwise, submit directly
+    await executeSubmission(formData);
+  };
+
+  // Handle user confirming that today is correct
+  const handleConfirmToday = async () => {
+    if (pendingSubmission) {
+      await executeSubmission(pendingSubmission);
+    }
+    setShowDateConfirm(false);
+  };
+
+  // Handle user selecting a different date
+  const handleSelectDifferentDate = async (newDate: string) => {
+    if (pendingSubmission) {
+      const updatedData = { ...pendingSubmission, submitDate: newDate };
+      // Also update form state so UI reflects the change
+      setFormData((prev) => ({ ...prev, submitDate: newDate }));
+      await executeSubmission(updatedData);
+    }
+    setShowDateConfirm(false);
   };
 
   // Calculate display values
@@ -305,6 +340,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           )}
         </Button>
       </div>
+
+      {/* Submit Date Confirmation Dialog */}
+      <SubmitDateConfirmDialog
+        open={showDateConfirm}
+        onOpenChange={setShowDateConfirm}
+        onConfirmToday={handleConfirmToday}
+        onSelectDate={handleSelectDifferentDate}
+        isSubmitting={isSubmitting}
+      />
     </form>
   );
 };

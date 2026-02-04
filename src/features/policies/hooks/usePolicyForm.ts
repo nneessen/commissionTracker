@@ -9,13 +9,22 @@ import {
   Policy,
 } from "../../../types/policy.types";
 import { ProductType } from "../../../types/commission.types";
-import { formatDateForDB, parseLocalDate } from "../../../lib/date";
+import { formatDateForDB, parseLocalDate, getTodayString } from "../../../lib/date";
 import {
   calculatePaymentAmount,
   validatePremium,
   validateCommissionPercentage,
 } from "../../../utils/policyCalculations";
 import { formatPhoneNumber } from "../../../types/client.types";
+
+/**
+ * Check if a date string represents today's date
+ * @param dateString - Date string in YYYY-MM-DD format
+ * @returns true if the date is today
+ */
+export function isToday(dateString: string): boolean {
+  return dateString === getTodayString();
+}
 
 export interface UsePolicyFormOptions {
   policyId?: string;

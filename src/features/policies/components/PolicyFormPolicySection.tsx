@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { NewPolicyForm, PolicyStatus, PaymentFrequency } from "../../../types/policy.types";
+import { isToday } from "../hooks/usePolicyForm";
 
 interface PolicyFormPolicySectionProps {
   formData: NewPolicyForm;
@@ -89,6 +90,11 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
             {displayErrors.submitDate && (
               <span className="text-[10px] text-destructive">
                 {displayErrors.submitDate}
+              </span>
+            )}
+            {!policyId && isToday(formData.submitDate) && !displayErrors.submitDate && (
+              <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                Defaulted to today — change if entering an older policy
               </span>
             )}
           </div>
