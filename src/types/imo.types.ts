@@ -455,3 +455,45 @@ export interface RecruitingByRecruiter {
   conversion_rate: number;
   licensed_count: number;
 }
+
+// =============================================================================
+// CASCADE AGENCY ASSIGNMENT TYPES
+// =============================================================================
+
+/**
+ * Result from the cascade_agency_assignment RPC function
+ */
+export interface CascadeAssignmentResult {
+  success: boolean;
+  ownerUpdated: boolean;
+  downlinesUpdated: number;
+  totalUpdated: number;
+  ownerName?: string;
+  ownerHierarchyPath?: string;
+  error?: string;
+  errorDetail?: string;
+}
+
+/**
+ * Preview data for cascade assignment - shows how many users would be affected
+ */
+export interface CascadePreview {
+  ownerName: string;
+  downlineCount: number;
+  totalCount: number;
+}
+
+/**
+ * Options for creating an agency with cascade assignment
+ */
+export interface CreateAgencyWithCascadeOptions {
+  cascadeDownlines?: boolean;
+}
+
+/**
+ * Result from createAgencyWithCascade - includes agency and optional cascade result
+ */
+export interface CreateAgencyWithCascadeResult {
+  agency: AgencyRow;
+  cascadeResult?: CascadeAssignmentResult;
+}

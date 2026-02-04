@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   useMyImoAgencies,
-  useCreateAgency,
+  useCreateAgencyWithCascade,
   useUpdateAgency,
   useDeleteAgency,
   useDeactivateAgency,
@@ -46,7 +46,7 @@ import type { Agency, CreateAgencyData, UpdateAgencyData } from "@/types/imo.typ
 export function AgencyManagement() {
   const { imo, isImoAdmin, isSuperAdmin } = useImo();
   const { data: agencies, isLoading } = useMyImoAgencies();
-  const createAgency = useCreateAgency();
+  const createAgencyWithCascade = useCreateAgencyWithCascade();
   const updateAgency = useUpdateAgency();
   const deleteAgency = useDeleteAgency();
   const deactivateAgency = useDeactivateAgency();
@@ -112,7 +112,10 @@ export function AgencyManagement() {
     }
   };
 
-  const handleFormSubmit = async (data: CreateAgencyData | UpdateAgencyData) => {
+  const handleFormSubmit = async (
+    data: CreateAgencyData | UpdateAgencyData,
+    options?: { cascadeDownlines?: boolean }
+  ) => {
     try {
       if (selectedAgency) {
         await updateAgency.mutateAsync({
@@ -130,8 +133,27 @@ export function AgencyManagement() {
           ...data,
           imo_id: imo.id,
         } as CreateAgencyData;
-        await createAgency.mutateAsync(createData);
-        toast.success("Agency created successfully");
+
+        // Use cascade-enabled mutation
+        const result = await createAgencyWithCascade.mutateAsync({
+          data: createData,
+          options: { cascadeDownlines: options?.cascadeDownlines },
+        });
+
+        // Show appropriate toast based on cascade result
+        if (result.cascadeResult?.success && result.cascadeResult.totalUpdated > 0) {
+          toast.success(
+            `Agency created - ${result.cascadeResult.totalUpdated} user${
+              result.cascadeResult.totalUpdated === 1 ? "" : "s"
+            } assigned`
+          );
+        } else if (result.cascadeResult && !result.cascadeResult.success) {
+          toast.warning(
+            "Agency created but team assignment failed. You can manually assign users."
+          );
+        } else {
+          toast.success("Agency created successfully");
+        }
       }
       setIsFormOpen(false);
       setSelectedAgency(null);
@@ -268,7 +290,7 @@ export function AgencyManagement() {
           agency={selectedAgency}
           imoId={imo.id}
           onSubmit={handleFormSubmit}
-          isSubmitting={createAgency.isPending || updateAgency.isPending}
+          isSubmitting={createAgencyWithCascade.isPending || updateAgency.isPending}
         />
       )}
     </>

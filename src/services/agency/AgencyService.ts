@@ -16,6 +16,10 @@ import type {
   OverrideByAgent,
   AgencyRecruitingSummary,
   RecruitingByRecruiter,
+  CascadeAssignmentResult,
+  CascadePreview,
+  CreateAgencyWithCascadeOptions,
+  CreateAgencyWithCascadeResult,
 } from "../../types/imo.types";
 import { IMO_ROLES } from "../../types/imo.types";
 import {
@@ -235,6 +239,149 @@ class AgencyService {
     } catch (error) {
       logger.error(
         "Failed to create agency",
+        error instanceof Error ? error : new Error(String(error)),
+        "AgencyService",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Preview cascade assignment - returns count of users that would be affected
+   * without making any changes. Useful for confirmation UI.
+   */
+  async previewCascadeAssignment(ownerId: string): Promise<CascadePreview> {
+    try {
+      // Get owner info
+      const { data: owner, error: ownerError } = await supabase
+        .from("user_profiles")
+        .select("id, first_name, last_name, hierarchy_path")
+        .eq("id", ownerId)
+        .single();
+
+      if (ownerError || !owner) {
+        throw new Error("Owner not found");
+      }
+
+      const ownerName =
+        `${owner.first_name || ""} ${owner.last_name || ""}`.trim() || "Unknown";
+
+      // If owner has no hierarchy_path, just count themselves
+      if (!owner.hierarchy_path) {
+        return { ownerName, downlineCount: 0, totalCount: 1 };
+      }
+
+      // Count downlines using same pattern as the RPC
+      const { count, error: countError } = await supabase
+        .from("user_profiles")
+        .select("id", { count: "exact", head: true })
+        .like("hierarchy_path", `${owner.hierarchy_path}.%`);
+
+      if (countError) {
+        throw countError;
+      }
+
+      return {
+        ownerName,
+        downlineCount: count || 0,
+        totalCount: (count || 0) + 1, // +1 for owner
+      };
+    } catch (error) {
+      logger.error(
+        "Failed to preview cascade assignment",
+        error instanceof Error ? error : new Error(String(error)),
+        "AgencyService",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Creates an agency with optional cascade assignment of owner's downline.
+   * When cascadeDownlines is true, the owner and all users in their hierarchy
+   * will be assigned to the new agency.
+   */
+  async createAgencyWithCascade(
+    data: CreateAgencyData,
+    options: CreateAgencyWithCascadeOptions = {},
+  ): Promise<CreateAgencyWithCascadeResult> {
+    const { cascadeDownlines = false } = options;
+
+    try {
+      // Step 1: Create the agency (existing logic)
+      const agency = await this.createAgency(data);
+
+      // Step 2: If owner specified and cascade enabled, run cascade assignment
+      if (data.owner_id && cascadeDownlines) {
+        const { data: result, error } = await supabase.rpc(
+          "cascade_agency_assignment",
+          {
+            p_agency_id: agency.id,
+            p_owner_id: data.owner_id,
+            p_imo_id: data.imo_id,
+          },
+        );
+
+        if (error) {
+          // Log error but don't fail - agency was created successfully
+          logger.error(
+            "Cascade assignment failed after agency creation",
+            error,
+            "AgencyService",
+          );
+          return {
+            agency,
+            cascadeResult: {
+              success: false,
+              ownerUpdated: false,
+              downlinesUpdated: 0,
+              totalUpdated: 0,
+              error: error.message,
+            },
+          };
+        }
+
+        // Parse RPC result (returns JSONB)
+        const rpcResult = result as {
+          success: boolean;
+          owner_updated?: boolean;
+          downlines_updated?: number;
+          total_updated?: number;
+          owner_name?: string;
+          owner_hierarchy_path?: string;
+          error?: string;
+          error_detail?: string;
+        };
+
+        const cascadeResult: CascadeAssignmentResult = {
+          success: rpcResult.success,
+          ownerUpdated: rpcResult.owner_updated ?? false,
+          downlinesUpdated: rpcResult.downlines_updated ?? 0,
+          totalUpdated: rpcResult.total_updated ?? 0,
+          ownerName: rpcResult.owner_name,
+          ownerHierarchyPath: rpcResult.owner_hierarchy_path,
+          error: rpcResult.error,
+          errorDetail: rpcResult.error_detail,
+        };
+
+        logger.info(
+          "Agency created with cascade assignment",
+          {
+            agencyId: agency.id,
+            ownerId: data.owner_id,
+            totalUsersAssigned: cascadeResult.totalUpdated,
+          },
+          "AgencyService",
+        );
+
+        return { agency, cascadeResult };
+      }
+
+      // No cascade - just return the agency
+      return { agency };
+    } catch (error) {
+      logger.error(
+        "Failed to create agency with cascade",
         error instanceof Error ? error : new Error(String(error)),
         "AgencyService",
       );

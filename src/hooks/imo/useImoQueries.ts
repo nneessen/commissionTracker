@@ -9,6 +9,9 @@ import type {
   CreateAgencyData,
   ImoUpdate,
   AgencyUpdate,
+  CreateAgencyWithCascadeOptions,
+  CreateAgencyWithCascadeResult,
+  CascadePreview,
 } from "../../types/imo.types";
 import type { ReportDateRange } from "../../types/team-reports.schemas";
 
@@ -326,6 +329,52 @@ export function useCreateAgency() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agencyKeys.all });
       queryClient.invalidateQueries({ queryKey: imoKeys.all }); // IMO might have agency count
+    },
+  });
+}
+
+/**
+ * Preview cascade assignment - shows how many users would be affected
+ * when assigning an owner and their downlines to an agency
+ */
+export function usePreviewCascadeAssignment(ownerId: string | undefined) {
+  return useQuery({
+    queryKey: [...agencyKeys.all, "cascadePreview", ownerId],
+    queryFn: () => agencyService.previewCascadeAssignment(ownerId!),
+    enabled: !!ownerId,
+    staleTime: 30 * 1000, // 30 seconds - preview data can be slightly stale
+  });
+}
+
+/**
+ * Create agency with cascade assignment mutation
+ * When cascadeDownlines is true, assigns owner + all their downlines to the new agency
+ */
+export function useCreateAgencyWithCascade() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CreateAgencyWithCascadeResult,
+    Error,
+    { data: CreateAgencyData; options?: CreateAgencyWithCascadeOptions }
+  >({
+    mutationFn: ({ data, options }) =>
+      agencyService.createAgencyWithCascade(data, options),
+    onSuccess: (result) => {
+      // Invalidate agency queries
+      queryClient.invalidateQueries({ queryKey: agencyKeys.all });
+      queryClient.invalidateQueries({ queryKey: imoKeys.all });
+
+      // If cascade occurred, also invalidate user-related queries
+      if (result.cascadeResult?.success && result.cascadeResult.totalUpdated > 0) {
+        // Invalidate user profiles cache
+        queryClient.invalidateQueries({ queryKey: ["userProfiles"] });
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        // Invalidate hierarchy/team queries
+        queryClient.invalidateQueries({ queryKey: ["hierarchy"] });
+        queryClient.invalidateQueries({ queryKey: ["team"] });
+        queryClient.invalidateQueries({ queryKey: ["downlines"] });
+      }
     },
   });
 }

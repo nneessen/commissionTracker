@@ -1,9 +1,10 @@
 // src/features/settings/agency/components/AgencyForm.tsx
 // Form component for creating and editing Agencies
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
+import { usePreviewCascadeAssignment } from "@/hooks/imo";
 import {
   Sheet,
   SheetContent,
@@ -23,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Crown } from "lucide-react";
+import { Loader2, Crown, AlertTriangle, Users } from "lucide-react";
 import { supabase } from "@/services/base/supabase";
 import type { Agency, CreateAgencyData, UpdateAgencyData } from "@/types/imo.types";
 
@@ -32,7 +33,10 @@ interface AgencyFormProps {
   onOpenChange: (open: boolean) => void;
   agency: Agency | null;
   imoId: string;
-  onSubmit: (data: CreateAgencyData | UpdateAgencyData) => Promise<void>;
+  onSubmit: (
+    data: CreateAgencyData | UpdateAgencyData,
+    options?: { cascadeDownlines?: boolean }
+  ) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -67,6 +71,9 @@ export function AgencyForm({
   isSubmitting,
 }: AgencyFormProps) {
   const isEditing = !!agency;
+
+  // State for cascade option (only for new agencies)
+  const [cascadeDownlines, setCascadeDownlines] = useState(false);
 
   // Fetch potential owners (agents in the same IMO)
   const { data: potentialOwners = [] } = useQuery({
@@ -108,6 +115,17 @@ export function AgencyForm({
     },
   });
 
+  // Watch owner_id for cascade preview
+  const watchedOwnerId = watch("owner_id");
+
+  // Fetch preview of cascade assignment when owner is selected (new agencies only)
+  const { data: cascadePreview, isLoading: isLoadingPreview } =
+    usePreviewCascadeAssignment(
+      !isEditing && watchedOwnerId && watchedOwnerId !== "none"
+        ? watchedOwnerId
+        : undefined
+    );
+
   // Reset form when agency changes
   useEffect(() => {
     if (agency) {
@@ -125,6 +143,7 @@ export function AgencyForm({
         owner_id: agency.owner_id ?? "",
         is_active: agency.is_active,
       });
+      setCascadeDownlines(false);
     } else {
       reset({
         name: "",
@@ -140,8 +159,14 @@ export function AgencyForm({
         owner_id: "",
         is_active: true,
       });
+      setCascadeDownlines(false);
     }
   }, [agency, reset]);
+
+  // Reset cascade toggle when owner changes
+  useEffect(() => {
+    setCascadeDownlines(false);
+  }, [watchedOwnerId]);
 
   const onFormSubmit = async (data: FormData) => {
     const submitData: CreateAgencyData | UpdateAgencyData = {
@@ -166,7 +191,10 @@ export function AgencyForm({
       (submitData as UpdateAgencyData).is_active = data.is_active;
     }
 
-    await onSubmit(submitData);
+    // Pass cascade option for new agencies
+    await onSubmit(submitData, {
+      cascadeDownlines: !isEditing && cascadeDownlines,
+    });
   };
 
   const isActive = watch("is_active");
@@ -273,6 +301,46 @@ export function AgencyForm({
                 The owner has full control over this agency
               </p>
             </div>
+
+            {/* Cascade Downlines Toggle - Only for new agencies with owner that has downlines */}
+            {!isEditing && cascadePreview && cascadePreview.downlineCount > 0 && (
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                      Assign owner's team to this agency
+                    </p>
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      {isLoadingPreview ? (
+                        "Checking team size..."
+                      ) : (
+                        <>
+                          <Users className="inline h-3 w-3 mr-1" />
+                          {cascadePreview.ownerName} has{" "}
+                          <span className="font-medium">{cascadePreview.downlineCount}</span>{" "}
+                          downline{cascadePreview.downlineCount === 1 ? "" : "s"}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={cascadeDownlines}
+                    onCheckedChange={setCascadeDownlines}
+                    disabled={isLoadingPreview}
+                  />
+                </div>
+                {cascadeDownlines && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                    <span>
+                      {cascadePreview.totalCount} user
+                      {cascadePreview.totalCount === 1 ? "" : "s"} will be moved to
+                      this agency
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Contact Info */}

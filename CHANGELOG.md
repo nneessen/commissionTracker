@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-04 11:53:51
+
+### Changed Files
+- `src/features/settings/agency/AgencyManagement.tsx`
+- `src/features/settings/agency/components/AgencyForm.tsx`
+- `src/hooks/imo/index.ts`
+- `src/hooks/imo/useImoQueries.ts`
+- `src/services/agency/AgencyService.ts`
+- `src/types/imo.types.ts`
+- `supabase/migrations/20260204113052_cascade_agency_assignment.sql`
+
+### Statistics
+```
+ 7 files changed, 476 insertions(+), 10 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-04 10:37:10
 
 ### Changed Files
