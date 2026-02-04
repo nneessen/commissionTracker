@@ -208,6 +208,7 @@ export function AddRecruitDialog({
         upline_id: value.upline_id || undefined,
         referral_source: value.referral_source || undefined,
         imo_id: user?.imo_id ?? undefined,
+        agency_id: user?.agency_id ?? undefined,
       });
 
       if (recruit) {

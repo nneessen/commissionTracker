@@ -72,6 +72,8 @@ export interface CreateRecruitInput {
   is_admin?: boolean;
   // IMO to assign recruit to (from caller's context)
   imo_id?: string;
+  // Agency to assign recruit to (from caller's context)
+  agency_id?: string;
 }
 
 export interface PipelineTemplate {

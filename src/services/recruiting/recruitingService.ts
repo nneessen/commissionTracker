@@ -110,6 +110,7 @@ export const recruitingService = {
     console.log("[recruitingService.createRecruit] Sending profileData:", {
       upline_id: profileData.upline_id,
       imo_id: profileData.imo_id,
+      agency_id: profileData.agency_id,
       keys: Object.keys(profileData),
     });
 
