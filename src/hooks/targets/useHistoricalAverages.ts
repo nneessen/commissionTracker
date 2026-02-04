@@ -14,8 +14,8 @@ import { parseLocalDate } from "../../lib/date";
  *
  * CRITICAL:
  * - Uses REAL commission rates from comp_guide table based on user's contract level
- * - Calculates avgPolicyPremium from CURRENT MONTH's policies for real-time accuracy
- * - Falls back to recent months/all policies if current month has insufficient data
+ * - Calculates avgPolicyPremium from CURRENT YEAR's policies for year-to-date accuracy
+ * - Falls back to all active/all policies if current year has no data
  */
 export function useHistoricalAverages(): {
   averages: HistoricalAverages;
@@ -53,14 +53,14 @@ export function useHistoricalAverages(): {
     // This is premium-weighted based on user's actual product mix
     const avgCommissionRate = commissionProfile.recommendedRate;
 
-    // CRITICAL: Calculate average premium from CURRENT MONTH's policies
-    // This gives real-time accuracy for target calculations
-    // Falls back to recent months/all policies if current month has insufficient data
-    const currentMonthMetrics =
-      currentMonthMetricsService.calculateCurrentMonthAvgPremium(policies);
+    // CRITICAL: Calculate average premium from CURRENT YEAR's policies (year-to-date)
+    // This provides stable, meaningful target calculations throughout the year
+    // Falls back to all active/all policies if current year has no data
+    const currentYearMetrics =
+      currentMonthMetricsService.calculateCurrentYearAvgPremium(policies);
     const avgPolicyPremium =
-      currentMonthMetrics.avgPolicyPremium ||
-      // Fallback: calculate from all active policies if current month has no data
+      currentYearMetrics.avgPolicyPremium ||
+      // Fallback: calculate from all active policies if current year has no data
       (() => {
         const activePolicies = policies.filter((p) => p.status === "active");
         if (activePolicies.length > 0) {

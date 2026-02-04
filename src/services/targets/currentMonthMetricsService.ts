@@ -55,6 +55,45 @@ class CurrentMonthMetricsService {
   }
 
   /**
+   * Calculate average premium from current year's policies (year-to-date)
+   * Provides stable averages throughout the year instead of resetting monthly
+   * Optimized for performance with single-pass calculation
+   *
+   * @param policies - All policies from the database
+   * @returns CurrentMonthMetrics with average premium and metadata
+   */
+  calculateCurrentYearAvgPremium(policies: Policy[]): CurrentMonthMetrics {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1); // Jan 1
+    const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59); // Dec 31
+
+    // Single-pass calculation for performance
+    let totalPremium = 0;
+    let count = 0;
+
+    for (const policy of policies) {
+      const policyDate = new Date(policy.createdAt);
+
+      // Include policies created in current year
+      if (policyDate >= yearStart && policyDate <= yearEnd) {
+        totalPremium += policy.annualPremium || 0;
+        count++;
+      }
+    }
+
+    // Calculate average
+    const avgPolicyPremium = count > 0 ? totalPremium / count : 0;
+
+    return {
+      avgPolicyPremium,
+      policiesSold: count,
+      totalPremium,
+      hasData: count > 0,
+      fallbackReason: count === 0 ? 'no-policies' : undefined,
+    };
+  }
+
+  /**
    * Calculate average premium with intelligent fallback
    * If current month has insufficient data, fall back to recent months
    *
@@ -159,18 +198,21 @@ class CurrentMonthMetricsService {
 
   /**
    * Get display text explaining which calculation method was used
+   * @param metrics - The metrics object
+   * @param isYearBased - Whether the calculation is year-to-date (default: true)
    */
-  getCalculationMethodText(metrics: CurrentMonthMetrics): string {
+  getCalculationMethodText(metrics: CurrentMonthMetrics, isYearBased: boolean = true): string {
     if (!metrics.hasData) {
       return 'Using default values (no policy data available)';
     }
 
     if (!metrics.fallbackReason) {
-      return `Based on ${metrics.policiesSold} ${metrics.policiesSold === 1 ? 'policy' : 'policies'} sold this month`;
+      const period = isYearBased ? 'this year' : 'this month';
+      return `Based on ${metrics.policiesSold} ${metrics.policiesSold === 1 ? 'policy' : 'policies'} sold ${period}`;
     }
 
     if (metrics.fallbackReason === 'insufficient-data') {
-      return `Based on ${metrics.policiesSold} recent ${metrics.policiesSold === 1 ? 'policy' : 'policies'} (not enough current month data)`;
+      return `Based on ${metrics.policiesSold} recent ${metrics.policiesSold === 1 ? 'policy' : 'policies'} (not enough current data)`;
     }
 
     return 'Using default values';
