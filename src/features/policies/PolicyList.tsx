@@ -67,7 +67,7 @@ import {
   useCheckSharedClient,
 } from "../../hooks/policies";
 import type { SortConfig } from "./hooks/usePolicies";
-import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
+import { Policy, PolicyFilters, PolicyStatus, PolicyLifecycleStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { LeadPurchaseLinkDialog } from "./components/LeadPurchaseLinkDialog";
@@ -310,7 +310,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     updatePolicy(
       {
         id: policyId,
-        status: "cancelled",
+        lifecycleStatus: "cancelled",
         reason: "Manually cancelled by user",
         cancelDate: new Date(),
       },
@@ -333,7 +333,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     updatePolicy(
       {
         id: policyId,
-        status: "lapsed",
+        lifecycleStatus: "lapsed",
         lapseDate: new Date(),
         reason: "Client stopped paying premiums",
       },
@@ -350,7 +350,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
 
   const handleReinstatePolicy = (
     policyId: string,
-    currentStatus: "cancelled" | "lapsed",
+    currentLifecycleStatus: "cancelled" | "lapsed",
   ) => {
     const reason = window.prompt(
       "Please provide a reason for reinstating this policy:",
@@ -360,8 +360,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     updatePolicy(
       {
         id: policyId,
-        status: "active",
-        previousStatus: currentStatus,
+        lifecycleStatus: "active",
+        previousLifecycleStatus: currentLifecycleStatus,
         reason,
       },
       {
@@ -594,15 +594,36 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               })
             }
           >
-            <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="h-6 w-[100px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+              <SelectValue placeholder="Application" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">All Apps</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="denied">Denied</SelectItem>
+              <SelectItem value="withdrawn">Withdrawn</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.lifecycleStatus || "all"}
+            onValueChange={(value) =>
+              setFilters({
+                ...filters,
+                lifecycleStatus: value === "all" ? undefined : (value as PolicyLifecycleStatus),
+              })
+            }
+          >
+            <SelectTrigger className="h-6 w-[100px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+              <SelectValue placeholder="Lifecycle" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Lifecycle</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="lapsed">Lapsed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
             </SelectContent>
           </Select>
 
@@ -911,23 +932,97 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       </div>
                     </TableCell>
                     <TableCell className="py-1.5 px-2">
-                      <span
-                        className={cn(
-                          "text-[9px] px-1.5 py-0.5 rounded font-medium capitalize",
-                          policy.status === "pending" &&
-                            "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                          policy.status === "active" &&
-                            "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-                          policy.status === "lapsed" &&
-                            "bg-red-500/10 text-red-600 dark:text-red-400",
-                          policy.status === "cancelled" &&
-                            "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
-                          policy.status === "expired" &&
-                            "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                      <div className="flex flex-col gap-0.5">
+                        {/* Application Status Dropdown */}
+                        <Select
+                          value={policy.status}
+                          onValueChange={(value) => {
+                            updatePolicy({
+                              id: policy.id,
+                              updates: {
+                                status: value as PolicyStatus,
+                                // Set default lifecycle status when approving
+                                ...(value === "approved" && !policy.lifecycleStatus
+                                  ? { lifecycleStatus: "active" as PolicyLifecycleStatus }
+                                  : {}),
+                                // Clear lifecycle status when changing to non-approved
+                                ...(value !== "approved"
+                                  ? { lifecycleStatus: null as unknown as PolicyLifecycleStatus }
+                                  : {}),
+                              },
+                            });
+                          }}
+                        >
+                          <SelectTrigger
+                            className={cn(
+                              "h-6 text-[10px] w-[85px] px-1.5 gap-1 font-medium border",
+                              policy.status === "pending" &&
+                                "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+                              policy.status === "approved" &&
+                                "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+                              policy.status === "denied" &&
+                                "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
+                              policy.status === "withdrawn" &&
+                                "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
+                            )}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="approved">Approved</SelectItem>
+                            <SelectItem value="denied">Denied</SelectItem>
+                            <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {/* Lifecycle Status Dropdown - only show when approved */}
+                        {policy.status === "approved" && (
+                          <Select
+                            value={policy.lifecycleStatus || "active"}
+                            onValueChange={(value) => {
+                              const newStatus = value as PolicyLifecycleStatus;
+                              const currentStatus = policy.lifecycleStatus || "active";
+
+                              // Handle special cases for cancel/lapse/reinstate
+                              if (newStatus === "cancelled" && currentStatus === "active") {
+                                handleCancelPolicy(policy.id);
+                              } else if (newStatus === "lapsed" && currentStatus === "active") {
+                                handleLapsePolicy(policy.id);
+                              } else if (newStatus === "active" && (currentStatus === "cancelled" || currentStatus === "lapsed")) {
+                                handleReinstatePolicy(policy.id, currentStatus);
+                              } else {
+                                // Direct update for other changes (e.g., expired)
+                                updatePolicy({
+                                  id: policy.id,
+                                  updates: { lifecycleStatus: newStatus },
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-6 text-[10px] w-[85px] px-1.5 gap-1 font-medium border",
+                                (policy.lifecycleStatus === "active" || !policy.lifecycleStatus) &&
+                                  "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+                                policy.lifecycleStatus === "lapsed" &&
+                                  "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
+                                policy.lifecycleStatus === "cancelled" &&
+                                  "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
+                                policy.lifecycleStatus === "expired" &&
+                                  "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700",
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="lapsed">Lapsed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                              <SelectItem value="expired">Expired</SelectItem>
+                            </SelectContent>
+                          </Select>
                         )}
-                      >
-                        {policy.status}
-                      </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-[11px] py-1.5 px-2 text-right tabular-nums">
                       <div className="flex flex-col gap-0 items-end">
@@ -1030,7 +1125,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                               Link to Lead Purchase
                             </DropdownMenuItem>
                           )}
-                          {policy.status === "active" && (
+                          {/* Cancel/Lapse actions - only for approved+active policies */}
+                          {policy.status === "approved" && policy.lifecycleStatus === "active" && (
                             <>
                               <DropdownMenuItem
                                 onClick={() => handleCancelPolicy(policy.id)}
@@ -1048,13 +1144,14 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                               </DropdownMenuItem>
                             </>
                           )}
-                          {(policy.status === "cancelled" ||
-                            policy.status === "lapsed") && (
+                          {/* Reinstate action - only for cancelled/lapsed lifecycle */}
+                          {policy.status === "approved" && (policy.lifecycleStatus === "cancelled" ||
+                            policy.lifecycleStatus === "lapsed") && (
                             <DropdownMenuItem
                               onClick={() =>
                                 handleReinstatePolicy(
                                   policy.id,
-                                  policy.status as "cancelled" | "lapsed",
+                                  policy.lifecycleStatus as "cancelled" | "lapsed",
                                 )
                               }
                               className="text-emerald-600 dark:text-emerald-400 text-[11px]"

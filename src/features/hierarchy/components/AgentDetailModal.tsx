@@ -879,14 +879,16 @@ export function AgentDetailModal({
                                     <TableCell>
                                       <Badge
                                         variant={
-                                          policy.status === "active"
+                                          policy.lifecycleStatus === "active"
                                             ? "default"
-                                            : policy.status === "lapsed"
+                                            : policy.lifecycleStatus === "lapsed"
                                               ? "destructive"
-                                              : "secondary"
+                                              : policy.lifecycleStatus === "cancelled"
+                                                ? "destructive"
+                                                : "secondary"
                                         }
                                       >
-                                        {policy.status}
+                                        {policy.lifecycleStatus || policy.status}
                                       </Badge>
                                     </TableCell>
                                     <TableCell className="text-sm">

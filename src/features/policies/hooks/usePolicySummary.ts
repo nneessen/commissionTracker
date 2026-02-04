@@ -19,7 +19,7 @@ export const usePolicySummary = (
   commissions: Commission[] = [],
   dateRangeLabel?: string,
 ): PolicySummary => {
-  const activePolicies = policies.filter((p) => p.status === "active");
+  const activePolicies = policies.filter((p) => p.lifecycleStatus === "active");
 
   const pendingPolicies = policies.filter((p) => p.status === "pending");
 

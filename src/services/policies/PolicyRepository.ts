@@ -15,6 +15,7 @@ import { formatDateForDB, parseLocalDate } from "../../lib/date";
 export interface PolicyMetricRow {
   user_id: string;
   status: string | null;
+  lifecycle_status: string | null;
   annual_premium: number | string | null;
   created_at: string | null;
   submit_date: string | null;
@@ -25,6 +26,7 @@ export interface PolicyWithRelations {
   policy_number: string | null;
   user_id: string;
   status: string | null;
+  lifecycle_status: string | null;
   annual_premium: number | string | null;
   product: string | null;
   carrier_id: string | null;
@@ -209,6 +211,7 @@ export class PolicyRepository extends BaseRepository<
               carrierId: "carrier_id",
               product: "product",
               status: "status",
+              lifecycleStatus: "lifecycle_status",
             };
             const column = columnMap[key] || key;
             query = query.eq(column, value);
@@ -490,7 +493,7 @@ export class PolicyRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("user_id, status, annual_premium, created_at, submit_date")
+        .select("user_id, status, lifecycle_status, annual_premium, created_at, submit_date")
         .in("user_id", userIds);
 
       if (error) {
@@ -912,7 +915,7 @@ export class PolicyRepository extends BaseRepository<
       // Build base query with filters
       let query = this.client
         .from(this.tableName)
-        .select("status, annual_premium, effective_date", { count: "exact" });
+        .select("status, lifecycle_status, annual_premium, effective_date", { count: "exact" });
 
       // CRITICAL: Filter by current user ID when specified
       if (currentUserId) {
@@ -960,17 +963,19 @@ export class PolicyRepository extends BaseRepository<
       const currentYear = new Date().getFullYear();
       const policies = data || [];
 
+      // Use lifecycle_status for active/lapsed/cancelled (issued policy lifecycle)
+      // Use status for pending (application outcome)
       const activePolicies = policies.filter(
-        (p) => p.status === "active",
+        (p) => p.lifecycle_status === "active",
       ).length;
       const pendingPolicies = policies.filter(
         (p) => p.status === "pending",
       ).length;
       const lapsedPolicies = policies.filter(
-        (p) => p.status === "lapsed",
+        (p) => p.lifecycle_status === "lapsed",
       ).length;
       const cancelledPolicies = policies.filter(
-        (p) => p.status === "cancelled",
+        (p) => p.lifecycle_status === "cancelled",
       ).length;
 
       const totalPremium = policies.reduce(
@@ -1074,6 +1079,7 @@ export class PolicyRepository extends BaseRepository<
       id: dbRecord.id,
       policyNumber: dbRecord.policy_number,
       status: dbRecord.status,
+      lifecycleStatus: dbRecord.lifecycle_status || null,
       client: clientData,
       carrierId: dbRecord.carrier_id,
       productId: dbRecord.product_id,
@@ -1117,6 +1123,7 @@ export class PolicyRepository extends BaseRepository<
     if (data.policyNumber !== undefined)
       dbData.policy_number = data.policyNumber;
     if (data.status !== undefined) dbData.status = data.status;
+    if (data.lifecycleStatus !== undefined) dbData.lifecycle_status = data.lifecycleStatus;
     if (data.clientId !== undefined) dbData.client_id = data.clientId; // Use client_id foreign key
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
     if (data.productId !== undefined) dbData.product_id = data.productId; // NEW: Product ID field

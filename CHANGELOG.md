@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-04 15:47:40
+
+### Changed Files
+- `src/constants/status.constants.ts`
+- `src/features/analytics/components/CommissionPipeline.tsx`
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/components/AgentDetailModal.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/components/PolicyFormPolicySection.tsx`
+- `src/features/policies/hooks/usePolicySummary.ts`
+- `src/features/policies/hooks/useUpdatePolicy.ts`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/hooks/kpi/useMetrics.ts`
+- `src/hooks/kpi/useMetricsWithDateRange.ts`
+- `src/hooks/targets/useHistoricalAverages.ts`
+- `src/services/analytics/cohortService.ts`
+- `src/services/analytics/forecastService.ts`
+- `src/services/analytics/gamePlanService.ts`
+- `src/services/analytics/policyStatusService.ts`
+- `src/services/analytics/segmentationService.ts`
+- `src/services/analytics/teamAnalyticsService.ts`
+- `src/services/clients/client/ClientService.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/kpi/metricCalculationService.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `src/services/reports/reportGenerationService.ts`
+- `src/services/targets/currentMonthMetricsService.ts`
+- `src/types/agent-detail.types.ts`
+- `src/types/database.types.ts`
+- `src/types/policy.types.ts`
+- `src/types/team-analytics.types.ts`
+- `supabase/migrations/20260204141628_decouple_policy_status.sql`
+- `supabase/migrations/20260204152453_fix_lifecycle_status_remaining_functions.sql`
+- `supabase/migrations/20260204152734_fix_lifecycle_status_cleanup.sql`
+- `supabase/migrations/20260204153334_fix_lifecycle_status_final_batch.sql`
+- `supabase/migrations/20260204154250_fix_lifecycle_status_final_two.sql`
+
+### Statistics
+```
+ 35 files changed, 4244 insertions(+), 298 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-04 13:20:23
 
 ### Changed Files

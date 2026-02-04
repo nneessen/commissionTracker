@@ -556,12 +556,13 @@ class HierarchyService {
 
         // Aggregate active policies for entire team including owner
         // Use submit_date (when policy was submitted) not created_at (DB record creation)
+        // lifecycle_status = "active" indicates an issued, in-force policy
         const periodPolicies = policies.filter((p) => {
           const submitDate = new Date(p.submit_date || p.created_at || "");
           return (
             submitDate >= rangeStart &&
             submitDate <= rangeEnd &&
-            p.status === "active"
+            p.lifecycle_status === "active"
           );
         });
 
@@ -704,9 +705,10 @@ class HierarchyService {
 
         // Filter YTD active policies
         // Use submit_date (when policy was submitted) not created_at (DB record creation)
+        // lifecycle_status = "active" indicates an issued, in-force policy
         const ytdPolicies = policies.filter((p) => {
           const submitDate = new Date(p.submit_date || p.created_at || "");
-          return submitDate >= ytdRangeStart && p.status === "active";
+          return submitDate >= ytdRangeStart && p.lifecycle_status === "active";
         });
 
         const ytdAP = ytdPolicies.reduce(
@@ -731,12 +733,13 @@ class HierarchyService {
 
         // Filter MTD active policies (current month only)
         // Use submit_date (when policy was submitted) not created_at (DB record creation)
+        // lifecycle_status = "active" indicates an issued, in-force policy
         const mtdActivePolicies = policies.filter((p) => {
           const submitDate = new Date(p.submit_date || p.created_at || "");
           return (
             submitDate >= mtdRangeStart &&
             submitDate <= mtdRangeEnd &&
-            p.status === "active"
+            p.lifecycle_status === "active"
           );
         });
 
@@ -963,7 +966,8 @@ class HierarchyService {
       const policyMetrics = policies.reduce(
         (acc, policy) => {
           acc.totalPolicies++;
-          if (policy.status === "active") {
+          // Use lifecycle_status for active policy counting (issued, in-force policies)
+          if (policy.lifecycle_status === "active") {
             acc.activePolicies++;
             acc.totalPremium += parseFloat(
               String(policy.annual_premium) || "0",
@@ -1035,7 +1039,8 @@ class HierarchyService {
     try {
       const policies = await this.policyRepo.findWithRelationsByUserId(agentId);
 
-      const active = policies.filter((p) => p.status === "active").length;
+      // Use lifecycle_status for active policy counting (issued, in-force policies)
+      const active = policies.filter((p) => p.lifecycle_status === "active").length;
       const total = policies.length;
 
       return {
@@ -1049,6 +1054,7 @@ class HierarchyService {
           carrier: p.carrier?.name || p.carrier_id,
           annualPremium: p.annual_premium,
           status: p.status,
+          lifecycleStatus: p.lifecycle_status,
           // Include both dates for proper filtering
           createdAt: p.created_at || new Date().toISOString(),
           effectiveDate: p.effective_date,
@@ -1296,8 +1302,9 @@ class HierarchyService {
       // Aggregate metrics per team member
       const teamMembers = directReports.map((member) => {
         const memberPolicies = policies.filter((p) => p.user_id === member.id);
+        // Use lifecycle_status for active policy filtering (issued, in-force policies)
         const activePolicies = memberPolicies.filter(
-          (p) => p.status === "active",
+          (p) => p.lifecycle_status === "active",
         );
         const totalPremium = activePolicies.reduce(
           (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
@@ -1376,6 +1383,7 @@ class HierarchyService {
 
   /**
    * Calculate policy metrics from policy rows
+   * Uses lifecycle_status for active/lapsed/cancelled counts (lifecycle states)
    */
   private calculatePolicyMetrics(policies: PolicyMetricRow[]): {
     total: number;
@@ -1387,9 +1395,10 @@ class HierarchyService {
     return policies.reduce(
       (acc, policy) => {
         acc.total++;
-        if (policy.status === "active") acc.active++;
-        if (policy.status === "lapsed") acc.lapsed++;
-        if (policy.status === "cancelled") acc.cancelled++;
+        // Use lifecycle_status for lifecycle states (active, lapsed, cancelled)
+        if (policy.lifecycle_status === "active") acc.active++;
+        if (policy.lifecycle_status === "lapsed") acc.lapsed++;
+        if (policy.lifecycle_status === "cancelled") acc.cancelled++;
         acc.totalPremium += parseFloat(String(policy.annual_premium) || "0");
         return acc;
       },

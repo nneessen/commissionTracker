@@ -30,15 +30,14 @@ export const COMMISSION_STATUS_CONFIG: Record<
 };
 
 // =============================================================================
-// POLICY STATUS (from database enum: policy_status)
+// POLICY STATUS (application/underwriting outcome)
 // =============================================================================
 
 export const POLICY_STATUS = {
   PENDING: "pending",
-  ACTIVE: "active",
-  LAPSED: "lapsed",
-  CANCELLED: "cancelled",
-  EXPIRED: "expired",
+  APPROVED: "approved",
+  DENIED: "denied",
+  WITHDRAWN: "withdrawn",
 } as const;
 
 export type PolicyStatusValue =
@@ -49,27 +48,34 @@ export const POLICY_STATUS_CONFIG: Record<
   { label: string; color: string }
 > = {
   pending: { label: "Pending", color: "amber" },
+  approved: { label: "Approved", color: "emerald" },
+  denied: { label: "Denied", color: "red" },
+  withdrawn: { label: "Withdrawn", color: "zinc" },
+};
+
+// =============================================================================
+// POLICY LIFECYCLE STATUS (state after approval)
+// =============================================================================
+
+export const POLICY_LIFECYCLE_STATUS = {
+  ACTIVE: "active",
+  LAPSED: "lapsed",
+  CANCELLED: "cancelled",
+  EXPIRED: "expired",
+} as const;
+
+export type PolicyLifecycleStatusValue =
+  (typeof POLICY_LIFECYCLE_STATUS)[keyof typeof POLICY_LIFECYCLE_STATUS];
+
+export const POLICY_LIFECYCLE_STATUS_CONFIG: Record<
+  PolicyLifecycleStatusValue,
+  { label: string; color: string }
+> = {
   active: { label: "Active", color: "emerald" },
   lapsed: { label: "Lapsed", color: "red" },
   cancelled: { label: "Cancelled", color: "zinc" },
   expired: { label: "Expired", color: "blue" },
 };
 
-// =============================================================================
-// STATUS TRANSITIONS
-// =============================================================================
-
-/**
- * Maps policy status to the expected commission status
- * When policy changes, commission should follow this mapping
- */
-export const POLICY_TO_COMMISSION_STATUS: Record<
-  PolicyStatusValue,
-  CommissionStatusValue
-> = {
-  pending: "pending",
-  active: "paid",
-  lapsed: "charged_back",
-  cancelled: "charged_back",
-  expired: "paid", // Expired policies have already been paid out
-};
+// NOTE: POLICY_TO_COMMISSION_STATUS mapping has been REMOVED
+// Commission status is now fully independent and manually controlled

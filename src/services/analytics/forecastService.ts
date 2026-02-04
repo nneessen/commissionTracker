@@ -69,7 +69,7 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
 
     // Find policies that will be up for renewal this month
     const renewalPolicies = policies.filter((policy) => {
-      if (policy.status !== "active" || !policy.termLength) return false;
+      if (policy.lifecycleStatus !== "active" || !policy.termLength) return false;
 
       // Calculate renewal date
       const effectiveDate = parseLocalDate(policy.effectiveDate);
@@ -146,10 +146,10 @@ export function calculateChargebackRisk(
     if (policy.status === "pending") {
       riskScore += 30;
       factors.push("Policy still pending");
-    } else if (policy.status === "lapsed") {
+    } else if (policy.lifecycleStatus === "lapsed") {
       riskScore += 60;
       factors.push("Policy has lapsed");
-    } else if (policy.status === "cancelled") {
+    } else if (policy.lifecycleStatus === "cancelled") {
       riskScore += 80;
       factors.push("Policy cancelled");
     }

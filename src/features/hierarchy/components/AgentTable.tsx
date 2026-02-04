@@ -69,9 +69,10 @@ interface AgentTableProps {
   dateRange?: DateRangeFilter;
 }
 
-// Statuses for AP calculations
-const ISSUED_AP_STATUSES = ["active"]; // Policies that are in-force (IP = Issued Premium)
-const PENDING_AP_STATUSES = ["pending", "submitted", "underwriting"]; // Pending policies
+// Lifecycle statuses for IP (Issued Premium) - uses lifecycle_status column
+const ISSUED_LIFECYCLE_STATUSES = ["active"]; // Policies that are in-force (IP = Issued Premium)
+// Application statuses for Pending AP - uses status column
+const PENDING_AP_STATUSES = ["pending"]; // Pending application outcome
 
 // Metrics for a single agent
 interface AgentMetrics {
@@ -136,10 +137,12 @@ async function fetchAllAgentMetrics(
     });
 
     // Calculate AP metrics
+    // IP (Issued Premium): Use lifecycle_status = 'active' for in-force policies
     const total_ip = mtdPolicies
-      .filter((p) => ISSUED_AP_STATUSES.includes(p.status || ""))
+      .filter((p) => ISSUED_LIFECYCLE_STATUSES.includes(p.lifecycle_status || ""))
       .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
 
+    // Pending AP: Use status = 'pending' for application outcome
     const pending_ap = mtdPolicies
       .filter((p) => PENDING_AP_STATUSES.includes(p.status || ""))
       .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);

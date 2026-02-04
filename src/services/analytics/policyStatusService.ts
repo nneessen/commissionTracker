@@ -51,10 +51,10 @@ export function getPolicyStatusSummary(
     };
   }
 
-  const activeCount = policies.filter((p) => p.status === "active").length;
-  const lapsedCount = policies.filter((p) => p.status === "lapsed").length;
+  const activeCount = policies.filter((p) => p.lifecycleStatus === "active").length;
+  const lapsedCount = policies.filter((p) => p.lifecycleStatus === "lapsed").length;
   const cancelledCount = policies.filter(
-    (p) => p.status === "cancelled",
+    (p) => p.lifecycleStatus === "cancelled",
   ).length;
 
   return {
@@ -91,13 +91,13 @@ export function getMonthlyTrendData(policies: Policy[]): MonthlyTrendData[] {
     // Count policies that were active in this month
     const activePolicies = policies.filter((p) => {
       const effectiveDate = parseLocalDate(p.effectiveDate);
-      return effectiveDate <= monthStart && p.status === "active";
+      return effectiveDate <= monthStart && p.lifecycleStatus === "active";
     });
 
     // Count policies that lapsed in this month (approximation)
     const lapsedPolicies = policies.filter((p) => {
       const effectiveDate = parseLocalDate(p.effectiveDate);
-      return effectiveDate <= monthStart && p.status === "lapsed";
+      return effectiveDate <= monthStart && p.lifecycleStatus === "lapsed";
     });
 
     // Net change (rough calculation - policies added vs lost)
@@ -137,7 +137,7 @@ export function getProductRetentionRates(policies: Policy[]): {
 
     productMap.set(productName, {
       total: existing.total + 1,
-      active: existing.active + (policy.status === "active" ? 1 : 0),
+      active: existing.active + (policy.lifecycleStatus === "active" ? 1 : 0),
     });
   });
 

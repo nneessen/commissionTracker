@@ -316,9 +316,9 @@ export function useMetricsWithDateRange(
     const averagePremium = newCount > 0 ? premiumWritten / newCount : 0;
 
     const cancelled = filteredPolicies.filter(
-      (p) => p.status === "cancelled",
+      (p) => p.lifecycleStatus === "cancelled",
     ).length;
-    const lapsed = filteredPolicies.filter((p) => p.status === "lapsed").length;
+    const lapsed = filteredPolicies.filter((p) => p.lifecycleStatus === "lapsed").length;
 
     // Calculate total commissionable value
     const commissionableValue = filteredPolicies.reduce((sum, p) => {
@@ -386,7 +386,7 @@ export function useMetricsWithDateRange(
 
   // Calculate current state metrics (point-in-time, not filtered by date)
   const currentState = (() => {
-    const activePolicies = policies.filter((p) => p.status === "active").length;
+    const activePolicies = policies.filter((p) => p.lifecycleStatus === "active").length;
     const pendingPolicies = policies.filter(
       (p) => p.status === "pending",
     ).length;
@@ -406,9 +406,9 @@ export function useMetricsWithDateRange(
         // Find the related policy
         const policy = policies.find((p) => p.id === c.policyId);
 
-        // Only include if policy exists and is active or pending
+        // Only include if policy exists and is active (lifecycleStatus) or pending (status)
         return (
-          policy && (policy.status === "active" || policy.status === "pending")
+          policy && (policy.lifecycleStatus === "active" || policy.status === "pending")
         );
       })
       .reduce((sum, c) => sum + (c.amount || 0), 0);

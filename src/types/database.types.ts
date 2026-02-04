@@ -5618,6 +5618,7 @@ export type Database = {
           lead_source_type:
             | Database["public"]["Enums"]["lead_source_type"]
             | null
+          lifecycle_status: string | null
           monthly_premium: number
           notes: string | null
           payment_frequency:
@@ -5650,6 +5651,7 @@ export type Database = {
           lead_source_type?:
             | Database["public"]["Enums"]["lead_source_type"]
             | null
+          lifecycle_status?: string | null
           monthly_premium: number
           notes?: string | null
           payment_frequency?:
@@ -5682,6 +5684,7 @@ export type Database = {
           lead_source_type?:
             | Database["public"]["Enums"]["lead_source_type"]
             | null
+          lifecycle_status?: string | null
           monthly_premium?: number
           notes?: string | null
           payment_frequency?:

@@ -140,13 +140,13 @@ export function useMetrics() {
   // Calculate policy metrics
   const calculatePolicyMetrics = (): PolicyMetrics => {
     const totalPolicies = policies.length;
-    const activePolicies = policies.filter((p) => p.status === "active").length;
+    const activePolicies = policies.filter((p) => p.lifecycleStatus === "active").length;
     const pendingPolicies = policies.filter(
       (p) => p.status === "pending",
     ).length;
-    const lapsedPolicies = policies.filter((p) => p.status === "lapsed").length;
+    const lapsedPolicies = policies.filter((p) => p.lifecycleStatus === "lapsed").length;
     const cancelledPolicies = policies.filter(
-      (p) => p.status === "cancelled",
+      (p) => p.lifecycleStatus === "cancelled",
     ).length;
 
     // Calculate retention rate
@@ -178,7 +178,7 @@ export function useMetrics() {
       active: activePolicies,
       lapsed: lapsedPolicies,
       cancelled: cancelledPolicies,
-      expired: policies.filter((p) => p.status === "expired").length,
+      expired: policies.filter((p) => p.lifecycleStatus === "expired").length,
     };
 
     // Premium by product
@@ -246,7 +246,7 @@ export function useMetrics() {
 
     // Policies expiring in next 30 and 90 days
     const policiesExpiringThisMonth = policies.filter((p) => {
-      if (p.status !== "active" || !p.termLength) return false;
+      if (p.lifecycleStatus !== "active" || !p.termLength) return false;
       const expiryDate = parseLocalDate(p.effectiveDate);
       expiryDate.setFullYear(expiryDate.getFullYear() + p.termLength);
       const daysUntilExpiry = Math.ceil(
@@ -256,7 +256,7 @@ export function useMetrics() {
     }).length;
 
     const policiesExpiringThisQuarter = policies.filter((p) => {
-      if (p.status !== "active" || !p.termLength) return false;
+      if (p.lifecycleStatus !== "active" || !p.termLength) return false;
       const expiryDate = parseLocalDate(p.effectiveDate);
       expiryDate.setFullYear(expiryDate.getFullYear() + p.termLength);
       const daysUntilExpiry = Math.ceil(
@@ -695,7 +695,7 @@ export function useMetrics() {
 
     // Estimate renewal income
     const expectedRenewals = policies
-      .filter((p) => p.status === "active")
+      .filter((p) => p.lifecycleStatus === "active")
       .reduce((sum, p) => {
         // Assume 50% of commission rate for renewals (ongoing monthly commissions)
         const advance = calculateCommissionAdvance(
@@ -772,7 +772,7 @@ export function useMetrics() {
 
       // Count policies that will be up for renewal
       const policiesForRenewal = policies.filter((p) => {
-        if (p.status !== "active" || !p.termLength) return false;
+        if (p.lifecycleStatus !== "active" || !p.termLength) return false;
         const renewalDate = parseLocalDate(p.effectiveDate);
         renewalDate.setFullYear(renewalDate.getFullYear() + p.termLength);
         return (

@@ -84,14 +84,14 @@ export function getCohortRetention(policies: Policy[]): CohortRetentionData[] {
       // 1. It's currently active, OR
       // 2. It was cancelled/lapsed AFTER month X
       const active = cohortPolicies.filter((p) => {
-        if (p.status === "active") {
+        if (p.lifecycleStatus === "active") {
           // Currently active policies are active at all past points
           return true;
         }
 
         // For cancelled/lapsed policies, check if they were still active at monthsElapsed
         if (
-          (p.status === "cancelled" || p.status === "lapsed") &&
+          (p.lifecycleStatus === "cancelled" || p.lifecycleStatus === "lapsed") &&
           p.updatedAt
         ) {
           const statusChangeMonth = differenceInMonths(
@@ -107,7 +107,7 @@ export function getCohortRetention(policies: Policy[]): CohortRetentionData[] {
 
       // Count policies that lapsed in this specific month
       const lapsed = cohortPolicies.filter((p) => {
-        if (p.status === "lapsed" && p.updatedAt) {
+        if (p.lifecycleStatus === "lapsed" && p.updatedAt) {
           const lapsedMonth = differenceInMonths(
             new Date(p.updatedAt),
             parseLocalDate(p.effectiveDate),
@@ -119,7 +119,7 @@ export function getCohortRetention(policies: Policy[]): CohortRetentionData[] {
 
       // Count policies that were cancelled in this specific month
       const cancelled = cohortPolicies.filter((p) => {
-        if (p.status === "cancelled" && p.updatedAt) {
+        if (p.lifecycleStatus === "cancelled" && p.updatedAt) {
           const cancelledMonth = differenceInMonths(
             new Date(p.updatedAt),
             parseLocalDate(p.effectiveDate),

@@ -123,7 +123,7 @@ class CurrentMonthMetricsService {
     }
 
     // Fall back to all active policies
-    const activePolicies = policies.filter(p => p.status === 'active');
+    const activePolicies = policies.filter(p => p.lifecycleStatus === 'active');
     if (activePolicies.length > 0) {
       const totalPremium = activePolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
       return {

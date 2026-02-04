@@ -67,7 +67,10 @@ export interface AgentPolicy {
   product: string;
   carrier: string;
   annualPremium: number;
-  status: "active" | "lapsed" | "cancelled";
+  /** Application status: pending, approved, denied, withdrawn */
+  status: string;
+  /** Lifecycle status for issued policies: active, lapsed, cancelled, expired (null when pending) */
+  lifecycleStatus: string | null;
   issueDate: string;
 }
 

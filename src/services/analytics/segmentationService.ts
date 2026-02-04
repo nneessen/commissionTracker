@@ -260,7 +260,7 @@ export function calculatePolicyChargebackRisk(
 
   policies.forEach((policy) => {
     // Only active policies in contestability period
-    if (policy.status !== "active") return;
+    if (policy.lifecycleStatus !== "active") return;
 
     const effectiveDate = parseLocalDate(policy.effectiveDate);
     const monthsSinceEffective = Math.floor(
@@ -337,7 +337,7 @@ export function getClientLifetimeValue(
   clientMap.forEach((clientPolicies, clientId) => {
     const totalPolicies = clientPolicies.length;
     const activePolicies = clientPolicies.filter(
-      (p) => p.status === "active",
+      (p) => p.lifecycleStatus === "active",
     ).length;
     const lifetimeValue = clientPolicies.reduce(
       (sum, p) => sum + (p.annualPremium || 0),
@@ -357,10 +357,10 @@ export function getClientLifetimeValue(
 
     // Calculate risk score (0-100, higher = more risk)
     const lapsedPolicies = clientPolicies.filter(
-      (p) => p.status === "lapsed",
+      (p) => p.lifecycleStatus === "lapsed",
     ).length;
     const cancelledPolicies = clientPolicies.filter(
-      (p) => p.status === "cancelled",
+      (p) => p.lifecycleStatus === "cancelled",
     ).length;
     const riskScore =
       totalPolicies > 0

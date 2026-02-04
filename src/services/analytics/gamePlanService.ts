@@ -300,7 +300,7 @@ class GamePlanService {
     const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const upcomingRenewals = allPolicies.filter((p) => {
-      if (!p.effectiveDate || p.status !== "active") return false;
+      if (!p.effectiveDate || p.lifecycleStatus !== "active") return false;
       // Calculate anniversary date (same month/day as effective date, but this year)
       const effective = parseLocalDate(p.effectiveDate);
       const anniversary = new Date(

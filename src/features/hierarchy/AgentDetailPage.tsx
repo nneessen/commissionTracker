@@ -48,6 +48,7 @@ interface AgentPolicy {
   carrier: string;
   annualPremium: number;
   status: string;
+  lifecycleStatus: string | null;
   createdAt: string;
   effectiveDate: string;
   issueDate: string;
@@ -468,15 +469,19 @@ export function AgentDetailPage() {
                           variant="outline"
                           className={cn(
                             "text-[9px] h-4 px-1",
-                            policy.status === "active" &&
+                            // Use lifecycleStatus for active/lapsed/cancelled styling
+                            policy.lifecycleStatus === "active" &&
                               "text-emerald-600 border-emerald-300 dark:border-emerald-700",
-                            policy.status === "lapsed" &&
+                            policy.lifecycleStatus === "lapsed" &&
                               "text-yellow-600 border-yellow-300 dark:border-yellow-700",
-                            policy.status === "cancelled" &&
+                            policy.lifecycleStatus === "cancelled" &&
                               "text-red-600 border-red-300 dark:border-red-700",
+                            // Use status for pending styling (application status)
+                            policy.status === "pending" &&
+                              "text-orange-600 border-orange-300 dark:border-orange-700",
                           )}
                         >
-                          {policy.status}
+                          {policy.lifecycleStatus || policy.status}
                         </Badge>
                       </TableCell>
                     </TableRow>

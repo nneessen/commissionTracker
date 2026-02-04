@@ -160,14 +160,15 @@ class TeamAnalyticsService {
         const avgPremium = policyCount > 0 ? totalAP / policyCount : 0;
 
         // Status counts from all policies
+        // Use lifecycle_status for active/lapsed/cancelled (issued policy lifecycle)
         const activePolicies = agentAllPolicies.filter(
-          (p) => p.status === "active",
+          (p) => p.lifecycle_status === "active",
         ).length;
         const lapsedPolicies = agentAllPolicies.filter(
-          (p) => p.status === "lapsed",
+          (p) => p.lifecycle_status === "lapsed",
         ).length;
         const cancelledPolicies = agentAllPolicies.filter(
-          (p) => p.status === "cancelled",
+          (p) => p.lifecycle_status === "cancelled",
         ).length;
 
         // IMPORTANT: Persistency excludes pending policies
@@ -392,10 +393,12 @@ class TeamAnalyticsService {
   ): TeamPolicyStatusBreakdown {
     const allPolicies = rawData.allPolicies;
 
-    const active = allPolicies.filter((p) => p.status === "active");
+    // Use lifecycle_status for active/lapsed/cancelled (issued policy lifecycle)
+    // Use status for pending (application outcome)
+    const active = allPolicies.filter((p) => p.lifecycle_status === "active");
     const pending = allPolicies.filter((p) => p.status === "pending");
-    const lapsed = allPolicies.filter((p) => p.status === "lapsed");
-    const cancelled = allPolicies.filter((p) => p.status === "cancelled");
+    const lapsed = allPolicies.filter((p) => p.lifecycle_status === "lapsed");
+    const cancelled = allPolicies.filter((p) => p.lifecycle_status === "cancelled");
 
     const sumPremium = (policies: TeamPolicyRow[]) =>
       policies.reduce((sum, p) => sum + (p.annual_premium || 0), 0);

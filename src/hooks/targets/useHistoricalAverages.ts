@@ -62,7 +62,7 @@ export function useHistoricalAverages(): {
       currentYearMetrics.avgPolicyPremium ||
       // Fallback: calculate from all active policies if current year has no data
       (() => {
-        const activePolicies = policies.filter((p) => p.status === "active");
+        const activePolicies = policies.filter((p) => p.lifecycleStatus === "active");
         if (activePolicies.length > 0) {
           return (
             activePolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) /
@@ -190,7 +190,7 @@ export function useHistoricalAverages(): {
     });
 
     const still_active_13Month = policiesFrom13MonthsAgo.filter(
-      (p) => p.status === "active",
+      (p) => p.lifecycleStatus === "active",
     ).length;
     const persistency13Month =
       policiesFrom13MonthsAgo.length > 0
@@ -209,7 +209,7 @@ export function useHistoricalAverages(): {
     });
 
     const stillActive25Month = policiesFrom25MonthsAgo.filter(
-      (p) => p.status === "active",
+      (p) => p.lifecycleStatus === "active",
     ).length;
     const persistency25Month =
       policiesFrom25MonthsAgo.length > 0

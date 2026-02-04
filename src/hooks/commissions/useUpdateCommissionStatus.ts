@@ -109,32 +109,10 @@ export const useUpdateCommissionStatus = () => {
       // Use the first result (they should all be the same since we're updating by ID)
       const commissionData = commissionResults[0];
 
-      // Update policy status when commission status changes
-      if (policyId) {
-        let policyStatus = "active"; // default
-
-        if (status === "charged_back") {
-          policyStatus = "lapsed";
-        } else if (status === "paid") {
-          policyStatus = "active";
-        } else if (status === "pending") {
-          policyStatus = "pending";
-        }
-
-        const { error: policyError } = await supabase
-          .from("policies")
-          .update({
-            status: policyStatus,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", policyId);
-
-        if (policyError) {
-          throw new Error(
-            `Failed to update policy status: ${policyError.message}`,
-          );
-        }
-      }
+      // NOTE: Commission status is now DECOUPLED from policy status.
+      // Policy status (application outcome) and lifecycle status are controlled independently.
+      // Commission status changes do NOT automatically update policy status.
+      // Database triggers handle chargeback calculations when lifecycle_status changes.
 
       return commissionData;
     },

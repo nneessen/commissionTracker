@@ -8,6 +8,8 @@ export interface TeamPolicyRow {
   id: string;
   user_id: string;
   status: string;
+  /** Lifecycle status: active, lapsed, cancelled, expired (null when status is pending) */
+  lifecycle_status: string | null;
   annual_premium: number | null;
   effective_date: string;
   product: string | null;

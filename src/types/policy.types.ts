@@ -29,9 +29,15 @@ export type LeadSourceType = Database["public"]["Enums"]["lead_source_type"];
 // APP-LEVEL TYPES (CamelCase for React components)
 // =============================================================================
 
-/** Policy status matching database enum: policy_status */
+/** Policy status - application/underwriting outcome */
 export type PolicyStatus =
   | "pending"
+  | "approved"
+  | "denied"
+  | "withdrawn";
+
+/** Policy lifecycle status - state after approval */
+export type PolicyLifecycleStatus =
   | "active"
   | "lapsed"
   | "cancelled"
@@ -78,6 +84,7 @@ export interface Policy {
   id: string;
   policyNumber: string | null;
   status: PolicyStatus;
+  lifecycleStatus?: PolicyLifecycleStatus | null; // Only set when status = 'approved'
 
   // Client Information - flexible to support both formats
   client: PolicyClient | PolicyClientExtended;
@@ -119,6 +126,7 @@ export interface Policy {
 export interface NewPolicyForm {
   policyNumber: string;
   status: PolicyStatus;
+  lifecycleStatus?: PolicyLifecycleStatus | null; // Only set when status = 'approved'
 
   // Client fields
   clientName: string;
@@ -150,6 +158,7 @@ export interface NewPolicyForm {
 
 export interface PolicyFilters {
   status?: PolicyStatus;
+  lifecycleStatus?: PolicyLifecycleStatus;
   carrierId?: string;
   product?: ProductType;
   dateRange?: {
@@ -206,6 +215,7 @@ export interface CreatePolicyData {
   commissionPercentage: number;
   notes?: string;
   status?: PolicyStatus;
+  lifecycleStatus?: PolicyLifecycleStatus | null;
   // Lead source tracking
   leadPurchaseId?: string | null;
   leadSourceType?: LeadSourceType | null;
@@ -231,6 +241,7 @@ export function policyRowToPolicy(
     id: row.id,
     policyNumber: row.policy_number,
     status: row.status as PolicyStatus,
+    lifecycleStatus: row.lifecycle_status as PolicyLifecycleStatus | null,
     client,
     carrierId: row.carrier_id,
     productId: row.product_id || undefined,
@@ -274,5 +285,6 @@ export function createPolicyDataToInsert(data: CreatePolicyData): PolicyInsert {
     commission_percentage: data.commissionPercentage,
     notes: data.notes,
     status: data.status || "pending",
+    lifecycle_status: data.lifecycleStatus || null,
   };
 }

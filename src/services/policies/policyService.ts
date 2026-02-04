@@ -529,7 +529,7 @@ class PolicyService {
    * Cancel a policy and trigger automatic chargeback calculation
    *
    * When a policy is cancelled, this method:
-   * 1. Updates policy status to 'cancelled'
+   * 1. Updates policy lifecycle_status to 'cancelled'
    * 2. Database trigger automatically calculates chargeback
    * 3. Commission status updated to 'charged_back' with chargeback amount
    *
@@ -564,23 +564,23 @@ class PolicyService {
         throw new NotFoundError("Policy", policyId);
       }
 
-      // Validate policy is not already cancelled
-      if (policy.status === "cancelled" || policy.status === "lapsed") {
+      // Validate policy is not already cancelled or lapsed (lifecycle_status)
+      if (policy.lifecycleStatus === "cancelled" || policy.lifecycleStatus === "lapsed") {
         throw new ValidationError("Policy is already cancelled or lapsed", [
           {
-            field: "status",
+            field: "lifecycleStatus",
             message: "Cannot cancel an already cancelled/lapsed policy",
-            value: policy.status,
+            value: policy.lifecycleStatus,
           },
         ]);
       }
 
-      // Update policy status to 'cancelled'
+      // Update policy lifecycle_status to 'cancelled'
       // Database trigger will automatically calculate chargeback
       const { data: updated, error: updateError } = await supabase
         .from("policies")
         .update({
-          status: "cancelled",
+          lifecycle_status: "cancelled",
           notes: policy.notes
             ? `${policy.notes}\n\nCancelled: ${reason} (${cancelDate.toISOString().split("T")[0]})`
             : `Cancelled: ${reason} (${cancelDate.toISOString().split("T")[0]})`,
@@ -685,18 +685,18 @@ class PolicyService {
         throw new NotFoundError("Policy", policyId);
       }
 
-      // Validate policy is not already lapsed or cancelled
-      if (policy.status === "cancelled" || policy.status === "lapsed") {
+      // Validate policy is not already lapsed or cancelled (check lifecycle_status)
+      if (policy.lifecycleStatus === "cancelled" || policy.lifecycleStatus === "lapsed") {
         throw new ValidationError("Policy is already cancelled or lapsed", [
           {
-            field: "status",
+            field: "lifecycleStatus",
             message: "Cannot lapse an already cancelled/lapsed policy",
-            value: policy.status,
+            value: policy.lifecycleStatus,
           },
         ]);
       }
 
-      // Update policy status to 'lapsed'
+      // Update policy lifecycle_status to 'lapsed'
       // Database trigger will automatically calculate chargeback
       const lapseNote = reason
         ? `Lapsed: ${reason} (${lapseDate.toISOString().split("T")[0]})`
@@ -705,7 +705,7 @@ class PolicyService {
       const { data: updated, error: updateError } = await supabase
         .from("policies")
         .update({
-          status: "lapsed",
+          lifecycle_status: "lapsed",
           notes: policy.notes ? `${policy.notes}\n\n${lapseNote}` : lapseNote,
           updated_at: new Date().toISOString(),
         })
@@ -792,15 +792,15 @@ class PolicyService {
         throw new NotFoundError("Policy", policyId);
       }
 
-      // Validate policy is cancelled or lapsed
-      if (policy.status !== "cancelled" && policy.status !== "lapsed") {
+      // Validate policy is cancelled or lapsed (check lifecycle_status)
+      if (policy.lifecycleStatus !== "cancelled" && policy.lifecycleStatus !== "lapsed") {
         throw new ValidationError(
           "Policy must be cancelled or lapsed to reinstate",
           [
             {
-              field: "status",
+              field: "lifecycleStatus",
               message: "Can only reinstate cancelled/lapsed policies",
-              value: policy.status,
+              value: policy.lifecycleStatus,
             },
           ],
         );
@@ -818,11 +818,11 @@ class PolicyService {
         await commissionStatusService.reverseChargeback(commission.id);
       }
 
-      // Update policy status to 'active'
+      // Update policy lifecycle_status to 'active'
       const { data: updated, error: updateError } = await supabase
         .from("policies")
         .update({
-          status: "active",
+          lifecycle_status: "active",
           notes: policy.notes
             ? `${policy.notes}\n\nReinstated: ${reason} (${new Date().toISOString().split("T")[0]})`
             : `Reinstated: ${reason} (${new Date().toISOString().split("T")[0]})`,

@@ -152,9 +152,9 @@ class ClientServiceClass {
       // Calculate statistics
       const stats = {
         total: policyList.length,
-        active: policyList.filter((p) => p.status === "active").length,
-        lapsed: policyList.filter((p) => p.status === "lapsed").length,
-        cancelled: policyList.filter((p) => p.status === "cancelled").length,
+        active: policyList.filter((p) => p.lifecycleStatus === "active").length,
+        lapsed: policyList.filter((p) => p.lifecycleStatus === "lapsed").length,
+        cancelled: policyList.filter((p) => p.lifecycleStatus === "cancelled").length,
         totalPremium: policyList.reduce(
           (sum, p) => sum + (p.annualPremium || 0),
           0,

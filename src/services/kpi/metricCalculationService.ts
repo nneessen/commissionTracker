@@ -92,10 +92,10 @@ export function calculateActualTotals(
 
   const newPoliciesCount = periodPolicies.length;
   const cancelledCount = periodPolicies.filter(
-    (p) => p.status === "cancelled",
+    (p) => p.lifecycleStatus === "cancelled",
   ).length;
   const lapsedCount = periodPolicies.filter(
-    (p) => p.status === "lapsed",
+    (p) => p.lifecycleStatus === "lapsed",
   ).length;
 
   // Client metrics (unique clients from period policies)
@@ -148,7 +148,7 @@ export function calculateCurrentState(
   allCommissions: Commission[],
 ): CurrentStateMetrics {
   const activePolicies = allPolicies.filter(
-    (p) => p.status === "active",
+    (p) => p.lifecycleStatus === "active",
   ).length;
   const pendingPolicies = allPolicies.filter(
     (p) => p.status === "pending",

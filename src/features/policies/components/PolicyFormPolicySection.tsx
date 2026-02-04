@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NewPolicyForm, PolicyStatus, PaymentFrequency } from "../../../types/policy.types";
+import { NewPolicyForm, PolicyStatus, PolicyLifecycleStatus, PaymentFrequency } from "../../../types/policy.types";
 import { isToday } from "../hooks/usePolicyForm";
 
 interface PolicyFormPolicySectionProps {
@@ -33,6 +33,9 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
   onInputChange,
   onSelectChange,
 }) => {
+  // Show lifecycle status dropdown only when status is approved
+  const showLifecycleStatus = formData.status === "approved";
+
   return (
     <div className="p-3 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
       <div className="flex items-center gap-2 mb-3">
@@ -177,31 +180,63 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
           </div>
         </div>
 
-        {/* Status */}
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="status" className="text-[11px] text-muted-foreground">
-            Status
-          </Label>
-          <Select
-            value={formData.status}
-            onValueChange={(value) =>
-              onSelectChange("status", value as PolicyStatus)
-            }
-          >
-            <SelectTrigger id="status" className="h-8 text-[11px] border-input">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              {policyId && (
-                <>
+        {/* Application Status and Lifecycle Status */}
+        <div className={showLifecycleStatus ? "grid grid-cols-2 gap-2" : ""}>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="status" className="text-[11px] text-muted-foreground">
+              Application Status
+            </Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => {
+                onSelectChange("status", value as PolicyStatus);
+                // Clear lifecycle status when changing to non-approved status
+                if (value !== "approved") {
+                  onSelectChange("lifecycleStatus", "");
+                }
+              }}
+            >
+              <SelectTrigger id="status" className="h-8 text-[11px] border-input">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="denied">Denied</SelectItem>
+                <SelectItem value="withdrawn">Withdrawn</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-[10px] text-muted-foreground">
+              Carrier decision on the application
+            </span>
+          </div>
+
+          {showLifecycleStatus && (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="lifecycleStatus" className="text-[11px] text-muted-foreground">
+                Policy Lifecycle
+              </Label>
+              <Select
+                value={formData.lifecycleStatus || "active"}
+                onValueChange={(value) =>
+                  onSelectChange("lifecycleStatus", value as PolicyLifecycleStatus)
+                }
+              >
+                <SelectTrigger id="lifecycleStatus" className="h-8 text-[11px] border-input">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="lapsed">Lapsed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-[10px] text-muted-foreground">
+                Current state of the policy
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Calculated Values Summary */}

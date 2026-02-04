@@ -109,7 +109,8 @@ export class ReportGenerationService {
     const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
     const netIncome = totalCommissionPaid - totalExpenses;
 
-    const activePolicies = policies.filter((p) => p.status === "active").length;
+    // Use lifecycle_status for active policy counting (issued, in-force policies)
+    const activePolicies = policies.filter((p) => p.lifecycle_status === "active").length;
     const totalPolicies = policies.length;
     const totalPremium = policies.reduce(
       (sum, p) => sum + (p.annual_premium || 0),
@@ -970,6 +971,7 @@ export class ReportGenerationService {
       const policy = commission.policy as {
         carrier_id: string;
         status: string;
+        lifecycle_status: string | null;
         commission_percentage: number | null;
         carrier: { name: string } | null;
       } | null;
@@ -992,9 +994,10 @@ export class ReportGenerationService {
       const policyId = commission.policy_id;
       if (policyId && !existing.policyIds.has(policyId)) {
         existing.policyIds.add(policyId);
-        if (policy.status === "active") {
+        // Use lifecycle_status for active/lapsed (issued policy lifecycle)
+        if (policy.lifecycle_status === "active") {
           existing.activePolicyIds.add(policyId);
-        } else if (policy.status === "lapsed") {
+        } else if (policy.lifecycle_status === "lapsed") {
           existing.lapsedPolicyIds.add(policyId);
         }
         if (policy.commission_percentage !== null) {

@@ -83,7 +83,7 @@ export function CommissionPipeline() {
           now.getTime() - 180 * 24 * 60 * 60 * 1000,
         );
 
-        if (policyDate > sixMonthsAgo && policy.status === "lapsed") {
+        if (policyDate > sixMonthsAgo && policy.lifecycleStatus === "lapsed") {
           atRisk += commission.amount || 0;
           atRiskCount++;
         }
