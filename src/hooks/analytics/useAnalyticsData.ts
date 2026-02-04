@@ -78,9 +78,22 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
   };
 
   // Client Segmentation - client value and chargeback risk (React 19.1 optimizes automatically)
+  // Map commissions to the minimal shape needed for real-time at-risk calculation
+  // Uses amount and advanceMonths to calculate unearned in real-time based on policy effective date
+  const commissionsForRisk = allCommissions.map((c) => ({
+    policyId: c.policyId ?? null,
+    amount: c.amount ?? 0, // The advance amount paid
+    advanceMonths: c.advanceMonths ?? 9, // Typically 9 months
+    status: c.status,
+  }));
+
   const segmentationData = {
     segments: segmentClientsByValue(policies),
-    chargebackRisk: calculatePolicyChargebackRisk(allPolicies, 5), // Top 5 highest premium at-risk
+    chargebackRisk: calculatePolicyChargebackRisk(
+      allPolicies,
+      commissionsForRisk,
+      5,
+    ), // Top 5 highest at-risk (calculated real-time from policy effective date)
     ltv: getClientLifetimeValue(policies),
   };
 

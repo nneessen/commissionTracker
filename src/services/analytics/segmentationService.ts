@@ -178,23 +178,83 @@ export interface PolicyChargebackRisk {
   clientName: string;
   product: string;
   annualPremium: number;
+  atRiskAmount: number; // Actual unearned commission amount at risk of chargeback
   effectiveDate: string;
   monthsInContestability: number;
   riskLevel: RenewalRiskLevel;
 }
 
 /**
+ * Commission data structure for chargeback risk calculation
+ * Uses amount and advanceMonths to calculate at-risk in real-time
+ */
+export interface CommissionForChargebackRisk {
+  policyId: string | null;
+  amount: number; // The advance amount paid upfront
+  advanceMonths: number; // Typically 9 months
+  status: string;
+}
+
+/**
+ * Calculate at-risk amount for a single commission based on elapsed time
+ *
+ * Formula: At Risk = Amount × (1 - min(monthsElapsed, advanceMonths) / advanceMonths)
+ *
+ * @param amount - Commission advance amount
+ * @param advanceMonths - Number of months in the advance (typically 9)
+ * @param monthsElapsed - Months since policy effective date
+ * @returns Unearned amount still at risk of chargeback
+ */
+function calculateUnearnedAmount(
+  amount: number,
+  advanceMonths: number,
+  monthsElapsed: number,
+): number {
+  const effectiveAdvanceMonths = advanceMonths || 9;
+  const monthsPaid = Math.min(monthsElapsed, effectiveAdvanceMonths);
+  const monthlyRate = amount / effectiveAdvanceMonths;
+  const earnedAmount = monthlyRate * monthsPaid;
+  return Math.max(0, amount - earnedAmount);
+}
+
+/**
  * Calculate top chargeback risk policies
- * Returns the 5 highest premium policies still in contestability period (24 months)
- * These represent the most money at risk if the policy lapses
+ * Returns the top N policies by actual unearned commission amount at risk
+ *
+ * The "At Risk" amount is calculated in REAL-TIME based on:
+ * 1. Policy effective date → months elapsed
+ * 2. Commission amount (the advance)
+ * 3. Advance months (typically 9)
+ *
+ * This ensures accuracy regardless of whether database earned/unearned
+ * fields have been recently updated.
+ *
+ * @param policies - All policies
+ * @param commissions - All commissions (with amount and advanceMonths)
+ * @param limit - Number of results to return (default 5)
  */
 export function calculatePolicyChargebackRisk(
   policies: Policy[],
+  commissions: CommissionForChargebackRisk[] = [],
   limit: number = 5,
 ): PolicyChargebackRisk[] {
   const now = new Date();
   const DAY_MS = 24 * 60 * 60 * 1000;
   const CONTESTABILITY_MONTHS = 24;
+
+  // Group commissions by policy ID for efficient lookup
+  const policyCommissionsMap = new Map<string, CommissionForChargebackRisk[]>();
+  commissions.forEach((commission) => {
+    if (
+      commission.policyId &&
+      commission.status !== "charged_back" &&
+      commission.status !== "cancelled"
+    ) {
+      const existing = policyCommissionsMap.get(commission.policyId) || [];
+      existing.push(commission);
+      policyCommissionsMap.set(commission.policyId, existing);
+    }
+  });
 
   const atRiskPolicies: PolicyChargebackRisk[] = [];
 
@@ -207,29 +267,51 @@ export function calculatePolicyChargebackRisk(
       (now.getTime() - effectiveDate.getTime()) / (DAY_MS * 30),
     );
 
-    if (monthsSinceEffective < CONTESTABILITY_MONTHS) {
-      let riskLevel: RenewalRiskLevel = "low";
-      if (monthsSinceEffective < 6) {
-        riskLevel = "high";
-      } else if (monthsSinceEffective < 12) {
-        riskLevel = "medium";
-      }
+    // Skip if outside contestability period
+    if (monthsSinceEffective >= CONTESTABILITY_MONTHS) return;
 
-      atRiskPolicies.push({
-        policyId: policy.id,
-        clientName: policy.client?.name || "Unknown",
-        product: policy.product,
-        annualPremium: policy.annualPremium || 0,
-        effectiveDate: policy.effectiveDate,
-        monthsInContestability: monthsSinceEffective,
-        riskLevel,
-      });
+    // Get all commissions for this policy
+    const policyCommissions = policyCommissionsMap.get(policy.id) || [];
+
+    // Skip policies with no commissions
+    if (policyCommissions.length === 0) return;
+
+    // Calculate total at-risk amount in REAL-TIME
+    // Sum unearned amounts across all commissions for this policy
+    let totalAtRisk = 0;
+    policyCommissions.forEach((commission) => {
+      totalAtRisk += calculateUnearnedAmount(
+        commission.amount,
+        commission.advanceMonths,
+        monthsSinceEffective,
+      );
+    });
+
+    // Skip policies with no unearned commission at risk (fully earned)
+    if (totalAtRisk <= 0) return;
+
+    let riskLevel: RenewalRiskLevel = "low";
+    if (monthsSinceEffective < 6) {
+      riskLevel = "high";
+    } else if (monthsSinceEffective < 12) {
+      riskLevel = "medium";
     }
+
+    atRiskPolicies.push({
+      policyId: policy.id,
+      clientName: policy.client?.name || "Unknown",
+      product: policy.product,
+      annualPremium: policy.annualPremium || 0,
+      atRiskAmount: totalAtRisk,
+      effectiveDate: policy.effectiveDate,
+      monthsInContestability: monthsSinceEffective,
+      riskLevel,
+    });
   });
 
-  // Sort by premium descending (highest risk first) and take top N
+  // Sort by actual at-risk amount descending (highest financial exposure first)
   return atRiskPolicies
-    .sort((a, b) => b.annualPremium - a.annualPremium)
+    .sort((a, b) => b.atRiskAmount - a.atRiskAmount)
     .slice(0, limit);
 }
 

@@ -199,7 +199,7 @@ export function ClientSegmentation() {
                     </span>
                   </TableCell>
                   <TableCell className="p-1.5 text-right font-mono font-semibold text-red-600 dark:text-red-400">
-                    {formatCurrency(row.annualPremium)}
+                    {formatCurrency(row.atRiskAmount)}
                   </TableCell>
                   <TableCell className="p-1.5 text-right">
                     <span

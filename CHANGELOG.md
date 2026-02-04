@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-04 09:26:50
+
+### Changed Files
+- `src/features/analytics/components/ClientSegmentation.tsx`
+- `src/hooks/analytics/useAnalyticsData.ts`
+- `src/services/analytics/segmentationService.ts`
+
+### Statistics
+```
+ 3 files changed, 118 insertions(+), 23 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-04 08:50:46
 
 ### Changed Files
