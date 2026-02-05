@@ -27,6 +27,7 @@
     "email:build": "email export --dir supabase/email-src --outDir supabase/templates",
     "slack:leaderboard": "node scripts/invoke-slack-leaderboard.js",
     "slack:auto-complete": "node scripts/invoke-slack-auto-complete.js",
+    "fix:submit-dates": "node scripts/fix-submit-dates.js",
     "prepare": "husky && husky install"
   },
   "dependencies": {
