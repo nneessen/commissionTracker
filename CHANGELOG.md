@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-07 12:12:53
+
+### Changed Files
+- `supabase/migrations/20260207120817_fix_vendor_stats_imo_fallback.sql`
+
+### Statistics
+```
+ 1 file changed, 58 insertions(+)
+```
+
 ## [Checkpoint] - 2026-02-07 11:40:24
 
 ### Changed Files
