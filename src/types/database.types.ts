@@ -12348,6 +12348,10 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: Json
       }
+      cascade_agency_assignment: {
+        Args: { p_agency_id: string; p_imo_id: string; p_owner_id: string }
+        Returns: Json
+      }
       check_and_update_milestones: {
         Args: { p_log_id: string; p_policy_count: number; p_total_ap: number }
         Returns: {
@@ -12724,47 +12728,24 @@ export type Database = {
           name: string
         }[]
       }
-      get_agency_dashboard_metrics:
-        | {
-            Args: { p_agency_id?: string }
-            Returns: {
-              active_policies: number
-              agency_id: string
-              agency_name: string
-              agent_count: number
-              avg_production_per_agent: number
-              imo_id: string
-              top_producer_id: string
-              top_producer_name: string
-              top_producer_premium: number
-              total_annual_premium: number
-              total_commissions_ytd: number
-              total_earned_ytd: number
-              total_unearned: number
-            }[]
-          }
-        | {
-            Args: {
-              p_agency_id?: string
-              p_end_date?: string
-              p_start_date?: string
-            }
-            Returns: {
-              active_policies: number
-              agency_id: string
-              agency_name: string
-              agent_count: number
-              avg_production_per_agent: number
-              imo_id: string
-              top_producer_id: string
-              top_producer_name: string
-              top_producer_premium: number
-              total_annual_premium: number
-              total_commissions_ytd: number
-              total_earned_ytd: number
-              total_unearned: number
-            }[]
-          }
+      get_agency_dashboard_metrics: {
+        Args: { p_agency_id?: string }
+        Returns: {
+          active_policies: number
+          agency_id: string
+          agency_name: string
+          agent_count: number
+          avg_production_per_agent: number
+          imo_id: string
+          top_producer_id: string
+          top_producer_name: string
+          top_producer_premium: number
+          total_annual_premium: number
+          total_commissions_ytd: number
+          total_earned_ytd: number
+          total_unearned: number
+        }[]
+      }
       get_agency_descendants: {
         Args: { p_agency_id: string }
         Returns: {
@@ -13111,7 +13092,7 @@ export type Database = {
         }[]
       }
       get_clients_with_stats: {
-        Args: never
+        Args: { p_user_id?: string }
         Returns: {
           active_policy_count: number
           address: string
@@ -13157,7 +13138,7 @@ export type Database = {
         }[]
       }
       get_downline_clients_with_stats: {
-        Args: never
+        Args: { p_user_id?: string }
         Returns: {
           active_policy_count: number
           address: string
@@ -13169,7 +13150,6 @@ export type Database = {
           last_policy_date: string
           name: string
           notes: string
-          owner_name: string
           phone: string
           policy_count: number
           status: string
@@ -13292,28 +13272,6 @@ export type Database = {
         }[]
       }
       get_imo_admin: { Args: { p_imo_id: string }; Returns: string }
-      get_imo_clients_with_stats: {
-        Args: never
-        Returns: {
-          active_policy_count: number
-          address: string
-          avg_premium: number
-          created_at: string
-          date_of_birth: string
-          email: string
-          id: string
-          last_policy_date: string
-          name: string
-          notes: string
-          owner_name: string
-          phone: string
-          policy_count: number
-          status: string
-          total_premium: number
-          updated_at: string
-          user_id: string
-        }[]
-      }
       get_imo_contract_stats: {
         Args: { p_imo_id: string }
         Returns: {
@@ -13324,37 +13282,21 @@ export type Database = {
           total_contracts: number
         }[]
       }
-      get_imo_dashboard_metrics:
-        | {
-            Args: never
-            Returns: {
-              agency_count: number
-              agent_count: number
-              avg_production_per_agent: number
-              imo_id: string
-              imo_name: string
-              total_active_policies: number
-              total_annual_premium: number
-              total_commissions_ytd: number
-              total_earned_ytd: number
-              total_unearned: number
-            }[]
-          }
-        | {
-            Args: { p_end_date?: string; p_start_date?: string }
-            Returns: {
-              agency_count: number
-              agent_count: number
-              avg_production_per_agent: number
-              imo_id: string
-              imo_name: string
-              total_active_policies: number
-              total_annual_premium: number
-              total_commissions_ytd: number
-              total_earned_ytd: number
-              total_unearned: number
-            }[]
-          }
+      get_imo_dashboard_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          agency_count: number
+          agent_count: number
+          avg_production_per_agent: number
+          imo_id: string
+          imo_name: string
+          total_active_policies: number
+          total_annual_premium: number
+          total_commissions_ytd: number
+          total_earned_ytd: number
+          total_unearned: number
+        }[]
+      }
       get_imo_expense_by_category: {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
@@ -13526,6 +13468,55 @@ export type Database = {
           unique_users: number
           vendor_id: string
           vendor_name: string
+        }[]
+      }
+      get_lead_vendor_admin_overview: {
+        Args: { p_end_date?: string; p_imo_id?: string; p_start_date?: string }
+        Returns: {
+          aged_leads: number
+          aged_spent: number
+          avg_cost_per_lead: number
+          avg_roi: number
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          conversion_rate: number
+          created_at: string
+          fresh_leads: number
+          fresh_spent: number
+          last_purchase_date: string
+          notes: string
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
+          unique_users: number
+          vendor_id: string
+          vendor_name: string
+          website: string
+        }[]
+      }
+      get_lead_vendor_user_breakdown: {
+        Args: {
+          p_end_date?: string
+          p_start_date?: string
+          p_vendor_id: string
+        }
+        Returns: {
+          aged_leads: number
+          avg_cost_per_lead: number
+          avg_roi: number
+          conversion_rate: number
+          fresh_leads: number
+          last_purchase_date: string
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
+          user_id: string
+          user_name: string
         }[]
       }
       get_leaderboard_data: {
@@ -13801,11 +13792,17 @@ export type Database = {
           p_warning_days: number
         }
         Returns: {
-          agent_id: string
-          days_until_lapse: number
-          lapse_date: string
+          annual_premium: number
+          carrier_name: string
+          days_until_due: number
+          effective_date: string
+          last_payment_date: string
           policy_id: string
           policy_number: string
+          product_type: string
+          user_email: string
+          user_id: string
+          user_name: string
         }[]
       }
       get_policies_paginated: {
@@ -14100,23 +14097,48 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      get_top_performers_report: {
-        Args: { p_end_date?: string; p_limit?: number; p_start_date?: string }
-        Returns: {
-          agency_id: string
-          agency_name: string
-          agent_email: string
-          agent_id: string
-          agent_name: string
-          avg_premium_per_policy: number
-          commissions_earned: number
-          contract_level: number
-          new_policies: number
-          new_premium: number
-          rank_in_agency: number
-          rank_in_imo: number
-        }[]
-      }
+      get_top_performers_report:
+        | {
+            Args: {
+              p_end_date?: string
+              p_limit?: number
+              p_start_date?: string
+            }
+            Returns: {
+              agency_id: string
+              agency_name: string
+              agent_email: string
+              agent_id: string
+              agent_name: string
+              avg_premium_per_policy: number
+              commissions_earned: number
+              contract_level: number
+              new_policies: number
+              new_premium: number
+              rank_in_agency: number
+              rank_in_imo: number
+            }[]
+          }
+        | {
+            Args: {
+              p_end_date?: string
+              p_limit?: number
+              p_start_date?: string
+            }
+            Returns: {
+              agency_id: string
+              agency_name: string
+              agent_id: string
+              agent_name: string
+              avg_premium_per_policy: number
+              commissions_earned: number
+              contract_level: number
+              new_policies: number
+              new_premium: number
+              rank_in_agency: number
+              rank_in_imo: number
+            }[]
+          }
       get_unipile_config: {
         Args: { p_imo_id: string }
         Returns: {
@@ -14411,7 +14433,7 @@ export type Database = {
         Returns: string[]
       }
       get_vendors_with_stats: {
-        Args: { p_imo_id: string; p_include_inactive?: boolean }
+        Args: { p_imo_id?: string; p_include_inactive?: boolean }
         Returns: {
           contact_email: string
           contact_name: string
@@ -14427,17 +14449,37 @@ export type Database = {
         }[]
       }
       get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
-      getuser_commission_profile: {
-        Args: { p_lookback_months?: number; puser_id: string }
-        Returns: {
-          calculated_at: string
-          contract_level: number
-          data_quality: string
-          product_breakdown: Json
-          simple_avg_rate: number
-          weighted_avg_rate: number
-        }[]
-      }
+      getuser_commission_profile:
+        | {
+            Args: { p_user_id?: string }
+            Returns: {
+              active_policies: number
+              agency_id: string
+              agency_name: string
+              avg_commission_per_policy: number
+              contract_level: number
+              recent_policies: Json
+              total_chargebacks: number
+              total_earned: number
+              total_policies: number
+              total_unearned: number
+              user_email: string
+              user_id: string
+              user_name: string
+              ytd_earned: number
+            }[]
+          }
+        | {
+            Args: { p_lookback_months?: number; puser_id: string }
+            Returns: {
+              calculated_at: string
+              contract_level: number
+              data_quality: string
+              product_breakdown: Json
+              simple_avg_rate: number
+              weighted_avg_rate: number
+            }[]
+          }
       graduate_recruit_to_agent: {
         Args: {
           p_contract_level: number

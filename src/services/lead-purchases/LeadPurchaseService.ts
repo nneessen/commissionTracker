@@ -8,6 +8,8 @@ import type {
   LeadPurchaseStats,
   VendorStats,
   VendorStatsAggregate,
+  VendorAdminOverview,
+  VendorUserBreakdown,
   LeadPurchaseFilters,
 } from "@/types/lead-purchase.types";
 
@@ -183,6 +185,50 @@ export class LeadPurchaseService extends BaseService<
         endDate,
       );
       return { success: true, data: stats };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get vendor admin overview - all vendors with full stats for admin tab
+   */
+  async getVendorAdminOverview(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ServiceResponse<VendorAdminOverview[]>> {
+    try {
+      const data = await this.repository.getVendorAdminOverview(
+        startDate,
+        endDate,
+      );
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get per-user breakdown for a specific vendor
+   */
+  async getVendorUserBreakdown(
+    vendorId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ServiceResponse<VendorUserBreakdown[]>> {
+    try {
+      const data = await this.repository.getVendorUserBreakdown(
+        vendorId,
+        startDate,
+        endDate,
+      );
+      return { success: true, data };
     } catch (error) {
       return {
         success: false,

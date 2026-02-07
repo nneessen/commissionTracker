@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-07 13:07:51
+
+### Changed Files
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/LeadVendorsTab.tsx`
+- `src/hooks/lead-purchases/useLeadPurchases.ts`
+- `src/services/lead-purchases/LeadPurchaseRepository.ts`
+- `src/services/lead-purchases/LeadPurchaseService.ts`
+- `src/types/database.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `supabase/migrations/20260207123503_lead_vendor_admin_stats.sql`
+- `supabase/migrations/20260207125614_lead_vendor_admin_add_last_purchase.sql`
+- `supabase/migrations/20260207130208_user_breakdown_last_purchase.sql`
+
+### Statistics
+```
+ 10 files changed, 1459 insertions(+), 130 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-07 12:12:53
 
 ### Changed Files

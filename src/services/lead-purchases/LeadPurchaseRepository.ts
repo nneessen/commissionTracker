@@ -7,6 +7,8 @@ import type {
   LeadPurchaseStats,
   VendorStats,
   VendorStatsAggregate,
+  VendorAdminOverview,
+  VendorUserBreakdown,
   LeadPurchaseFilters,
 } from "@/types/lead-purchase.types";
 import {
@@ -272,6 +274,94 @@ export class LeadPurchaseRepository extends BaseRepository<
         avgRoi: Number(row.avg_roi || 0),
         conversionRate: Number(row.conversion_rate || 0),
         uniqueUsers: Number(row.unique_users || 0),
+      })) || []
+    );
+  }
+
+  /**
+   * Get vendor admin overview - all vendors with full stats + fresh/aged breakdown
+   */
+  async getVendorAdminOverview(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<VendorAdminOverview[]> {
+    const { data, error } = await this.client.rpc(
+      "get_lead_vendor_admin_overview",
+      {
+        p_imo_id: null,
+        p_start_date: startDate || null,
+        p_end_date: endDate || null,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "getVendorAdminOverview");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        vendorId: String(row.vendor_id),
+        vendorName: String(row.vendor_name),
+        contactName: row.contact_name ? String(row.contact_name) : null,
+        contactEmail: row.contact_email ? String(row.contact_email) : null,
+        contactPhone: row.contact_phone ? String(row.contact_phone) : null,
+        website: row.website ? String(row.website) : null,
+        notes: row.notes ? String(row.notes) : null,
+        createdAt: String(row.created_at),
+        lastPurchaseDate: row.last_purchase_date ? String(row.last_purchase_date) : null,
+        totalPurchases: Number(row.total_purchases || 0),
+        totalLeads: Number(row.total_leads || 0),
+        totalSpent: Number(row.total_spent || 0),
+        totalPolicies: Number(row.total_policies || 0),
+        totalCommission: Number(row.total_commission || 0),
+        avgCostPerLead: Number(row.avg_cost_per_lead || 0),
+        avgRoi: Number(row.avg_roi || 0),
+        conversionRate: Number(row.conversion_rate || 0),
+        uniqueUsers: Number(row.unique_users || 0),
+        freshLeads: Number(row.fresh_leads || 0),
+        agedLeads: Number(row.aged_leads || 0),
+        freshSpent: Number(row.fresh_spent || 0),
+        agedSpent: Number(row.aged_spent || 0),
+      })) || []
+    );
+  }
+
+  /**
+   * Get per-user breakdown for a specific vendor
+   */
+  async getVendorUserBreakdown(
+    vendorId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<VendorUserBreakdown[]> {
+    const { data, error } = await this.client.rpc(
+      "get_lead_vendor_user_breakdown",
+      {
+        p_vendor_id: vendorId,
+        p_start_date: startDate || null,
+        p_end_date: endDate || null,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "getVendorUserBreakdown");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        userId: String(row.user_id),
+        userName: String(row.user_name || "Unknown"),
+        lastPurchaseDate: row.last_purchase_date ? String(row.last_purchase_date) : null,
+        totalPurchases: Number(row.total_purchases || 0),
+        totalLeads: Number(row.total_leads || 0),
+        totalSpent: Number(row.total_spent || 0),
+        totalPolicies: Number(row.total_policies || 0),
+        totalCommission: Number(row.total_commission || 0),
+        avgCostPerLead: Number(row.avg_cost_per_lead || 0),
+        avgRoi: Number(row.avg_roi || 0),
+        conversionRate: Number(row.conversion_rate || 0),
+        freshLeads: Number(row.fresh_leads || 0),
+        agedLeads: Number(row.aged_leads || 0),
       })) || []
     );
   }

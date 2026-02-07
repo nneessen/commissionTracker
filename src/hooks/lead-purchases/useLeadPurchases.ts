@@ -11,6 +11,8 @@ import type {
   LeadPurchaseStats,
   VendorStats,
   VendorStatsAggregate,
+  VendorAdminOverview,
+  VendorUserBreakdown,
 } from "@/types/lead-purchase.types";
 
 // Query keys
@@ -25,6 +27,10 @@ export const leadPurchaseKeys = {
   statsByVendor: () => [...leadPurchaseKeys.all, "stats-by-vendor"] as const,
   statsByVendorAggregate: () =>
     [...leadPurchaseKeys.all, "stats-by-vendor-aggregate"] as const,
+  vendorAdminOverview: () =>
+    [...leadPurchaseKeys.all, "vendor-admin-overview"] as const,
+  vendorUserBreakdown: () =>
+    [...leadPurchaseKeys.all, "vendor-user-breakdown"] as const,
 };
 
 /**
@@ -159,6 +165,69 @@ export function useLeadStatsByVendorAggregate(
     },
     staleTime: 5 * 60 * 1000,
     enabled: !!user?.id,
+  });
+}
+
+/**
+ * Get vendor admin overview - all vendors with full stats for admin tab
+ */
+export function useLeadVendorAdminOverview(
+  startDate?: string,
+  endDate?: string,
+) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [
+      ...leadPurchaseKeys.vendorAdminOverview(),
+      startDate,
+      endDate,
+    ],
+    queryFn: async () => {
+      const result = await leadPurchaseService.getVendorAdminOverview(
+        startDate,
+        endDate,
+      );
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as VendorAdminOverview[];
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Get per-user breakdown for a specific vendor (loads on-demand)
+ */
+export function useLeadVendorUserBreakdown(
+  vendorId: string | null,
+  startDate?: string,
+  endDate?: string,
+) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [
+      ...leadPurchaseKeys.vendorUserBreakdown(),
+      vendorId,
+      startDate,
+      endDate,
+    ],
+    queryFn: async () => {
+      const result = await leadPurchaseService.getVendorUserBreakdown(
+        vendorId!,
+        startDate,
+        endDate,
+      );
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as VendorUserBreakdown[];
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: !!user?.id && !!vendorId,
   });
 }
 

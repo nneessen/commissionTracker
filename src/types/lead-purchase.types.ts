@@ -153,6 +153,49 @@ export interface VendorWithStats {
   uniqueUsers: number;
 }
 
+// Admin-level vendor overview (aggregated across all users)
+export interface VendorAdminOverview {
+  vendorId: string;
+  vendorName: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  website: string | null;
+  notes: string | null;
+  createdAt: string;
+  lastPurchaseDate: string | null;
+  totalPurchases: number;
+  totalLeads: number;
+  totalSpent: number;
+  totalPolicies: number;
+  totalCommission: number;
+  avgCostPerLead: number;
+  avgRoi: number;
+  conversionRate: number;
+  uniqueUsers: number;
+  freshLeads: number;
+  agedLeads: number;
+  freshSpent: number;
+  agedSpent: number;
+}
+
+// Per-user breakdown for a specific vendor (admin drill-down)
+export interface VendorUserBreakdown {
+  userId: string;
+  userName: string;
+  lastPurchaseDate: string | null;
+  totalPurchases: number;
+  totalLeads: number;
+  totalSpent: number;
+  totalPolicies: number;
+  totalCommission: number;
+  avgCostPerLead: number;
+  avgRoi: number;
+  conversionRate: number;
+  freshLeads: number;
+  agedLeads: number;
+}
+
 // Merge vendors result
 export interface MergeVendorsResult {
   reassignedCount: number;
