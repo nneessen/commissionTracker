@@ -6,6 +6,7 @@ const ALLOWED_ORIGINS = [
   "https://thestandardhq.com",
   "http://localhost:5173", // Local dev
   "http://localhost:3000", // Local dev alt
+  "http://localhost:3001", // Local dev alt
 ];
 
 export function getCorsHeaders(

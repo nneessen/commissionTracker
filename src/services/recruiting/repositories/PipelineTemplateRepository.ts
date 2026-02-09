@@ -87,12 +87,10 @@ export class PipelineTemplateRepository extends BaseRepository<
       .select("*")
       .eq("is_default", true)
       .eq("is_active", true)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return null;
-      }
       throw this.handleError(error, "findDefaultActive");
     }
 

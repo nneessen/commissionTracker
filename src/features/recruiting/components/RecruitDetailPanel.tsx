@@ -78,6 +78,19 @@ import { useResendInvite } from "../hooks/useAuthUser";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
+import {
+  useSlackIntegrations,
+  useSlackChannelsById,
+  useRecruitNotificationStatus,
+  useSendRecruitSlackNotification,
+} from "@/hooks/slack";
+import {
+  findSelfMadeIntegration,
+  findRecruitChannel,
+  buildNewRecruitMessage,
+  buildNpnReceivedMessage,
+} from "@/services/slack/recruitNotificationService";
+import { Hash } from "lucide-react";
 
 interface RecruitDetailPanelProps {
   recruit: UserProfile;
@@ -98,6 +111,9 @@ export function RecruitDetailPanel({
   const [initializeDialogOpen, setInitializeDialogOpen] = useState(false);
   const [unenrollDialogOpen, setUnenrollDialogOpen] = useState(false);
   const [resendingInvite, setResendingInvite] = useState(false);
+  const [sendingNotificationType, setSendingNotificationType] = useState<
+    "new_recruit" | "npn_received" | null
+  >(null);
   const _router = useRouter();
 
   // Invitation detection - for pending invitations that haven't registered yet
@@ -156,6 +172,18 @@ export function RecruitDetailPanel({
   const updatePhaseStatus = useUpdatePhaseStatus();
   const initializeProgress = useInitializeRecruitProgress();
   const unenrollPipeline = useUnenrollFromPipeline();
+
+  // Slack recruit notification hooks
+  const { data: slackIntegrations = [] } = useSlackIntegrations();
+  const selfMadeIntegration = findSelfMadeIntegration(slackIntegrations);
+  const { data: slackChannels = [] } = useSlackChannelsById(
+    selfMadeIntegration?.id,
+  );
+  const recruitChannel = findRecruitChannel(slackChannels);
+  const { data: notificationStatus } = useRecruitNotificationStatus(
+    recruitIdForQueries,
+  );
+  const sendSlackNotification = useSendRecruitSlackNotification();
 
   const handleAdvancePhase = async () => {
     if (!currentPhase || !confirm("Advance to next phase?")) return;
@@ -530,6 +558,124 @@ export function RecruitDetailPanel({
                 Initialize
               </Button>
             )}
+            {/* Slack notification buttons */}
+            {!isInvitation &&
+              selfMadeIntegration &&
+              recruitChannel &&
+              currentUserProfile?.imo_id && (
+                <>
+                  {recruit.agent_status === "unlicensed" && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              notificationStatus?.newRecruitSent ||
+                              sendSlackNotification.isPending
+                            }
+                            onClick={() => {
+                              setSendingNotificationType("new_recruit");
+                              const msg = buildNewRecruitMessage(recruit);
+                              sendSlackNotification.mutate(
+                                {
+                                  integrationId: selfMadeIntegration.id,
+                                  channelId: recruitChannel.id,
+                                  text: msg.text,
+                                  blocks: msg.blocks,
+                                  notificationType: "new_recruit",
+                                  recruitId: recruit.id,
+                                  imoId: currentUserProfile.imo_id!,
+                                },
+                                { onSettled: () => setSendingNotificationType(null) },
+                              );
+                            }}
+                            className={cn(
+                              "h-6 text-[10px] px-2",
+                              notificationStatus?.newRecruitSent &&
+                                "text-emerald-600 border-emerald-300",
+                            )}
+                          >
+                            {sendingNotificationType === "new_recruit" ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : notificationStatus?.newRecruitSent ? (
+                              <Check className="h-3 w-3 mr-0.5" />
+                            ) : (
+                              <Hash className="h-3 w-3 mr-0.5" />
+                            )}
+                            {notificationStatus?.newRecruitSent
+                              ? "Sent"
+                              : "Slack: New Recruit"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-[10px]">
+                            {notificationStatus?.newRecruitSent
+                              ? "New recruit notification already sent"
+                              : "Post to #new-agent-testing-odette"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  {recruit.npn && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              notificationStatus?.npnReceivedSent ||
+                              sendSlackNotification.isPending
+                            }
+                            onClick={() => {
+                              setSendingNotificationType("npn_received");
+                              const msg = buildNpnReceivedMessage(recruit);
+                              sendSlackNotification.mutate(
+                                {
+                                  integrationId: selfMadeIntegration.id,
+                                  channelId: recruitChannel.id,
+                                  text: msg.text,
+                                  blocks: msg.blocks,
+                                  notificationType: "npn_received",
+                                  recruitId: recruit.id,
+                                  imoId: currentUserProfile.imo_id!,
+                                },
+                                { onSettled: () => setSendingNotificationType(null) },
+                              );
+                            }}
+                            className={cn(
+                              "h-6 text-[10px] px-2",
+                              notificationStatus?.npnReceivedSent &&
+                                "text-emerald-600 border-emerald-300",
+                            )}
+                          >
+                            {sendingNotificationType === "npn_received" ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : notificationStatus?.npnReceivedSent ? (
+                              <Check className="h-3 w-3 mr-0.5" />
+                            ) : (
+                              <Hash className="h-3 w-3 mr-0.5" />
+                            )}
+                            {notificationStatus?.npnReceivedSent
+                              ? "Sent"
+                              : "Slack: NPN"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-[10px]">
+                            {notificationStatus?.npnReceivedSent
+                              ? "NPN received notification already sent"
+                              : "Post NPN received to #new-agent-testing-odette"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </>
+              )}
             {/* Common actions for registered recruits */}
             {!isInvitation && (
               <>

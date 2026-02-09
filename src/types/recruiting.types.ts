@@ -74,6 +74,10 @@ export interface CreateRecruitInput {
   imo_id?: string;
   // Agency to assign recruit to (from caller's context)
   agency_id?: string;
+  // Recruit's resident state (e.g. "CA", "TX")
+  resident_state?: string;
+  // Starting comp / contract level (percentage, e.g. 50, 55, 60)
+  contract_level?: number;
 }
 
 export interface PipelineTemplate {
@@ -399,6 +403,8 @@ export interface UpdateRecruitInput {
   npn?: string;
   license_expiration?: string;
   onboarding_status?: string; // Dynamic - phase name from pipeline_phases
+  agent_status?: AgentStatus;
+  contract_level?: number;
 }
 
 export interface UpdatePhaseInput {

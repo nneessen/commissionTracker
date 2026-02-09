@@ -52,3 +52,10 @@ export {
   useDeleteSlackWebhook,
   useTestSlackWebhook,
 } from "./useSlackWebhooks";
+
+export {
+  // Recruit notifications
+  useRecruitNotificationStatus,
+  useSendRecruitSlackNotification,
+  useAutoPostRecruitNotification,
+} from "./useRecruitSlackNotification";

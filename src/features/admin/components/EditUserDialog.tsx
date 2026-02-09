@@ -70,6 +70,7 @@ import {
   imoKeys,
   agencyKeys,
 } from "@/hooks/imo";
+import { autoPostRecruitNotification } from "@/services/slack/recruitNotificationService";
 
 interface EditUserDialogProps {
   user: UserProfile | null;
@@ -473,6 +474,25 @@ export default function EditUserDialog({
       }
 
       toast.success("User updated successfully");
+
+      // Auto-post NPN received notification if NPN was just set
+      if (
+        updates.npn &&
+        !user.npn &&
+        user.roles?.includes("recruit") &&
+        user.imo_id
+      ) {
+        autoPostRecruitNotification(
+          { ...user, npn: updates.npn as string, upline_name: null },
+          "npn_received",
+          user.imo_id,
+        ).then(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["slack", "recruit-notification-status", user.id],
+          });
+        }).catch(() => {});
+      }
+
       queryClient.invalidateQueries({ queryKey: ["userApproval"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       // Invalidate recruits when switching to recruit role or recruiter_id changes

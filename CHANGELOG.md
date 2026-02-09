@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-09 18:59:16
+
+### Changed Files
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/hooks/slack/index.ts`
+- `src/hooks/slack/useRecruitSlackNotification.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/PipelineTemplateRepository.ts`
+- `src/services/slack/index.ts`
+- `src/services/slack/recruitNotificationService.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/_shared/cors.ts`
+- `supabase/migrations/20260209175632_add_recruit_slack_notification_types.sql`
+- `supabase/migrations/20260209184715_allow_uplines_update_recruits.sql`
+- `supabase/migrations/20260209184757_allow_uplines_delete_recruits.sql`
+
+### Statistics
+```
+ 16 files changed, 2865 insertions(+), 1821 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-09 12:50:03
 
 ### Changed Files

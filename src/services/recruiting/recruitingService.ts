@@ -98,10 +98,10 @@ export const recruitingService = {
       // Required hierarchy fields (set defaults)
       hierarchy_path: "", // Will be updated by trigger
       hierarchy_depth: 0, // Will be updated by trigger
-      // IMPORTANT: Set contract_level to null for new recruits
-      // This prevents the default value of 80 from triggering hierarchy validation
+      // Set contract_level to null for new recruits unless explicitly provided
+      // Prevents default value of 80 from triggering hierarchy validation
       // that requires upline contract_level > downline contract_level
-      contract_level: null,
+      contract_level: recruit.contract_level ?? null,
       approval_status: "pending",
       is_admin: recruit.is_admin || false,
     };
@@ -207,9 +207,10 @@ export const recruitingService = {
       .update(updates)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error("Update failed — you may not have permission to edit this recruit.");
 
     const updatedRecruit = data as UserProfile;
 
