@@ -513,20 +513,45 @@ function encodeSubject(subject: string): string {
 // Helper: Quoted-printable encoding
 // =========================================================================
 function encodeQuotedPrintable(text: string): string {
-  return text
-    .split("")
-    .map((char) => {
-      const code = char.charCodeAt(0);
-      // Encode non-printable characters and '=' and characters > 126
-      if (code < 32 || code > 126 || code === 61) {
-        if (char === "\r" || char === "\n" || char === "\t") {
-          return char; // Keep line breaks and tabs
-        }
-        return "=" + code.toString(16).toUpperCase().padStart(2, "0");
-      }
-      return char;
-    })
-    .join("");
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+
+  let line = "";
+  let result = "";
+
+  for (const byte of bytes) {
+    let encoded: string;
+
+    if (byte === 13 || byte === 10) {
+      // CR/LF: flush current line and emit the line break
+      result += line + String.fromCharCode(byte);
+      line = "";
+      continue;
+    } else if (byte === 9) {
+      // Tab: keep as-is
+      encoded = "\t";
+    } else if (byte >= 33 && byte <= 126 && byte !== 61) {
+      // Printable ASCII (except '=')
+      encoded = String.fromCharCode(byte);
+    } else if (byte === 32) {
+      // Space
+      encoded = " ";
+    } else {
+      // Everything else: encode as =XX
+      encoded = "=" + byte.toString(16).toUpperCase().padStart(2, "0");
+    }
+
+    // Soft line break at 76 chars per RFC 2045
+    if (line.length + encoded.length > 75) {
+      result += line + "=\r\n";
+      line = "";
+    }
+
+    line += encoded;
+  }
+
+  result += line;
+  return result;
 }
 
 // =========================================================================
