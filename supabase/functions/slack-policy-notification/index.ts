@@ -62,6 +62,13 @@ interface AgencySubmitTotals {
   mtd_policies: number;
 }
 
+interface ImoSubmitTotals {
+  wtd_ap: number;
+  wtd_policies: number;
+  mtd_ap: number;
+  mtd_policies: number;
+}
+
 /**
  * Get today's date in US Eastern timezone (YYYY-MM-DD format)
  * This ensures consistent date handling for US business operations
@@ -857,6 +864,7 @@ function buildLeaderboardWithPeriods(
   entries: LeaderboardEntryWithPeriods[],
   agencyTotals: AgencySubmitTotals[] | null,
   scopeAgencyId: string | null, // The agency this leaderboard is scoped to (null = IMO-level)
+  imoTotals: ImoSubmitTotals | null = null, // Flat IMO totals to avoid double-counting hierarchical agency rows
 ): { text: string; blocks: unknown[] } {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -882,12 +890,15 @@ function buildLeaderboardWithPeriods(
         mtdTotalAP = scopedAgency.mtd_ap;
       }
     } else {
-      // IMO-level: sum all agencies (but avoid double-counting - use only top-level agencies)
-      // Since hierarchical totals already include descendants, we sum all agencies
-      // Note: This might double-count if parent agencies include child totals
-      // For now, sum all - the hierarchy function handles this correctly
-      wtdTotalAP = agencyTotals.reduce((sum, a) => sum + (a.wtd_ap || 0), 0);
-      mtdTotalAP = agencyTotals.reduce((sum, a) => sum + (a.mtd_ap || 0), 0);
+      // IMO-level: use flat IMO totals to avoid double-counting hierarchical agency rows
+      if (imoTotals) {
+        wtdTotalAP = imoTotals.wtd_ap;
+        mtdTotalAP = imoTotals.mtd_ap;
+      } else {
+        // Fallback: sum all agencies (may double-count with hierarchy)
+        wtdTotalAP = agencyTotals.reduce((sum, a) => sum + (a.wtd_ap || 0), 0);
+        mtdTotalAP = agencyTotals.reduce((sum, a) => sum + (a.mtd_ap || 0), 0);
+      }
     }
   }
 
@@ -1190,7 +1201,7 @@ async function handleCompleteFirstSale(
 
   if (integration.include_leaderboard_with_policy) {
     // Get today's production for leaderboard with WTD/MTD data
-    const [{ data: leaderboardData }, { data: agencyData }] = await Promise.all([
+    const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] = await Promise.all([
       supabase.rpc("get_slack_leaderboard_with_periods", {
         p_imo_id: log.imo_id,
         p_agency_id: integration.agency_id,
@@ -1198,10 +1209,14 @@ async function handleCompleteFirstSale(
       supabase.rpc("get_all_agencies_submit_totals", {
         p_imo_id: log.imo_id,
       }),
+      !integration.agency_id
+        ? supabase.rpc("get_imo_submit_totals", { p_imo_id: log.imo_id })
+        : Promise.resolve({ data: null }),
     ]);
 
     const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
     const agencyTotals: AgencySubmitTotals[] = agencyData || [];
+    const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData) ? imoData[0] || null : null;
 
     // Build leaderboard with the title (use override, then log title, then default)
     // Sanitize user-provided title to prevent Slack injection
@@ -1210,7 +1225,7 @@ async function handleCompleteFirstSale(
       : log.title
         ? sanitizeSlackTitle(log.title)
         : getDefaultDailyTitle();
-    const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals, integration.agency_id);
+    const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals, integration.agency_id, imoTotals);
 
     // Post the leaderboard with Block Kit (use workspace logo if configured)
     const leaderboardResult = await postSlackMessage(
@@ -1339,7 +1354,7 @@ async function handleUpdateLeaderboard(
   const botToken = await decrypt(integration.bot_token_encrypted);
 
   // Get today's production for leaderboard with WTD/MTD data
-  const [{ data: leaderboardData }, { data: agencyData }] = await Promise.all([
+  const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] = await Promise.all([
     supabase.rpc("get_slack_leaderboard_with_periods", {
       p_imo_id: log.imo_id,
       p_agency_id: integration.agency_id,
@@ -1347,17 +1362,21 @@ async function handleUpdateLeaderboard(
     supabase.rpc("get_all_agencies_submit_totals", {
       p_imo_id: log.imo_id,
     }),
+    !integration.agency_id
+      ? supabase.rpc("get_imo_submit_totals", { p_imo_id: log.imo_id })
+      : Promise.resolve({ data: null }),
   ]);
 
   const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
   const agencyTotals: AgencySubmitTotals[] = agencyData || [];
+  const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData) ? imoData[0] || null : null;
 
   // Build leaderboard with the title from database (which was just updated)
   // Sanitize user-provided title to prevent Slack injection
   const title = log.title
     ? sanitizeSlackTitle(log.title)
     : getDefaultDailyTitle();
-  const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals, integration.agency_id);
+  const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals, integration.agency_id, imoTotals);
 
   // Update the Slack message with Block Kit
   const updateResult = await updateSlackMessage(
@@ -1957,7 +1976,7 @@ serve(async (req) => {
         // - The Standard's scoreboard shows only The Standard's sales
         // - Self Made's scoreboard shows Self Made + all child agencies
         const integrationAgencyId = integration.agency_id;
-        const [{ data: leaderboardData }, { data: agencyData }] = await Promise.all([
+        const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] = await Promise.all([
           supabase.rpc("get_slack_leaderboard_with_periods", {
             p_imo_id: imoId,
             p_agency_id: integrationAgencyId,
@@ -1965,10 +1984,14 @@ serve(async (req) => {
           supabase.rpc("get_all_agencies_submit_totals", {
             p_imo_id: imoId,
           }),
+          !integrationAgencyId
+            ? supabase.rpc("get_imo_submit_totals", { p_imo_id: imoId })
+            : Promise.resolve({ data: null }),
         ]);
 
         const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
         const agencyTotals: AgencySubmitTotals[] = agencyData || [];
+        const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData) ? imoData[0] || null : null;
 
         // Detect if this is effectively the first sale of the day
         // More robust check: if log exists, verify the first_seller still has production
@@ -2118,6 +2141,7 @@ serve(async (req) => {
             production,
             agencyTotals,
             integration.agency_id,
+            imoTotals,
           );
 
           // Delete old leaderboard message if it exists (ignore errors - message may be gone)

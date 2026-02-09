@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-09 11:31:53
+
+### Changed Files
+- `src/types/database.types.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20260209110103_add_imo_submit_totals.sql`
+
+### Statistics
+```
+ 3 files changed, 1860 insertions(+), 1498 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-07 13:07:51
 
 ### Changed Files
