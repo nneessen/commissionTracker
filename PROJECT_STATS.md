@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-02-10 12:18:08
+Last Updated: 2026-02-10 14:23:00
 
 ## Metrics
-- Total Files: 29736
-- Total Lines of Code: 565552
-- Total Commits: 928
+- Total Files: 29771
+- Total Lines of Code: 568876
+- Total Commits: 932
 
 ## Recent Activity
-2283f026 chore(tooling): fix husky lint-staged path
-8715f2f4 chore(integrations): remove linkedin integration
-151fc0a6 feat(realtime): pause instagram subscriptions when hidden
-f0fa47e5 docs: multiple changes in .,src/features/admin/components,src/features/recruiting/components
-e1540ba0 docs: CHANGELOG.md,PROJECT_STATS.md,index.ts
+eb35cfce docs: multiple changes in .,scripts/monitoring,src/hooks/admin/__tests__
+0fbd3a1b chore(tooling): fix husky lint-staged path
+535d4e5e chore(integrations): remove linkedin integration
+f72292d8 feat(realtime): pause instagram subscriptions when hidden
+ae3ad7f5 feat: add training modules feature with schema, services, and UI
