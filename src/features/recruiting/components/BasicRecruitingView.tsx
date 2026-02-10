@@ -63,17 +63,25 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  SendHorizontal,
 } from "lucide-react";
 import { GraduateToAgentDialog } from "@/features/admin";
-import { useRecruits, useCreateRecruit, useUpdateRecruit, useDeleteRecruit } from "../hooks";
+import {
+  useRecruits,
+  useCreateRecruit,
+  useUpdateRecruit,
+  useDeleteRecruit,
+} from "../hooks";
+import { useResendInvite } from "../hooks/useAuthUser";
 import { useInitializeRecruitProgress } from "../hooks/useRecruitProgress";
 import { useActiveTemplate } from "../hooks/usePipeline";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecruitNotificationStatus } from "@/hooks/slack";
+// eslint-disable-next-line no-restricted-imports -- pre-existing: RecruitSlackActions + BasicAddRecruitDialog use raw service fns
 import {
   autoPostRecruitNotification,
   checkNotificationSent,
-} from "@/services/slack/recruitNotificationService";
+} from "@/services/slack";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -92,9 +100,17 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [graduatingRecruit, setGraduatingRecruit] =
     useState<UserProfile | null>(null);
-  const [editingRecruit, setEditingRecruit] = useState<UserProfile | null>(null);
-  const [deletingRecruit, setDeletingRecruit] = useState<UserProfile | null>(null);
+  const [editingRecruit, setEditingRecruit] = useState<UserProfile | null>(
+    null,
+  );
+  const [deletingRecruit, setDeletingRecruit] = useState<UserProfile | null>(
+    null,
+  );
   const [showInstructions, setShowInstructions] = useState(false);
+  const [resendingRecruitId, setResendingRecruitId] = useState<string | null>(
+    null,
+  );
+  const resendInvite = useResendInvite();
 
   // Detect staff role
   const isStaffRole =
@@ -149,6 +165,21 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
         {statusInfo.label}
       </Badge>
     );
+  };
+
+  const handleResendInvite = async (recruit: UserProfile) => {
+    if (!recruit.email) return;
+    setResendingRecruitId(recruit.id);
+    try {
+      await resendInvite.mutateAsync({
+        email: recruit.email,
+        fullName:
+          `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim(),
+        roles: recruit.roles || ["recruit"],
+      });
+    } finally {
+      setResendingRecruitId(null);
+    }
   };
 
   return (
@@ -223,30 +254,52 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
             <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2" />
             <ol className="space-y-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 list-decimal list-inside">
               <li>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">Add a new recruit</span>{" "}
-                — Click "Add Recruit" and enter their name, email, and phone number.
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  Add a new recruit
+                </span>{" "}
+                — Click "Add Recruit" and enter their name, email, and phone
+                number.
               </li>
               <li>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">Recruit receives a password email</span>{" "}
-                — They will be emailed a link to set their password and log in to the system.
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  Recruit receives a password email
+                </span>{" "}
+                — They will be emailed a link to set their password and log in
+                to the system.
               </li>
               <li>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">Licensing status determines next steps</span>{" "}
-                — If the recruit is <em>not already licensed</em>, they are added as "unlicensed" and their details
-                are automatically posted to the Slack channel (<code className="text-[9px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">#new-agent-testing-odette</code>).
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  Licensing status determines next steps
+                </span>{" "}
+                — If the recruit is <em>not already licensed</em>, they are
+                added as "unlicensed" and their details are automatically posted
+                to the Slack channel (
+                <code className="text-[9px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">
+                  #new-agent-testing-odette
+                </code>
+                ).
               </li>
               <li>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">Recruit enters the onboarding pipeline</span>{" "}
-                — They are enrolled in the standard pipeline where you can track their progress through each phase.
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  Recruit enters the onboarding pipeline
+                </span>{" "}
+                — They are enrolled in the standard pipeline where you can track
+                their progress through each phase.
               </li>
               <li>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">NPN received triggers a second notification</span>{" "}
-                — When the recruit's NPN (National Producer Number) is entered, a second Slack notification is posted
-                requesting email #2 be sent.
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  NPN received triggers a second notification
+                </span>{" "}
+                — When the recruit's NPN (National Producer Number) is entered,
+                a second Slack notification is posted requesting email #2 be
+                sent.
               </li>
               <li>
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">Graduate to agent</span>{" "}
-                — Once onboarding is complete, use the "Graduate" button to promote the recruit to a full agent.
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  Graduate to agent
+                </span>{" "}
+                — Once onboarding is complete, use the "Graduate" button to
+                promote the recruit to a full agent.
               </li>
             </ol>
           </div>
@@ -355,6 +408,30 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                           imoId={user!.imo_id!}
                         />
                       )}
+                      {recruit.email && (
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 w-5 p-0 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                disabled={resendingRecruitId === recruit.id}
+                                onClick={() => handleResendInvite(recruit)}
+                              >
+                                {resendingRecruitId === recruit.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <SendHorizontal className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-[10px]">
+                              Resend password setup email
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -438,10 +515,7 @@ interface RecruitSlackActionsProps {
   imoId: string;
 }
 
-function RecruitSlackActions({
-  recruit,
-  imoId,
-}: RecruitSlackActionsProps) {
+function RecruitSlackActions({ recruit, imoId }: RecruitSlackActionsProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: notificationStatus } = useRecruitNotificationStatus(recruit.id);
@@ -449,7 +523,8 @@ function RecruitSlackActions({
     "new_recruit" | "npn_received" | null
   >(null);
 
-  const showNewRecruit = recruit.agent_status === "unlicensed" || !recruit.agent_status;
+  const showNewRecruit =
+    recruit.agent_status === "unlicensed" || !recruit.agent_status;
   // Always show the NPN button — it's the 2nd Slack notification (exam passed, NPN received)
   const showNpn = true;
 
@@ -469,7 +544,8 @@ function RecruitSlackActions({
         return;
       }
 
-      const uplineName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || null;
+      const uplineName =
+        `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || null;
       await autoPostRecruitNotification(
         { ...recruit, upline_name: uplineName },
         type,
@@ -497,9 +573,7 @@ function RecruitSlackActions({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={
-                  notificationStatus?.newRecruitSent || !!sendingType
-                }
+                disabled={notificationStatus?.newRecruitSent || !!sendingType}
                 onClick={() => handleSend("new_recruit")}
                 className={cn(
                   "h-5 text-[9px] px-1.5",
@@ -534,9 +608,7 @@ function RecruitSlackActions({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={
-                  notificationStatus?.npnReceivedSent || !!sendingType
-                }
+                disabled={notificationStatus?.npnReceivedSent || !!sendingType}
                 onClick={() => handleSend("npn_received")}
                 className={cn(
                   "h-5 text-[9px] px-1.5",
@@ -627,7 +699,10 @@ function BasicEditRecruitDialog({
           phone: formData.phone.trim() || undefined,
           resident_state: formData.resident_state || undefined,
           npn: formData.npn.trim() || undefined,
-          agent_status: formData.agent_status as "licensed" | "unlicensed" | "not_applicable",
+          agent_status: formData.agent_status as
+            | "licensed"
+            | "unlicensed"
+            | "not_applicable",
           contract_level:
             contractLevel && !isNaN(contractLevel) ? contractLevel : undefined,
         },
@@ -731,12 +806,19 @@ function BasicEditRecruitDialog({
                   setFormData((prev) => ({ ...prev, resident_state: value }))
                 }
               >
-                <SelectTrigger id="edit_resident_state" className="h-8 text-[11px]">
+                <SelectTrigger
+                  id="edit_resident_state"
+                  className="h-8 text-[11px]"
+                >
                   <SelectValue placeholder="Select state" />
                 </SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
-                    <SelectItem key={s.value} value={s.value} className="text-[11px]">
+                    <SelectItem
+                      key={s.value}
+                      value={s.value}
+                      className="text-[11px]"
+                    >
                       {s.label}
                     </SelectItem>
                   ))}
@@ -781,7 +863,10 @@ function BasicEditRecruitDialog({
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2">
-            <Label htmlFor="edit_is_licensed" className="text-[10px] cursor-pointer">
+            <Label
+              htmlFor="edit_is_licensed"
+              className="text-[10px] cursor-pointer"
+            >
               Licensed Agent?
             </Label>
             <Switch
@@ -961,21 +1046,20 @@ function BasicAddRecruitDialog({
       }
 
       // Auto-post to Slack for unlicensed new recruits (fire-and-forget)
-      if (
-        recruit?.id &&
-        user?.imo_id &&
-        agentStatus === "unlicensed"
-      ) {
-        const uplineName = `${user.first_name || ""} ${user.last_name || ""}`.trim() || null;
+      if (recruit?.id && user?.imo_id && agentStatus === "unlicensed") {
+        const uplineName =
+          `${user.first_name || ""} ${user.last_name || ""}`.trim() || null;
         autoPostRecruitNotification(
           { ...recruit, upline_name: uplineName },
           "new_recruit",
           user.imo_id,
-        ).then(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["slack", "recruit-notification-status", recruit.id],
-          });
-        }).catch(() => {});
+        )
+          .then(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["slack", "recruit-notification-status", recruit.id],
+            });
+          })
+          .catch(() => {});
       }
 
       // Success toast is handled by the mutation's onSuccess callback
@@ -1119,7 +1203,11 @@ function BasicAddRecruitDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
-                    <SelectItem key={s.value} value={s.value} className="text-[11px]">
+                    <SelectItem
+                      key={s.value}
+                      value={s.value}
+                      className="text-[11px]"
+                    >
                       {s.label}
                     </SelectItem>
                   ))}
@@ -1129,7 +1217,10 @@ function BasicAddRecruitDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center justify-between rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2">
-              <Label htmlFor="is_licensed" className="text-[10px] cursor-pointer">
+              <Label
+                htmlFor="is_licensed"
+                className="text-[10px] cursor-pointer"
+              >
                 Already Licensed?
               </Label>
               <Switch
