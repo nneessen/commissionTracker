@@ -401,7 +401,6 @@ export function useSubmitRegistrationWithPassword() {
         state?: string;
         zip?: string;
         instagram_username?: string;
-        linkedin_username?: string;
         facebook_handle?: string;
         personal_website?: string;
         referral_source?: string;

@@ -97,7 +97,6 @@ interface EditableUserData {
   license_number: string;
   npn: string;
   license_expiration: string;
-  linkedin_url: string;
   instagram_url: string;
   imo_id: string | null;
   agency_id: string | null;
@@ -151,7 +150,6 @@ export default function EditUserDialog({
     license_number: "",
     npn: "",
     license_expiration: "",
-    linkedin_url: "",
     instagram_url: "",
     imo_id: null,
     agency_id: null,
@@ -230,7 +228,6 @@ export default function EditUserDialog({
         license_number: user.license_number || "",
         npn: user.npn || "",
         license_expiration: user.license_expiration || "",
-        linkedin_url: user.linkedin_url || "",
         instagram_url: user.instagram_url || "",
         imo_id: user.imo_id || null,
         agency_id: user.agency_id || null,
@@ -366,8 +363,6 @@ export default function EditUserDialog({
       if (formData.license_expiration !== (user.license_expiration || ""))
         updates.license_expiration = formData.license_expiration || null;
 
-      if (formData.linkedin_url !== (user.linkedin_url || ""))
-        updates.linkedin_url = formData.linkedin_url || null;
       if (formData.instagram_url !== (user.instagram_url || ""))
         updates.instagram_url = formData.instagram_url || null;
 
@@ -1202,18 +1197,7 @@ export default function EditUserDialog({
                   <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-1">
                     <Globe className="h-2.5 w-2.5" /> Social & Web
                   </Label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <Input
-                      value={formData.linkedin_url}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          linkedin_url: e.target.value,
-                        }))
-                      }
-                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                      placeholder="LinkedIn URL"
-                    />
+                  <div className="grid grid-cols-1 gap-1.5">
                     <Input
                       value={formData.instagram_url}
                       onChange={(e) =>

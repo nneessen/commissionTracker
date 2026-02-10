@@ -86,7 +86,7 @@ CREATE TABLE recruiting_page_settings (
   support_phone TEXT,                   -- "Text us" number
 
   -- Social Links (JSONB for flexibility)
-  social_links JSONB DEFAULT '{}',      -- { facebook, instagram, linkedin, twitter, youtube }
+  social_links JSONB DEFAULT '{}',      -- { facebook, instagram, twitter, youtube }
 
   -- Compliance
   disclaimer_text TEXT,                 -- Optional footer disclaimer
@@ -346,7 +346,6 @@ export interface RecruitingPageTheme {
 export interface SocialLinks {
   facebook?: string;
   instagram?: string;
-  linkedin?: string;
   twitter?: string;
   youtube?: string;
 }
@@ -499,7 +498,7 @@ Settings form with:
 - CTA text input
 - Calendly URL input
 - Support phone input
-- Social links inputs (Facebook, Instagram, LinkedIn)
+- Social links inputs (Facebook, Instagram)
 - Disclaimer text textarea
 - Preview button (opens new tab with current settings)
 

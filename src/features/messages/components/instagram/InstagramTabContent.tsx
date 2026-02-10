@@ -156,17 +156,21 @@ interface InstagramTabContentProps {
   selectedConversation?: InstagramConversation | null;
   /** Callback for mobile back button - when provided, shows a back button */
   onBack?: () => void;
+  /** Whether the Instagram tab is active */
+  isActive?: boolean;
 }
 
 export function InstagramTabContent({
   selectedConversation,
   onBack,
+  isActive = true,
 }: InstagramTabContentProps): ReactNode {
   return (
     <FeatureGate feature="instagram_messaging" promptVariant="card">
       <InstagramTabContentInner
         selectedConversation={selectedConversation}
         onBack={onBack}
+        isActive={isActive}
       />
     </FeatureGate>
   );
@@ -175,6 +179,7 @@ export function InstagramTabContent({
 function InstagramTabContentInner({
   selectedConversation,
   onBack,
+  isActive = true,
 }: InstagramTabContentProps): ReactNode {
   const {
     data: integration,
@@ -190,6 +195,7 @@ function InstagramTabContentInner({
   useInstagramRealtime(
     integration?.id ?? null,
     selectedConversation?.id ?? null,
+    isActive,
   );
 
   // Proactive check for token expiry - shows toast if expiring within 3 days

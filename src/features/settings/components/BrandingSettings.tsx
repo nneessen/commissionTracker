@@ -420,9 +420,6 @@ export function BrandingSettings() {
       if (formData.social_links.instagram?.trim()) {
         cleanedSocialLinks.instagram = formData.social_links.instagram.trim();
       }
-      if (formData.social_links.linkedin?.trim()) {
-        cleanedSocialLinks.linkedin = formData.social_links.linkedin.trim();
-      }
       if (formData.social_links.twitter?.trim()) {
         cleanedSocialLinks.twitter = formData.social_links.twitter.trim();
       }
@@ -1132,12 +1129,6 @@ export function BrandingSettings() {
               value={formData.social_links?.instagram || ""}
               onChange={(val) => updateSocialLink("instagram", val)}
               placeholder="https://instagram.com/..."
-            />
-            <UrlInput
-              label="LinkedIn"
-              value={formData.social_links?.linkedin || ""}
-              onChange={(val) => updateSocialLink("linkedin", val)}
-              placeholder="https://linkedin.com/in/..."
             />
             <UrlInput
               label="YouTube"

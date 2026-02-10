@@ -425,7 +425,7 @@ export interface ColumnsBlockContent {
   gap?: number // gap in pixels
 }
 
-export type SocialPlatform = 'facebook' | 'twitter' | 'linkedin' | 'instagram' | 'youtube' | 'email'
+export type SocialPlatform = 'facebook' | 'twitter' | 'instagram' | 'youtube' | 'email'
 
 export interface SocialLink {
   platform: SocialPlatform

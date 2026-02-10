@@ -74,7 +74,6 @@ const VARIABLE_LIST = [
     variables: [
       "{{recruit_facebook}}",
       "{{recruit_instagram}}",
-      "{{recruit_linkedin}}",
       "{{recruit_website}}",
     ],
   },

@@ -393,7 +393,6 @@ export const recruitInvitationService = {
               state: formData.state,
               zip: formData.zip,
               instagram_username: formData.instagram_username,
-              linkedin_username: formData.linkedin_username,
               facebook_handle: formData.facebook_handle,
               personal_website: formData.personal_website,
               referral_source: formData.referral_source,

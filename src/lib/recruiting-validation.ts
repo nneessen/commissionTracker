@@ -105,7 +105,6 @@ export const socialLinksSchema = z
   .object({
     facebook: safeUrlSchema,
     instagram: safeUrlSchema,
-    linkedin: safeUrlSchema,
     twitter: safeUrlSchema,
     youtube: safeUrlSchema,
   })
@@ -145,9 +144,6 @@ export function validateSocialLinks(data: unknown): SocialLinks {
     }
     if (result.instagram && result.instagram.trim() !== "") {
       cleaned.instagram = result.instagram;
-    }
-    if (result.linkedin && result.linkedin.trim() !== "") {
-      cleaned.linkedin = result.linkedin;
     }
     if (result.twitter && result.twitter.trim() !== "") {
       cleaned.twitter = result.twitter;

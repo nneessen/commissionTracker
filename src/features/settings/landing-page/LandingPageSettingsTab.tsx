@@ -1701,20 +1701,6 @@ function SeoContactSection({ theme, updateField }: SectionProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs">LinkedIn</Label>
-            <Input
-              value={theme.social_links?.linkedin || ''}
-              onChange={(e) =>
-                updateField('social_links', {
-                  ...theme.social_links,
-                  linkedin: e.target.value || undefined,
-                })
-              }
-              placeholder="https://linkedin.com/..."
-              className="text-xs h-8"
-            />
-          </div>
-          <div className="space-y-2">
             <Label className="text-xs">YouTube</Label>
             <Input
               value={theme.social_links?.youtube || ''}

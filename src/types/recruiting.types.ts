@@ -389,8 +389,6 @@ export interface UpdateRecruitInput {
   profile_photo_url?: string;
   instagram_username?: string;
   instagram_url?: string;
-  linkedin_username?: string;
-  linkedin_url?: string;
   upline_id?: string;
   referral_source?: string;
   street_address?: string;
@@ -1227,7 +1225,6 @@ export interface RegistrationFormData {
   state?: string;
   zip?: string;
   instagram_username?: string;
-  linkedin_username?: string;
   facebook_handle?: string;
   personal_website?: string;
   referral_source?: string;

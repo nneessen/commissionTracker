@@ -755,7 +755,6 @@ async function buildTemplateVariables(
   variables["recruit_referral_source"] = "";
   variables["recruit_facebook"] = "";
   variables["recruit_instagram"] = "";
-  variables["recruit_linkedin"] = "";
   variables["recruit_website"] = "";
 
   // Add date variables (using underscores)
@@ -846,7 +845,6 @@ async function buildTemplateVariables(
       recipientProfile.referral_source || "";
     variables["recruit_facebook"] = recipientProfile.facebook_handle || "";
     variables["recruit_instagram"] = recipientProfile.instagram_username || "";
-    variables["recruit_linkedin"] = recipientProfile.linkedin_username || "";
     variables["recruit_website"] = recipientProfile.personal_website || "";
   }
 

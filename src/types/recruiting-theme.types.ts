@@ -34,7 +34,6 @@ export const LOGO_SIZE_MAP: Record<
 export interface SocialLinks {
   facebook?: string;
   instagram?: string;
-  linkedin?: string;
   twitter?: string;
   youtube?: string;
 }

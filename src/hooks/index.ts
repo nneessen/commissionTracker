@@ -72,9 +72,6 @@ export * from "./slack";
 // Instagram hooks
 export * from "./instagram";
 
-// LinkedIn hooks
-export * from "./linkedin";
-
 // Leaderboard hooks
 export * from "./leaderboard";
 

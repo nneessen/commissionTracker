@@ -73,7 +73,6 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   email: "Email Messaging",
   sms: "SMS Messaging",
   slack: "Slack Integration",
-  linkedin: "LinkedIn Messaging",
   instagram_messaging: "Instagram Messaging",
   instagram_scheduled_messages: "Scheduled Instagram Messages",
   instagram_templates: "Instagram Templates",

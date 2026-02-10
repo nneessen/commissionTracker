@@ -153,12 +153,6 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     description: "Connect and message via Slack channels",
     category: "messaging",
   },
-  linkedin: {
-    key: "linkedin",
-    displayName: "LinkedIn Messaging",
-    description: "Manage LinkedIn messages from the platform",
-    category: "messaging",
-  },
   instagram_messaging: {
     key: "instagram_messaging",
     displayName: "Instagram Messaging",

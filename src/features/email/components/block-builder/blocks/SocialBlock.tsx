@@ -1,4 +1,4 @@
-import {Facebook, Twitter, Linkedin, Instagram, Youtube, Mail} from 'lucide-react'
+import {Facebook, Twitter, Instagram, Youtube, Mail} from 'lucide-react'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Switch} from '@/components/ui/switch'
@@ -13,7 +13,6 @@ interface SocialBlockProps {
 const PLATFORM_ICONS: Record<SocialPlatform, React.ElementType> = {
   facebook: Facebook,
   twitter: Twitter,
-  linkedin: Linkedin,
   instagram: Instagram,
   youtube: Youtube,
   email: Mail,
@@ -22,7 +21,6 @@ const PLATFORM_ICONS: Record<SocialPlatform, React.ElementType> = {
 const PLATFORM_COLORS: Record<SocialPlatform, string> = {
   facebook: '#1877F2',
   twitter: '#1DA1F2',
-  linkedin: '#0A66C2',
   instagram: '#E4405F',
   youtube: '#FF0000',
   email: '#6B7280',
@@ -31,7 +29,6 @@ const PLATFORM_COLORS: Record<SocialPlatform, string> = {
 const PLATFORM_LABELS: Record<SocialPlatform, string> = {
   facebook: 'Facebook',
   twitter: 'Twitter/X',
-  linkedin: 'LinkedIn',
   instagram: 'Instagram',
   youtube: 'YouTube',
   email: 'Email',
@@ -104,7 +101,6 @@ export function SocialBlock({ block, isSelected, onChange }: SocialBlockProps) {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Facebook className="h-5 w-5" />
             <Twitter className="h-5 w-5" />
-            <Linkedin className="h-5 w-5" />
             <span className="ml-2">Enable social links below</span>
           </div>
         )}
@@ -155,7 +151,6 @@ export function SocialBlock({ block, isSelected, onChange }: SocialBlockProps) {
 const DEFAULT_SOCIAL_LINKS: SocialLink[] = [
   { platform: 'facebook', url: '', enabled: false },
   { platform: 'twitter', url: '', enabled: false },
-  { platform: 'linkedin', url: '', enabled: false },
   { platform: 'instagram', url: '', enabled: false },
   { platform: 'youtube', url: '', enabled: false },
   { platform: 'email', url: '', enabled: false },

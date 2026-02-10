@@ -336,7 +336,7 @@ export function SubscriptionAnnouncementDialog({
                       />
                       <RecruitingFeature
                         icon={MessageSquare}
-                        label="LinkedIn & Instagram integration"
+                        label="Instagram integration"
                       />
                       <RecruitingFeature
                         icon={Workflow}

@@ -2,14 +2,13 @@
 // Main settings container with horizontal sub-tabs for messaging preferences
 
 import { useState } from "react";
-import { Mail, MessageSquare, Instagram, Linkedin } from "lucide-react";
+import { Mail, MessageSquare, Instagram } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailSettingsPanel } from "./EmailSettingsPanel";
 import { SlackSettingsPanel } from "./SlackSettingsPanel";
 import { InstagramSettingsPanel } from "./InstagramSettingsPanel";
-import { LinkedInSettingsPanel } from "./LinkedInSettingsPanel";
 
-type SettingsTab = "email" | "slack" | "instagram" | "linkedin";
+type SettingsTab = "email" | "slack" | "instagram";
 
 export function MessagesSettingsContainer() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("email");
@@ -54,13 +53,6 @@ export function MessagesSettingsContainer() {
             <Instagram className="h-3 w-3 mr-1.5" />
             Instagram
           </TabsTrigger>
-          <TabsTrigger
-            value="linkedin"
-            className="h-7 px-3 text-[11px] data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-none rounded-md"
-          >
-            <Linkedin className="h-3 w-3 mr-1.5" />
-            LinkedIn
-          </TabsTrigger>
         </TabsList>
 
         <div className="flex-1 overflow-auto">
@@ -72,9 +64,6 @@ export function MessagesSettingsContainer() {
           </TabsContent>
           <TabsContent value="instagram" className="h-full mt-0 p-4">
             <InstagramSettingsPanel />
-          </TabsContent>
-          <TabsContent value="linkedin" className="h-full mt-0 p-4">
-            <LinkedInSettingsPanel />
           </TabsContent>
         </div>
       </Tabs>

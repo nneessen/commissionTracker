@@ -98,8 +98,6 @@ const createRecruitSchema = z.object({
   // Social Media
   instagramusername: z.string().optional(),
   instagram_url: z.string().optional(),
-  linkedinusername: z.string().optional(),
-  linkedin_url: z.string().optional(),
   facebook_handle: z.string().optional(),
   personal_website: z.string().optional(),
 
@@ -151,8 +149,6 @@ export function AddRecruitDialog({
       years_licensed: 0,
       instagramusername: "",
       instagram_url: "",
-      linkedinusername: "",
-      linkedin_url: "",
       facebook_handle: "",
       personal_website: "",
       upline_id: "",
@@ -798,7 +794,7 @@ export function AddRecruitDialog({
 
             {/* Social/Referral Tab */}
             <TabsContent value="social" className="space-y-2 py-2">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <form.Field name="instagramusername">
                   {(field) => (
                     <div className="grid gap-1">
@@ -812,23 +808,6 @@ export function AddRecruitDialog({
                         className="h-7 text-[11px]"
                         id="instagramusername"
                         placeholder="@username"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-                    </div>
-                  )}
-                </form.Field>
-
-                <form.Field name="linkedinusername">
-                  {(field) => (
-                    <div className="grid gap-1">
-                      <Label htmlFor="linkedinusername" className="text-[11px]">
-                        LinkedIn Username
-                      </Label>
-                      <Input
-                        className="h-7 text-[11px]"
-                        id="linkedinusername"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}

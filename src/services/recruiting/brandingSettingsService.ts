@@ -126,7 +126,6 @@ export const brandingSettingsService = {
         const knownKeys = [
           "facebook",
           "instagram",
-          "linkedin",
           "twitter",
           "youtube",
         ] as const;

@@ -13,7 +13,6 @@ import {
   ArrowRight,
   Facebook,
   Instagram,
-  Linkedin,
   Twitter,
   Youtube,
 } from "lucide-react";
@@ -26,7 +25,6 @@ import { getActiveSocialLinks } from "./types";
 const SOCIAL_ICONS: Record<string, typeof Facebook> = {
   facebook: Facebook,
   instagram: Instagram,
-  linkedin: Linkedin,
   twitter: Twitter,
   youtube: Youtube,
 };

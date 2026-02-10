@@ -62,7 +62,6 @@ async function testUserData() {
 
     // Social info
     console.log('\n🌐 Social:');
-    console.log(`  LinkedIn: ${user.linkedin_url || '(empty)'}`);
     console.log(`  Instagram: ${user.instagram_url || '(empty)'}`);
 
     // Check field count

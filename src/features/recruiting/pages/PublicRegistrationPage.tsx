@@ -60,7 +60,6 @@ const registrationSchema = z
     state: z.string().optional(),
     zip: z.string().optional(),
     instagram_username: z.string().optional(),
-    linkedin_username: z.string().optional(),
     facebook_handle: z.string().optional(),
     personal_website: z.string().optional(),
     referral_source: z.string().optional(),
@@ -701,18 +700,6 @@ export function PublicRegistrationPage() {
                         placeholder="username"
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="linkedin_username" className="text-[10px]">
-                      LinkedIn Username
-                    </Label>
-                    <Input
-                      id="linkedin_username"
-                      {...register("linkedin_username")}
-                      className="mt-1 h-8 text-xs"
-                      placeholder="john-doe"
-                    />
                   </div>
 
                   <div>

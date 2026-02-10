@@ -179,7 +179,6 @@ function sanitizeSocialLinks(links: unknown): Record<string, string> {
   const allowedKeys = [
     "facebook",
     "instagram",
-    "linkedin",
     "twitter",
     "youtube",
   ];

@@ -849,7 +849,6 @@ class AdminSubscriptionService {
         email: false,
         sms: false,
         slack: false,
-        linkedin: false,
         instagram_messaging: false,
         instagram_scheduled_messages: false,
         instagram_templates: false,

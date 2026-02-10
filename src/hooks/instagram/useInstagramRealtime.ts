@@ -21,18 +21,26 @@ type ConversationPayload =
  * Subscribe to new messages for a specific conversation
  * Automatically updates the TanStack Query cache on new messages
  */
-export function useInstagramMessagesRealtime(conversationId: string | null) {
+export function useInstagramMessagesRealtime(
+  conversationId: string | null,
+  enabled = true,
+) {
   const queryClient = useQueryClient();
   const isVisible = usePageVisibility();
   const wasVisibleRef = useRef(isVisible);
+  const wasEnabledRef = useRef(enabled);
 
   useEffect(() => {
     if (!conversationId) {
       wasVisibleRef.current = isVisible;
+      wasEnabledRef.current = enabled;
       return;
     }
 
-    if (isVisible && !wasVisibleRef.current) {
+    const becameVisible = isVisible && !wasVisibleRef.current;
+    const becameEnabled = enabled && !wasEnabledRef.current;
+
+    if (enabled && (becameVisible || becameEnabled)) {
       const messagesKey = instagramKeys.messages(conversationId);
       queryClient.invalidateQueries({
         predicate: (query) =>
@@ -43,10 +51,11 @@ export function useInstagramMessagesRealtime(conversationId: string | null) {
     }
 
     wasVisibleRef.current = isVisible;
-  }, [conversationId, isVisible, queryClient]);
+    wasEnabledRef.current = enabled;
+  }, [conversationId, enabled, isVisible, queryClient]);
 
   useEffect(() => {
-    if (!conversationId || !isVisible) return;
+    if (!conversationId || !enabled || !isVisible) return;
 
     const channel = supabase
       .channel(`instagram-messages:${conversationId}`)
@@ -117,7 +126,7 @@ export function useInstagramMessagesRealtime(conversationId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, isVisible, queryClient]);
+  }, [conversationId, enabled, isVisible, queryClient]);
 }
 
 /**
@@ -126,18 +135,24 @@ export function useInstagramMessagesRealtime(conversationId: string | null) {
  */
 export function useInstagramConversationsRealtime(
   integrationId: string | null,
+  enabled = true,
 ) {
   const queryClient = useQueryClient();
   const isVisible = usePageVisibility();
   const wasVisibleRef = useRef(isVisible);
+  const wasEnabledRef = useRef(enabled);
 
   useEffect(() => {
     if (!integrationId) {
       wasVisibleRef.current = isVisible;
+      wasEnabledRef.current = enabled;
       return;
     }
 
-    if (isVisible && !wasVisibleRef.current) {
+    const becameVisible = isVisible && !wasVisibleRef.current;
+    const becameEnabled = enabled && !wasEnabledRef.current;
+
+    if (enabled && (becameVisible || becameEnabled)) {
       const conversationsKey = instagramKeys.conversations(integrationId);
       queryClient.invalidateQueries({
         predicate: (query) =>
@@ -148,10 +163,11 @@ export function useInstagramConversationsRealtime(
     }
 
     wasVisibleRef.current = isVisible;
-  }, [integrationId, isVisible, queryClient]);
+    wasEnabledRef.current = enabled;
+  }, [integrationId, enabled, isVisible, queryClient]);
 
   useEffect(() => {
-    if (!integrationId || !isVisible) return;
+    if (!integrationId || !enabled || !isVisible) return;
 
     const channel = supabase
       .channel(`instagram-conversations:${integrationId}`)
@@ -212,7 +228,7 @@ export function useInstagramConversationsRealtime(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [integrationId, isVisible, queryClient]);
+  }, [integrationId, enabled, isVisible, queryClient]);
 }
 
 /**
@@ -222,9 +238,10 @@ export function useInstagramConversationsRealtime(
 export function useInstagramRealtime(
   integrationId: string | null,
   activeConversationId: string | null,
+  enabled = true,
 ) {
-  useInstagramConversationsRealtime(integrationId);
-  useInstagramMessagesRealtime(activeConversationId);
+  useInstagramConversationsRealtime(integrationId, enabled);
+  useInstagramMessagesRealtime(activeConversationId, enabled);
 }
 
 /**

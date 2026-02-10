@@ -434,19 +434,6 @@ export const recruitingService = {
   // OAUTH
   // ========================================
 
-  getLinkedInOAuthUrl(userId: string) {
-    const LINKEDIN_CLIENT_ID = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
-    const REDIRECT_URI = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/linkedin-oauth`;
-    const state = userId; // Pass userId as state
-    const scope = "r_liteprofile r_emailaddress";
-
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(
-      REDIRECT_URI,
-    )}&state=${state}&scope=${scope}`;
-
-    return authUrl;
-  },
-
   getInstagramOAuthUrl(userId: string) {
     const INSTAGRAM_APP_ID = import.meta.env.VITE_INSTAGRAM_APP_ID;
     const REDIRECT_URI = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth`;

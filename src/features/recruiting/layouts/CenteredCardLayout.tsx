@@ -1,7 +1,7 @@
 // src/features/recruiting/layouts/CenteredCardLayout.tsx
 // Centered card layout: form card centered over hero background
 
-import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LOGO_SIZE_MAP } from "@/types/recruiting-theme.types";
 import type { LayoutProps } from "./types";
@@ -10,7 +10,6 @@ import { getActiveSocialLinks } from "./types";
 const SOCIAL_ICONS: Record<string, typeof Facebook> = {
   facebook: Facebook,
   instagram: Instagram,
-  linkedin: Linkedin,
   twitter: Twitter,
   youtube: Youtube,
 };

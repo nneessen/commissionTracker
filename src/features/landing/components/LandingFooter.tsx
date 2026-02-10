@@ -102,16 +102,6 @@ export function LandingFooter({ theme }: LandingFooterProps) {
                       Instagram →
                     </a>
                   )}
-                  {theme.social_links.linkedin && (
-                    <a
-                      href={theme.social_links.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-white/50 hover:text-white transition-colors text-sm"
-                    >
-                      LinkedIn →
-                    </a>
-                  )}
                   {theme.social_links.tiktok && (
                     <a
                       href={theme.social_links.tiktok}

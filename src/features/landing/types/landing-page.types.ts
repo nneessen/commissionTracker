@@ -51,7 +51,6 @@ export interface FaqItem {
 
 export interface SocialLinks {
   instagram?: string;
-  linkedin?: string;
   youtube?: string;
   tiktok?: string;
   facebook?: string;
