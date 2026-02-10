@@ -1,5 +1,5 @@
 // src/hooks/subscription/useOwnerDownlineAccess.ts
-// Hook to check if the current user is a direct downline of the owner
+// Hook to check if the current user is in the owner's downline hierarchy
 
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +40,7 @@ export const OWNER_DOWNLINE_GRANTED_FEATURES = [
   "overrides",
   "downline_reports",
   "team_analytics",
+  "training",
 ] as const;
 
 export type OwnerDownlineGrantedFeature =

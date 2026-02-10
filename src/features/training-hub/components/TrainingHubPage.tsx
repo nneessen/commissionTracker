@@ -10,6 +10,7 @@ import {
   X,
   GraduationCap,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,16 +21,19 @@ import { supabase } from "@/services/base/supabase";
 import { ActivityTab } from "./ActivityTab";
 import { EmailTemplatesTab } from "./EmailTemplatesTab";
 import { DocumentsTab } from "./DocumentsTab";
+import { ModulesManagementTab } from "@/features/training-modules/components/admin/ModulesManagementTab";
 
-type TabView = "templates" | "activity" | "documents";
+type TabView = "templates" | "documents" | "modules" | "activity";
 
 const TAB_STORAGE_KEY = "training-hub-active-tab";
+
+const VALID_TABS: TabView[] = ["templates", "documents", "modules", "activity"];
 
 export default function TrainingHubPage() {
   // Persist tab selection in localStorage
   const [activeView, setActiveView] = useState<TabView>(() => {
     const saved = localStorage.getItem(TAB_STORAGE_KEY);
-    if (saved && ["templates", "activity", "documents"].includes(saved)) {
+    if (saved && VALID_TABS.includes(saved as TabView)) {
       return saved as TabView;
     }
     return "templates";
@@ -81,6 +85,11 @@ export default function TrainingHubPage() {
       label: "Documents",
       icon: FileText,
       count: documentStats?.count,
+    },
+    {
+      id: "modules" as TabView,
+      label: "Modules",
+      icon: BookOpen,
     },
     { id: "activity" as TabView, label: "Activity", icon: Activity },
   ];
@@ -185,6 +194,7 @@ export default function TrainingHubPage() {
         {activeView === "documents" && (
           <DocumentsTab searchQuery={searchQuery} />
         )}
+        {activeView === "modules" && <ModulesManagementTab />}
         {activeView === "activity" && <ActivityTab searchQuery={searchQuery} />}
       </div>
     </div>

@@ -46,6 +46,11 @@ import { PublicRegistrationPage } from "./features/recruiting/pages/PublicRegist
 import { TestRegistration } from "./features/recruiting/pages/TestRegistration";
 import { LeadsQueueDashboard } from "./features/recruiting/components/LeadsQueueDashboard";
 import { TrainingHubPage, TrainerDashboard } from "./features/training-hub";
+import MyTrainingPage from "./features/training-modules/components/learner/MyTrainingPage";
+import ModulePlayer from "./features/training-modules/components/learner/ModulePlayer";
+import ModuleBuilderPage from "./features/training-modules/components/admin/ModuleBuilderPage";
+import PresentationRecordPage from "./features/training-modules/components/presentations/PresentationRecordPage";
+import PresentationDetailPage from "./features/training-modules/components/presentations/PresentationDetailPage";
 import { ContractingPage } from "./features/contracting/ContractingPage";
 import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
@@ -541,6 +546,67 @@ const trainingHubRoute = createRoute({
   ),
 });
 
+// My Training route - for agents and recruits to access training modules
+const myTrainingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "my-training",
+  component: () => (
+    <RouteGuard noStaffRoles subscriptionFeature="training">
+      <MyTrainingPage />
+    </RouteGuard>
+  ),
+});
+
+// Module Player route - for agents and recruits to play a specific training module
+const myTrainingModuleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "my-training/$moduleId",
+  component: () => {
+    const { moduleId } = myTrainingModuleRoute.useParams();
+    return (
+      <RouteGuard noStaffRoles subscriptionFeature="training">
+        <ModulePlayer moduleId={moduleId} />
+      </RouteGuard>
+    );
+  },
+});
+
+// Module Builder route - for admins and staff to build/edit training modules
+const myTrainingBuilderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "my-training/builder/$moduleId",
+  component: () => {
+    const { moduleId } = myTrainingBuilderRoute.useParams();
+    return (
+      <RouteGuard subscriptionFeature="training">
+        <ModuleBuilderPage moduleId={moduleId} />
+      </RouteGuard>
+    );
+  },
+});
+
+// Presentation Record route - agents submit weekly presentation recordings
+const presentationRecordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "my-training/presentations/record",
+  component: () => (
+    <RouteGuard noStaffRoles subscriptionFeature="training">
+      <PresentationRecordPage />
+    </RouteGuard>
+  ),
+});
+
+// Presentation Detail route - view a specific presentation submission
+const presentationDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "my-training/presentations/$submissionId",
+  component: () => (
+    <RouteGuard subscriptionFeature="training">
+      <PresentationDetailPage />
+    </RouteGuard>
+  ),
+});
+
 // Trainer Dashboard route - Staff-only dashboard with KPIs and quick actions
 const trainerDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -665,6 +731,11 @@ const routeTree = rootRoute.addChildren([
   testRegistrationRoute,
   leadsQueueRoute,
   trainingHubRoute,
+  myTrainingRoute,
+  myTrainingBuilderRoute,
+  presentationRecordRoute,
+  presentationDetailRoute,
+  myTrainingModuleRoute,
   trainerDashboardRoute,
   contractingRoute,
   messagesRoute,

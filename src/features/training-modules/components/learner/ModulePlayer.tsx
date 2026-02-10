@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -33,7 +33,7 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
   const completeLesson = useCompleteLesson();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lessonStartTime, setLessonStartTime] = useState(Date.now());
+  const lessonStartTime = useRef(Date.now());
 
   const currentLesson = lessons[currentIndex];
   const currentProgress = progressSummary.find(
@@ -45,7 +45,7 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
 
   useEffect(() => {
     if (currentLesson && moduleId) {
-      setLessonStartTime(Date.now());
+      lessonStartTime.current = Date.now();
       startLesson.mutate({ lessonId: currentLesson.id, moduleId });
     }
     // Only trigger when the lesson id changes
@@ -54,7 +54,7 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
 
   const handleCompleteLesson = useCallback(async () => {
     if (!currentLesson) return;
-    const timeSpent = Math.round((Date.now() - lessonStartTime) / 1000);
+    const timeSpent = Math.round((Date.now() - lessonStartTime.current) / 1000);
     await completeLesson.mutateAsync({
       lessonId: currentLesson.id,
       timeSpentSeconds: timeSpent,
@@ -66,7 +66,6 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
     }
   }, [
     currentLesson,
-    lessonStartTime,
     completeLesson,
     currentIndex,
     lessons.length,
@@ -86,11 +85,12 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
       <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
         <Button
           variant="ghost"
-          size="icon"
-          className="h-7 w-7"
+          size="sm"
+          className="h-7 text-xs gap-1"
           onClick={() => navigate({ to: "/my-training" as string })}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
@@ -159,7 +159,17 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
           <ChevronLeft className="h-3 w-3 mr-1" /> Previous
         </Button>
 
-        {currentProgress?.status !== "completed" &&
+        {completedCount === lessons.length && lessons.length > 0 ? (
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => navigate({ to: "/my-training" as string })}
+          >
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Module Complete — Back to Training
+          </Button>
+        ) : (
+          currentProgress?.status !== "completed" &&
           currentLesson?.lesson_type !== "quiz" && (
             <Button
               size="sm"
@@ -174,7 +184,8 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
               )}
               Mark Complete
             </Button>
-          )}
+          )
+        )}
 
         <Button
           variant="outline"

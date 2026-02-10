@@ -82,6 +82,8 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   recruiting: "Recruiting Pipeline",
   overrides: "Override Tracking",
   downline_reports: "Downline Reports",
+  // Training features
+  training: "Training Modules",
   // Premium branding features
   recruiting_basic: "Basic Recruiting",
   recruiting_custom_pipeline: "Custom Recruiting Pipeline",

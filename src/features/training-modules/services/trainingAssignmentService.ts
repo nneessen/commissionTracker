@@ -17,11 +17,13 @@ export const trainingAssignmentService = {
   },
 
   async listMyAssignments(userId: string): Promise<TrainingAssignment[]> {
+    // Fetch individual assignments + agency-wide assignments (assigned_to is null)
+    // RLS already restricts to same imo_id, so this is safe
     const { data, error } = await supabase
       .from("training_assignments")
       .select("*, module:training_modules(*)")
-      .eq("assigned_to", userId)
       .eq("status", "active")
+      .or(`assigned_to.eq.${userId},assigned_to.is.null`)
       .order("priority", { ascending: false });
     if (error) throw error;
     return data as unknown as TrainingAssignment[];

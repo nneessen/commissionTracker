@@ -19,12 +19,9 @@ export const trainingGamificationService = {
       .from("training_user_stats")
       .select("*")
       .eq("user_id", userId)
-      .single();
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw error;
-    }
-    return data as TrainingUserStats;
+      .maybeSingle();
+    if (error) throw error;
+    return data as TrainingUserStats | null;
   },
 
   async getXpHistory(

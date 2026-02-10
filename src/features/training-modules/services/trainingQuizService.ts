@@ -1,9 +1,15 @@
 // src/features/training-modules/services/trainingQuizService.ts
 import { supabase } from "@/services/base";
 import type {
+  TrainingQuiz,
   TrainingQuizWithQuestions,
+  TrainingQuizQuestion,
+  TrainingQuizOption,
   TrainingQuizAttempt,
   SubmitQuizAttemptResult,
+  CreateQuizInput,
+  CreateQuestionInput,
+  CreateOptionInput,
 } from "../types/training-module.types";
 
 export const trainingQuizService = {
@@ -16,6 +22,7 @@ export const trainingQuizService = {
         "*, questions:training_quiz_questions(*, options:training_quiz_options(*))",
       )
       .eq("lesson_id", lessonId)
+      .order("sort_order", { referencedTable: "training_quiz_questions" })
       .single();
     if (error) {
       if (error.code === "PGRST116") return null;
@@ -50,5 +57,105 @@ export const trainingQuizService = {
     });
     if (error) throw error;
     return data as SubmitQuizAttemptResult;
+  },
+
+  // ── Quiz CRUD ──────────────────────────────────────────────────────
+
+  async createQuiz(
+    input: CreateQuizInput,
+    imoId: string,
+  ): Promise<TrainingQuiz> {
+    const { data, error } = await supabase
+      .from("training_quizzes")
+      .insert({ ...input, imo_id: imoId })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as TrainingQuiz;
+  },
+
+  async updateQuiz(
+    id: string,
+    input: Partial<CreateQuizInput>,
+  ): Promise<TrainingQuiz> {
+    const { data, error } = await supabase
+      .from("training_quizzes")
+      .update(input)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as TrainingQuiz;
+  },
+
+  // ── Question CRUD ──────────────────────────────────────────────────
+
+  async createQuestion(
+    input: CreateQuestionInput,
+    imoId: string,
+  ): Promise<TrainingQuizQuestion> {
+    const { data, error } = await supabase
+      .from("training_quiz_questions")
+      .insert({ ...input, imo_id: imoId })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as TrainingQuizQuestion;
+  },
+
+  async updateQuestion(
+    id: string,
+    input: Partial<Omit<CreateQuestionInput, "quiz_id">>,
+  ): Promise<TrainingQuizQuestion> {
+    const { data, error } = await supabase
+      .from("training_quiz_questions")
+      .update(input)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as TrainingQuizQuestion;
+  },
+
+  async deleteQuestion(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("training_quiz_questions")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+  },
+
+  // ── Option CRUD ────────────────────────────────────────────────────
+
+  async createOption(input: CreateOptionInput): Promise<TrainingQuizOption> {
+    const { data, error } = await supabase
+      .from("training_quiz_options")
+      .insert(input)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as TrainingQuizOption;
+  },
+
+  async updateOption(
+    id: string,
+    input: Partial<Omit<CreateOptionInput, "question_id">>,
+  ): Promise<TrainingQuizOption> {
+    const { data, error } = await supabase
+      .from("training_quiz_options")
+      .update(input)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as TrainingQuizOption;
+  },
+
+  async deleteOption(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("training_quiz_options")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
   },
 };

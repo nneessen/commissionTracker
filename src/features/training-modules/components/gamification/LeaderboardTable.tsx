@@ -66,7 +66,7 @@ export function LeaderboardTable({ agencyId }: LeaderboardTableProps) {
                           : "text-zinc-400"
                   }`}
                 >
-                  {entry.rank <= 3 ? (
+                  {Number(entry.rank) <= 3 ? (
                     <Trophy className="h-3.5 w-3.5 mx-auto" />
                   ) : (
                     entry.rank
@@ -81,7 +81,7 @@ export function LeaderboardTable({ agencyId }: LeaderboardTableProps) {
                 <div className="flex items-center gap-1">
                   <Zap className="h-3 w-3 text-amber-500" />
                   <span className="font-medium">
-                    {entry.total_xp.toLocaleString()}
+                    {(entry.total_xp ?? 0).toLocaleString()}
                   </span>
                 </div>
               </div>

@@ -44,6 +44,8 @@ export interface SubscriptionFeatures {
   recruiting: boolean;
   overrides: boolean;
   downline_reports: boolean;
+  // Training features
+  training: boolean;
   // Premium branding features
   recruiting_basic: boolean;
   recruiting_custom_pipeline: boolean;

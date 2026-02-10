@@ -428,13 +428,26 @@ export default function Sidebar({
           });
 
   // Staff-only roles don't see the training items section (it's already in their main nav)
-  // Regular agents with training permissions will still see it
-  const visibleTrainingItems: NavigationItem[] =
-    isRecruit || isTrainerOnly
-      ? []
-      : isPending
-        ? [] // Don't show training items for pending regular users
-        : [];
+  // Regular agents with training subscription see it
+  const visibleTrainingItems: NavigationItem[] = (() => {
+    if (isTrainerOnly) return [];
+
+    const trainingNavigationItems: NavigationItem[] = [
+      {
+        icon: GraduationCap,
+        label: "My Training",
+        href: "/my-training",
+        subscriptionFeature: "training",
+      },
+    ];
+
+    return trainingNavigationItems.filter((item) => {
+      if (item.subscriptionFeature && !hasFeature(item.subscriptionFeature)) {
+        return false;
+      }
+      return true;
+    });
+  })();
 
   const visibleAdminItems =
     isRecruit || isTrainerOnly

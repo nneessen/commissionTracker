@@ -1,21 +1,34 @@
+// src/features/training-modules/components/learner/MyTrainingPage.tsx
 import { useState } from "react";
-import { BookOpen, Target, Clock, Loader2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { BookOpen, Target, Clock, Loader2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useMyTrainingAssignments } from "../../hooks/useTrainingAssignments";
 import { useTrainingUserStats } from "../../hooks/useTrainingGamification";
+import { useCanManageTraining } from "../../hooks/useCanManageTraining";
 import { ModuleCard } from "./ModuleCard";
 import { XpDisplay } from "../gamification/XpDisplay";
 import { StreakIndicator } from "../gamification/StreakIndicator";
 import { BadgeGrid } from "../gamification/BadgeGrid";
 import { LeaderboardTable } from "../gamification/LeaderboardTable";
+import { ModulesManagementTab } from "../admin/ModulesManagementTab";
+import { PresentationSubmissionList } from "../presentations/PresentationSubmissionList";
+import { PresentationComplianceTable } from "../presentations/PresentationComplianceTable";
+import { PresentationWeekPicker, getCurrentWeekStart } from "../presentations/PresentationWeekPicker";
+import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 
-type TabId = "assignments" | "leaderboard" | "badges";
+type TabId = "assignments" | "presentations" | "leaderboard" | "badges" | "modules";
 
 export default function MyTrainingPage() {
   const { data: assignments = [], isLoading } = useMyTrainingAssignments();
   const { data: stats } = useTrainingUserStats();
+  const { user } = useAuth();
   const { agency } = useImo();
+  const canManage = useCanManageTraining();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>("assignments");
+  const [weekStart, setWeekStart] = useState(getCurrentWeekStart);
 
   if (isLoading) {
     return (
@@ -27,8 +40,12 @@ export default function MyTrainingPage() {
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "assignments", label: "Assignments", count: assignments.length },
+    { id: "presentations", label: "Presentations" },
     { id: "leaderboard", label: "Leaderboard" },
     { id: "badges", label: "Badges" },
+    ...(canManage
+      ? [{ id: "modules" as const, label: "Modules" }]
+      : []),
   ];
 
   return (
@@ -97,11 +114,47 @@ export default function MyTrainingPage() {
           </div>
         )}
 
+        {activeTab === "presentations" && (
+          <div className="space-y-3">
+            {/* Toolbar: week picker + new submission button */}
+            <div className="flex items-center justify-between">
+              <PresentationWeekPicker weekStart={weekStart} onChange={setWeekStart} />
+              {!canManage && (
+                <Button
+                  size="sm"
+                  className="h-7 text-[11px]"
+                  onClick={() => navigate({ to: "/my-training/presentations/record" })}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  New Submission
+                </Button>
+              )}
+            </div>
+
+            {/* Manager compliance table */}
+            {canManage && agency && (
+              <PresentationComplianceTable agencyId={agency.id} weekStart={weekStart} />
+            )}
+
+            {/* Submissions list */}
+            <PresentationSubmissionList
+              filters={{
+                weekStart,
+                ...(canManage ? {} : { userId: user?.id || "" }),
+                ...(agency ? { agencyId: agency.id } : {}),
+              }}
+              showSubmitter={canManage}
+            />
+          </div>
+        )}
+
         {activeTab === "leaderboard" && agency && (
           <LeaderboardTable agencyId={agency.id} />
         )}
 
         {activeTab === "badges" && <BadgeGrid />}
+
+        {activeTab === "modules" && canManage && <ModulesManagementTab />}
       </div>
     </div>
   );

@@ -6,6 +6,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-10 18:15:07
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/constants/features.ts`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/elevenlabs/ElevenLabsIntegrationCard.tsx`
+- `src/features/training-hub/components/TrainingHubPage.tsx`
+- `src/features/training-modules/components/admin/AssignModuleDialog.tsx`
+- `src/features/training-modules/components/admin/ContentBlockEditor.tsx`
+- `src/features/training-modules/components/admin/LessonEditor.tsx`
+- `src/features/training-modules/components/admin/ModuleBuilderPage.tsx`
+- `src/features/training-modules/components/admin/ModulesManagementTab.tsx`
+- `src/features/training-modules/components/admin/QuizBuilder.tsx`
+- `src/features/training-modules/components/gamification/LeaderboardTable.tsx`
+- `src/features/training-modules/components/learner/ContentBlockRenderer.tsx`
+- `src/features/training-modules/components/learner/ModulePlayer.tsx`
+- `src/features/training-modules/components/learner/MyTrainingPage.tsx`
+- `src/features/training-modules/components/presentations/PresentationComplianceTable.tsx`
+- `src/features/training-modules/components/presentations/PresentationDetailPage.tsx`
+- `src/features/training-modules/components/presentations/PresentationRecordPage.tsx`
+- `src/features/training-modules/components/presentations/PresentationRecorder.tsx`
+- `src/features/training-modules/components/presentations/PresentationReviewPanel.tsx`
+- `src/features/training-modules/components/presentations/PresentationStatusBadge.tsx`
+- `src/features/training-modules/components/presentations/PresentationSubmissionList.tsx`
+- `src/features/training-modules/components/presentations/PresentationUploader.tsx`
+- `src/features/training-modules/components/presentations/PresentationVideoPlayer.tsx`
+- `src/features/training-modules/components/presentations/PresentationWeekPicker.tsx`
+- `src/features/training-modules/hooks/useCanManageTraining.ts`
+- `src/features/training-modules/hooks/useDebouncedField.ts`
+- `src/features/training-modules/hooks/useElevenLabsAvailable.ts`
+- `src/features/training-modules/hooks/usePresentationSubmissions.ts`
+- `src/features/training-modules/hooks/useTextToSpeech.ts`
+- `src/features/training-modules/hooks/useTrainingQuizzes.ts`
+- `src/features/training-modules/services/presentationSubmissionService.ts`
+- `src/features/training-modules/services/trainingAssignmentService.ts`
+- `src/features/training-modules/services/trainingGamificationService.ts`
+- `src/features/training-modules/services/trainingQuizService.ts`
+- `src/features/training-modules/types/training-module.types.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useOwnerDownlineAccess.ts`
+- `src/router.tsx`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/save-elevenlabs-config/index.ts`
+- `supabase/functions/text-to-speech/index.ts`
+- `supabase/migrations/20260209205958_training_core_content.sql`
+- `supabase/migrations/20260209210000_training_progress_assignments.sql`
+- `supabase/migrations/20260209210100_training_gamification.sql`
+- `supabase/migrations/20260209210200_training_certs_challenges.sql`
+- `supabase/migrations/20260209210300_training_helper_functions.sql`
+- `supabase/migrations/20260209210400_training_rpc_functions.sql`
+- `supabase/migrations/20260210155621_fix_training_leaderboard_fullname.sql`
+- `supabase/migrations/20260210161611_owner_downline_full_hierarchy.sql`
+- `supabase/migrations/20260210170611_presentation_submissions.sql`
+- `supabase/migrations/20260210171547_elevenlabs_config.sql`
+- `supabase/migrations/20260210175530_fix_presentation_rls_security.sql`
+
+### Statistics
+```
+ 55 files changed, 10988 insertions(+), 1561 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-10 14:23:00
 
 ### Changed Files

@@ -858,6 +858,8 @@ class AdminSubscriptionService {
         recruiting: false,
         overrides: false,
         downline_reports: false,
+        // Training features
+        training: false,
         // Premium branding features
         recruiting_basic: false,
         recruiting_custom_pipeline: false,

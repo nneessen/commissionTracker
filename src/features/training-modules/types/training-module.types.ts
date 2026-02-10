@@ -44,6 +44,7 @@ export const CONTENT_TYPES = [
   "video",
   "external_link",
   "script_prompt",
+  "slides",
 ] as const;
 export type ContentType = (typeof CONTENT_TYPES)[number];
 
@@ -448,6 +449,48 @@ export interface SkillRadarData {
   completed_modules: number;
   total_modules: number;
   proficiency_pct: number;
+}
+
+// ============================================================================
+// Presentation Submissions
+// ============================================================================
+
+export const PRESENTATION_STATUSES = ["pending", "approved", "needs_improvement"] as const;
+export type PresentationStatus = (typeof PRESENTATION_STATUSES)[number];
+
+export const RECORDING_TYPES = ["browser_recording", "upload"] as const;
+export type RecordingType = (typeof RECORDING_TYPES)[number];
+
+export interface PresentationSubmission {
+  id: string;
+  imo_id: string;
+  agency_id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  week_start: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  duration_seconds: number | null;
+  recording_type: RecordingType;
+  status: PresentationStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reviewer_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  submitter?: { id: string; first_name: string; last_name: string; email: string };
+  reviewer?: { id: string; first_name: string; last_name: string } | null;
+}
+
+export interface PresentationSubmissionFilters {
+  userId?: string;
+  agencyId?: string;
+  weekStart?: string;
+  status?: PresentationStatus;
 }
 
 // ============================================================================

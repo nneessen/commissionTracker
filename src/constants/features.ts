@@ -172,6 +172,14 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     category: "messaging",
   },
 
+  // Training Features
+  training: {
+    key: "training",
+    displayName: "Training Modules",
+    description: "Access training modules, quizzes, and gamification",
+    category: "team",
+  },
+
   // Premium Branding Features
   recruiting_basic: {
     key: "recruiting_basic",
