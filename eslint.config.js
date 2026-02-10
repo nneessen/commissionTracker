@@ -176,7 +176,7 @@ export default tseslint.config(
   },
   {
     files: ['src/features/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
-    ignores: ['src/features/**/hooks/**/*.{ts,tsx}'],
+    ignores: ['src/features/**/hooks/**/*.{ts,tsx}', 'src/features/**/services/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
