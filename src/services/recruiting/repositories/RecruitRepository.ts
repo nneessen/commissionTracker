@@ -400,8 +400,8 @@ export class RecruitRepository extends BaseRepository<
    * Delete recruit via RPC (admin function)
    */
   async deleteRecruit(id: string): Promise<void> {
-    const { data, error } = await this.client.rpc("admin_deleteuser", {
-      target_user_id: id,
+    const { data, error } = await this.client.rpc("delete_recruit", {
+      target_recruit_id: id,
     });
 
     if (error) {
