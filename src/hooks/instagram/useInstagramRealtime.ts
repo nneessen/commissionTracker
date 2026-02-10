@@ -2,7 +2,7 @@
 // Realtime subscription hooks for Instagram messages and conversations
 // Provides live updates without polling
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
@@ -11,6 +11,7 @@ import {
   type InstagramMessageRow,
   type InstagramConversationRow,
 } from "@/types/instagram.types";
+import { usePageVisibility } from "@/hooks/usePageVisibility";
 
 type MessagePayload = RealtimePostgresChangesPayload<InstagramMessageRow>;
 type ConversationPayload =
@@ -22,9 +23,30 @@ type ConversationPayload =
  */
 export function useInstagramMessagesRealtime(conversationId: string | null) {
   const queryClient = useQueryClient();
+  const isVisible = usePageVisibility();
+  const wasVisibleRef = useRef(isVisible);
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      wasVisibleRef.current = isVisible;
+      return;
+    }
+
+    if (isVisible && !wasVisibleRef.current) {
+      const messagesKey = instagramKeys.messages(conversationId);
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === messagesKey[0] &&
+          query.queryKey[1] === messagesKey[1] &&
+          query.queryKey[2] === messagesKey[2],
+      });
+    }
+
+    wasVisibleRef.current = isVisible;
+  }, [conversationId, isVisible, queryClient]);
+
+  useEffect(() => {
+    if (!conversationId || !isVisible) return;
 
     const channel = supabase
       .channel(`instagram-messages:${conversationId}`)
@@ -95,7 +117,7 @@ export function useInstagramMessagesRealtime(conversationId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, queryClient]);
+  }, [conversationId, isVisible, queryClient]);
 }
 
 /**
@@ -106,9 +128,30 @@ export function useInstagramConversationsRealtime(
   integrationId: string | null,
 ) {
   const queryClient = useQueryClient();
+  const isVisible = usePageVisibility();
+  const wasVisibleRef = useRef(isVisible);
 
   useEffect(() => {
-    if (!integrationId) return;
+    if (!integrationId) {
+      wasVisibleRef.current = isVisible;
+      return;
+    }
+
+    if (isVisible && !wasVisibleRef.current) {
+      const conversationsKey = instagramKeys.conversations(integrationId);
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === conversationsKey[0] &&
+          query.queryKey[1] === conversationsKey[1] &&
+          query.queryKey[2] === conversationsKey[2],
+      });
+    }
+
+    wasVisibleRef.current = isVisible;
+  }, [integrationId, isVisible, queryClient]);
+
+  useEffect(() => {
+    if (!integrationId || !isVisible) return;
 
     const channel = supabase
       .channel(`instagram-conversations:${integrationId}`)
@@ -169,7 +212,7 @@ export function useInstagramConversationsRealtime(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [integrationId, queryClient]);
+  }, [integrationId, isVisible, queryClient]);
 }
 
 /**
