@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-02-09 18:59:16
+Last Updated: 2026-02-10 12:18:08
 
 ## Metrics
-- Total Files: 29762
-- Total Lines of Code: 572459
-- Total Commits: 924
+- Total Files: 29736
+- Total Lines of Code: 565552
+- Total Commits: 928
 
 ## Recent Activity
+2283f026 chore(tooling): fix husky lint-staged path
+8715f2f4 chore(integrations): remove linkedin integration
+151fc0a6 feat(realtime): pause instagram subscriptions when hidden
+f0fa47e5 docs: multiple changes in .,src/features/admin/components,src/features/recruiting/components
 e1540ba0 docs: CHANGELOG.md,PROJECT_STATS.md,index.ts
-6c4de2f5 docs: multiple changes in .,src/types,supabase/functions/slack-policy-notification
-04b6de14 docs: multiple changes in .,src/features/admin/components,src/hooks/lead-purchases
-8e32fecc docs: CHANGELOG.md,PROJECT_STATS.md,20260207120817_fix_vendor_stats_imo_fallback.sql
-eec7a8f7 docs: CHANGELOG.md,PROJECT_STATS.md,20260207113114_fix_team_policy_visibility.sql

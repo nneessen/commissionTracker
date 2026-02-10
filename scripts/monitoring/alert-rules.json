@@ -1,0 +1,159 @@
+{
+  "_comment": "scripts/monitoring/alert-rules.json - Grafana Cloud alert rule definitions for Supabase Large compute (8GB RAM, 2-core ARM)",
+  "_usage": "Import these definitions manually into Grafana Cloud > Alerting > Alert rules. Each rule uses PromQL expressions against the Supabase Prometheus data source.",
+  "rules": [
+    {
+      "name": "Supabase High Memory Usage",
+      "description": "Memory usage exceeds 75% for 5 minutes. Indicates the working set is growing and may need investigation.",
+      "severity": "warning",
+      "expression": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+      "condition": "> 75",
+      "for": "5m",
+      "labels": {
+        "severity": "warning",
+        "service": "supabase",
+        "resource": "memory"
+      },
+      "annotations": {
+        "summary": "Supabase memory usage above 75%",
+        "description": "Memory usage is {{ $value | printf \"%.1f\" }}% on the Supabase instance. Current compute: Large (8GB RAM)."
+      }
+    },
+    {
+      "name": "Supabase Critical Memory Usage",
+      "description": "Memory usage exceeds 90% for 3 minutes. OOM risk is imminent - may need compute upgrade or immediate query optimization.",
+      "severity": "critical",
+      "expression": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+      "condition": "> 90",
+      "for": "3m",
+      "labels": {
+        "severity": "critical",
+        "service": "supabase",
+        "resource": "memory"
+      },
+      "annotations": {
+        "summary": "CRITICAL: Supabase memory usage above 90%",
+        "description": "Memory usage is {{ $value | printf \"%.1f\" }}%. OOM kill risk. Investigate top queries and consider connection pooling or compute upgrade."
+      }
+    },
+    {
+      "name": "Supabase High CPU Usage",
+      "description": "CPU usage exceeds 75% for 10 minutes. May indicate expensive queries or insufficient compute for workload.",
+      "severity": "warning",
+      "expression": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+      "condition": "> 75",
+      "for": "10m",
+      "labels": {
+        "severity": "warning",
+        "service": "supabase",
+        "resource": "cpu"
+      },
+      "annotations": {
+        "summary": "Supabase CPU usage above 75%",
+        "description": "CPU usage is {{ $value | printf \"%.1f\" }}% over the last 5 minutes. Current compute: Large (2-core ARM)."
+      }
+    },
+    {
+      "name": "Supabase Critical CPU Usage",
+      "description": "CPU usage exceeds 90% for 5 minutes. Queries are likely being throttled.",
+      "severity": "critical",
+      "expression": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+      "condition": "> 90",
+      "for": "5m",
+      "labels": {
+        "severity": "critical",
+        "service": "supabase",
+        "resource": "cpu"
+      },
+      "annotations": {
+        "summary": "CRITICAL: Supabase CPU usage above 90%",
+        "description": "CPU usage is {{ $value | printf \"%.1f\" }}%. Query performance is degraded. Check pg_stat_activity for long-running queries."
+      }
+    },
+    {
+      "name": "Supabase Postgres Down",
+      "description": "Postgres is unreachable. All database operations will fail.",
+      "severity": "critical",
+      "expression": "pg_up",
+      "condition": "== 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical",
+        "service": "supabase",
+        "resource": "postgres"
+      },
+      "annotations": {
+        "summary": "CRITICAL: Supabase Postgres is DOWN",
+        "description": "pg_up metric is 0. The database is unreachable. Check Supabase status page and project dashboard."
+      }
+    },
+    {
+      "name": "Supabase High Connection Count",
+      "description": "Active database connections exceed 150. Default max_connections is typically 200 on Large compute.",
+      "severity": "warning",
+      "expression": "pg_stat_database_num_backends",
+      "condition": "> 150",
+      "for": "5m",
+      "labels": {
+        "severity": "warning",
+        "service": "supabase",
+        "resource": "connections"
+      },
+      "annotations": {
+        "summary": "Supabase connection count above 150",
+        "description": "{{ $value }} active connections. Max is typically 200 on Large compute. Enable connection pooling via Supavisor if not already configured."
+      }
+    },
+    {
+      "name": "Supabase Low Cache Hit Rate",
+      "description": "Buffer cache hit rate below 95% for 15 minutes. The working set exceeds available shared_buffers - this is the primary signal that memory optimization or compute upgrade is needed.",
+      "severity": "warning",
+      "expression": "rate(pg_stat_database_blks_hit_total[5m]) / (rate(pg_stat_database_blks_hit_total[5m]) + rate(pg_stat_database_blks_read_total[5m])) * 100",
+      "condition": "< 95",
+      "for": "15m",
+      "labels": {
+        "severity": "warning",
+        "service": "supabase",
+        "resource": "cache"
+      },
+      "annotations": {
+        "summary": "Supabase cache hit rate below 95%",
+        "description": "Cache hit rate is {{ $value | printf \"%.2f\" }}%. Working set exceeds RAM. Investigate large table scans, missing indexes, or oversized queries."
+      }
+    },
+    {
+      "name": "Supabase Database Size Spike",
+      "description": "Database size grew more than 20% in 12 hours. May indicate runaway data ingestion or bloat.",
+      "severity": "warning",
+      "expression": "((pg_database_size_bytes{datname=\"postgres\"} - pg_database_size_bytes{datname=\"postgres\"} offset 12h) / pg_database_size_bytes{datname=\"postgres\"} offset 12h) * 100",
+      "condition": "> 20",
+      "for": "5m",
+      "labels": {
+        "severity": "warning",
+        "service": "supabase",
+        "resource": "storage"
+      },
+      "annotations": {
+        "summary": "Supabase database size grew >20% in 12 hours",
+        "description": "Database size increased by {{ $value | printf \"%.1f\" }}% in the last 12 hours. Check for bulk inserts, WAL bloat, or table bloat."
+      }
+    },
+    {
+      "name": "Supabase Replication Lag",
+      "description": "Replication lag exceeds 10 minutes. Read replicas (if configured) are falling behind.",
+      "severity": "warning",
+      "expression": "physical_replication_lag_physical_replication_lag_seconds",
+      "condition": "> 600",
+      "for": "5m",
+      "labels": {
+        "severity": "warning",
+        "service": "supabase",
+        "resource": "replication"
+      },
+      "annotations": {
+        "summary": "Supabase replication lag above 10 minutes",
+        "description": "Replication lag is {{ $value | printf \"%.0f\" }} seconds. Read replicas are falling behind. Check for long-running transactions or high write load."
+      }
+    }
+  ]
+}

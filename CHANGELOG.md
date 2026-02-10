@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-10 12:18:08
+
+### Changed Files
+- `.env.example`
+- `scripts/monitoring/alert-rules.json`
+- `scripts/monitoring/check-resource-usage.sh`
+- `scripts/monitoring/grafana-dashboard.json`
+- `scripts/monitoring/validate-metrics-endpoint.sh`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `supabase/migrations/20260207125449_lead_vendor_admin_last_purchase.sql`
+- `supabase/migrations/20260209205958_training_core_content.sql`
+- `supabase/migrations/20260209210000_training_progress_assignments.sql`
+- `supabase/migrations/20260209210100_training_gamification.sql`
+- `supabase/migrations/20260209210200_training_certs_challenges.sql`
+- `supabase/migrations/20260209210300_training_helper_functions.sql`
+- `supabase/migrations/20260209210400_training_rpc_functions.sql`
+- `supabase/migrations/20260209210719_delete_recruit_rpc.sql`
+- `supabase/migrations/20260210120000_remove_linkedin.sql`
+
+### Statistics
+```
+ 15 files changed, 10364 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-09 18:59:16
 
 ### Changed Files

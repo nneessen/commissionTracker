@@ -1,8 +1,13 @@
 -- supabase/migrations/20260210120000_remove_linkedin.sql
 -- Remove LinkedIn integration and related schema
 
+BEGIN;
+
 -- Update views to remove LinkedIn fields
-CREATE OR REPLACE VIEW active_user_profiles AS
+DROP VIEW IF EXISTS active_user_profiles;
+DROP VIEW IF EXISTS user_management_view;
+
+CREATE VIEW active_user_profiles AS
 SELECT
     id,
     email,
@@ -51,7 +56,7 @@ SELECT
     archive_reason
 FROM user_profiles;
 
-CREATE OR REPLACE VIEW user_management_view AS
+CREATE VIEW user_management_view AS
 SELECT
     id,
     email,
@@ -340,6 +345,9 @@ COMMENT ON FUNCTION submit_recruit_registration(UUID, JSONB, UUID) IS
   'Submits recruit registration form. Creates/updates user_profiles record with onboarding_started_at set, updates invite status.';
 
 -- Update admin RPCs to exclude LinkedIn fields
+DROP FUNCTION IF EXISTS admin_get_allusers();
+DROP FUNCTION IF EXISTS admin_get_all_users();
+
 CREATE OR REPLACE FUNCTION admin_get_allusers()
 RETURNS TABLE (
   approval_status TEXT,
@@ -544,3 +552,5 @@ DROP FUNCTION IF EXISTS get_unipile_config(UUID);
 -- Drop LinkedIn enum types
 DROP TYPE IF EXISTS linkedin_connection_status;
 DROP TYPE IF EXISTS linkedin_message_type;
+
+COMMIT;
