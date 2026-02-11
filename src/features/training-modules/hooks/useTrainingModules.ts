@@ -8,6 +8,7 @@ import type {
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 import { toast } from "sonner";
+import { trainingProgressKeys } from "./useTrainingProgress";
 
 export const trainingModuleKeys = {
   all: ["training-modules"] as const,
@@ -79,6 +80,7 @@ export function useUpdateTrainingModule() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: trainingModuleKeys.all });
+      queryClient.invalidateQueries({ queryKey: trainingProgressKeys.all });
       queryClient.setQueryData(trainingModuleKeys.detail(data.id), data);
       toast.success("Module updated");
     },

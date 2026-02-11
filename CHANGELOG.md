@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-11 11:43:19
+
+### Changed Files
+- `scripts/seed-mortgage-protection-module.ts`
+- `scripts/seed-vet-life-module.ts`
+- `src/features/training-modules/components/learner/MyTrainingPage.tsx`
+- `src/features/training-modules/hooks/useQuizAttempts.ts`
+- `src/features/training-modules/hooks/useTrainingLessons.ts`
+- `src/features/training-modules/hooks/useTrainingModules.ts`
+- `src/features/training-modules/hooks/useTrainingProgress.ts`
+- `src/features/training-modules/hooks/useTrainingQuizzes.ts`
+
+### Statistics
+```
+ 8 files changed, 3626 insertions(+), 17 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-11 09:58:15
 
 ### Changed Files

@@ -4,22 +4,8 @@ import { trainingQuizService } from "../services/trainingQuizService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { trainingProgressKeys } from "./useTrainingProgress";
-
-export const quizKeys = {
-  all: ["training-quizzes"] as const,
-  byLesson: (lessonId: string) =>
-    [...quizKeys.all, "lesson", lessonId] as const,
-  attempts: (quizId: string, userId: string) =>
-    [...quizKeys.all, "attempts", quizId, userId] as const,
-};
-
-export function useTrainingQuiz(lessonId: string | undefined) {
-  return useQuery({
-    queryKey: quizKeys.byLesson(lessonId!),
-    queryFn: () => trainingQuizService.getByLessonId(lessonId!),
-    enabled: !!lessonId,
-  });
-}
+import { quizKeys } from "./useTrainingQuizzes";
+import { assignmentKeys } from "./useTrainingAssignments";
 
 export function useQuizAttempts(quizId: string | undefined) {
   const { user } = useAuth();
@@ -47,6 +33,7 @@ export function useSubmitQuizAttempt() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: quizKeys.all });
       queryClient.invalidateQueries({ queryKey: trainingProgressKeys.all });
+      queryClient.invalidateQueries({ queryKey: assignmentKeys.all });
       queryClient.invalidateQueries({ queryKey: ["training-gamification"] });
 
       if (result.passed) {

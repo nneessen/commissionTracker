@@ -1,5 +1,5 @@
 // src/features/training-modules/components/learner/MyTrainingPage.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { BookOpen, Target, Clock, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,10 @@ import { PresentationComplianceTable } from "../presentations/PresentationCompli
 import { PresentationWeekPicker, getCurrentWeekStart } from "../presentations/PresentationWeekPicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { assignmentKeys } from "../../hooks/useTrainingAssignments";
+import { presentationKeys } from "../../hooks/usePresentationSubmissions";
+import { trainingModuleKeys } from "../../hooks/useTrainingModules";
 
 type TabId = "assignments" | "presentations" | "leaderboard" | "badges" | "modules";
 
@@ -28,8 +32,20 @@ export default function MyTrainingPage() {
   const { agency } = useImo();
   const canManage = useCanManageTraining();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>("assignments");
   const [weekStart, setWeekStart] = useState(getCurrentWeekStart);
+
+  useEffect(() => {
+    const keyMap: Record<TabId, readonly string[]> = {
+      assignments: assignmentKeys.all,
+      presentations: presentationKeys.all,
+      leaderboard: ["training-gamification"],
+      badges: ["training-gamification"],
+      modules: trainingModuleKeys.all,
+    };
+    queryClient.invalidateQueries({ queryKey: [...keyMap[activeTab]] });
+  }, [activeTab, queryClient]);
 
   if (isLoading) {
     return (

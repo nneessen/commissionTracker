@@ -8,6 +8,7 @@ import type {
 import { useImo } from "@/contexts/ImoContext";
 import { toast } from "sonner";
 import { trainingModuleKeys } from "./useTrainingModules";
+import { quizKeys } from "./useTrainingQuizzes";
 
 export const trainingLessonKeys = {
   all: ["training-lessons"] as const,
@@ -90,6 +91,7 @@ export function useDeleteTrainingLesson() {
         queryKey: trainingLessonKeys.byModule(moduleId),
       });
       queryClient.invalidateQueries({ queryKey: trainingModuleKeys.all });
+      queryClient.invalidateQueries({ queryKey: quizKeys.all });
     },
     onError: (error: Error) => {
       toast.error(error.message);

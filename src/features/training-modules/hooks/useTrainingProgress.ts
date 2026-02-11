@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 import { toast } from "sonner";
 import { trainingModuleKeys } from "./useTrainingModules";
+import { assignmentKeys } from "./useTrainingAssignments";
 
 export const trainingProgressKeys = {
   all: ["training-progress"] as const,
@@ -82,6 +83,7 @@ export function useCompleteLesson() {
       queryClient.invalidateQueries({ queryKey: trainingProgressKeys.all });
       queryClient.invalidateQueries({ queryKey: trainingModuleKeys.all });
       queryClient.invalidateQueries({ queryKey: ["training-gamification"] });
+      queryClient.invalidateQueries({ queryKey: assignmentKeys.all });
 
       if (result.module_completed) {
         toast.success("Module completed! Great work!");

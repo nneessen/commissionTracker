@@ -14,6 +14,8 @@ export const quizKeys = {
   all: ["training-quizzes"] as const,
   byLesson: (lessonId: string) =>
     [...quizKeys.all, "lesson", lessonId] as const,
+  attempts: (quizId: string, userId: string) =>
+    [...quizKeys.all, "attempts", quizId, userId] as const,
 };
 
 export function useTrainingQuiz(lessonId: string | undefined) {
