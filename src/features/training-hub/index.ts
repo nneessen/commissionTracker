@@ -9,6 +9,10 @@ export { DocumentBrowserSheet } from "./components/DocumentBrowserSheet";
 
 // Hooks
 export {
+  useTrainingDocument,
+  useTrainingDocumentUrl,
+} from "./hooks/useTrainingDocuments";
+export {
   usePipelinePhases,
   usePipelinePhaseOptions,
 } from "./hooks/usePipelinePhases";

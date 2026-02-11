@@ -1,10 +1,27 @@
 // src/features/training-modules/components/learner/ContentBlockRenderer.tsx
-import { useState, useCallback } from "react";
-import { ExternalLink, FileText, MessageSquare, Presentation, Download, Eye, ChevronLeft, ChevronRight, Volume2, Loader2, Pause, Square } from "lucide-react";
+import { useState } from "react";
+import {
+  ExternalLink,
+  FileText,
+  MessageSquare,
+  Presentation,
+  Download,
+  Eye,
+  Volume2,
+  Loader2,
+  Pause,
+  Square,
+} from "lucide-react";
+import { SlidesPresentation } from "./SlidesPresentation";
+import { PdfDocumentViewer } from "./PdfDocumentViewer";
 import { Button } from "@/components/ui/button";
-import { useTrainingDocument, useTrainingDocumentUrl } from "@/features/training-hub/hooks/useTrainingDocuments";
+import {
+  useTrainingDocument,
+  useTrainingDocumentUrl,
+} from "@/features/training-hub";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 import { useElevenLabsAvailable } from "../../hooks/useElevenLabsAvailable";
+import { sanitizeHtml } from "@/features/email";
 import type { TrainingLessonContent } from "../../types/training-module.types";
 
 type VideoPlatform = "youtube" | "vimeo" | "loom";
@@ -65,7 +82,9 @@ export function ContentBlockRenderer({ block }: ContentBlockRendererProps) {
       return (
         <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
           <div
-            dangerouslySetInnerHTML={{ __html: block.rich_text_content || "" }}
+            dangerouslySetInnerHTML={{
+              __html: sanitizeHtml(block.rich_text_content || ""),
+            }}
           />
         </div>
       );
@@ -149,7 +168,9 @@ function PdfBlockRenderer({ block }: { block: TrainingLessonContent }) {
           <p className="text-xs font-medium truncate">
             {block.title || "Document"}
           </p>
-          <p className="text-[10px] text-zinc-500">PDF document not available</p>
+          <p className="text-[10px] text-zinc-500">
+            PDF document not available
+          </p>
         </div>
       </div>
     );
@@ -178,7 +199,11 @@ function PdfBlockRenderer({ block }: { block: TrainingLessonContent }) {
                 {showPreview ? "Hide" : "Preview"}
               </Button>
               <a href={signedUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                >
                   <Download className="h-3 w-3 mr-1" />
                   Download
                 </Button>
@@ -188,16 +213,7 @@ function PdfBlockRenderer({ block }: { block: TrainingLessonContent }) {
         </div>
       </div>
 
-      {showPreview && signedUrl && (
-        <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
-          <iframe
-            src={signedUrl}
-            className="w-full"
-            style={{ height: "500px" }}
-            title={doc.name}
-          />
-        </div>
-      )}
+      {showPreview && signedUrl && <PdfDocumentViewer url={signedUrl} />}
     </div>
   );
 }
@@ -208,10 +224,6 @@ function PdfBlockRenderer({ block }: { block: TrainingLessonContent }) {
 function SlidesBlockRenderer({ block }: { block: TrainingLessonContent }) {
   const { data: doc } = useTrainingDocument(block.document_id || undefined);
   const { data: signedUrl } = useTrainingDocumentUrl(doc?.storagePath || null);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const goNext = useCallback(() => setCurrentPage((p) => p + 1), []);
-  const goPrev = useCallback(() => setCurrentPage((p) => Math.max(1, p - 1)), []);
 
   if (!block.document_id || !doc) {
     return (
@@ -231,8 +243,6 @@ function SlidesBlockRenderer({ block }: { block: TrainingLessonContent }) {
     );
   }
 
-  const pdfUrl = `${signedUrl}#page=${currentPage}`;
-
   return (
     <div className="space-y-2">
       {block.title && (
@@ -241,38 +251,7 @@ function SlidesBlockRenderer({ block }: { block: TrainingLessonContent }) {
           <span className="text-[11px] font-medium">{block.title}</span>
         </div>
       )}
-      <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
-        <iframe
-          src={pdfUrl}
-          className="w-full bg-white"
-          style={{ height: "500px" }}
-          title={doc.name || "Slides"}
-        />
-      </div>
-      <div className="flex items-center justify-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-[11px]"
-          onClick={goPrev}
-          disabled={currentPage <= 1}
-        >
-          <ChevronLeft className="h-3 w-3 mr-0.5" />
-          Prev
-        </Button>
-        <span className="text-[11px] text-zinc-500 min-w-[40px] text-center">
-          Page {currentPage}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-[11px]"
-          onClick={goNext}
-        >
-          Next
-          <ChevronRight className="h-3 w-3 ml-0.5" />
-        </Button>
-      </div>
+      <SlidesPresentation url={signedUrl} />
     </div>
   );
 }
@@ -294,7 +273,13 @@ function ScriptPromptRenderer({ block }: { block: TrainingLessonContent }) {
           </span>
         </div>
         {ttsAvailable && block.script_prompt_text && (
-          <TtsButton state={tts.state} onPlay={tts.play} onPause={tts.pause} onResume={tts.resume} onStop={tts.stop} />
+          <TtsButton
+            state={tts.state}
+            onPlay={tts.play}
+            onPause={tts.pause}
+            onResume={tts.resume}
+            onStop={tts.stop}
+          />
         )}
       </div>
       {block.script_prompt_text && (
@@ -307,14 +292,18 @@ function ScriptPromptRenderer({ block }: { block: TrainingLessonContent }) {
           {block.script_prompt_instructions}
         </div>
       )}
-      {tts.error && (
-        <p className="text-[10px] text-red-500">{tts.error}</p>
-      )}
+      {tts.error && <p className="text-[10px] text-red-500">{tts.error}</p>}
     </div>
   );
 }
 
-function TtsButton({ state, onPlay, onPause, onResume, onStop }: {
+function TtsButton({
+  state,
+  onPlay,
+  onPause,
+  onResume,
+  onStop,
+}: {
   state: "idle" | "loading" | "playing" | "paused";
   onPlay: () => void;
   onPause: () => void;
@@ -324,14 +313,24 @@ function TtsButton({ state, onPlay, onPause, onResume, onStop }: {
   switch (state) {
     case "idle":
       return (
-        <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-violet-600 dark:text-violet-400" onClick={onPlay}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-[10px] px-2 text-violet-600 dark:text-violet-400"
+          onClick={onPlay}
+        >
           <Volume2 className="h-3 w-3 mr-1" />
           Listen
         </Button>
       );
     case "loading":
       return (
-        <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" disabled>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-[10px] px-2"
+          disabled
+        >
           <Loader2 className="h-3 w-3 animate-spin mr-1" />
           Loading...
         </Button>
@@ -339,10 +338,20 @@ function TtsButton({ state, onPlay, onPause, onResume, onStop }: {
     case "playing":
       return (
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5" onClick={onPause}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] px-1.5"
+            onClick={onPause}
+          >
             <Pause className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5" onClick={onStop}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] px-1.5"
+            onClick={onStop}
+          >
             <Square className="h-3 w-3" />
           </Button>
         </div>
@@ -350,11 +359,21 @@ function TtsButton({ state, onPlay, onPause, onResume, onStop }: {
     case "paused":
       return (
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-violet-600 dark:text-violet-400" onClick={onResume}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] px-2 text-violet-600 dark:text-violet-400"
+            onClick={onResume}
+          >
             <Volume2 className="h-3 w-3 mr-1" />
             Resume
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5" onClick={onStop}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] px-1.5"
+            onClick={onStop}
+          >
             <Square className="h-3 w-3" />
           </Button>
         </div>
