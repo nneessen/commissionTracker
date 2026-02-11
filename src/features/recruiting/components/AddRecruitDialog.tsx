@@ -2,7 +2,6 @@
 // TODO: why is this file over 1000 lines long? This is not how a senior dev would write a simple dialog feaeture component
 
 import React, { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import {
@@ -38,7 +37,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { US_STATES } from "@/constants/states";
-import { autoPostRecruitNotification } from "@/services/slack/recruitNotificationService";
 
 // Helper function to auto-prepend https:// to URLs
 // TODO: helper function should also not be in this file.
@@ -123,7 +121,6 @@ export function AddRecruitDialog({
   onSuccess,
 }: AddRecruitDialogProps) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const createRecruitMutation = useCreateRecruit();
   const checkEmailMutation = useCheckEmailExists();
   const initializeProgressMutation = useInitializeRecruitProgress();
@@ -222,20 +219,6 @@ export function AddRecruitDialog({
             console.error("Failed to initialize recruit progress:", error);
             // Don't block the success flow - the recruit was created
           }
-        }
-
-        // Auto-post to Slack for unlicensed recruits (fire-and-forget)
-        if (agent_status === "unlicensed" && user?.imo_id) {
-          const uplineName = `${user.first_name || ""} ${user.last_name || ""}`.trim() || null;
-          autoPostRecruitNotification(
-            { ...recruit, upline_name: uplineName },
-            "new_recruit",
-            user.imo_id,
-          ).then(() => {
-            queryClient.invalidateQueries({
-              queryKey: ["slack", "recruit-notification-status", recruit.id],
-            });
-          }).catch(() => {});
         }
 
         // Always close dialog and reset form on successful recruit creation

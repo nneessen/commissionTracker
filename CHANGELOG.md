@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-11 14:25:45
+
+### Changed Files
+- `scripts/seed-apriority-term-module.ts`
+- `scripts/seed-apriority-whole-module.ts`
+- `scripts/seed-transamerica-uw-module.ts`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+
+### Statistics
+```
+ 6 files changed, 3802 insertions(+), 53 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-11 13:00:07
 
 ### Changed Files

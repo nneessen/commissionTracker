@@ -1045,23 +1045,6 @@ function BasicAddRecruitDialog({
         }
       }
 
-      // Auto-post to Slack for unlicensed new recruits (fire-and-forget)
-      if (recruit?.id && user?.imo_id && agentStatus === "unlicensed") {
-        const uplineName =
-          `${user.first_name || ""} ${user.last_name || ""}`.trim() || null;
-        autoPostRecruitNotification(
-          { ...recruit, upline_name: uplineName },
-          "new_recruit",
-          user.imo_id,
-        )
-          .then(() => {
-            queryClient.invalidateQueries({
-              queryKey: ["slack", "recruit-notification-status", recruit.id],
-            });
-          })
-          .catch(() => {});
-      }
-
       // Success toast is handled by the mutation's onSuccess callback
       setFormData({
         first_name: "",
