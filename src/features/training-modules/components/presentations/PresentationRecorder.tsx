@@ -1,22 +1,26 @@
 // src/features/training-modules/components/presentations/PresentationRecorder.tsx
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Square, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MAX_RECORDING_MS = 20 * 60 * 1000; // 20 minutes
 const TIMESLICE_MS = 5000; // 5-second chunks
 
+/** MIME type candidates in order of preference (video only — no audio-only types) */
+const MIME_CANDIDATES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm",
+  "video/mp4",
+] as const;
+
 /**
- * Try MIME types in order of preference
+ * Detect the best supported MIME type for MediaRecorder.
+ * Pure function — deterministic per browser, safe to memoize.
  */
-function getSupportedMimeType(): string {
-  const candidates = [
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
-    "video/webm",
-    "video/mp4",
-  ];
-  for (const mime of candidates) {
+function detectSupportedMimeType(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  for (const mime of MIME_CANDIDATES) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
   return "";
@@ -42,7 +46,8 @@ export function PresentationRecorder({ onRecordingComplete }: PresentationRecord
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const blobUrlRef = useRef<string | null>(null);
 
-  const supported = typeof MediaRecorder !== "undefined" && !!getSupportedMimeType();
+  const supportedMime = useMemo(detectSupportedMimeType, []);
+  const supported = !!supportedMime;
 
   // Clean up on unmount
   useEffect(() => {
@@ -67,29 +72,35 @@ export function PresentationRecorder({ onRecordingComplete }: PresentationRecord
       }
       setState("previewing");
     } catch (err) {
-      setError("Could not access camera/microphone. Please grant permission and try again.");
+      const mediaErr = err as DOMException;
+      if (mediaErr.name === "NotAllowedError") {
+        setError("Camera/microphone permission was denied. Check your browser's site settings and allow access, then try again.");
+      } else if (mediaErr.name === "NotFoundError") {
+        setError("No camera or microphone found. Please connect a device or use the Upload option instead.");
+      } else if (mediaErr.name === "NotReadableError") {
+        setError("Camera/microphone is in use by another application. Close it and try again.");
+      } else if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+        setError("Camera access requires a secure connection (HTTPS). Please use the Upload option instead.");
+      } else {
+        setError(`Could not access camera/microphone: ${mediaErr.message || "Unknown error"}. Try the Upload option instead.`);
+      }
       console.error("getUserMedia error:", err);
     }
   }, []);
 
   const startRecording = useCallback(() => {
-    if (!streamRef.current) return;
-    const mime = getSupportedMimeType();
-    if (!mime) {
-      setError("No supported recording format found.");
-      return;
-    }
-    setMimeType(mime);
+    if (!streamRef.current || !supportedMime) return;
+    setMimeType(supportedMime);
     chunksRef.current = [];
     const recorder = new MediaRecorder(streamRef.current, {
-      mimeType: mime,
+      mimeType: supportedMime,
       videoBitsPerSecond: 1_500_000,
     });
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: mime });
+      const blob = new Blob(chunksRef.current, { type: supportedMime });
       const url = URL.createObjectURL(blob);
       blobUrlRef.current = url;
       setRecordedBlob(blob);
@@ -111,7 +122,7 @@ export function PresentationRecorder({ onRecordingComplete }: PresentationRecord
         if (intervalRef.current) clearInterval(intervalRef.current);
       }
     }, 500);
-  }, []);
+  }, [supportedMime]);
 
   const stopRecording = useCallback(() => {
     recorderRef.current?.stop();

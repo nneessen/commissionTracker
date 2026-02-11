@@ -52,7 +52,25 @@ export function useSubmitPresentation() {
 }
 
 /**
- * Review a presentation submission (manager action)
+ * Update a pending submission's title/description (agent action)
+ */
+export function useUpdatePresentation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...params }: {
+      id: string;
+      title?: string;
+      description?: string;
+    }) => presentationSubmissionService.update(id, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: presentationKeys.all });
+    },
+  });
+}
+
+/**
+ * Review a presentation submission (manager action).
+ * reviewed_at and reviewed_by are enforced server-side via DB trigger.
  */
 export function useReviewPresentation() {
   const queryClient = useQueryClient();
@@ -61,7 +79,6 @@ export function useReviewPresentation() {
       id: string;
       status: "approved" | "needs_improvement";
       reviewerNotes?: string;
-      reviewedBy: string;
     }) => presentationSubmissionService.review(id, params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: presentationKeys.all });
@@ -77,8 +94,13 @@ export function useDeletePresentation() {
   return useMutation({
     mutationFn: (id: string) => presentationSubmissionService.delete(id),
     onSuccess: (_, id) => {
+      // Cancel in-flight queries to prevent refetching deleted resources
+      queryClient.cancelQueries({ queryKey: presentationKeys.all });
       queryClient.removeQueries({ queryKey: presentationKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: presentationKeys.all });
+      // Remove all signed URL queries (deleted files will 404)
+      queryClient.removeQueries({ queryKey: [...presentationKeys.all, "url"] });
+      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: [...presentationKeys.all, "compliance"] });
     },
   });
 }

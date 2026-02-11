@@ -20,7 +20,7 @@ export function PresentationReviewPanel({ submission, onReviewed }: Presentation
   const handleReview = (status: "approved" | "needs_improvement") => {
     if (!user?.id) return;
     reviewMutation.mutate(
-      { id: submission.id, status, reviewerNotes: notes || undefined, reviewedBy: user.id },
+      { id: submission.id, status, reviewerNotes: notes || undefined },
       {
         onSuccess: () => {
           toast.success(status === "approved" ? "Presentation approved" : "Feedback sent");

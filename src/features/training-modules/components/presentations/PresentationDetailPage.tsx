@@ -1,7 +1,18 @@
 // src/features/training-modules/components/presentations/PresentationDetailPage.tsx
+import { useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePresentationSubmission, useDeletePresentation } from "../../hooks/usePresentationSubmissions";
 import { useCanManageTraining } from "../../hooks/useCanManageTraining";
 import { PresentationVideoPlayer } from "./PresentationVideoPlayer";
@@ -15,6 +26,7 @@ export default function PresentationDetailPage() {
   const { data: submission, isLoading } = usePresentationSubmission(submissionId);
   const canManage = useCanManageTraining();
   const deleteMutation = useDeletePresentation();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -41,7 +53,6 @@ export default function PresentationDetailPage() {
   }
 
   const handleDelete = () => {
-    if (!confirm("Delete this presentation submission? This cannot be undone.")) return;
     deleteMutation.mutate(submission.id, {
       onSuccess: () => {
         toast.success("Submission deleted");
@@ -91,7 +102,7 @@ export default function PresentationDetailPage() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-zinc-400 hover:text-red-500"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteDialog(true)}
               disabled={deleteMutation.isPending}
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -150,42 +161,36 @@ export default function PresentationDetailPage() {
             </div>
           </div>
 
-          {/* Review panel: managers can review, everyone sees review result */}
-          {canManage && submission.status === "pending" && (
+          {/* Review panel: managers can review pending, everyone sees review result */}
+          {(canManage || submission.status !== "pending") && (
             <PresentationReviewPanel
               submission={submission}
               onReviewed={() => navigate({ to: "/my-training" })}
             />
           )}
-          {submission.status !== "pending" && (
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 space-y-2">
-              <h3 className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 uppercase">
-                Review
-              </h3>
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                <span className="font-medium">
-                  {submission.status === "approved" ? "Approved" : "Needs Improvement"}
-                </span>
-                {submission.reviewer && (
-                  <span>
-                    {" "}by {submission.reviewer.first_name} {submission.reviewer.last_name}
-                  </span>
-                )}
-                {submission.reviewed_at && (
-                  <span className="text-zinc-400">
-                    {" "}&middot; {new Date(submission.reviewed_at).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              {submission.reviewer_notes && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 italic">
-                  {submission.reviewer_notes}
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Presentation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete this presentation submission? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

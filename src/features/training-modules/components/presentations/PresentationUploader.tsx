@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { Upload, X, FileVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const ALLOWED_TYPES = ["video/webm", "video/mp4", "video/quicktime", "audio/webm"];
+const ALLOWED_TYPES = ["video/webm", "video/mp4", "video/quicktime"];
 const MAX_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
 
 interface PresentationUploaderProps {

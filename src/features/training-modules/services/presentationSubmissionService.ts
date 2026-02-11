@@ -4,6 +4,18 @@ import type { PresentationSubmission, PresentationSubmissionFilters } from "../t
 
 const STORAGE_BUCKET = "presentation-recordings";
 const SIGNED_URL_EXPIRY = 3600; // 1 hour
+const DEFAULT_PAGE_SIZE = 50;
+
+/** Supabase join select for presentation submissions with submitter/reviewer profiles */
+const SUBMISSION_SELECT = `
+  *,
+  submitter:user_profiles!presentation_submissions_user_id_fkey(
+    id, first_name, last_name, email
+  ),
+  reviewer:user_profiles!presentation_submissions_reviewed_by_fkey(
+    id, first_name, last_name
+  )
+`;
 
 /**
  * Build storage path for a presentation recording.
@@ -18,21 +30,25 @@ function buildStoragePath(userId: string, weekStart: string, fileName: string): 
 
 export const presentationSubmissionService = {
   /**
-   * List submissions with optional filters
+   * List submissions with optional filters.
+   * Paginated with limit/offset to prevent unbounded growth.
+   * @param filters - Optional filters for user, agency, week, status
+   * @param page - Page number (0-indexed, default 0)
+   * @param pageSize - Number of items per page (default 50)
    */
-  async list(filters?: PresentationSubmissionFilters): Promise<PresentationSubmission[]> {
+  async list(
+    filters?: PresentationSubmissionFilters,
+    page = 0,
+    pageSize = DEFAULT_PAGE_SIZE,
+  ): Promise<PresentationSubmission[]> {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
     let query = supabase
       .from("presentation_submissions")
-      .select(`
-        *,
-        submitter:user_profiles!presentation_submissions_user_id_fkey(
-          id, first_name, last_name, email
-        ),
-        reviewer:user_profiles!presentation_submissions_reviewed_by_fkey(
-          id, first_name, last_name
-        )
-      `)
-      .order("created_at", { ascending: false });
+      .select(SUBMISSION_SELECT)
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (filters?.userId) {
       query = query.eq("user_id", filters.userId);
@@ -49,6 +65,7 @@ export const presentationSubmissionService = {
 
     const { data, error } = await query;
     if (error) throw new Error(`Failed to list submissions: ${error.message}`);
+    // Cast: Supabase join select shape doesn't match generated Row type
     return (data || []) as unknown as PresentationSubmission[];
   },
 
@@ -58,15 +75,7 @@ export const presentationSubmissionService = {
   async getById(id: string): Promise<PresentationSubmission | null> {
     const { data, error } = await supabase
       .from("presentation_submissions")
-      .select(`
-        *,
-        submitter:user_profiles!presentation_submissions_user_id_fkey(
-          id, first_name, last_name, email
-        ),
-        reviewer:user_profiles!presentation_submissions_reviewed_by_fkey(
-          id, first_name, last_name
-        )
-      `)
+      .select(SUBMISSION_SELECT)
       .eq("id", id)
       .single();
 
@@ -74,6 +83,7 @@ export const presentationSubmissionService = {
       if (error.code === "PGRST116") return null;
       throw new Error(`Failed to get submission: ${error.message}`);
     }
+    // Cast: Supabase join select shape doesn't match generated Row type
     return data as unknown as PresentationSubmission;
   },
 
@@ -122,15 +132,7 @@ export const presentationSubmissionService = {
         duration_seconds: params.durationSeconds || null,
         recording_type: params.recordingType,
       })
-      .select(`
-        *,
-        submitter:user_profiles!presentation_submissions_user_id_fkey(
-          id, first_name, last_name, email
-        ),
-        reviewer:user_profiles!presentation_submissions_reviewed_by_fkey(
-          id, first_name, last_name
-        )
-      `)
+      .select(SUBMISSION_SELECT)
       .single();
 
     if (dbError) {
@@ -141,42 +143,43 @@ export const presentationSubmissionService = {
       if (cleanupError) {
         console.error(`ORPHANED FILE: Failed to clean up ${storagePath}:`, cleanupError);
       }
+      // Parse unique violation for friendly error
+      if (dbError.code === "23505") {
+        throw new Error("You already submitted a presentation for this week.");
+      }
       throw new Error(`Failed to create submission record: ${dbError.message}`);
     }
 
+    // Cast: Supabase join select shape doesn't match generated Row type
     return data as unknown as PresentationSubmission;
   },
 
   /**
-   * Update submission metadata (title/description) while still pending
+   * Update submission metadata (title/description) while still pending.
+   * Uses RPC to prevent agents from tampering with other columns via direct REST PATCH.
    */
   async update(id: string, params: { title?: string; description?: string }): Promise<void> {
-    const updateData: Record<string, unknown> = {};
-    if (params.title !== undefined) updateData.title = params.title;
-    if (params.description !== undefined) updateData.description = params.description;
-
-    const { error } = await supabase
-      .from("presentation_submissions")
-      .update(updateData)
-      .eq("id", id);
+    const { error } = await supabase.rpc("update_own_presentation", {
+      p_id: id,
+      p_title: params.title ?? null,
+      p_description: params.description ?? null,
+    });
     if (error) throw new Error(`Failed to update submission: ${error.message}`);
   },
 
   /**
-   * Manager reviews a submission
+   * Manager reviews a submission.
+   * reviewed_at and reviewed_by are enforced server-side via DB trigger.
    */
   async review(id: string, params: {
     status: "approved" | "needs_improvement";
     reviewerNotes?: string;
-    reviewedBy: string;
   }): Promise<void> {
     const { error } = await supabase
       .from("presentation_submissions")
       .update({
         status: params.status,
         reviewer_notes: params.reviewerNotes || null,
-        reviewed_by: params.reviewedBy,
-        reviewed_at: new Date().toISOString(),
       })
       .eq("id", id);
     if (error) throw new Error(`Failed to review submission: ${error.message}`);
@@ -220,7 +223,8 @@ export const presentationSubmissionService = {
   },
 
   /**
-   * Get weekly compliance: list of agents in agency + whether they submitted this week
+   * Get weekly compliance: list of agents in agency + whether they submitted this week.
+   * Validates the agencyId belongs to the caller's IMO to prevent cross-tenant enumeration.
    */
   async getWeeklyCompliance(agencyId: string, weekStart: string): Promise<{
     userId: string;
@@ -231,12 +235,23 @@ export const presentationSubmissionService = {
     submissionId: string | null;
     status: string | null;
   }[]> {
+    // Validate agency belongs to caller's IMO
+    const { data: agency, error: agencyError } = await supabase
+      .from("agencies")
+      .select("id")
+      .eq("id", agencyId)
+      .single();
+
+    if (agencyError || !agency) {
+      throw new Error("Agency not found or access denied");
+    }
+
     // Get all agents in the agency
     const { data: agents, error: agentsError } = await supabase
       .from("user_profiles")
       .select("id, first_name, last_name, email")
       .eq("agency_id", agencyId)
-      .eq("status", "approved")
+      .eq("approval_status", "approved")
       .not("roles", "ov", "{trainer,contracting_manager}");
 
     if (agentsError) throw new Error(`Failed to fetch agents: ${agentsError.message}`);

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-11 13:00:07
+
+### Changed Files
+- `plans/active/CONTINUATION_presentations_deep_review.md`
+- `src/features/training-modules/components/presentations/PresentationDetailPage.tsx`
+- `src/features/training-modules/components/presentations/PresentationRecorder.tsx`
+- `src/features/training-modules/components/presentations/PresentationReviewPanel.tsx`
+- `src/features/training-modules/components/presentations/PresentationUploader.tsx`
+- `src/features/training-modules/hooks/usePresentationSubmissions.ts`
+- `src/features/training-modules/services/presentationSubmissionService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260211121625_fix_presentation_agent_update_rls.sql`
+- `supabase/migrations/20260211125320_lock_agent_update_to_rpc.sql`
+
+### Statistics
+```
+ 10 files changed, 377 insertions(+), 103 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-11 11:43:19
 
 ### Changed Files

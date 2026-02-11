@@ -16119,6 +16119,10 @@ export type Database = {
         Args: { p_months_paid: number; p_policy_id: string }
         Returns: undefined
       }
+      update_own_presentation: {
+        Args: { p_description?: string; p_id: string; p_title?: string }
+        Returns: undefined
+      }
       update_scheduled_report: {
         Args: {
           p_day_of_month?: number
