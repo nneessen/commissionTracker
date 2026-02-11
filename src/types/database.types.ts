@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -2674,7 +2654,7 @@ export type Database = {
           email_id: string
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           link_index: number | null
           link_url: string | null
           tracking_id: string
@@ -2688,7 +2668,7 @@ export type Database = {
           email_id: string
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           link_index?: number | null
           link_url?: string | null
           tracking_id: string
@@ -2702,7 +2682,7 @@ export type Database = {
           email_id?: string
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           link_index?: number | null
           link_url?: string | null
           tracking_id?: string
@@ -6334,7 +6314,7 @@ export type Database = {
           instagram_conversation_id: string | null
           instagram_username: string | null
           insurance_experience: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_licensed: boolean | null
           last_name: string
           lead_source: string | null
@@ -6373,7 +6353,7 @@ export type Database = {
           instagram_conversation_id?: string | null
           instagram_username?: string | null
           insurance_experience: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_licensed?: boolean | null
           last_name: string
           lead_source?: string | null
@@ -6412,7 +6392,7 @@ export type Database = {
           instagram_conversation_id?: string | null
           instagram_username?: string | null
           insurance_experience?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_licensed?: boolean | null
           last_name?: string
           lead_source?: string | null
@@ -13097,84 +13077,28 @@ export type Database = {
     }
     Functions: {
       accept_recruiting_lead: {
-        Args: {
-          p_lead_id: string
-          p_pipeline_template_id?: string
-        }
+        Args: { p_lead_id: string; p_pipeline_template_id?: string }
         Returns: Json
       }
       add_to_read_by: {
-        Args: {
-          message_id: string
-          user_id: string
-        }
+        Args: { message_id: string; user_id: string }
         Returns: undefined
       }
       admin_approve_user: {
-        Args: {
-          target_user_id: string
-          approver_id: string
-        }
+        Args: { approver_id: string; target_user_id: string }
         Returns: boolean
       }
       admin_delete_domain: {
-        Args: {
-          p_domain_id: string
-          p_user_id: string
-        }
+        Args: { p_domain_id: string; p_user_id: string }
         Returns: boolean
       }
-      admin_deleteuser: {
-        Args: {
-          target_user_id: string
-        }
-        Returns: Json
-      }
+      admin_deleteuser: { Args: { target_user_id: string }; Returns: Json }
       admin_deny_user: {
-        Args: {
-          target_user_id: string
-          approver_id: string
-          reason: string
-        }
+        Args: { approver_id: string; reason: string; target_user_id: string }
         Returns: boolean
-      }
-      admin_get_all_users: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          city: string
-          contract_level: number
-          created_at: string
-          current_onboarding_phase: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          first_name: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          instagram_url: string
-          is_admin: boolean
-          last_name: string
-          license_expiration: string
-          license_number: string
-          npn: string
-          onboarding_status: string
-          phone: string
-          resident_state: string
-          roles: string[]
-          state: string
-          street_address: string
-          updated_at: string
-          upline_id: string
-          zip: string
-        }[]
       }
       admin_get_allusers: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           approval_status: string
           approved_at: string
@@ -13209,77 +13133,65 @@ export type Database = {
         }[]
       }
       admin_get_pending_users: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
+          approval_status: string
+          approved_at: string
+          approved_by: string
+          contract_level: number
+          created_at: string
+          denial_reason: string
+          denied_at: string
           email: string
           full_name: string
-          roles: string[]
-          approval_status: string
+          hierarchy_depth: number
+          hierarchy_path: string
+          id: string
           is_admin: boolean
-          approved_by: string
-          approved_at: string
-          denied_at: string
-          denial_reason: string
-          created_at: string
+          roles: string[]
           updated_at: string
           upline_id: string
-          hierarchy_path: string
-          hierarchy_depth: number
-          contract_level: number
         }[]
       }
-      admin_get_user_by_id: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      admin_get_user_by_id: { Args: { p_user_id: string }; Returns: Json }
       admin_get_user_profile: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: {
-          id: string
+          approval_status: string
+          approved_at: string
+          approved_by: string
+          contract_level: number
+          created_at: string
+          denial_reason: string
+          denied_at: string
           email: string
           full_name: string
-          roles: string[]
-          approval_status: string
+          hierarchy_depth: number
+          hierarchy_path: string
+          id: string
           is_admin: boolean
-          approved_by: string
-          approved_at: string
-          denied_at: string
-          denial_reason: string
-          created_at: string
+          roles: string[]
           updated_at: string
           upline_id: string
-          hierarchy_path: string
-          hierarchy_depth: number
-          contract_level: number
         }[]
       }
       admin_set_admin_role: {
-        Args: {
-          target_user_id: string
-          new_is_admin: boolean
-        }
+        Args: { new_is_admin: boolean; target_user_id: string }
         Returns: boolean
       }
       admin_set_pending_user: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: boolean
       }
       admin_update_domain_status: {
         Args: {
           p_domain_id: string
-          p_user_id: string
+          p_last_error?: string
           p_new_status: Database["public"]["Enums"]["custom_domain_status"]
-          p_verified_at?: string
           p_provider_domain_id?: string
           p_provider_metadata?: Json
-          p_last_error?: string
+          p_user_id: string
+          p_verified_at?: string
         }
         Returns: {
           created_at: string
@@ -13296,58 +13208,53 @@ export type Database = {
           verification_token: string
           verified_at: string | null
         }
+        SetofOptions: {
+          from: "*"
+          to: "custom_domains"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_update_user: {
-        Args: {
-          p_user_id: string
-          p_updates: Json
-        }
+        Args: { p_updates: Json; p_user_id: string }
         Returns: Json
       }
       approve_acceptance_rule: {
-        Args: {
-          p_rule_id: string
-          p_notes?: string
-        }
+        Args: { p_notes?: string; p_rule_id: string }
         Returns: undefined
       }
       approve_agency_request: {
-        Args: {
-          p_request_id: string
-        }
+        Args: { p_request_id: string }
         Returns: string
       }
       approve_join_request: {
         Args: {
-          p_request_id: string
           p_agency_id?: string
+          p_request_id: string
           p_upline_id?: string
         }
         Returns: undefined
       }
       approve_underwriting_rule_set: {
-        Args: {
-          p_rule_set_id: string
-          p_notes?: string
-        }
+        Args: { p_notes?: string; p_rule_set_id: string }
         Returns: Json
       }
       assign_user_role: {
         Args: {
-          p_user_id: string
           p_contract_level?: number
           p_is_recruit?: boolean
           p_requested_role?: string
+          p_user_id: string
         }
         Returns: string[]
       }
       award_training_xp: {
         Args: {
+          p_description?: string
+          p_source_id?: string
+          p_source_type: string
           p_user_id: string
           p_xp_amount: number
-          p_source_type: string
-          p_source_id?: string
-          p_description?: string
         }
         Returns: undefined
       }
@@ -13384,99 +13291,75 @@ export type Database = {
         Returns: Json
       }
       calculate_chargeback_on_policy_lapse: {
-        Args: {
-          p_policy_id: string
-          p_lapse_date?: string
-        }
+        Args: { p_lapse_date?: string; p_policy_id: string }
         Returns: Json
       }
-      calculate_client_age: {
-        Args: {
-          birth_date: string
-        }
-        Returns: number
-      }
+      calculate_client_age: { Args: { birth_date: string }; Returns: number }
       calculate_commission_advance: {
         Args: {
+          p_advance_months: number
           p_annual_premium: number
           p_commission_percentage: number
-          p_advance_months: number
           p_contract_level?: number
         }
         Returns: number
       }
       calculate_earned_amount: {
         Args: {
-          p_amount: number
           p_advance_months: number
+          p_amount: number
           p_months_paid: number
         }
         Returns: number
       }
       calculate_months_paid: {
-        Args: {
-          p_effective_date: string
-          p_end_date?: string
-        }
+        Args: { p_effective_date: string; p_end_date?: string }
         Returns: number
       }
       calculate_next_delivery: {
         Args: {
-          p_frequency: Database["public"]["Enums"]["report_frequency"]
-          p_day_of_week: number
           p_day_of_month: number
-          p_preferred_time: string
+          p_day_of_week: number
+          p_frequency: Database["public"]["Enums"]["report_frequency"]
           p_from_date?: string
+          p_preferred_time: string
         }
         Returns: string
       }
       calculate_next_run_time: {
         Args: {
-          p_schedule_type: string
-          p_run_time: string
-          p_timezone: string
-          p_day_of_week?: number
           p_day_of_month?: number
+          p_day_of_week?: number
           p_from_time?: string
+          p_run_time: string
+          p_schedule_type: string
+          p_timezone: string
         }
         Returns: string
       }
       calculate_premium: {
-        Args: {
-          p_rate_per_thousand: number
-          p_face_amount: number
-        }
+        Args: { p_face_amount: number; p_rate_per_thousand: number }
         Returns: number
       }
       calculate_quiz_score: {
-        Args: {
-          p_answers: Json
-          p_questions: Json
-        }
+        Args: { p_answers: Json; p_questions: Json }
         Returns: Json
       }
       calculate_unearned_amount: {
         Args: {
-          p_amount: number
           p_advance_months: number
+          p_amount: number
           p_months_paid: number
         }
         Returns: number
       }
       can_manage_workflows: {
-        Args: {
-          user_id_param: string
-        }
+        Args: { user_id_param: string }
         Returns: boolean
       }
-      can_request_agency: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      can_request_agency: { Args: never; Returns: boolean }
       can_run_uw_wizard: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: {
           allowed: boolean
           reason: string
@@ -13484,149 +13367,95 @@ export type Database = {
           tier_id: string
         }[]
       }
-      can_submit_join_request: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_view_agent_details: {
-        Args: {
-          p_agent_id: string
-        }
-        Returns: boolean
-      }
+      can_submit_join_request: { Args: never; Returns: boolean }
+      can_view_agent_details: { Args: { p_agent_id: string }; Returns: boolean }
       can_workflow_run: {
-        Args: {
-          p_workflow_id: string
-          p_recipient_id?: string
-        }
+        Args: { p_recipient_id?: string; p_workflow_id: string }
         Returns: boolean
       }
       cancel_recruit_invitation: {
-        Args: {
-          p_invitation_id: string
-        }
+        Args: { p_invitation_id: string }
         Returns: Json
       }
       cascade_agency_assignment: {
-        Args: {
-          p_agency_id: string
-          p_owner_id: string
-          p_imo_id: string
-        }
+        Args: { p_agency_id: string; p_imo_id: string; p_owner_id: string }
         Returns: Json
       }
       check_and_update_milestones: {
-        Args: {
-          p_log_id: string
-          p_policy_count: number
-          p_total_ap: number
-        }
+        Args: { p_log_id: string; p_policy_count: number; p_total_ap: number }
         Returns: {
-          new_policy_milestone: number
           new_ap_milestone: number
+          new_policy_milestone: number
           should_send_sms: boolean
         }[]
       }
       check_auth_identity: {
-        Args: {
-          check_email: string
-        }
+        Args: { check_email: string }
         Returns: {
-          id: string
-          user_id: string
-          provider: string
-          email: string
           created_at: string
+          email: string
+          id: string
+          provider: string
+          user_id: string
         }[]
       }
       check_email_exists: {
-        Args: {
-          target_email: string
-        }
+        Args: { target_email: string }
         Returns: {
           email_exists: boolean
-          user_id: string
           error_message: string
+          user_id: string
         }[]
       }
       check_email_quota: {
-        Args: {
-          p_user_id: string
-          p_provider: string
-          p_limit?: number
-        }
+        Args: { p_limit?: number; p_provider: string; p_user_id: string }
         Returns: boolean
       }
       check_first_seller_naming: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: {
-          log_id: string
           agency_id: string
           agency_name: string
-          log_date: string
-          needs_naming: boolean
           has_pending_notification: boolean
+          log_date: string
+          log_id: string
+          needs_naming: boolean
         }[]
       }
       check_first_seller_naming_unified: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: {
-          first_sale_group_id: string
-          representative_log_id: string
           agency_name: string
+          channel_names: string[]
+          first_sale_group_id: string
+          has_pending_notification: boolean
           log_date: string
           needs_naming: boolean
-          has_pending_notification: boolean
+          representative_log_id: string
           total_channels: number
-          channel_names: string[]
         }[]
       }
-      check_is_imo_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      check_is_imo_admin: { Args: never; Returns: boolean }
       check_module_completion: {
-        Args: {
-          p_user_id: string
-          p_module_id: string
-        }
+        Args: { p_module_id: string; p_user_id: string }
         Returns: boolean
       }
       check_pending_invitation_exists: {
-        Args: {
-          p_email: string
-          p_inviter_id: string
-        }
+        Args: { p_email: string; p_inviter_id: string }
         Returns: boolean
       }
-      check_team_size_limit: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: Json
-      }
-      check_training_badges: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: undefined
-      }
+      check_team_size_limit: { Args: { p_user_id: string }; Returns: Json }
+      check_training_badges: { Args: { p_user_id: string }; Returns: undefined }
       check_user_template_limit: {
-        Args: {
-          user_uuid: string
-        }
+        Args: { user_uuid: string }
         Returns: boolean
       }
       check_workflow_email_rate_limit: {
         Args: {
+          p_recipient_count?: number
+          p_recipient_email: string
           p_user_id: string
           p_workflow_id: string
-          p_recipient_email: string
-          p_recipient_count?: number
         }
         Returns: Json
       }
@@ -13651,103 +13480,87 @@ export type Database = {
           status: Database["public"]["Enums"]["instagram_job_status"]
           updated_at: string
         }[]
-      }
-      cleanup_expired_evaluation_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      cleanup_expired_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      cleanup_instagram_jobs: {
-        Args: {
-          p_older_than?: unknown
+        SetofOptions: {
+          from: "*"
+          to: "instagram_job_queue"
+          isOneToOne: false
+          isSetofReturn: true
         }
+      }
+      cleanup_expired_evaluation_logs: { Args: never; Returns: number }
+      cleanup_expired_invitations: { Args: never; Returns: number }
+      cleanup_instagram_jobs: {
+        Args: { p_older_than?: unknown }
         Returns: number
       }
       cleanup_old_audit_logs: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          deleted_non_financial: number
           deleted_financial: number
+          deleted_non_financial: number
           total_deleted: number
         }[]
       }
       cleanup_old_reports: {
-        Args: {
-          max_reports_per_user?: number
-        }
+        Args: { max_reports_per_user?: number }
         Returns: number
       }
       clone_org_template: {
-        Args: {
-          p_template_id: string
-          p_new_name: string
-        }
+        Args: { p_new_name: string; p_template_id: string }
         Returns: string
       }
       clone_pipeline_template: {
-        Args: {
-          p_template_id: string
-          p_new_name: string
-        }
+        Args: { p_new_name: string; p_template_id: string }
         Returns: string
       }
       complete_instagram_job: {
-        Args: {
-          p_job_id: string
-          p_result?: Json
-        }
+        Args: { p_job_id: string; p_result?: Json }
         Returns: undefined
       }
       complete_scheduled_delivery: {
         Args: {
-          p_schedule_id: string
           p_delivery_id: string
-          p_success: boolean
           p_error_message?: string
           p_mailgun_message_id?: string
+          p_schedule_id: string
+          p_success: boolean
         }
         Returns: boolean
       }
       complete_training_lesson: {
-        Args: {
-          p_lesson_id: string
-          p_time_spent_seconds: number
-        }
+        Args: { p_lesson_id: string; p_time_spent_seconds: number }
         Returns: Json
       }
       create_alert_notification_safe: {
         Args: {
-          p_user_id: string
-          p_type: string
-          p_title: string
-          p_message: string
-          p_rule_id: string
-          p_metric: string
-          p_current_value: number
-          p_threshold_value: number
           p_comparison: string
-          p_entity_type?: string
+          p_current_value: number
           p_entity_id?: string
+          p_entity_type?: string
+          p_message: string
+          p_metric: string
+          p_rule_id: string
+          p_threshold_value: number
+          p_title: string
+          p_type: string
+          p_user_id: string
         }
         Returns: string
       }
       create_alert_rule: {
         Args: {
-          p_name: string
+          p_applies_to_downlines?: boolean
+          p_applies_to_self?: boolean
+          p_applies_to_team?: boolean
+          p_comparison?: Database["public"]["Enums"]["alert_comparison"]
+          p_cooldown_hours?: number
           p_description?: string
           p_metric?: Database["public"]["Enums"]["alert_metric"]
-          p_comparison?: Database["public"]["Enums"]["alert_comparison"]
-          p_threshold_value?: number
-          p_threshold_unit?: string
-          p_applies_to_self?: boolean
-          p_applies_to_downlines?: boolean
-          p_applies_to_team?: boolean
-          p_notify_in_app?: boolean
+          p_name: string
           p_notify_email?: boolean
-          p_cooldown_hours?: number
+          p_notify_in_app?: boolean
+          p_threshold_unit?: string
+          p_threshold_value?: number
         }
         Returns: {
           agency_id: string | null
@@ -13773,36 +13586,40 @@ export type Database = {
           trigger_count: number
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_default_decision_tree_for_imo: {
-        Args: {
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string }
         Returns: string
       }
       create_lead_from_instagram: {
         Args: {
-          p_conversation_id: string
-          p_first_name: string
-          p_last_name: string
-          p_email: string
-          p_phone: string
-          p_city?: string
-          p_state?: string
           p_availability?: string
+          p_city?: string
+          p_conversation_id: string
+          p_email: string
+          p_first_name: string
           p_insurance_experience?: string
+          p_last_name: string
+          p_phone: string
+          p_state?: string
           p_why_interested?: string
         }
         Returns: string
       }
       create_notification: {
         Args: {
-          p_user_id: string
-          p_type: string
-          p_title: string
+          p_expires_at?: string
           p_message?: string
           p_metadata?: Json
-          p_expires_at?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
         }
         Returns: {
           created_at: string
@@ -13816,133 +13633,105 @@ export type Database = {
           updated_at: string
           user_id: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       create_org_workflow_template: {
         Args: {
-          p_name: string
-          p_description: string
-          p_category: string
-          p_trigger_type: string
-          p_config: Json
-          p_conditions: Json
           p_actions: Json
+          p_category: string
+          p_conditions: Json
+          p_config: Json
+          p_cooldown_minutes?: number
+          p_description: string
           p_max_runs_per_day?: number
           p_max_runs_per_recipient?: number
-          p_cooldown_minutes?: number
+          p_name: string
           p_priority?: number
+          p_trigger_type: string
         }
         Returns: string
       }
       create_recruit_invitation:
         | {
             Args: {
+              p_city?: string
               p_email: string
-              p_message?: string
               p_first_name?: string
               p_last_name?: string
+              p_message?: string
               p_phone?: string
-              p_city?: string
               p_state?: string
               p_upline_id?: string
             }
             Returns: Json
           }
         | {
-            Args: {
-              p_recruit_id: string
-              p_email: string
-              p_message?: string
-            }
+            Args: { p_email: string; p_message?: string; p_recruit_id: string }
             Returns: Json
           }
       create_scheduled_report: {
         Args: {
-          p_schedule_name: string
-          p_report_type: string
-          p_frequency: Database["public"]["Enums"]["report_frequency"]
-          p_day_of_week?: number
           p_day_of_month?: number
-          p_preferred_time?: string
-          p_recipients?: Json
+          p_day_of_week?: number
           p_export_format?: string
-          p_report_config?: Json
+          p_frequency: Database["public"]["Enums"]["report_frequency"]
           p_include_charts?: boolean
           p_include_insights?: boolean
           p_include_summary?: boolean
+          p_preferred_time?: string
+          p_recipients?: Json
+          p_report_config?: Json
+          p_report_type: string
+          p_schedule_name: string
         }
         Returns: string
       }
       create_workflow_run: {
-        Args: {
-          workflow_id_param: string
-          context_param?: Json
-        }
+        Args: { context_param?: Json; workflow_id_param: string }
         Returns: string
       }
-      delete_alert_rule: {
-        Args: {
-          p_rule_id: string
-        }
-        Returns: boolean
-      }
-      delete_orphan_identity: {
-        Args: {
-          del_email: string
-        }
+      delete_alert_rule: { Args: { p_rule_id: string }; Returns: boolean }
+      delete_orphan_identity: { Args: { del_email: string }; Returns: Json }
+      delete_recruit: { Args: { target_recruit_id: string }; Returns: Json }
+      duplicate_training_lesson: {
+        Args: { p_lesson_id: string }
         Returns: Json
       }
-      delete_recruit: {
-        Args: {
-          target_recruit_id: string
-        }
-        Returns: Json
-      }
-      email_subject_hash: {
-        Args: {
-          subject: string
-        }
-        Returns: string
-      }
+      email_subject_hash: { Args: { subject: string }; Returns: string }
       enqueue_instagram_job: {
         Args: {
+          p_integration_id?: string
           p_job_type: Database["public"]["Enums"]["instagram_job_type"]
           p_payload: Json
-          p_integration_id?: string
           p_priority?: number
           p_scheduled_for?: string
         }
         Returns: string
       }
-      ensure_system_labels: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: undefined
-      }
-      expire_instagram_scheduled_messages: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      ensure_system_labels: { Args: { p_user_id: string }; Returns: undefined }
+      expire_instagram_scheduled_messages: { Args: never; Returns: number }
       expire_old_invitations: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           expired_count: number
         }[]
       }
       fail_instagram_job: {
-        Args: {
-          p_job_id: string
-          p_error: string
-        }
+        Args: { p_error: string; p_job_id: string }
         Returns: undefined
       }
       generate_age_rules_from_products: {
         Args: {
           p_carrier_id: string
           p_imo_id: string
-          p_user_id: string
           p_product_ids?: string[]
           p_strategy?: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -13950,426 +13739,379 @@ export type Database = {
         Args: {
           p_carrier_id: string
           p_imo_id: string
-          p_user_id: string
           p_knockout_codes?: string[]
           p_strategy?: string
+          p_user_id: string
         }
         Returns: Json
       }
-      get_active_decision_tree: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: Json
-      }
+      get_active_decision_tree: { Args: { p_imo_id: string }; Returns: Json }
       get_active_system_automations: {
-        Args: {
-          p_trigger_type: string
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string; p_trigger_type: string }
         Returns: {
-          id: string
-          trigger_type: string
           communication_type: string
-          recipients: Json
-          email_subject: string
           email_body_html: string
-          notification_title: string
-          notification_message: string
-          sms_message: string
+          email_subject: string
+          id: string
           imo_id: string
+          notification_message: string
+          notification_title: string
+          recipients: Json
+          sms_message: string
+          trigger_type: string
         }[]
       }
       get_agencies_for_join: {
-        Args: {
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string }
         Returns: {
-          id: string
-          name: string
           code: string
           description: string
+          id: string
+          name: string
         }[]
       }
       get_agency_dashboard_metrics: {
-        Args: {
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string }
         Returns: {
+          active_policies: number
           agency_id: string
           agency_name: string
+          agent_count: number
+          avg_production_per_agent: number
           imo_id: string
-          active_policies: number
+          top_producer_id: string
+          top_producer_name: string
+          top_producer_premium: number
           total_annual_premium: number
           total_commissions_ytd: number
           total_earned_ytd: number
           total_unearned: number
-          agent_count: number
-          avg_production_per_agent: number
-          top_producer_id: string
-          top_producer_name: string
-          top_producer_premium: number
         }[]
       }
       get_agency_descendants: {
-        Args: {
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string }
         Returns: {
           agency_id: string
           agency_name: string
-          parent_agency_id: string
           depth: number
+          parent_agency_id: string
         }[]
       }
       get_agency_hierarchy: {
-        Args: {
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string }
         Returns: {
           agency_id: string
           agency_name: string
-          parent_agency_id: string
           depth: number
+          parent_agency_id: string
         }[]
       }
       get_agency_leaderboard_data: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
           agency_id: string
           agency_name: string
+          agent_count: number
+          ap_total: number
+          ip_total: number
           owner_id: string
           owner_name: string
-          agent_count: number
-          ip_total: number
-          ap_total: number
-          policy_count: number
           pending_policy_count: number
-          prospect_count: number
           pipeline_count: number
+          policy_count: number
+          prospect_count: number
           rank_overall: number
         }[]
       }
-      get_agency_metrics: {
-        Args: {
-          p_agency_id: string
-        }
-        Returns: Json
-      }
+      get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json }
       get_agency_override_summary: {
         Args: {
           p_agency_id?: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: {
           agency_id: string
           agency_name: string
-          total_override_count: number
-          total_override_amount: number
-          pending_amount: number
+          avg_override_per_policy: number
+          chargeback_amount: number
           earned_amount: number
           paid_amount: number
-          chargeback_amount: number
-          unique_uplines: number
-          unique_downlines: number
-          avg_override_per_policy: number
+          pending_amount: number
+          top_earner_amount: number
           top_earner_id: string
           top_earner_name: string
-          top_earner_amount: number
+          total_override_amount: number
+          total_override_count: number
+          unique_downlines: number
+          unique_uplines: number
         }[]
       }
       get_agency_performance_report: {
         Args: {
           p_agency_id?: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: {
-          month_start: string
+          commissions_earned: number
+          lapsed_premium: number
           month_label: string
+          month_start: string
+          net_premium_change: number
+          new_agents: number
           new_policies: number
           new_premium: number
-          commissions_earned: number
-          new_agents: number
           policies_lapsed: number
-          lapsed_premium: number
-          net_premium_change: number
           running_total_policies: number
           running_total_premium: number
         }[]
       }
       get_agency_production_by_agent: {
-        Args: {
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string }
         Returns: {
+          active_policies: number
+          agent_email: string
           agent_id: string
           agent_name: string
-          agent_email: string
-          contract_level: number
-          active_policies: number
-          total_annual_premium: number
           commissions_ytd: number
+          contract_level: number
           earned_ytd: number
-          unearned_amount: number
-          pct_of_agency_production: number
           joined_date: string
+          pct_of_agency_production: number
+          total_annual_premium: number
+          unearned_amount: number
         }[]
       }
       get_agency_recruiting_summary: {
-        Args: {
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string }
         Returns: Json
       }
       get_agency_slack_credentials: {
-        Args: {
-          p_imo_id: string
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string; p_imo_id: string }
         Returns: {
-          credential_id: string
+          app_name: string
           client_id: string
           client_secret_encrypted: string
-          signing_secret_encrypted: string
-          app_name: string
-          source_agency_id: string
+          credential_id: string
           is_fallback: boolean
+          signing_secret_encrypted: string
+          source_agency_id: string
         }[]
       }
       get_agency_users_for_sms: {
         Args: {
           p_agency_id: string
-          p_imo_id: string
           p_exclude_user_id: string
+          p_imo_id: string
         }
         Returns: {
-          user_id: string
-          phone: string
           first_name: string
+          phone: string
+          user_id: string
         }[]
       }
       get_agency_weekly_production: {
         Args: {
           p_agency_id?: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: {
-          week_start: string
-          week_end: string
-          week_label: string
-          new_policies: number
-          new_premium: number
           commissions_earned: number
-          policies_lapsed: number
           lapsed_premium: number
           net_premium_change: number
+          new_policies: number
+          new_premium: number
+          policies_lapsed: number
           running_total_policies: number
           running_total_premium: number
+          week_end: string
+          week_label: string
+          week_start: string
         }[]
       }
       get_agent_contract_summary: {
-        Args: {
-          p_agent_id: string
-        }
+        Args: { p_agent_id: string }
         Returns: {
           current_contract_id: string
           current_contract_level: number
           current_contract_status: string
-          writing_numbers_count: number
           documents_count: number
           pending_documents: number
+          writing_numbers_count: number
         }[]
       }
       get_agent_daily_stats: {
-        Args: {
-          p_user_id: string
-          p_imo_id: string
-          p_target_date?: string
-        }
+        Args: { p_imo_id: string; p_target_date?: string; p_user_id: string }
         Returns: {
           policy_count: number
           total_ap: number
         }[]
       }
       get_alert_rule_history: {
-        Args: {
-          p_rule_id: string
-          p_limit?: number
-        }
+        Args: { p_limit?: number; p_rule_id: string }
         Returns: {
-          id: string
-          triggered: boolean
-          current_value: number
-          threshold_value: number
-          comparison: Database["public"]["Enums"]["alert_comparison"]
+          affected_entity_id: string
+          affected_entity_type: string
           affected_user_id: string
           affected_user_name: string
-          affected_entity_type: string
-          affected_entity_id: string
-          notification_id: string
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          current_value: number
           evaluated_at: string
+          id: string
+          notification_id: string
+          threshold_value: number
+          triggered: boolean
         }[]
       }
       get_alertable_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          metric: string
-          label: string
-          description: string
-          default_unit: string
-          default_threshold: number
-          default_comparison: string
-          available_for_self: boolean
           available_for_downlines: boolean
+          available_for_self: boolean
           available_for_team: boolean
+          default_comparison: string
+          default_threshold: number
+          default_unit: string
+          description: string
+          label: string
+          metric: string
         }[]
       }
       get_all_agencies_submit_totals: {
-        Args: {
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string }
         Returns: {
           agency_id: string
           agency_name: string
-          wtd_ap: number
-          wtd_policies: number
           mtd_ap: number
           mtd_policies: number
+          wtd_ap: number
+          wtd_policies: number
         }[]
       }
       get_all_expense_categories: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          name: string
-          description: string
           category_type: string
-          sort_order: number
+          description: string
+          id: string
           is_active: boolean
           is_global: boolean
+          name: string
+          sort_order: number
         }[]
       }
       get_approaching_deadline_items: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          recruit_id: string
+          automation_delay_days: number
           checklist_item_id: string
           days_until_deadline: number
-          automation_delay_days: number
+          recruit_id: string
         }[]
       }
       get_at_risk_commissions: {
-        Args: {
-          p_user_id: string
-          p_risk_threshold?: number
-        }
+        Args: { p_risk_threshold?: number; p_user_id: string }
         Returns: {
-          commission_id: string
-          policy_id: string
           advance_amount: number
-          months_paid: number
+          commission_id: string
           earned_amount: number
-          unearned_amount: number
-          risk_level: string
           effective_date: string
+          months_paid: number
+          policy_id: string
           policy_status: string
+          risk_level: string
+          unearned_amount: number
         }[]
       }
       get_audit_action_types: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action_type: string
           count: number
         }[]
       }
       get_audit_log_detail: {
-        Args: {
-          p_audit_id: string
-        }
+        Args: { p_audit_id: string }
         Returns: {
+          action: Database["public"]["Enums"]["audit_action"]
+          action_type: string
+          agency_id: string
+          changed_fields: string[]
+          created_at: string
+          description: string
           id: string
           imo_id: string
-          agency_id: string
-          table_name: string
-          record_id: string
-          action: Database["public"]["Enums"]["audit_action"]
-          performed_by: string
-          performed_by_name: string
-          performed_by_email: string
-          old_data: Json
-          new_data: Json
-          changed_fields: string[]
-          action_type: string
-          description: string
-          source: Database["public"]["Enums"]["audit_source"]
           metadata: Json
-          created_at: string
+          new_data: Json
+          old_data: Json
+          performed_by: string
+          performed_by_email: string
+          performed_by_name: string
+          record_id: string
+          source: Database["public"]["Enums"]["audit_source"]
+          table_name: string
         }[]
       }
       get_audit_logs: {
         Args: {
-          p_page?: number
-          p_page_size?: number
-          p_table_name?: string
           p_action?: string
           p_action_type?: string
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
           p_performed_by?: string
           p_record_id?: string
-          p_start_date?: string
-          p_end_date?: string
           p_search?: string
+          p_start_date?: string
+          p_table_name?: string
         }
         Returns: {
+          action: Database["public"]["Enums"]["audit_action"]
+          action_type: string
+          agency_id: string
+          changed_fields: string[]
+          created_at: string
+          description: string
           id: string
           imo_id: string
-          agency_id: string
-          table_name: string
-          record_id: string
-          action: Database["public"]["Enums"]["audit_action"]
           performed_by: string
-          performed_by_name: string
           performed_by_email: string
-          changed_fields: string[]
-          action_type: string
-          description: string
+          performed_by_name: string
+          record_id: string
           source: Database["public"]["Enums"]["audit_source"]
-          created_at: string
+          table_name: string
           total_count: number
         }[]
       }
       get_audit_performers: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
+          action_count: number
+          user_email: string
           user_id: string
           user_name: string
-          user_email: string
-          action_count: number
         }[]
       }
       get_audit_tables: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          table_name: string
           count: number
+          table_name: string
         }[]
       }
       get_available_imos_for_join: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          name: string
           code: string
           description: string
+          id: string
+          name: string
         }[]
       }
       get_available_knockout_codes: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           code: string
           name: string
@@ -14380,251 +14122,214 @@ export type Database = {
         Args: {
           p_carrier_id: string
           p_condition_code: string
-          p_product_type: string
           p_imo_id: string
+          p_product_type: string
         }
         Returns: {
           acceptance: string
-          health_class_result: string
           approval_likelihood: number
-          requires_conditions: Json
+          health_class_result: string
           notes: string
+          requires_conditions: Json
         }[]
       }
       get_clients_with_stats: {
-        Args: {
-          p_user_id?: string
-        }
+        Args: { p_user_id?: string }
         Returns: {
-          id: string
-          user_id: string
-          name: string
-          email: string
-          phone: string
-          address: string
-          date_of_birth: string
-          notes: string
-          status: string
-          created_at: string
-          updated_at: string
-          policy_count: number
           active_policy_count: number
-          total_premium: number
+          address: string
           avg_premium: number
+          created_at: string
+          date_of_birth: string
+          email: string
+          id: string
           last_policy_date: string
+          name: string
+          notes: string
+          phone: string
+          policy_count: number
+          status: string
+          total_premium: number
+          updated_at: string
+          user_id: string
         }[]
       }
       get_commissions_for_threshold_check: {
         Args: {
-          p_rule_id: string
-          p_user_ids: string[]
-          p_start_date: string
           p_end_date: string
+          p_rule_id: string
+          p_start_date: string
+          p_user_ids: string[]
         }
         Returns: {
           agent_id: string
           total_commission: number
         }[]
       }
-      get_current_user_hierarchy_path: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_profile_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_hierarchy_path: { Args: never; Returns: string }
+      get_current_user_profile_id: { Args: never; Returns: string }
       get_daily_production_by_agent: {
-        Args: {
-          p_imo_id: string
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string; p_imo_id: string }
         Returns: {
+          agent_email: string
           agent_id: string
           agent_name: string
-          agent_email: string
+          policy_count: number
           slack_member_id: string
           total_annual_premium: number
-          policy_count: number
         }[]
       }
       get_downline_clients_with_stats: {
-        Args: {
-          p_user_id?: string
-        }
+        Args: { p_user_id?: string }
         Returns: {
-          id: string
-          user_id: string
-          name: string
-          email: string
-          phone: string
-          address: string
-          date_of_birth: string
-          notes: string
-          status: string
-          created_at: string
-          updated_at: string
-          policy_count: number
           active_policy_count: number
-          total_premium: number
+          address: string
           avg_premium: number
+          created_at: string
+          date_of_birth: string
+          email: string
+          id: string
           last_policy_date: string
+          name: string
+          notes: string
+          phone: string
+          policy_count: number
+          status: string
+          total_premium: number
+          updated_at: string
+          user_id: string
         }[]
       }
       get_downline_expense_summary: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          user_id: string
-          owner_name: string
-          total_amount: number
-          expense_count: number
           business_amount: number
+          expense_count: number
+          owner_name: string
           personal_amount: number
           tax_deductible_amount: number
+          total_amount: number
+          user_id: string
         }[]
       }
       get_downline_expenses: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          id: string
-          user_id: string
-          owner_name: string
-          name: string
-          description: string
           amount: number
           category: string
-          date: string
-          expense_type: Database["public"]["Enums"]["expense_type"]
-          is_tax_deductible: boolean
-          is_recurring: boolean
           created_at: string
+          date: string
+          description: string
+          expense_type: Database["public"]["Enums"]["expense_type"]
+          id: string
+          is_recurring: boolean
+          is_tax_deductible: boolean
+          name: string
+          owner_name: string
+          user_id: string
         }[]
       }
       get_downline_ids: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: {
           downline_id: string
         }[]
       }
       get_downline_targets: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          user_id: string
-          owner_name: string
           annual_income_target: number
-          monthly_income_target: number
-          quarterly_income_target: number
           annual_policies_target: number
-          monthly_policies_target: number
           avg_premium_target: number
+          created_at: string
+          expense_ratio_target: number
+          id: string
+          monthly_expense_target: number
+          monthly_income_target: number
+          monthly_policies_target: number
+          owner_name: string
           persistency_13_month_target: number
           persistency_25_month_target: number
-          monthly_expense_target: number
-          expense_ratio_target: number
-          created_at: string
+          quarterly_income_target: number
           updated_at: string
+          user_id: string
         }[]
       }
       get_downline_with_emails: {
-        Args: {
-          p_user_id: string
-          p_max_count?: number
-        }
+        Args: { p_max_count?: number; p_user_id: string }
         Returns: {
-          id: string
           email: string
+          id: string
         }[]
       }
       get_due_alert_rules: {
-        Args: {
-          p_worker_id?: string
-          p_batch_size?: number
-        }
+        Args: { p_batch_size?: number; p_worker_id?: string }
         Returns: {
-          id: string
-          owner_id: string
-          imo_id: string
           agency_id: string
-          metric: Database["public"]["Enums"]["alert_metric"]
-          comparison: Database["public"]["Enums"]["alert_comparison"]
-          threshold_value: number
-          threshold_unit: string
-          applies_to_self: boolean
           applies_to_downlines: boolean
+          applies_to_self: boolean
           applies_to_team: boolean
-          notify_in_app: boolean
-          notify_email: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
           cooldown_hours: number
+          id: string
+          imo_id: string
           last_triggered_at: string
+          metric: Database["public"]["Enums"]["alert_metric"]
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          threshold_unit: string
+          threshold_value: number
         }[]
       }
       get_due_scheduled_reports: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          owner_id: string
-          imo_id: string
           agency_id: string
-          schedule_name: string
-          report_type: string
-          report_config: Json
-          frequency: Database["public"]["Enums"]["report_frequency"]
-          day_of_week: number
           day_of_month: number
-          preferred_time: string
-          recipients: Json
+          day_of_week: number
           export_format: string
+          frequency: Database["public"]["Enums"]["report_frequency"]
+          id: string
+          imo_id: string
           include_charts: boolean
           include_insights: boolean
           include_summary: boolean
+          owner_id: string
+          preferred_time: string
+          recipients: Json
+          report_config: Json
+          report_type: string
+          schedule_name: string
         }[]
       }
       get_eligible_recipients: {
-        Args: {
-          p_imo_id?: string
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string; p_imo_id?: string }
         Returns: {
-          user_id: string
+          agency_name: string
           email: string
           full_name: string
           role: string
-          agency_name: string
+          user_id: string
         }[]
       }
-      get_imo_admin: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: string
-      }
+      get_imo_admin: { Args: { p_imo_id: string }; Returns: string }
       get_imo_contract_stats: {
-        Args: {
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string }
         Returns: {
-          total_contracts: number
           active_contracts: number
-          pending_contracts: number
           expiring_soon: number
+          pending_contracts: number
           pending_documents: number
+          total_contracts: number
         }[]
       }
       get_imo_dashboard_metrics: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
+          agency_count: number
+          agent_count: number
+          avg_production_per_agent: number
           imo_id: string
           imo_name: string
           total_active_policies: number
@@ -14632,309 +14337,261 @@ export type Database = {
           total_commissions_ytd: number
           total_earned_ytd: number
           total_unearned: number
-          agent_count: number
-          agency_count: number
-          avg_production_per_agent: number
         }[]
       }
       get_imo_expense_by_category: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          category: string
-          total_amount: number
-          expense_count: number
           avg_amount: number
+          category: string
+          expense_count: number
+          total_amount: number
         }[]
       }
       get_imo_expense_summary: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          user_id: string
-          owner_name: string
           agency_name: string
-          total_amount: number
-          expense_count: number
           business_amount: number
+          expense_count: number
+          owner_name: string
           personal_amount: number
           tax_deductible_amount: number
+          total_amount: number
+          user_id: string
         }[]
       }
-      get_imo_metrics: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: Json
-      }
+      get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json }
       get_imo_override_summary: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
+          avg_override_per_policy: number
+          chargeback_amount: number
+          earned_amount: number
           imo_id: string
           imo_name: string
-          total_override_count: number
-          total_override_amount: number
-          pending_amount: number
-          earned_amount: number
           paid_amount: number
-          chargeback_amount: number
-          unique_uplines: number
+          pending_amount: number
+          total_override_amount: number
+          total_override_count: number
           unique_downlines: number
-          avg_override_per_policy: number
+          unique_uplines: number
         }[]
       }
       get_imo_performance_report: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          month_start: string
+          commissions_earned: number
+          lapsed_premium: number
           month_label: string
+          month_start: string
+          net_premium_change: number
+          new_agents: number
           new_policies: number
           new_premium: number
-          commissions_earned: number
-          new_agents: number
           policies_lapsed: number
-          lapsed_premium: number
-          net_premium_change: number
           running_total_policies: number
           running_total_premium: number
         }[]
       }
       get_imo_production_by_agency: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
+          agency_code: string
           agency_id: string
           agency_name: string
-          agency_code: string
-          owner_name: string
-          new_policies: number
-          policies_lapsed: number
-          retention_rate: number
-          new_premium: number
-          commissions_earned: number
           agent_count: number
           avg_premium_per_agent: number
-          rank_by_premium: number
-          rank_by_policies: number
+          commissions_earned: number
+          new_policies: number
+          new_premium: number
+          owner_name: string
           pct_of_imo_premium: number
+          policies_lapsed: number
+          rank_by_policies: number
+          rank_by_premium: number
+          retention_rate: number
         }[]
       }
-      get_imo_recruiting_summary: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: Json
-      }
+      get_imo_recruiting_summary: { Args: { p_imo_id: string }; Returns: Json }
       get_imo_submit_totals: {
-        Args: {
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string }
         Returns: {
-          wtd_ap: number
-          wtd_policies: number
           mtd_ap: number
           mtd_policies: number
+          wtd_ap: number
+          wtd_policies: number
         }[]
       }
       get_imo_targets: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          user_id: string
-          owner_name: string
           agency_name: string
           annual_income_target: number
-          monthly_income_target: number
-          quarterly_income_target: number
           annual_policies_target: number
-          monthly_policies_target: number
           avg_premium_target: number
+          created_at: string
+          expense_ratio_target: number
+          id: string
+          monthly_expense_target: number
+          monthly_income_target: number
+          monthly_policies_target: number
+          owner_name: string
           persistency_13_month_target: number
           persistency_25_month_target: number
-          monthly_expense_target: number
-          expense_ratio_target: number
-          created_at: string
+          quarterly_income_target: number
           updated_at: string
+          user_id: string
         }[]
       }
       get_imo_workflow_templates: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          name: string
-          description: string
-          category: string
-          status: string
-          trigger_type: string
-          config: Json
-          conditions: Json
           actions: Json
-          max_runs_per_day: number
-          max_runs_per_recipient: number
+          category: string
+          conditions: Json
+          config: Json
           cooldown_minutes: number
-          priority: number
+          created_at: string
           created_by: string
           created_by_name: string
-          created_at: string
+          description: string
+          id: string
+          max_runs_per_day: number
+          max_runs_per_recipient: number
+          name: string
+          priority: number
+          status: string
+          trigger_type: string
           updated_at: string
         }[]
       }
       get_imos_with_system_automations: {
-        Args: {
-          p_trigger_type: string
-        }
+        Args: { p_trigger_type: string }
         Returns: {
           imo_id: string
           imo_name: string
         }[]
       }
       get_knockout_conditions: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["CompositeTypes"]["knockout_condition_def"][]
       }
       get_lead_purchase_stats: {
-        Args: {
-          p_user_id?: string
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string; p_user_id?: string }
         Returns: {
-          total_purchases: number
-          total_leads: number
-          total_spent: number
-          total_policies: number
-          total_commission: number
           avg_cost_per_lead: number
           avg_roi: number
           conversion_rate: number
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
         }[]
       }
       get_lead_stats_by_vendor: {
-        Args: {
-          p_user_id?: string
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string; p_user_id?: string }
         Returns: {
-          vendor_id: string
-          vendor_name: string
-          total_purchases: number
-          total_leads: number
-          total_spent: number
-          total_policies: number
-          total_commission: number
           avg_cost_per_lead: number
           avg_roi: number
           conversion_rate: number
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
+          vendor_id: string
+          vendor_name: string
         }[]
       }
       get_lead_stats_by_vendor_imo_aggregate: {
-        Args: {
-          p_imo_id?: string
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_imo_id?: string; p_start_date?: string }
         Returns: {
-          vendor_id: string
-          vendor_name: string
-          total_purchases: number
-          total_leads: number
-          total_spent: number
-          total_policies: number
-          total_commission: number
           avg_cost_per_lead: number
           avg_roi: number
           conversion_rate: number
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
           unique_users: number
+          vendor_id: string
+          vendor_name: string
         }[]
       }
       get_lead_vendor_admin_overview: {
-        Args: {
-          p_imo_id?: string
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_imo_id?: string; p_start_date?: string }
         Returns: {
-          vendor_id: string
-          vendor_name: string
-          contact_name: string
-          contact_email: string
-          contact_phone: string
-          website: string
-          notes: string
-          created_at: string
-          last_purchase_date: string
-          total_purchases: number
-          total_leads: number
-          total_spent: number
-          total_policies: number
-          total_commission: number
+          aged_leads: number
+          aged_spent: number
           avg_cost_per_lead: number
           avg_roi: number
+          contact_email: string
+          contact_name: string
+          contact_phone: string
           conversion_rate: number
-          unique_users: number
+          created_at: string
           fresh_leads: number
-          aged_leads: number
           fresh_spent: number
-          aged_spent: number
+          last_purchase_date: string
+          notes: string
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
+          unique_users: number
+          vendor_id: string
+          vendor_name: string
+          website: string
         }[]
       }
       get_lead_vendor_user_breakdown: {
         Args: {
-          p_vendor_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
+          p_vendor_id: string
         }
         Returns: {
-          user_id: string
-          user_name: string
-          last_purchase_date: string
-          total_purchases: number
-          total_leads: number
-          total_spent: number
-          total_policies: number
-          total_commission: number
+          aged_leads: number
           avg_cost_per_lead: number
           avg_roi: number
           conversion_rate: number
           fresh_leads: number
-          aged_leads: number
+          last_purchase_date: string
+          total_commission: number
+          total_leads: number
+          total_policies: number
+          total_purchases: number
+          total_spent: number
+          user_id: string
+          user_name: string
         }[]
       }
       get_leaderboard_data: {
         Args: {
-          p_start_date?: string
           p_end_date?: string
           p_scope?: string
           p_scope_id?: string
+          p_start_date?: string
           p_team_threshold?: number
         }
         Returns: {
-          agent_id: string
-          agent_name: string
-          agent_email: string
-          profile_photo_url: string
           agency_id: string
           agency_name: string
+          agent_email: string
+          agent_id: string
+          agent_name: string
+          ap_total: number
           direct_downline_count: number
           ip_total: number
-          ap_total: number
-          policy_count: number
           pending_policy_count: number
-          prospect_count: number
           pipeline_count: number
+          policy_count: number
+          profile_photo_url: string
+          prospect_count: number
           rank_overall: number
         }[]
       }
@@ -14945,80 +14602,66 @@ export type Database = {
           p_warning_days: number
         }
         Returns: {
+          days_until_expiration: number
+          license_expiration: string
           user_id: string
           user_name: string
-          license_expiration: string
-          days_until_expiration: number
         }[]
       }
-      get_message_stats: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_module_progress_summary: {
-        Args: {
-          p_module_id: string
-          p_user_id?: string
-        }
+        Args: { p_module_id: string; p_user_id?: string }
         Returns: Json[]
       }
-      get_my_agency_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_my_agency_id: { Args: never; Returns: string }
       get_my_alert_rules: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          owner_id: string
-          owner_name: string
-          imo_id: string
           agency_id: string
-          name: string
-          description: string
-          metric: Database["public"]["Enums"]["alert_metric"]
-          comparison: Database["public"]["Enums"]["alert_comparison"]
-          threshold_value: number
-          threshold_unit: string
-          applies_to_self: boolean
           applies_to_downlines: boolean
+          applies_to_self: boolean
           applies_to_team: boolean
-          notify_in_app: boolean
-          notify_email: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
           cooldown_hours: number
+          created_at: string
+          description: string
+          id: string
+          imo_id: string
           is_active: boolean
           last_triggered_at: string
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          owner_name: string
+          threshold_unit: string
+          threshold_value: number
           trigger_count: number
-          created_at: string
           updated_at: string
         }[]
       }
       get_my_daily_sales_logs: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
+          can_rename: boolean
+          channel_id: string
+          created_at: string
+          first_seller_id: string
           id: string
           imo_id: string
-          slack_integration_id: string
-          channel_id: string
-          log_date: string
-          title: string
-          first_seller_id: string
           is_first_seller: boolean
-          can_rename: boolean
           leaderboard_message_ts: string
+          log_date: string
+          slack_integration_id: string
+          title: string
           title_set_at: string
-          created_at: string
           updated_at: string
         }[]
       }
-      get_my_imo_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_my_imo_id: { Args: never; Returns: string }
       get_my_notification_preferences: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           browser_push_enabled: boolean | null
           browser_push_subscription: Json | null
@@ -15039,38 +14682,41 @@ export type Database = {
           updated_at: string | null
           user_id: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_my_scheduled_reports: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          schedule_name: string
-          report_type: string
-          frequency: Database["public"]["Enums"]["report_frequency"]
-          day_of_week: number
+          consecutive_failures: number
+          created_at: string
           day_of_month: number
-          preferred_time: string
-          recipients: Json
+          day_of_week: number
           export_format: string
-          report_config: Json
+          failed_deliveries: number
+          frequency: Database["public"]["Enums"]["report_frequency"]
+          id: string
           include_charts: boolean
           include_insights: boolean
           include_summary: boolean
           is_active: boolean
-          next_delivery: string
           last_delivery: string
-          consecutive_failures: number
-          created_at: string
-          total_deliveries: number
+          next_delivery: string
+          preferred_time: string
+          recipients: Json
+          report_config: Json
+          report_type: string
+          schedule_name: string
           successful_deliveries: number
-          failed_deliveries: number
+          total_deliveries: number
         }[]
       }
       get_or_create_usage_tracking: {
-        Args: {
-          p_user_id: string
-          p_metric: string
-        }
+        Args: { p_metric: string; p_user_id: string }
         Returns: {
           count: number
           created_at: string
@@ -15083,91 +14729,81 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "usage_tracking"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_org_chart_data: {
         Args: {
-          p_scope?: string
-          p_scope_id?: string
           p_include_metrics?: boolean
           p_max_depth?: number
+          p_scope?: string
+          p_scope_id?: string
         }
         Returns: Json
       }
       get_overrides_by_agency: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
+          agency_code: string
           agency_id: string
           agency_name: string
-          agency_code: string
-          override_count: number
-          total_amount: number
-          pending_amount: number
           earned_amount: number
+          override_count: number
           paid_amount: number
           pct_of_imo_overrides: number
+          pending_amount: number
+          total_amount: number
         }[]
       }
       get_overrides_by_agent: {
-        Args: {
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string }
         Returns: {
+          agent_email: string
           agent_id: string
           agent_name: string
-          agent_email: string
-          override_count: number
-          total_amount: number
-          pending_amount: number
-          earned_amount: number
-          paid_amount: number
           avg_per_override: number
+          earned_amount: number
+          override_count: number
+          paid_amount: number
           pct_of_agency_overrides: number
+          pending_amount: number
+          total_amount: number
         }[]
       }
       get_password_reminder_users: {
-        Args: {
-          hours_since_creation: number
-          filter_imo_id: string
-        }
+        Args: { filter_imo_id: string; hours_since_creation: number }
         Returns: {
-          user_id: string
-          email: string
-          phone: string
-          first_name: string
-          last_name: string
           created_at: string
+          email: string
+          first_name: string
           imo_id: string
+          last_name: string
+          phone: string
+          user_id: string
         }[]
       }
-      get_pending_agency_request_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_pending_agency_request_count: { Args: never; Returns: number }
       get_pending_first_sale_logs: {
-        Args: {
-          p_first_sale_group_id: string
-        }
+        Args: { p_first_sale_group_id: string }
         Returns: {
-          log_id: string
-          imo_id: string
-          slack_integration_id: string
           channel_id: string
-          log_date: string
-          title: string
-          pending_policy_data: Json
           first_seller_id: string
           hierarchy_depth: number
+          imo_id: string
           leaderboard_message_ts: string
+          log_date: string
+          log_id: string
+          pending_policy_data: Json
+          slack_integration_id: string
+          title: string
         }[]
       }
-      get_pending_invitations_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_pending_join_request_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_pending_invitations_count: { Args: never; Returns: number }
+      get_pending_join_request_count: { Args: never; Returns: number }
       get_pipeline_template_for_user: {
         Args: {
           p_agent_status: Database["public"]["Enums"]["agent_status"]
@@ -15176,9 +14812,7 @@ export type Database = {
         Returns: string
       }
       get_plan_by_lemon_variant: {
-        Args: {
-          p_variant_id: string
-        }
+        Args: { p_variant_id: string }
         Returns: {
           analytics_sections: string[]
           created_at: string
@@ -15199,6 +14833,12 @@ export type Database = {
           team_size_limit: number | null
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "subscription_plans"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_policies_for_lapse_check: {
         Args: {
@@ -15207,61 +14847,61 @@ export type Database = {
           p_warning_days: number
         }
         Returns: {
+          annual_premium: number
+          carrier_name: string
+          days_until_due: number
+          effective_date: string
+          last_payment_date: string
           policy_id: string
           policy_number: string
+          product_type: string
+          user_email: string
           user_id: string
           user_name: string
-          user_email: string
-          annual_premium: number
-          effective_date: string
-          days_until_due: number
-          last_payment_date: string
-          carrier_name: string
-          product_type: string
         }[]
       }
       get_policies_paginated: {
         Args: {
+          p_carrier_id?: string
           p_cursor?: string
           p_limit?: number
-          p_status?: string
-          p_carrier_id?: string
           p_product_id?: string
+          p_status?: string
           p_user_id?: string
         }
         Returns: {
-          id: string
-          policy_number: string
-          status: Database["public"]["Enums"]["policy_status"]
-          client: Json
-          carrier_id: string
-          product_id: string
-          user_id: string
-          product: Database["public"]["Enums"]["product_type"]
-          effective_date: string
           annual_premium: number
-          commission_percentage: number
-          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
-          created_at: string
-          product_name: string
+          carrier_id: string
           carrier_name: string
+          client: Json
+          commission_percentage: number
+          created_at: string
+          effective_date: string
+          id: string
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          policy_number: string
+          product: Database["public"]["Enums"]["product_type"]
+          product_id: string
+          product_name: string
+          status: Database["public"]["Enums"]["policy_status"]
+          user_id: string
         }[]
       }
       get_policy_count: {
         Args: {
-          p_status?: string
           p_carrier_id?: string
           p_product_id?: string
+          p_status?: string
           p_user_id?: string
         }
         Returns: number
       }
       get_policy_counts_for_check: {
         Args: {
-          p_rule_id: string
-          p_user_ids: string[]
-          p_start_date: string
           p_end_date: string
+          p_rule_id: string
+          p_start_date: string
+          p_user_ids: string[]
         }
         Returns: {
           agent_id: string
@@ -15269,279 +14909,227 @@ export type Database = {
         }[]
       }
       get_premium_matrices_for_imo: {
-        Args: {
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string }
         Returns: {
-          id: string
-          imo_id: string
-          product_id: string
           age: number
+          carrier_id: string
+          carrier_name: string
+          created_at: string
+          created_by: string
           face_amount: number
           gender: string
-          tobacco_class: string
           health_class: string
-          term_years: number
+          id: string
+          imo_id: string
+          is_active: boolean
+          max_age: number
+          max_face_amount: number
+          min_age: number
+          min_face_amount: number
           monthly_premium: number
-          created_at: string
-          updated_at: string
-          created_by: string
+          product_id: string
+          product_metadata: Json
           product_name: string
           product_type: string
-          carrier_id: string
-          min_age: number
-          max_age: number
-          min_face_amount: number
-          max_face_amount: number
-          is_active: boolean
-          product_metadata: Json
-          carrier_name: string
+          term_years: number
+          tobacco_class: string
+          updated_at: string
         }[]
       }
       get_product_commission_rate: {
         Args: {
-          p_product_id: string
           p_comp_level: Database["public"]["Enums"]["comp_level"]
           p_date?: string
+          p_product_id: string
         }
         Returns: number
       }
       get_product_rate: {
         Args: {
-          p_product_id: string
           p_age: number
           p_gender: string
-          p_tobacco_class: string
           p_health_class: string
           p_imo_id: string
+          p_product_id: string
+          p_tobacco_class: string
         }
         Returns: number
       }
       get_public_invitation_by_token: {
-        Args: {
-          p_token: string
-        }
+        Args: { p_token: string }
         Returns: Json
       }
       get_public_landing_page_settings: {
-        Args: {
-          p_imo_id?: string
-        }
+        Args: { p_imo_id?: string }
         Returns: Json
       }
       get_public_recruiter_info: {
-        Args: {
-          p_slug: string
-        }
+        Args: { p_slug: string }
         Returns: {
-          recruiter_id: string
-          recruiter_first_name: string
-          recruiter_last_name: string
-          imo_name: string
-          imo_logo_url: string
-          imo_primary_color: string
-          imo_description: string
           calendly_url: string
+          imo_description: string
+          imo_logo_url: string
+          imo_name: string
+          imo_primary_color: string
           is_active: boolean
+          recruiter_first_name: string
+          recruiter_id: string
+          recruiter_last_name: string
         }[]
       }
-      get_public_recruiting_theme: {
-        Args: {
-          p_slug: string
-        }
-        Returns: Json
-      }
-      get_recruiting_by_agency: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: Json
-      }
+      get_public_recruiting_theme: { Args: { p_slug: string }; Returns: Json }
+      get_recruiting_by_agency: { Args: { p_imo_id: string }; Returns: Json }
       get_recruiting_by_recruiter: {
-        Args: {
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string }
         Returns: Json
       }
       get_recruiting_leads_stats: {
-        Args: {
-          p_recruiter_id?: string
-        }
+        Args: { p_recruiter_id?: string }
         Returns: Json
       }
       get_role_permissions_with_inheritance: {
-        Args: {
-          p_role_id: string
-        }
+        Args: { p_role_id: string }
         Returns: {
-          permission_id: string
-          permission_code: string
-          permission_resource: string
-          permission_action: string
-          permission_scope: string
-          permission_description: string
-          permission_type: string
           inherited_from_role_name: string
+          permission_action: string
+          permission_code: string
+          permission_description: string
+          permission_id: string
+          permission_resource: string
+          permission_scope: string
+          permission_type: string
         }[]
       }
       get_schedule_delivery_history: {
-        Args: {
-          p_schedule_id: string
-          p_limit?: number
-        }
+        Args: { p_limit?: number; p_schedule_id: string }
         Returns: {
-          id: string
-          status: string
-          error_message: string
-          delivered_at: string
-          recipients_sent: Json
-          report_period_start: string
-          report_period_end: string
           created_at: string
+          delivered_at: string
+          error_message: string
+          id: string
+          recipients_sent: Json
+          report_period_end: string
+          report_period_start: string
+          status: string
         }[]
       }
-      get_skill_radar_data: {
-        Args: {
-          p_user_id?: string
-        }
-        Returns: Json[]
-      }
+      get_skill_radar_data: { Args: { p_user_id?: string }; Returns: Json[] }
       get_slack_integrations_for_agency_hierarchy: {
-        Args: {
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string }
         Returns: {
-          integration_id: string
           agency_id: string
           agency_name: string
-          team_id: string
-          team_name: string
           display_name: string
-          policy_channel_id: string
-          policy_channel_name: string
+          hierarchy_depth: number
           include_client_info: boolean
           include_leaderboard: boolean
-          hierarchy_depth: number
+          integration_id: string
+          policy_channel_id: string
+          policy_channel_name: string
+          team_id: string
+          team_name: string
         }[]
       }
       get_slack_leaderboard_with_periods: {
-        Args: {
-          p_imo_id: string
-          p_agency_id?: string
-        }
+        Args: { p_agency_id?: string; p_imo_id: string }
         Returns: {
+          agent_email: string
           agent_id: string
           agent_name: string
-          agent_email: string
+          mtd_ap: number
+          mtd_policies: number
           slack_member_id: string
           today_ap: number
           today_policies: number
           wtd_ap: number
           wtd_policies: number
-          mtd_ap: number
-          mtd_policies: number
         }[]
       }
       get_stale_phase_recruits: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          recruit_id: string
-          phase_id: string
-          days_in_phase: number
           automation_delay_days: number
+          days_in_phase: number
+          phase_id: string
+          recruit_id: string
         }[]
       }
       get_submit_leaderboard: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          agent_id: string
-          agent_name: string
-          agent_email: string
-          profile_photo_url: string
           agency_id: string
           agency_name: string
+          agent_email: string
+          agent_id: string
+          agent_name: string
           ap_total: number
           policy_count: number
+          profile_photo_url: string
           rank_overall: number
         }[]
       }
-      get_sync_webhook_secret: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_sync_webhook_secret: { Args: never; Returns: string }
       get_team_analytics_data: {
         Args: {
-          p_team_user_ids: string[]
-          p_start_date: string
           p_end_date: string
+          p_start_date: string
+          p_team_user_ids: string[]
         }
         Returns: Json
       }
       get_team_comparison_report: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
+          agency_code: string
           agency_id: string
           agency_name: string
-          agency_code: string
-          owner_name: string
           agent_count: number
+          avg_premium_per_agent: number
+          avg_premium_per_policy: number
+          commissions_earned: number
           new_policies: number
           new_premium: number
-          commissions_earned: number
-          avg_premium_per_policy: number
-          avg_premium_per_agent: number
-          policies_lapsed: number
-          retention_rate: number
-          rank_by_premium: number
-          rank_by_policies: number
+          owner_name: string
           pct_of_imo_premium: number
+          policies_lapsed: number
+          rank_by_policies: number
+          rank_by_premium: number
+          retention_rate: number
         }[]
       }
       get_team_leaderboard_data: {
         Args: {
-          p_start_date?: string
           p_end_date?: string
           p_min_downlines?: number
+          p_start_date?: string
         }
         Returns: {
-          leader_id: string
-          leader_name: string
-          leader_email: string
-          leader_profile_photo_url: string
           agency_id: string
           agency_name: string
-          team_size: number
-          ip_total: number
           ap_total: number
-          policy_count: number
+          ip_total: number
+          leader_email: string
+          leader_id: string
+          leader_name: string
+          leader_profile_photo_url: string
           pending_policy_count: number
-          prospect_count: number
           pipeline_count: number
+          policy_count: number
+          prospect_count: number
           rank_overall: number
+          team_size: number
         }[]
       }
       get_team_leaders_for_leaderboard: {
-        Args: {
-          p_min_downlines?: number
-        }
+        Args: { p_min_downlines?: number }
         Returns: {
+          downline_count: number
           id: string
           name: string
-          downline_count: number
         }[]
       }
       get_templates_for_platform: {
-        Args: {
-          p_imo_id: string
-          p_user_id: string
-          p_platform: string
-        }
+        Args: { p_imo_id: string; p_platform: string; p_user_id: string }
         Returns: {
           category: string | null
           content: string
@@ -15558,99 +15146,177 @@ export type Database = {
           use_count: number | null
           user_id: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "instagram_message_templates"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_top_performers_report:
         | {
             Args: {
+              p_end_date?: string
               p_limit?: number
               p_start_date?: string
-              p_end_date?: string
             }
             Returns: {
+              agency_id: string
+              agency_name: string
+              agent_email: string
               agent_id: string
               agent_name: string
-              agent_email: string
-              agency_name: string
-              agency_id: string
+              avg_premium_per_policy: number
+              commissions_earned: number
               contract_level: number
               new_policies: number
               new_premium: number
-              commissions_earned: number
-              avg_premium_per_policy: number
-              rank_in_imo: number
               rank_in_agency: number
+              rank_in_imo: number
             }[]
           }
         | {
             Args: {
-              p_start_date?: string
               p_end_date?: string
               p_limit?: number
+              p_start_date?: string
             }
             Returns: {
-              agent_id: string
-              agent_name: string
               agency_id: string
               agency_name: string
+              agent_id: string
+              agent_name: string
+              avg_premium_per_policy: number
+              commissions_earned: number
               contract_level: number
               new_policies: number
               new_premium: number
-              commissions_earned: number
-              avg_premium_per_policy: number
-              rank_in_imo: number
               rank_in_agency: number
+              rank_in_imo: number
             }[]
           }
       get_training_leaderboard: {
-        Args: {
-          p_agency_id: string
-          p_period?: string
-        }
+        Args: { p_agency_id: string; p_period?: string }
         Returns: Json[]
       }
       get_upline_chain: {
-        Args: {
-          p_user_id: string
-          p_max_depth?: number
-        }
+        Args: { p_max_depth?: number; p_user_id: string }
         Returns: {
-          id: string
-          email: string
           depth: number
+          email: string
+          id: string
         }[]
       }
       get_user_addons: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: {
+          addon_display_name: string
           addon_id: string
           addon_name: string
-          addon_display_name: string
-          status: string
           billing_interval: string
           current_period_end: string
           granted_by: string
+          status: string
         }[]
       }
       get_user_carrier_performance: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: never
+        Returns: {
+          active_policies: number | null
+          avg_commission_amount: number | null
+          avg_commission_rate_pct: number | null
+          avg_premium: number | null
+          cancelled_policies: number | null
+          carrier_id: string | null
+          carrier_name: string | null
+          commission_count: number | null
+          lapsed_policies: number | null
+          persistency_rate: number | null
+          total_commission_amount: number | null
+          total_policies: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_carrier_performance"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_client_ltv: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: never
+        Returns: {
+          active_policies: number | null
+          active_premium: number | null
+          avg_commission_per_policy: number | null
+          avg_policy_age_months: number | null
+          avg_premium_per_policy: number | null
+          cancelled_policies: number | null
+          client_id: string | null
+          client_name: string | null
+          client_tier: string | null
+          cross_sell_opportunity: boolean | null
+          email: string | null
+          first_policy_date: string | null
+          lapsed_policies: number | null
+          latest_policy_date: string | null
+          paid_commission: number | null
+          total_commission: number | null
+          total_policies: number | null
+          total_premium: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_client_ltv"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_cohort_retention: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: never
+        Returns: {
+          active_premium: number | null
+          cancelled_count: number | null
+          cohort_month: string | null
+          cohort_size: number | null
+          lapsed_count: number | null
+          months_since_issue: number | null
+          retention_rate: number | null
+          still_active: number | null
+          total_premium: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_cohort_retention"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_commission_aging: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: never
+        Returns: {
+          aging_bucket: string | null
+          avg_at_risk: number | null
+          bucket_order: number | null
+          commission_count: number | null
+          policy_count: number | null
+          risk_level: string | null
+          total_at_risk: number | null
+          total_commission: number | null
+          total_earned: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_commission_aging"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_commission_chargeback_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           at_risk_amount: number | null
           chargeback_rate_percentage: number | null
@@ -15662,541 +15328,414 @@ export type Database = {
           total_earned: number | null
           user_id: string | null
         }
+        SetofOptions: {
+          from: "*"
+          to: "commission_chargeback_summary"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_user_commission_profile: {
-        Args: {
-          p_user_id: string
-          p_lookback_months?: number
-        }
+        Args: { p_lookback_months?: number; p_user_id: string }
         Returns: {
+          calculated_at: string
           contract_level: number
+          data_quality: string
+          product_breakdown: Json
           simple_avg_rate: number
           weighted_avg_rate: number
-          product_breakdown: Json
-          data_quality: string
-          calculated_at: string
         }[]
       }
       get_user_daily_production: {
-        Args: {
-          p_start_date?: string
-          p_end_date?: string
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          active_policies: number | null
+          avg_premium: number | null
+          cancelled_policies: number | null
+          lapsed_policies: number | null
+          max_premium: number | null
+          min_premium: number | null
+          production_date: string | null
+          total_policies: number | null
+          total_premium: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_daily_production"
+          isOneToOne: false
+          isSetofReturn: true
         }
-        Returns: unknown[]
       }
       get_user_expense_summary: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: never
+        Returns: {
+          avg_amount: number | null
+          category: string | null
+          expense_month: string | null
+          expense_type: Database["public"]["Enums"]["expense_type"] | null
+          max_amount: number | null
+          min_amount: number | null
+          recurring_amount: number | null
+          recurring_count: number | null
+          total_amount: number | null
+          transaction_count: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_expense_summary"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_permissions: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: {
           code: string
         }[]
       }
       get_user_product_performance: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
+        Args: never
+        Returns: {
+          active_policies: number | null
+          avg_commission: number | null
+          avg_commission_rate_pct: number | null
+          avg_premium: number | null
+          lapsed_policies: number | null
+          persistency_rate: number | null
+          product_id: string | null
+          product_name: string | null
+          product_type: Database["public"]["Enums"]["product_type"] | null
+          total_commission: number | null
+          total_policies: number | null
+          total_premium: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_product_performance"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_production_velocity: {
-        Args: {
-          p_limit?: number
+        Args: { p_limit?: number }
+        Returns: {
+          month_start: string | null
+          monthly_avg_premium: number | null
+          monthly_policies: number | null
+          monthly_premium: number | null
+          user_id: string | null
+          week_start: string | null
+          weekly_avg_premium: number | null
+          weekly_policies: number | null
+          weekly_premium: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mv_production_velocity"
+          isOneToOne: false
+          isSetofReturn: true
         }
-        Returns: unknown[]
       }
       get_user_profile: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: {
-          id: string
-          email: string
-          name: string
-          phone: string
-          contract_comp_level: number
-          is_active: boolean
           agent_code: string
+          contract_comp_level: number
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
           license_number: string
           license_state: string
+          name: string
           notes: string
-          created_at: string
+          phone: string
           updated_at: string
         }[]
       }
       get_user_subscription_tier: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: string
       }
       get_user_upline_and_recruiter_ids: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: {
-          upline_id: string
           recruiter_id: string
+          upline_id: string
         }[]
       }
       get_uw_wizard_usage: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: {
-          runs_used: number
+          billing_period_end: string
+          billing_period_start: string
           runs_limit: number
           runs_remaining: number
-          usage_percent: number
-          billing_period_start: string
-          billing_period_end: string
+          runs_used: number
           tier_id: string
           tier_name: string
+          usage_percent: number
         }[]
       }
       get_valid_users_for_rule: {
-        Args: {
-          p_rule_id: string
-          p_user_ids: string[]
-        }
+        Args: { p_rule_id: string; p_user_ids: string[] }
         Returns: string[]
       }
       get_vendors_with_stats: {
-        Args: {
-          p_imo_id?: string
-          p_include_inactive?: boolean
-        }
+        Args: { p_imo_id?: string; p_include_inactive?: boolean }
         Returns: {
-          vendor_id: string
-          vendor_name: string
-          contact_name: string
           contact_email: string
+          contact_name: string
           contact_phone: string
-          website: string
           created_at: string
           created_by: string
           total_purchases: number
           total_spent: number
           unique_users: number
+          vendor_id: string
+          vendor_name: string
+          website: string
         }[]
       }
-      get_workflow_email_usage: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
       getuser_commission_profile:
         | {
-            Args: {
-              p_user_id?: string
-            }
+            Args: { p_user_id?: string }
             Returns: {
-              user_id: string
-              user_name: string
-              user_email: string
-              contract_level: number
+              active_policies: number
               agency_id: string
               agency_name: string
-              total_policies: number
-              active_policies: number
-              total_earned: number
-              total_unearned: number
-              total_chargebacks: number
               avg_commission_per_policy: number
-              ytd_earned: number
+              contract_level: number
               recent_policies: Json
+              total_chargebacks: number
+              total_earned: number
+              total_policies: number
+              total_unearned: number
+              user_email: string
+              user_id: string
+              user_name: string
+              ytd_earned: number
             }[]
           }
         | {
-            Args: {
-              puser_id: string
-              p_lookback_months?: number
-            }
+            Args: { p_lookback_months?: number; puser_id: string }
             Returns: {
+              calculated_at: string
               contract_level: number
+              data_quality: string
+              product_breakdown: Json
               simple_avg_rate: number
               weighted_avg_rate: number
-              product_breakdown: Json
-              data_quality: string
-              calculated_at: string
             }[]
           }
       graduate_recruit_to_agent: {
         Args: {
-          p_recruit_id: string
           p_contract_level: number
           p_notes?: string
+          p_recruit_id: string
         }
         Returns: Json
-      }
-      gtrgm_compress: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: {
-          "": unknown
-        }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
       }
       hard_delete_user: {
         Args: {
-          p_user_id: string
-          p_deleted_by: string
           p_confirm_text: string
+          p_deleted_by: string
+          p_user_id: string
         }
         Returns: Json
       }
-      has_downlines: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      has_downlines: { Args: never; Returns: boolean }
       has_permission: {
-        Args: {
-          target_user_id: string
-          permission_code: string
-        }
+        Args: { permission_code: string; target_user_id: string }
         Returns: boolean
       }
       has_role:
+        | { Args: { role_to_check: string }; Returns: boolean }
         | {
-            Args: {
-              role_to_check: string
-            }
+            Args: { role_name: string; target_user_id: string }
             Returns: boolean
           }
-        | {
-            Args: {
-              target_user_id: string
-              role_name: string
-            }
-            Returns: boolean
-          }
-      has_subscription_bypass: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      has_subscription_bypass: { Args: never; Returns: boolean }
       health_class_rank: {
-        Args: {
-          hc: Database["public"]["Enums"]["health_class"]
-        }
+        Args: { hc: Database["public"]["Enums"]["health_class"] }
         Returns: number
       }
-      hierarchy_path_array: {
-        Args: {
-          path: string
-        }
-        Returns: string[]
-      }
+      hierarchy_path_array: { Args: { path: string }; Returns: string[] }
       increment_email_quota: {
-        Args: {
-          p_user_id: string
-          p_provider: string
-        }
+        Args: { p_provider: string; p_user_id: string }
         Returns: number
       }
       increment_template_usage: {
-        Args: {
-          p_template_id: string
-        }
+        Args: { p_template_id: string }
         Returns: undefined
       }
       increment_template_use_count: {
-        Args: {
-          p_template_id: string
-        }
+        Args: { p_template_id: string }
         Returns: undefined
       }
       increment_usage: {
-        Args: {
-          p_user_id: string
-          p_metric: string
-          p_increment?: number
-        }
+        Args: { p_increment?: number; p_metric: string; p_user_id: string }
         Returns: number
       }
       increment_uw_wizard_usage: {
         Args: {
-          p_user_id: string
           p_imo_id: string
-          p_session_id?: string
           p_input_tokens?: number
           p_output_tokens?: number
+          p_session_id?: string
+          p_user_id: string
         }
         Returns: {
-          success: boolean
           new_runs_used: number
           runs_remaining: number
+          success: boolean
         }[]
       }
-      invoke_slack_auto_complete_first_sale: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      invoke_slack_auto_complete_first_sale: { Args: never; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       is_admin_user:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: boolean
-          }
-        | {
-            Args: {
-              target_user_id?: string
-            }
-            Returns: boolean
-          }
+        | { Args: never; Returns: boolean }
+        | { Args: { target_user_id?: string }; Returns: boolean }
       is_agency_owner:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: boolean
-          }
-        | {
-            Args: {
-              p_agency_id?: string
-            }
-            Returns: boolean
-          }
+        | { Args: never; Returns: boolean }
+        | { Args: { p_agency_id?: string }; Returns: boolean }
       is_agency_owner_of: {
-        Args: {
-          target_agency_id: string
-        }
+        Args: { target_agency_id: string }
         Returns: boolean
       }
-      is_caller_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_caller_admin: { Args: never; Returns: boolean }
       is_contact_favorited: {
         Args: {
-          p_user_id: string
-          p_contact_user_id?: string
           p_client_id?: string
+          p_contact_user_id?: string
+          p_user_id: string
         }
         Returns: boolean
       }
       is_direct_downline_of_owner: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: boolean
       }
-      is_elevenlabs_available: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: boolean
-      }
-      is_imo_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_imo_admin_for: {
-        Args: {
-          p_imo_id: string
-        }
-        Returns: boolean
-      }
-      is_imo_staff_role: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_same_agency: {
-        Args: {
-          target_user_id: string
-        }
-        Returns: boolean
-      }
-      is_same_imo: {
-        Args: {
-          target_user_id: string
-        }
-        Returns: boolean
-      }
-      is_staff_role: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_training_hub_staff: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
+      is_elevenlabs_available: { Args: { p_imo_id: string }; Returns: boolean }
+      is_imo_admin: { Args: never; Returns: boolean }
+      is_imo_admin_for: { Args: { p_imo_id: string }; Returns: boolean }
+      is_imo_staff_role: { Args: never; Returns: boolean }
+      is_same_agency: { Args: { target_user_id: string }; Returns: boolean }
+      is_same_imo: { Args: { target_user_id: string }; Returns: boolean }
+      is_staff_role: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      is_training_hub_staff: { Args: { user_id: string }; Returns: boolean }
       is_training_module_manager: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: boolean
       }
       is_underwriting_wizard_enabled: {
-        Args: {
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string }
         Returns: boolean
       }
-      is_upline_of: {
-        Args: {
-          target_user_id: string
-        }
-        Returns: boolean
-      }
-      is_user_approved: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_upline_of: { Args: { target_user_id: string }; Returns: boolean }
+      is_user_approved: { Args: never; Returns: boolean }
       log_audit_event: {
         Args: {
-          p_table_name: string
-          p_record_id: string
           p_action: Database["public"]["Enums"]["audit_action"]
           p_action_type: string
-          p_description?: string
-          p_old_data?: Json
-          p_new_data?: Json
           p_changed_fields?: string[]
+          p_description?: string
           p_metadata?: Json
+          p_new_data?: Json
+          p_old_data?: Json
+          p_record_id: string
+          p_table_name: string
         }
         Returns: string
       }
       lookup_user_by_email: {
-        Args: {
-          p_email: string
-        }
+        Args: { p_email: string }
         Returns: {
-          id: string
           email: string
-          upline_id: string
+          id: string
           is_approved: boolean
+          upline_id: string
         }[]
       }
-      mark_invitation_sent: {
-        Args: {
-          p_invitation_id: string
-        }
-        Returns: Json
-      }
+      mark_invitation_sent: { Args: { p_invitation_id: string }; Returns: Json }
       mark_policy_cancelled: {
         Args: {
-          p_policy_id: string
           p_cancellation_date?: string
           p_cancellation_reason?: string
+          p_policy_id: string
         }
         Returns: Json
       }
       mark_policy_lapsed: {
         Args: {
-          p_policy_id: string
           p_lapse_date?: string
           p_lapse_reason?: string
+          p_policy_id: string
         }
         Returns: Json
       }
-      mark_thread_read: {
-        Args: {
-          p_thread_id: string
-        }
-        Returns: undefined
-      }
+      mark_thread_read: { Args: { p_thread_id: string }; Returns: undefined }
       merge_vendors: {
-        Args: {
-          p_keep_vendor_id: string
-          p_merge_vendor_ids: string[]
-        }
+        Args: { p_keep_vendor_id: string; p_merge_vendor_ids: string[] }
         Returns: Json
       }
-      normalize_email_subject: {
-        Args: {
-          subject: string
-        }
-        Returns: string
-      }
+      normalize_email_subject: { Args: { subject: string }; Returns: string }
       process_lemon_subscription_event: {
         Args: {
-          p_event_type: string
-          p_event_name: string
-          p_lemon_event_id: string
-          p_lemon_subscription_id: string
-          p_lemon_customer_id: string
-          p_lemon_order_id: string
-          p_lemon_variant_id: string
-          p_user_id: string
-          p_status: string
           p_billing_interval: string
-          p_current_period_start: string
-          p_current_period_end: string
-          p_trial_ends_at: string
           p_cancelled_at: string
+          p_current_period_end: string
+          p_current_period_start: string
           p_event_data: Json
+          p_event_name: string
+          p_event_type: string
+          p_lemon_customer_id: string
+          p_lemon_event_id: string
+          p_lemon_order_id: string
+          p_lemon_subscription_id: string
+          p_lemon_variant_id: string
+          p_status: string
+          p_trial_ends_at: string
+          p_user_id: string
         }
         Returns: string
       }
       process_pending_workflow_runs: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          run_id: string
-          workflow_id: string
-          status: string
           message: string
+          run_id: string
+          status: string
+          workflow_id: string
         }[]
       }
       process_workflow_trigger: {
-        Args: {
-          p_event_name: string
-          p_context: Json
-        }
+        Args: { p_context: Json; p_event_name: string }
         Returns: undefined
       }
       rank_to_health_class: {
-        Args: {
-          rank: number
-        }
+        Args: { rank: number }
         Returns: Database["public"]["Enums"]["health_class"]
       }
       recalculate_lead_purchase_roi: {
-        Args: {
-          p_lead_purchase_id: string
-        }
+        Args: { p_lead_purchase_id: string }
         Returns: undefined
       }
       record_alert_evaluation: {
         Args: {
+          p_affected_entity_id?: string
+          p_affected_entity_type?: string
+          p_affected_user_id?: string
+          p_current_value: number
+          p_evaluation_context?: Json
+          p_notification_id?: string
           p_rule_id: string
           p_triggered: boolean
-          p_current_value: number
-          p_affected_user_id?: string
-          p_affected_entity_type?: string
-          p_affected_entity_id?: string
-          p_notification_id?: string
-          p_evaluation_context?: Json
         }
         Returns: {
           affected_entity_id: string | null
@@ -16212,172 +15751,132 @@ export type Database = {
           threshold_value: number
           triggered: boolean
         }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rule_evaluations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       record_email_click: {
         Args: {
-          p_link_tracking_id: string
-          p_ip_address?: unknown
-          p_user_agent?: string
-          p_device_type?: string
-          p_country?: string
           p_city?: string
+          p_country?: string
+          p_device_type?: string
+          p_ip_address?: unknown
+          p_link_tracking_id: string
+          p_user_agent?: string
         }
         Returns: string
       }
       record_email_open: {
         Args: {
-          p_tracking_id: string
-          p_ip_address?: unknown
-          p_user_agent?: string
-          p_device_type?: string
-          p_country?: string
           p_city?: string
+          p_country?: string
+          p_device_type?: string
+          p_ip_address?: unknown
+          p_tracking_id: string
+          p_user_agent?: string
         }
         Returns: boolean
       }
       record_lemon_payment: {
         Args: {
-          p_user_id: string
+          p_amount: number
+          p_billing_reason: string
+          p_card_brand: string
+          p_card_last_four: string
+          p_currency: string
+          p_discount_amount: number
+          p_invoice_url: string
           p_lemon_invoice_id: string
           p_lemon_order_id: string
           p_lemon_subscription_id: string
-          p_amount: number
-          p_tax_amount: number
-          p_discount_amount: number
-          p_currency: string
-          p_status: string
-          p_billing_reason: string
-          p_receipt_url: string
-          p_invoice_url: string
-          p_card_brand: string
-          p_card_last_four: string
           p_paid_at: string
+          p_receipt_url: string
+          p_status: string
+          p_tax_amount: number
+          p_user_id: string
         }
         Returns: string
       }
       record_workflow_email: {
         Args: {
-          p_workflow_id: string
-          p_user_id: string
+          p_error_message?: string
           p_recipient_email: string
           p_recipient_type: string
           p_success?: boolean
-          p_error_message?: string
+          p_user_id: string
+          p_workflow_id: string
         }
         Returns: string
       }
-      refresh_all_report_materialized_views: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_all_report_materialized_views: { Args: never; Returns: undefined }
       regenerate_override_commissions: {
-        Args: {
-          p_policy_id: string
-        }
+        Args: { p_policy_id: string }
         Returns: number
       }
       reject_acceptance_rule: {
-        Args: {
-          p_rule_id: string
-          p_notes: string
-        }
+        Args: { p_notes: string; p_rule_id: string }
         Returns: undefined
       }
       reject_agency_request: {
-        Args: {
-          p_request_id: string
-          p_reason?: string
-        }
+        Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
       reject_join_request: {
-        Args: {
-          p_request_id: string
-          p_reason?: string
-        }
+        Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
       reject_recruiting_lead: {
-        Args: {
-          p_lead_id: string
-          p_reason?: string
-        }
+        Args: { p_lead_id: string; p_reason?: string }
         Returns: Json
       }
       reject_underwriting_rule_set: {
-        Args: {
-          p_rule_set_id: string
-          p_notes: string
-        }
+        Args: { p_notes: string; p_rule_set_id: string }
         Returns: Json
       }
-      release_alert_rules: {
-        Args: {
-          p_rule_ids: string[]
-        }
-        Returns: number
-      }
+      release_alert_rules: { Args: { p_rule_ids: string[] }; Returns: number }
       resend_recruit_invitation: {
-        Args: {
-          p_invitation_id: string
-        }
+        Args: { p_invitation_id: string }
         Returns: Json
       }
       resolve_join_request_approver: {
-        Args: {
-          p_imo_id: string
-          p_agency_id?: string
-          p_upline_id?: string
-        }
+        Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string }
         Returns: string
       }
       revert_rule_set_to_draft: {
-        Args: {
-          p_rule_set_id: string
-        }
+        Args: { p_rule_set_id: string }
         Returns: Json
       }
-      safe_uuid_from_text: {
-        Args: {
-          input: string
-        }
-        Returns: string
-      }
+      safe_uuid_from_text: { Args: { input: string }; Returns: string }
       save_workflow_as_org_template: {
-        Args: {
-          p_workflow_id: string
-        }
+        Args: { p_workflow_id: string }
         Returns: string
       }
       search_users_for_assignment: {
         Args: {
-          p_search_term?: string
-          p_roles?: string[]
           p_approval_status?: string
           p_exclude_ids?: string[]
           p_limit?: number
+          p_roles?: string[]
+          p_search_term?: string
         }
         Returns: {
-          id: string
-          first_name: string
-          last_name: string
-          email: string
-          roles: string[]
           agent_status: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          roles: string[]
         }[]
       }
       set_default_decision_tree: {
-        Args: {
-          p_tree_id: string
-          p_imo_id: string
-        }
+        Args: { p_imo_id: string; p_tree_id: string }
         Returns: undefined
       }
       set_leaderboard_title: {
-        Args: {
-          p_log_id: string
-          p_title: string
-        }
+        Args: { p_log_id: string; p_title: string }
         Returns: boolean
       }
       set_leaderboard_title_batch: {
@@ -16387,22 +15886,12 @@ export type Database = {
           p_user_id?: string
         }
         Returns: {
-          updated_count: number
           log_ids: string[]
+          updated_count: number
         }[]
       }
-      set_limit: {
-        Args: {
-          "": number
-        }
-        Returns: number
-      }
       setup_baltimore_life_apriority_rules: {
-        Args: {
-          p_carrier_id: string
-          p_imo_id: string
-          p_user_id: string
-        }
+        Args: { p_carrier_id: string; p_imo_id: string; p_user_id: string }
         Returns: {
           inserted_count: number
           part_a_count: number
@@ -16410,96 +15899,78 @@ export type Database = {
           part_c_count: number
         }[]
       }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: {
-          "": string
-        }
-        Returns: string[]
-      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       submit_recruit_registration: {
-        Args: {
-          p_token: string
-          p_data: Json
-          p_auth_user_id?: string
-        }
+        Args: { p_auth_user_id?: string; p_data: Json; p_token: string }
         Returns: Json
       }
       submit_recruiting_lead:
         | {
             Args: {
-              p_recruiter_slug: string
-              p_first_name: string
-              p_last_name: string
-              p_email: string
-              p_phone: string
-              p_city: string
-              p_state: string
               p_availability: string
+              p_city: string
+              p_email: string
+              p_first_name: string
               p_income_goals?: string
-              p_why_interested?: string
               p_insurance_experience?: string
-              p_utm_source?: string
-              p_utm_medium?: string
-              p_utm_campaign?: string
-              p_referrer_url?: string
               p_ip_address?: unknown
+              p_last_name: string
+              p_phone: string
+              p_recruiter_slug: string
+              p_referrer_url?: string
+              p_state: string
               p_user_agent?: string
+              p_utm_campaign?: string
+              p_utm_medium?: string
+              p_utm_source?: string
+              p_why_interested?: string
             }
             Returns: Json
           }
         | {
             Args: {
-              p_recruiter_slug: string
-              p_first_name: string
-              p_last_name: string
-              p_email: string
-              p_phone: string
-              p_city: string
-              p_state: string
               p_availability: string
-              p_income_goals?: string
-              p_why_interested?: string
-              p_insurance_experience?: string
-              p_utm_source?: string
-              p_utm_medium?: string
-              p_utm_campaign?: string
-              p_referrer_url?: string
-              p_ip_address?: unknown
-              p_user_agent?: string
-              p_is_licensed?: boolean
+              p_city: string
               p_current_imo_name?: string
+              p_email: string
+              p_first_name: string
+              p_income_goals?: string
+              p_insurance_experience?: string
+              p_ip_address?: unknown
+              p_is_licensed?: boolean
+              p_last_name: string
+              p_phone: string
+              p_recruiter_slug: string
+              p_referrer_url?: string
               p_specialties?: string[]
+              p_state: string
+              p_user_agent?: string
+              p_utm_campaign?: string
+              p_utm_medium?: string
+              p_utm_source?: string
+              p_why_interested?: string
             }
             Returns: Json
           }
       submit_rule_set_for_review: {
-        Args: {
-          p_rule_set_id: string
-        }
+        Args: { p_rule_set_id: string }
         Returns: Json
       }
       submit_training_quiz_attempt: {
         Args: {
-          p_quiz_id: string
           p_answers: Json
+          p_quiz_id: string
           p_time_taken_seconds: number
         }
         Returns: Json
       }
       table_rating_units: {
-        Args: {
-          rating: Database["public"]["Enums"]["table_rating"]
-        }
+        Args: { rating: Database["public"]["Enums"]["table_rating"] }
         Returns: number
       }
       test_rls_for_user: {
-        Args: {
-          test_user_id: string
-        }
+        Args: { test_user_id: string }
         Returns: {
           policy_number: string
           user_id: string
@@ -16507,10 +15978,7 @@ export type Database = {
         }[]
       }
       toggle_alert_rule_active: {
-        Args: {
-          p_rule_id: string
-          p_is_active: boolean
-        }
+        Args: { p_is_active: boolean; p_rule_id: string }
         Returns: {
           agency_id: string | null
           applies_to_downlines: boolean
@@ -16535,40 +16003,39 @@ export type Database = {
           trigger_count: number
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       trigger_workflows_for_event: {
-        Args: {
-          event_name_param: string
-          context_data: Json
-        }
+        Args: { context_data: Json; event_name_param: string }
         Returns: undefined
       }
       unenroll_from_pipeline: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: Json
       }
       units_to_table_rating: {
-        Args: {
-          units: number
-        }
+        Args: { units: number }
         Returns: Database["public"]["Enums"]["table_rating"]
       }
       update_alert_rule: {
         Args: {
-          p_rule_id: string
-          p_name?: string
-          p_description?: string
-          p_threshold_value?: number
-          p_threshold_unit?: string
-          p_applies_to_self?: boolean
           p_applies_to_downlines?: boolean
+          p_applies_to_self?: boolean
           p_applies_to_team?: boolean
-          p_notify_in_app?: boolean
-          p_notify_email?: boolean
           p_cooldown_hours?: number
+          p_description?: string
           p_is_active?: boolean
+          p_name?: string
+          p_notify_email?: boolean
+          p_notify_in_app?: boolean
+          p_rule_id: string
+          p_threshold_unit?: string
+          p_threshold_value?: number
         }
         Returns: {
           agency_id: string | null
@@ -16594,34 +16061,32 @@ export type Database = {
           trigger_count: number
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_daily_leaderboard_title: {
-        Args: {
-          p_log_id: string
-          p_title: string
-          p_user_id: string
-        }
+        Args: { p_log_id: string; p_title: string; p_user_id: string }
         Returns: boolean
       }
       update_lead_discovery_call: {
-        Args: {
-          p_lead_id: string
-          p_scheduled_at: string
-          p_call_url?: string
-        }
+        Args: { p_call_url?: string; p_lead_id: string; p_scheduled_at: string }
         Returns: Json
       }
       update_my_notification_preferences: {
         Args: {
-          p_in_app_enabled?: boolean
           p_browser_push_enabled?: boolean
           p_email_digest_enabled?: boolean
           p_email_digest_frequency?: string
           p_email_digest_time?: string
           p_email_digest_timezone?: string
+          p_in_app_enabled?: boolean
           p_quiet_hours_enabled?: boolean
-          p_quiet_hours_start?: string
           p_quiet_hours_end?: string
+          p_quiet_hours_start?: string
         }
         Returns: {
           browser_push_enabled: boolean | null
@@ -16643,129 +16108,97 @@ export type Database = {
           updated_at: string | null
           user_id: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_override_earned_amount: {
-        Args: {
-          p_policy_id: string
-          p_months_paid: number
-        }
+        Args: { p_months_paid: number; p_policy_id: string }
         Returns: undefined
       }
       update_scheduled_report: {
         Args: {
-          p_schedule_id: string
-          p_schedule_name?: string
-          p_frequency?: Database["public"]["Enums"]["report_frequency"]
-          p_day_of_week?: number
           p_day_of_month?: number
-          p_preferred_time?: string
-          p_recipients?: Json
+          p_day_of_week?: number
           p_export_format?: string
-          p_report_config?: Json
+          p_frequency?: Database["public"]["Enums"]["report_frequency"]
           p_include_charts?: boolean
           p_include_insights?: boolean
           p_include_summary?: boolean
           p_is_active?: boolean
+          p_preferred_time?: string
+          p_recipients?: Json
+          p_report_config?: Json
+          p_schedule_id: string
+          p_schedule_name?: string
         }
         Returns: boolean
       }
       update_training_streak: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: undefined
       }
       update_user_metadata: {
-        Args: {
-          user_id: string
-          metadata: Json
-        }
+        Args: { metadata: Json; user_id: string }
         Returns: undefined
       }
       user_has_analytics_section: {
-        Args: {
-          p_user_id: string
-          p_section: string
-        }
+        Args: { p_section: string; p_user_id: string }
         Returns: boolean
       }
       user_has_feature: {
-        Args: {
-          p_user_id: string
-          p_feature: string
-        }
+        Args: { p_feature: string; p_user_id: string }
         Returns: boolean
       }
       user_has_instagram_access: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: boolean
       }
       user_has_uw_wizard_access: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: boolean
       }
       validate_field_requirements: {
-        Args: {
-          p_requirements: Json
-        }
+        Args: { p_requirements: Json }
         Returns: boolean
       }
       validate_hierarchy_change: {
-        Args: {
-          p_agent_id: string
-          p_new_upline_id: string
-        }
+        Args: { p_agent_id: string; p_new_upline_id: string }
         Returns: Json
       }
       validate_invitation_acceptance: {
-        Args: {
-          p_invitee_id: string
-          p_invitation_id: string
-        }
+        Args: { p_invitation_id: string; p_invitee_id: string }
         Returns: {
-          valid: boolean
           error_message: string
+          valid: boolean
         }[]
       }
       validate_invitation_eligibility: {
         Args: {
-          p_inviter_id: string
-          p_invitee_email: string
           p_exclude_invitation_id?: string
+          p_invitee_email: string
+          p_inviter_id: string
         }
         Returns: Json
       }
       validate_report_date_range: {
         Args: {
-          p_start_date: string
           p_end_date: string
           p_max_months?: number
+          p_start_date: string
         }
         Returns: undefined
       }
       validate_schedule_recipients: {
-        Args: {
-          p_recipients: Json
-          p_imo_id: string
-          p_agency_id: string
-        }
+        Args: { p_agency_id: string; p_imo_id: string; p_recipients: Json }
         Returns: boolean
       }
-      validate_social_links_urls: {
-        Args: {
-          links: Json
-        }
-        Returns: boolean
-      }
+      validate_social_links_urls: { Args: { links: Json }; Returns: boolean }
       validate_template_content_for_platform: {
-        Args: {
-          p_content: string
-          p_platform: string
-        }
+        Args: { p_content: string; p_platform: string }
         Returns: boolean
       }
     }
@@ -16967,27 +16400,33 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -16995,20 +16434,24 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -17016,20 +16459,24 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -17037,30 +16484,230 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
+export const Constants = {
+  public: {
+    Enums: {
+      agent_status: ["unlicensed", "licensed", "not_applicable"],
+      alert_comparison: ["lt", "lte", "gt", "gte", "eq"],
+      alert_metric: [
+        "policy_lapse_warning",
+        "target_miss_risk",
+        "commission_threshold",
+        "new_policy_count",
+        "recruit_stall",
+        "override_change",
+        "team_production_drop",
+        "persistency_warning",
+        "license_expiration",
+      ],
+      audit_action: ["INSERT", "UPDATE", "DELETE"],
+      audit_source: ["trigger", "application"],
+      automation_communication_type: [
+        "email",
+        "notification",
+        "both",
+        "sms",
+        "all",
+      ],
+      automation_recipient_type: [
+        "recruit",
+        "upline",
+        "trainer",
+        "contracting_manager",
+        "custom_email",
+      ],
+      chargeback_status: ["pending", "resolved", "disputed"],
+      commission_status: [
+        "pending",
+        "paid",
+        "reversed",
+        "disputed",
+        "clawback",
+        "charged_back",
+      ],
+      comp_level: ["street", "release", "enhanced", "premium"],
+      custom_domain_status: [
+        "draft",
+        "pending_dns",
+        "verified",
+        "provisioning",
+        "active",
+        "error",
+      ],
+      expense_category: [
+        "insurance_leads",
+        "software_tools",
+        "office_remote",
+        "professional_services",
+        "marketing",
+        "uncategorized",
+      ],
+      expense_type: ["personal", "business"],
+      file_type: ["csv", "pdf", "xlsx"],
+      gmail_connection_status: [
+        "connected",
+        "disconnected",
+        "expired",
+        "error",
+      ],
+      health_class: [
+        "preferred_plus",
+        "preferred",
+        "standard_plus",
+        "standard",
+        "substandard",
+        "refer",
+        "decline",
+        "unknown",
+      ],
+      instagram_connection_status: [
+        "connected",
+        "disconnected",
+        "expired",
+        "error",
+      ],
+      instagram_job_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "expired",
+      ],
+      instagram_job_type: [
+        "download_profile_picture",
+        "download_message_media",
+        "send_scheduled_message",
+        "refresh_participant_metadata",
+      ],
+      instagram_message_status: [
+        "pending",
+        "sent",
+        "delivered",
+        "read",
+        "failed",
+      ],
+      instagram_message_type: ["text", "media", "story_reply", "story_mention"],
+      insurance_product_type: [
+        "term_life",
+        "whole_life",
+        "universal_life",
+        "final_expense",
+        "indexed_universal_life",
+        "variable_life",
+      ],
+      lead_freshness: ["fresh", "aged"],
+      lead_source_type: ["lead_purchase", "free_lead", "other"],
+      message_direction: ["inbound", "outbound"],
+      payment_frequency: ["monthly", "quarterly", "semi_annual", "annual"],
+      pipeline_automation_trigger: [
+        "phase_enter",
+        "phase_complete",
+        "phase_stall",
+        "item_complete",
+        "item_approval_needed",
+        "item_deadline_approaching",
+        "password_not_set_24h",
+        "password_not_set_12h",
+      ],
+      policy_status: ["active", "pending", "lapsed", "cancelled", "expired"],
+      product_type: [
+        "term_life",
+        "whole_life",
+        "universal_life",
+        "variable_life",
+        "health",
+        "disability",
+        "annuity",
+        "indexed_universal_life",
+        "participating_whole_life",
+      ],
+      report_frequency: ["weekly", "monthly", "quarterly"],
+      rule_review_status: ["draft", "pending_review", "approved", "rejected"],
+      rule_set_scope: ["condition", "global"],
+      rule_source_type: ["generic_template", "carrier_document", "manual"],
+      scheduled_message_status: [
+        "pending",
+        "sent",
+        "cancelled",
+        "failed",
+        "expired",
+      ],
+      slack_connection_status: [
+        "connected",
+        "disconnected",
+        "error",
+        "pending",
+      ],
+      slack_message_status: [
+        "pending",
+        "sent",
+        "delivered",
+        "failed",
+        "retrying",
+      ],
+      slack_notification_type: [
+        "policy_created",
+        "policy_cancelled",
+        "policy_renewed",
+        "daily_leaderboard",
+        "weekly_summary",
+        "commission_milestone",
+        "agent_achievement",
+        "new_recruit",
+        "npn_received",
+      ],
+      table_rating: [
+        "none",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+      ],
+    },
+  },
+} as const

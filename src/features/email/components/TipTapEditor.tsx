@@ -6,7 +6,7 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import {TipTapMenuBar} from './TipTapMenuBar'
-import {useEffect} from 'react'
+import {useEffect, useRef} from 'react'
 import {sanitizeHtml} from '../services/sanitizationService'
 
 interface TipTapEditorProps {
@@ -32,6 +32,10 @@ export function TipTapEditor({
   minHeight = '200px',
   className = '',
 }: TipTapEditorProps) {
+  // Track the last HTML emitted by the editor to avoid resetting cursor
+  // when our own output flows back as the content prop
+  const lastEmittedHtmlRef = useRef<string>(content)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -74,14 +78,20 @@ export function TipTapEditor({
       const html = editor.getHTML()
       // Sanitize HTML before passing to parent
       const sanitized = sanitizeHtml(html)
+      lastEmittedHtmlRef.current = sanitized
       onChange?.(sanitized)
     },
   })
 
-  // Update editor content when prop changes (for draft loading, template insertion)
+  // Update editor content when prop changes from an external source
+  // (draft loading, template insertion, switching blocks).
+  // Skip if the content matches what we last emitted — that means our
+  // own output is flowing back through the parent, and calling setContent
+  // would reset the cursor position.
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (editor && content !== editor.getHTML() && content !== lastEmittedHtmlRef.current) {
       editor.commands.setContent(content)
+      lastEmittedHtmlRef.current = content
     }
   }, [content, editor])
 

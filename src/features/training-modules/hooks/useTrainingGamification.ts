@@ -1,6 +1,7 @@
 // src/features/training-modules/hooks/useTrainingGamification.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trainingGamificationService } from "../services/trainingGamificationService";
+import type { CreateBadgeInput } from "../types/training-module.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 import { toast } from "sonner";
@@ -48,12 +49,12 @@ export function useXpHistory(limit = 50) {
   });
 }
 
-export function useTrainingBadges() {
+export function useTrainingBadges(includeInactive = false) {
   const { imo } = useImo();
 
   return useQuery({
-    queryKey: gamificationKeys.badges(imo?.id || ""),
-    queryFn: () => trainingGamificationService.listBadges(imo!.id),
+    queryKey: [...gamificationKeys.badges(imo?.id || ""), includeInactive] as const,
+    queryFn: () => trainingGamificationService.listBadges(imo!.id, includeInactive),
     enabled: !!imo?.id,
   });
 }
@@ -140,6 +141,63 @@ export function useJoinChallenge() {
         queryKey: gamificationKeys.challenges(),
       });
       toast.success("Joined challenge!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+export function useCreateBadge() {
+  const queryClient = useQueryClient();
+  const { imo } = useImo();
+
+  return useMutation({
+    mutationFn: (input: CreateBadgeInput) =>
+      trainingGamificationService.createBadge(input, imo!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: gamificationKeys.badges(imo?.id || ""),
+      });
+      toast.success("Badge created");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+export function useUpdateBadge() {
+  const queryClient = useQueryClient();
+  const { imo } = useImo();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<CreateBadgeInput> }) =>
+      trainingGamificationService.updateBadge(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: gamificationKeys.badges(imo?.id || ""),
+      });
+      toast.success("Badge updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+export function useDeleteBadge() {
+  const queryClient = useQueryClient();
+  const { imo } = useImo();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      trainingGamificationService.deleteBadge(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: gamificationKeys.badges(imo?.id || ""),
+      });
+      toast.success("Badge deleted");
     },
     onError: (error: Error) => {
       toast.error(error.message);

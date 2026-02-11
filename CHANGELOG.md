@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-11 09:12:23
+
+### Changed Files
+- `src/features/email/components/TipTapEditor.tsx`
+- `src/features/training-modules/components/admin/BadgesManagementTab.tsx`
+- `src/features/training-modules/components/admin/ModuleBuilderPage.tsx`
+- `src/features/training-modules/components/learner/MyTrainingPage.tsx`
+- `src/features/training-modules/hooks/useTrainingGamification.ts`
+- `src/features/training-modules/hooks/useTrainingLessons.ts`
+- `src/features/training-modules/services/trainingGamificationService.ts`
+- `src/features/training-modules/services/trainingLessonService.ts`
+- `src/features/training-modules/types/training-module.types.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260211083954_duplicate_training_lesson_rpc.sql`
+
+### Statistics
+```
+ 11 files changed, 2458 insertions(+), 1822 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-10 18:15:07
 
 ### Changed Files

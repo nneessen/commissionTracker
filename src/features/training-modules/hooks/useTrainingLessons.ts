@@ -159,6 +159,29 @@ export function useUpdateContentBlock() {
   });
 }
 
+export function useDuplicateTrainingLesson() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      lessonId,
+      moduleId,
+    }: {
+      lessonId: string;
+      moduleId: string;
+    }) => trainingLessonService.duplicate(lessonId).then((data) => ({ data, moduleId })),
+    onSuccess: ({ moduleId }) => {
+      queryClient.invalidateQueries({
+        queryKey: trainingLessonKeys.byModule(moduleId),
+      });
+      queryClient.invalidateQueries({ queryKey: trainingModuleKeys.all });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
 export function useDeleteContentBlock() {
   const queryClient = useQueryClient();
 

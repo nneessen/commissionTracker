@@ -10,6 +10,7 @@ import {
   GripVertical,
   Settings,
   Trash2,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import {
   useCreateTrainingLesson,
   useDeleteTrainingLesson,
   useReorderTrainingLessons,
+  useDuplicateTrainingLesson,
 } from "../../hooks/useTrainingLessons";
 import {
   MODULE_CATEGORIES,
@@ -64,6 +66,7 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
   const publishModule = usePublishTrainingModule();
   const createLesson = useCreateTrainingLesson();
   const deleteLesson = useDeleteTrainingLesson();
+  const duplicateLesson = useDuplicateTrainingLesson();
   const reorderLessons = useReorderTrainingLessons();
 
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
@@ -119,6 +122,19 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
     if (!window.confirm("Delete this lesson?")) return;
     if (selectedLessonId === lessonId) setSelectedLessonId(null);
     deleteLesson.mutate({ id: lessonId, moduleId });
+  };
+
+  const handleDuplicateLesson = async (lessonId: string) => {
+    try {
+      const { data: newLesson } = await duplicateLesson.mutateAsync({
+        lessonId,
+        moduleId,
+      });
+      setSelectedLessonId(newLesson.id);
+      toast.success("Lesson duplicated");
+    } catch {
+      // Error handled by mutation
+    }
   };
 
   const handleSave = () => {
@@ -217,6 +233,7 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
                     isSelected={lesson.id === selectedLessonId}
                     onSelect={() => { setSelectedLessonId(lesson.id); setShowSettings(false); }}
                     onDelete={() => handleDeleteLesson(lesson.id)}
+                    onDuplicate={() => handleDuplicateLesson(lesson.id)}
                   />
                 ))}
               </SortableContext>
@@ -254,11 +271,13 @@ function SortableLessonItem({
   isSelected,
   onSelect,
   onDelete,
+  onDuplicate,
 }: {
   lesson: { id: string; title: string; lesson_type: string; sort_order: number };
   isSelected: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lesson.id,
@@ -292,7 +311,15 @@ function SortableLessonItem({
       <span className="truncate flex-1">{lesson.title}</span>
       <button
         className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+        title="Duplicate lesson"
+      >
+        <Copy className="h-3 w-3 text-zinc-400 hover:text-blue-500" />
+      </button>
+      <button
+        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        title="Delete lesson"
       >
         <Trash2 className="h-3 w-3 text-zinc-400 hover:text-red-500" />
       </button>

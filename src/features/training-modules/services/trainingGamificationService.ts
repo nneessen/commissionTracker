@@ -11,6 +11,7 @@ import type {
   TrainingUserCertification,
   TrainingChallenge,
   TrainingChallengeParticipant,
+  CreateBadgeInput,
 } from "../types/training-module.types";
 
 export const trainingGamificationService = {
@@ -38,13 +39,19 @@ export const trainingGamificationService = {
     return data as TrainingXpEntry[];
   },
 
-  async listBadges(imoId: string): Promise<TrainingBadge[]> {
-    const { data, error } = await supabase
+  async listBadges(
+    imoId: string,
+    includeInactive = false,
+  ): Promise<TrainingBadge[]> {
+    let query = supabase
       .from("training_badges")
       .select("*")
       .eq("imo_id", imoId)
-      .eq("is_active", true)
       .order("sort_order");
+    if (!includeInactive) {
+      query = query.eq("is_active", true);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return data as TrainingBadge[];
   },
@@ -132,5 +139,48 @@ export const trainingGamificationService = {
       .single();
     if (error) throw error;
     return data as TrainingChallengeParticipant;
+  },
+
+  async createBadge(
+    input: CreateBadgeInput,
+    imoId: string,
+  ): Promise<TrainingBadge> {
+    const { data, error } = await supabase
+      .from("training_badges")
+      .insert({
+        ...input,
+        imo_id: imoId,
+        criteria: input.criteria as unknown as Record<string, unknown>,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as unknown as TrainingBadge;
+  },
+
+  async updateBadge(
+    id: string,
+    input: Partial<CreateBadgeInput>,
+  ): Promise<TrainingBadge> {
+    const updateData: Record<string, unknown> = { ...input };
+    if (input.criteria) {
+      updateData.criteria = input.criteria as unknown as Record<string, unknown>;
+    }
+    const { data, error } = await supabase
+      .from("training_badges")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as unknown as TrainingBadge;
+  },
+
+  async deleteBadge(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("training_badges")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
   },
 };

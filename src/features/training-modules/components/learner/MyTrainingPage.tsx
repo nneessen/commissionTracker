@@ -12,6 +12,7 @@ import { StreakIndicator } from "../gamification/StreakIndicator";
 import { BadgeGrid } from "../gamification/BadgeGrid";
 import { LeaderboardTable } from "../gamification/LeaderboardTable";
 import { ModulesManagementTab } from "../admin/ModulesManagementTab";
+import { BadgesManagementTab } from "../admin/BadgesManagementTab";
 import { PresentationSubmissionList } from "../presentations/PresentationSubmissionList";
 import { PresentationComplianceTable } from "../presentations/PresentationComplianceTable";
 import { PresentationWeekPicker, getCurrentWeekStart } from "../presentations/PresentationWeekPicker";
@@ -152,7 +153,12 @@ export default function MyTrainingPage() {
           <LeaderboardTable agencyId={agency.id} />
         )}
 
-        {activeTab === "badges" && <BadgeGrid />}
+        {activeTab === "badges" && (
+          <div className="space-y-3">
+            {canManage && <BadgesManagementTab />}
+            <BadgeGrid />
+          </div>
+        )}
 
         {activeTab === "modules" && canManage && <ModulesManagementTab />}
       </div>

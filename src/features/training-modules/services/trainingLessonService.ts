@@ -139,4 +139,12 @@ export const trainingLessonService = {
       .eq("id", id);
     if (error) throw error;
   },
+
+  async duplicate(lessonId: string): Promise<TrainingLesson> {
+    const { data, error } = await supabase.rpc("duplicate_training_lesson", {
+      p_lesson_id: lessonId,
+    });
+    if (error) throw error;
+    return data as unknown as TrainingLesson;
+  },
 };

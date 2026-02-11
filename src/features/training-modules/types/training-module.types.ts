@@ -567,6 +567,18 @@ export interface CreateOptionInput {
   sort_order: number;
 }
 
+export interface CreateBadgeInput {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  badge_type: BadgeType;
+  criteria: BadgeCriteria;
+  xp_reward?: number;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
 export interface CreateAssignmentInput {
   module_id: string;
   agency_id: string;
