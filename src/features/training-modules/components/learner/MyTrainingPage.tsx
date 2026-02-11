@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useMyTrainingAssignments } from "../../hooks/useTrainingAssignments";
 import { useTrainingUserStats } from "../../hooks/useTrainingGamification";
 import { useCanManageTraining } from "../../hooks/useCanManageTraining";
-import { ModuleCard } from "./ModuleCard";
+import { AssignmentsTab } from "./AssignmentsTab";
 import { XpDisplay } from "../gamification/XpDisplay";
 import { StreakIndicator } from "../gamification/StreakIndicator";
 import { BadgeGrid } from "../gamification/BadgeGrid";
@@ -103,16 +103,7 @@ export default function MyTrainingPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "assignments" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {assignments.map((assignment) => (
-              <ModuleCard key={assignment.id} assignment={assignment} />
-            ))}
-            {assignments.length === 0 && (
-              <div className="col-span-full text-center py-8 text-xs text-zinc-400">
-                No training assignments yet
-              </div>
-            )}
-          </div>
+          <AssignmentsTab assignments={assignments} />
         )}
 
         {activeTab === "presentations" && (
