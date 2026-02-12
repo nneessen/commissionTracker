@@ -9,6 +9,8 @@ import type {
   VendorStatsAggregate,
   VendorAdminOverview,
   VendorUserBreakdown,
+  VendorPolicyTimelineRecord,
+  VendorHeatMetrics,
   LeadPurchaseFilters,
 } from "@/types/lead-purchase.types";
 import {
@@ -308,7 +310,9 @@ export class LeadPurchaseRepository extends BaseRepository<
         website: row.website ? String(row.website) : null,
         notes: row.notes ? String(row.notes) : null,
         createdAt: String(row.created_at),
-        lastPurchaseDate: row.last_purchase_date ? String(row.last_purchase_date) : null,
+        lastPurchaseDate: row.last_purchase_date
+          ? String(row.last_purchase_date)
+          : null,
         totalPurchases: Number(row.total_purchases || 0),
         totalLeads: Number(row.total_leads || 0),
         totalSpent: Number(row.total_spent || 0),
@@ -351,7 +355,9 @@ export class LeadPurchaseRepository extends BaseRepository<
       data?.map((row: Record<string, unknown>) => ({
         userId: String(row.user_id),
         userName: String(row.user_name || "Unknown"),
-        lastPurchaseDate: row.last_purchase_date ? String(row.last_purchase_date) : null,
+        lastPurchaseDate: row.last_purchase_date
+          ? String(row.last_purchase_date)
+          : null,
         totalPurchases: Number(row.total_purchases || 0),
         totalLeads: Number(row.total_leads || 0),
         totalSpent: Number(row.total_spent || 0),
@@ -413,5 +419,76 @@ export class LeadPurchaseRepository extends BaseRepository<
     }
 
     return this.transformFromDB(data);
+  }
+
+  /**
+   * Get individual policy records for a vendor+agent combination
+   */
+  async getVendorPolicyTimeline(
+    vendorId: string,
+    userId?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<VendorPolicyTimelineRecord[]> {
+    const { data, error } = await this.client.rpc(
+      "get_lead_vendor_policy_timeline",
+      {
+        p_vendor_id: vendorId,
+        p_user_id: userId || null,
+        p_start_date: startDate || null,
+        p_end_date: endDate || null,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "getVendorPolicyTimeline");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        policyId: String(row.policy_id),
+        policyNumber: row.policy_number ? String(row.policy_number) : null,
+        clientName: String(row.client_name || "Unknown"),
+        product: String(row.product || ""),
+        submitDate: String(row.submit_date),
+        effectiveDate: String(row.effective_date),
+        annualPremium: Number(row.annual_premium || 0),
+        status: String(row.status || ""),
+        agentId: String(row.agent_id),
+        agentName: String(row.agent_name || "Unknown"),
+      })) || []
+    );
+  }
+
+  /**
+   * Get per-vendor heat metrics for heat score computation
+   */
+  async getVendorHeatMetrics(): Promise<VendorHeatMetrics[]> {
+    const { data, error } = await this.client.rpc(
+      "get_lead_vendor_heat_metrics",
+    );
+
+    if (error) {
+      throw this.handleError(error, "getVendorHeatMetrics");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        vendorId: String(row.vendor_id),
+        medianDaysToFirstSale: Number(row.median_days_to_first_sale ?? -1),
+        avgDaysToFirstSale: Number(row.avg_days_to_first_sale ?? -1),
+        packsWithSales: Number(row.packs_with_sales || 0),
+        avgDaysBetweenSales: Number(row.avg_days_between_sales ?? -1),
+        agentsPurchased30d: Number(row.agents_purchased_30d || 0),
+        agentsWithSales30d: Number(row.agents_with_sales_30d || 0),
+        avgPoliciesPerPack: Number(row.avg_policies_per_pack || 0),
+        daysSinceLastSale: Number(row.days_since_last_sale ?? 999),
+        salesLast30d: Number(row.sales_last_30d || 0),
+        salesLast90d: Number(row.sales_last_90d || 0),
+        totalPacks90d: Number(row.total_packs_90d || 0),
+        totalLeads90d: Number(row.total_leads_90d || 0),
+        totalPoliciesAllTime: Number(row.total_policies_all_time || 0),
+      })) || []
+    );
   }
 }

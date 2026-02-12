@@ -10,6 +10,8 @@ import type {
   VendorStatsAggregate,
   VendorAdminOverview,
   VendorUserBreakdown,
+  VendorPolicyTimelineRecord,
+  VendorHeatMetrics,
   LeadPurchaseFilters,
 } from "@/types/lead-purchase.types";
 
@@ -287,6 +289,40 @@ export class LeadPurchaseService extends BaseService<
       policiesSold,
       commissionEarned,
     });
+  }
+
+  async getVendorPolicyTimeline(
+    vendorId: string,
+    userId?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ServiceResponse<VendorPolicyTimelineRecord[]>> {
+    try {
+      const data = await this.repository.getVendorPolicyTimeline(
+        vendorId,
+        userId,
+        startDate,
+        endDate,
+      );
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  async getVendorHeatMetrics(): Promise<ServiceResponse<VendorHeatMetrics[]>> {
+    try {
+      const data = await this.repository.getVendorHeatMetrics();
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
   }
 }
 

@@ -196,6 +196,74 @@ export interface VendorUserBreakdown {
   agedLeads: number;
 }
 
+// Individual policy record in a vendor's timeline
+export interface VendorPolicyTimelineRecord {
+  policyId: string;
+  policyNumber: string | null;
+  clientName: string;
+  product: string;
+  submitDate: string;
+  effectiveDate: string;
+  annualPremium: number;
+  status: string;
+  agentId: string;
+  agentName: string;
+}
+
+// Per-vendor heat metrics from SQL (replaces old VendorWeeklyActivity)
+export interface VendorHeatMetrics {
+  vendorId: string;
+  medianDaysToFirstSale: number; // -1 = no data
+  avgDaysToFirstSale: number; // -1 = no data
+  packsWithSales: number;
+  avgDaysBetweenSales: number; // -1 = no data (< 2 sales per pack)
+  agentsPurchased30d: number;
+  agentsWithSales30d: number;
+  avgPoliciesPerPack: number;
+  daysSinceLastSale: number; // 999 = never
+  salesLast30d: number;
+  salesLast90d: number;
+  totalPacks90d: number;
+  totalLeads90d: number;
+  totalPoliciesAllTime: number;
+}
+
+// Heat score levels
+export type HeatLevel = "hot" | "warming" | "neutral" | "cooling" | "cold";
+
+// Trend direction: is the vendor accelerating or decelerating?
+export type TrendDirection =
+  | "up"
+  | "up-right"
+  | "right"
+  | "down-right"
+  | "down";
+
+// Computed heat score for a vendor
+export interface VendorHeatScore {
+  vendorId: string;
+  score: number;
+  level: HeatLevel;
+  trend: TrendDirection;
+  // Key readable metrics for tooltip
+  medianDaysToFirstSale: number;
+  avgDaysBetweenSales: number;
+  agentSalesRatio30d: string; // e.g. "3/5" (3 of 5 agents sold)
+  avgPoliciesPerPack: number;
+  daysSinceLastSale: number;
+  salesLast30d: number;
+  totalPacks90d: number;
+  // Component breakdown (each component's contribution to score)
+  breakdown: {
+    timeToFirstSale: number; // max 25
+    interSaleCadence: number; // max 20
+    activeAgentRatio: number; // max 15
+    packEfficiency: number; // max 15
+    recency: number; // max 15
+    freshness: number; // max 10
+  };
+}
+
 // Merge vendors result
 export interface MergeVendorsResult {
   reassignedCount: number;

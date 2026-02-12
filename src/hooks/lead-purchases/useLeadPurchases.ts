@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { leadPurchaseService } from "@/services/lead-purchases";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMemo } from "react";
 import type {
   LeadPurchase,
   CreateLeadPurchaseData,
@@ -13,7 +14,11 @@ import type {
   VendorStatsAggregate,
   VendorAdminOverview,
   VendorUserBreakdown,
+  VendorPolicyTimelineRecord,
+  VendorHeatMetrics,
+  VendorHeatScore,
 } from "@/types/lead-purchase.types";
+import { calculateVendorHeatScores } from "@/services/analytics";
 
 // Query keys
 export const leadPurchaseKeys = {
@@ -31,6 +36,10 @@ export const leadPurchaseKeys = {
     [...leadPurchaseKeys.all, "vendor-admin-overview"] as const,
   vendorUserBreakdown: () =>
     [...leadPurchaseKeys.all, "vendor-user-breakdown"] as const,
+  vendorPolicyTimeline: () =>
+    [...leadPurchaseKeys.all, "vendor-policy-timeline"] as const,
+  vendorHeatMetrics: () =>
+    [...leadPurchaseKeys.all, "vendor-heat-metrics"] as const,
 };
 
 /**
@@ -178,11 +187,7 @@ export function useLeadVendorAdminOverview(
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: [
-      ...leadPurchaseKeys.vendorAdminOverview(),
-      startDate,
-      endDate,
-    ],
+    queryKey: [...leadPurchaseKeys.vendorAdminOverview(), startDate, endDate],
     queryFn: async () => {
       const result = await leadPurchaseService.getVendorAdminOverview(
         startDate,
@@ -229,6 +234,70 @@ export function useLeadVendorUserBreakdown(
     staleTime: 2 * 60 * 1000,
     enabled: !!user?.id && !!vendorId,
   });
+}
+
+/**
+ * Get individual policy records for a vendor+agent (on-demand)
+ */
+export function useLeadVendorPolicyTimeline(
+  vendorId: string | null,
+  userId: string | null,
+  startDate?: string,
+  endDate?: string,
+) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [
+      ...leadPurchaseKeys.vendorPolicyTimeline(),
+      vendorId,
+      userId,
+      startDate,
+      endDate,
+    ],
+    queryFn: async () => {
+      const result = await leadPurchaseService.getVendorPolicyTimeline(
+        vendorId!,
+        userId || undefined,
+        startDate,
+        endDate,
+      );
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as VendorPolicyTimelineRecord[];
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: !!user?.id && !!vendorId && !!userId,
+  });
+}
+
+/**
+ * Fetch weekly activity + compute heat scores client-side
+ */
+export function useVendorHeatScores() {
+  const { user } = useAuth();
+
+  const { data: heatMetrics, isLoading } = useQuery({
+    queryKey: leadPurchaseKeys.vendorHeatMetrics(),
+    queryFn: async () => {
+      const result = await leadPurchaseService.getVendorHeatMetrics();
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as VendorHeatMetrics[];
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user?.id,
+  });
+
+  const heatScores = useMemo(() => {
+    if (!heatMetrics || heatMetrics.length === 0)
+      return new Map<string, VendorHeatScore>();
+    return calculateVendorHeatScores(heatMetrics);
+  }, [heatMetrics]);
+
+  return { heatScores, isLoading };
 }
 
 /**
