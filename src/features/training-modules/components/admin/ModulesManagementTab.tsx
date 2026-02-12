@@ -12,6 +12,7 @@ import {
   EyeOff,
   Copy,
   Users,
+  FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +37,18 @@ import {
   useCreateTrainingModule,
   useUpdateTrainingModule,
 } from "../../hooks/useTrainingModules";
-import { MODULE_CATEGORIES, MODULE_CATEGORY_LABELS } from "../../types/training-module.types";
-import type { ModuleCategory, TrainingModule } from "../../types/training-module.types";
+import {
+  MODULE_CATEGORIES,
+  MODULE_CATEGORY_LABELS,
+} from "../../types/training-module.types";
+import type {
+  ModuleCategory,
+  TrainingModule,
+} from "../../types/training-module.types";
 import { CategoryBadge } from "../shared/CategoryBadge";
 import { DifficultyBadge } from "../shared/DifficultyBadge";
 import { AssignModuleDialog } from "./AssignModuleDialog";
+import { CreateFromPdfDialog } from "./CreateFromPdfDialog";
 import { toast } from "sonner";
 
 export function ModulesManagementTab() {
@@ -49,8 +57,10 @@ export function ModulesManagementTab() {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [assignModuleId, setAssignModuleId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState("");
-  const [newModuleCategory, setNewModuleCategory] = useState<ModuleCategory>("custom");
+  const [newModuleCategory, setNewModuleCategory] =
+    useState<ModuleCategory>("custom");
 
   const { data: modules = [], isLoading } = useTrainingModules({
     search: search || undefined,
@@ -79,7 +89,10 @@ export function ModulesManagementTab() {
         category: newModuleCategory,
       });
       setShowCreateDialog(false);
-      navigate({ to: "/my-training/builder/$moduleId" as string, params: { moduleId: newModule.id } as Record<string, string> });
+      navigate({
+        to: "/my-training/builder/$moduleId" as string,
+        params: { moduleId: newModule.id } as Record<string, string>,
+      });
     } catch {
       // Error handled by mutation
     }
@@ -91,13 +104,20 @@ export function ModulesManagementTab() {
         title: `${module.title} (Copy)`,
         category: module.category as ModuleCategory,
         description: module.description || undefined,
-        difficulty_level: module.difficulty_level as "beginner" | "intermediate" | "advanced",
-        estimated_duration_minutes: module.estimated_duration_minutes || undefined,
+        difficulty_level: module.difficulty_level as
+          | "beginner"
+          | "intermediate"
+          | "advanced",
+        estimated_duration_minutes:
+          module.estimated_duration_minutes || undefined,
         xp_reward: module.xp_reward,
         tags: module.tags,
       });
       toast.success("Module duplicated");
-      navigate({ to: "/my-training/builder/$moduleId" as string, params: { moduleId: dup.id } as Record<string, string> });
+      navigate({
+        to: "/my-training/builder/$moduleId" as string,
+        params: { moduleId: dup.id } as Record<string, string>,
+      });
     } catch {
       // Error handled by mutation
     }
@@ -144,7 +164,20 @@ export function ModulesManagementTab() {
             </option>
           ))}
         </select>
-        <Button size="sm" className="h-7 text-xs" onClick={handleOpenCreateDialog}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs"
+          onClick={() => setShowPdfDialog(true)}
+        >
+          <FileUp className="h-3 w-3 mr-1" />
+          Import PDF
+        </Button>
+        <Button
+          size="sm"
+          className="h-7 text-xs"
+          onClick={handleOpenCreateDialog}
+        >
           <Plus className="h-3 w-3 mr-1" />
           Create Module
         </Button>
@@ -160,12 +193,24 @@ export function ModulesManagementTab() {
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
-                <th className="text-left px-3 py-2 font-medium text-zinc-500">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-zinc-500">Category</th>
-                <th className="text-left px-3 py-2 font-medium text-zinc-500">Difficulty</th>
-                <th className="text-center px-3 py-2 font-medium text-zinc-500">Status</th>
-                <th className="text-center px-3 py-2 font-medium text-zinc-500">XP</th>
-                <th className="text-right px-3 py-2 font-medium text-zinc-500">Updated</th>
+                <th className="text-left px-3 py-2 font-medium text-zinc-500">
+                  Title
+                </th>
+                <th className="text-left px-3 py-2 font-medium text-zinc-500">
+                  Category
+                </th>
+                <th className="text-left px-3 py-2 font-medium text-zinc-500">
+                  Difficulty
+                </th>
+                <th className="text-center px-3 py-2 font-medium text-zinc-500">
+                  Status
+                </th>
+                <th className="text-center px-3 py-2 font-medium text-zinc-500">
+                  XP
+                </th>
+                <th className="text-right px-3 py-2 font-medium text-zinc-500">
+                  Updated
+                </th>
                 <th className="text-right px-3 py-2 font-medium text-zinc-500 w-10"></th>
               </tr>
             </thead>
@@ -211,7 +256,10 @@ export function ModulesManagementTab() {
                   <td className="px-3 py-2 text-right text-zinc-400">
                     {new Date(module.updated_at).toLocaleDateString()}
                   </td>
-                  <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="px-3 py-2 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -223,14 +271,19 @@ export function ModulesManagementTab() {
                           onClick={() =>
                             navigate({
                               to: "/my-training/builder/$moduleId" as string,
-                              params: { moduleId: module.id } as Record<string, string>,
+                              params: { moduleId: module.id } as Record<
+                                string,
+                                string
+                              >,
                             })
                           }
                         >
                           <Pencil className="h-3 w-3 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTogglePublish(module)}>
+                        <DropdownMenuItem
+                          onClick={() => handleTogglePublish(module)}
+                        >
                           {module.is_published ? (
                             <>
                               <EyeOff className="h-3 w-3 mr-2" />
@@ -244,12 +297,16 @@ export function ModulesManagementTab() {
                           )}
                         </DropdownMenuItem>
                         {module.is_published && (
-                          <DropdownMenuItem onClick={() => setAssignModuleId(module.id)}>
+                          <DropdownMenuItem
+                            onClick={() => setAssignModuleId(module.id)}
+                          >
                             <Users className="h-3 w-3 mr-2" />
                             Assign
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => handleDuplicate(module)}>
+                        <DropdownMenuItem
+                          onClick={() => handleDuplicate(module)}
+                        >
                           <Copy className="h-3 w-3 mr-2" />
                           Duplicate
                         </DropdownMenuItem>
@@ -308,7 +365,9 @@ export function ModulesManagementTab() {
               </label>
               <select
                 value={newModuleCategory}
-                onChange={(e) => setNewModuleCategory(e.target.value as ModuleCategory)}
+                onChange={(e) =>
+                  setNewModuleCategory(e.target.value as ModuleCategory)
+                }
                 className="w-full h-8 text-xs border border-zinc-200 dark:border-zinc-700 rounded-md px-2 bg-white dark:bg-zinc-900"
               >
                 {MODULE_CATEGORIES.map((cat) => (
@@ -353,6 +412,12 @@ export function ModulesManagementTab() {
           onOpenChange={(open: boolean) => !open && setAssignModuleId(null)}
         />
       )}
+
+      {/* PDF import dialog */}
+      <CreateFromPdfDialog
+        open={showPdfDialog}
+        onOpenChange={setShowPdfDialog}
+      />
     </div>
   );
 }

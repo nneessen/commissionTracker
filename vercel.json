@@ -31,6 +31,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/pdf-extract",
+      "destination": "https://pdf-extractor-web-production.up.railway.app/api/extract"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

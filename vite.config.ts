@@ -59,6 +59,13 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      "/api/pdf-extract": {
+        target: "https://pdf-extractor-web-production.up.railway.app",
+        changeOrigin: true,
+        rewrite: (p) => p.replace("/api/pdf-extract", "/api/extract"),
+      },
+    },
   },
   build: {
     outDir: "build",
