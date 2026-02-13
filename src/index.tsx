@@ -1,5 +1,43 @@
 // src/index.tsx
 
+// MAINTENANCE MODE: When enabled, render a static page and skip ALL Supabase/app initialization.
+// Set VITE_MAINTENANCE_MODE=true in Vercel env vars to activate.
+if (import.meta.env.VITE_MAINTENANCE_MODE === "true") {
+  const root = document.getElementById("root");
+  if (root) {
+    root.innerHTML = `
+      <div style="
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0b;
+        color: #e4e4e7;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 2rem;
+      ">
+        <div style="text-align: center; max-width: 480px;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">&#128736;</div>
+          <h1 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 0.75rem 0; color: #fafafa;">
+            Scheduled Maintenance
+          </h1>
+          <p style="font-size: 0.95rem; line-height: 1.6; color: #a1a1aa; margin: 0 0 1.5rem 0;">
+            We're performing scheduled maintenance to improve performance and reliability.
+            We'll be back shortly.
+          </p>
+          <p style="font-size: 0.8rem; color: #52525b; margin: 0;">
+            If this persists, contact support.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+  // Stop all further execution - no Supabase, no auth, no routing
+  throw new Error(
+    "[Maintenance Mode] App halted - VITE_MAINTENANCE_MODE is enabled",
+  );
+}
+
 // Auto-reload on stale chunk errors (new deployment while user has old HTML cached)
 // This MUST run before any imports to catch dynamic import failures early
 window.addEventListener("vite:preloadError", () => {
@@ -68,7 +106,10 @@ window.addEventListener("vite:preloadError", () => {
 
         // ALWAYS show dialog on new deploy (user requirement)
         // Pass any new notes if available, dialog shows regardless
-        console.log("[Version Check] Showing update dialog, notes:", newNotes.length);
+        console.log(
+          "[Version Check] Showing update dialog, notes:",
+          newNotes.length,
+        );
         window.dispatchEvent(
           new CustomEvent("version-update-available", {
             detail: { notes: newNotes },
