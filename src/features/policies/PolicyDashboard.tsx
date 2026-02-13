@@ -41,11 +41,11 @@ interface PendingLeadSource {
 }
 
 // Polling configuration for first-seller check
-// Increased to handle edge function cold starts (can take 5-10 seconds)
-const FIRST_SELLER_POLL_MAX_ATTEMPTS = 15;
-const FIRST_SELLER_POLL_INTERVAL_MS = 1000;
+// Reduced from 15x1s to 5x3s to cut DB load while still catching edge function cold starts
+const FIRST_SELLER_POLL_MAX_ATTEMPTS = 5;
+const FIRST_SELLER_POLL_INTERVAL_MS = 3000;
 // Background check interval to catch missed first sales (e.g., user returned to page)
-const FIRST_SELLER_BACKGROUND_CHECK_INTERVAL_MS = 30000; // 30 seconds
+const FIRST_SELLER_BACKGROUND_CHECK_INTERVAL_MS = 120000; // 2 minutes (was 30s)
 
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
