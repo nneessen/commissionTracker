@@ -203,11 +203,22 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
-      retry: 3,
+      retry: (failureCount, error) => {
+        // Don't retry on server errors (5xx) — DB is likely overloaded
+        const status = (error as { status?: number })?.status;
+        if (status && status >= 500) return false;
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
       refetchOnWindowFocus: false,
     },
     mutations: {
-      retry: 1,
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number })?.status;
+        if (status && status >= 500) return false;
+        return failureCount < 1;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   },
 });
