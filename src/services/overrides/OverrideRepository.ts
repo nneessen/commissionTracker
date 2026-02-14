@@ -227,11 +227,11 @@ export class OverrideRepository extends BaseRepository<
             override_commission_amount,
             status,
             created_at,
-            policy:policies!inner(status)
+            policy:policies!inner(lifecycle_status)
           `,
           )
           .eq("override_agent_id", overrideAgentId)
-          .eq("policy.status", "active");
+          .eq("policy.lifecycle_status", "active");
 
         if (startDate) {
           query = query.gte("created_at", startDate);
@@ -298,11 +298,11 @@ export class OverrideRepository extends BaseRepository<
             override_commission_amount,
             override_agent_id,
             base_agent_id,
-            policy:policies!inner(status)
+            policy:policies!inner(lifecycle_status)
           `,
           )
           .or(`override_agent_id.eq.${agentId},base_agent_id.eq.${agentId}`)
-          .eq("policy.status", "active")
+          .eq("policy.lifecycle_status", "active")
           .gte("created_at", startDate);
 
         if (error) {

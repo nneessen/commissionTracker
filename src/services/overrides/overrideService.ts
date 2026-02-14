@@ -42,13 +42,13 @@ class OverrideService {
           *,
           base_agent:user_profiles!override_commissions_base_agent_id_fkey(email),
           override_agent:user_profiles!override_commissions_override_agent_id_fkey(email),
-          policy:policies!inner(policy_number, status),
+          policy:policies!inner(policy_number, status, lifecycle_status),
           carrier:carriers(name),
           product:products(name)
         `,
         )
         .eq("override_agent_id", user.id)
-        .eq("policy.status", "active");
+        .eq("policy.lifecycle_status", "active");
 
       // Apply filters
       if (filters?.status) {
