@@ -5,15 +5,15 @@ export interface PdfExtraction {
   view_version: string;
   document_id: string;
   page_count: number;
-  document_metadata: {
+  document_metadata?: {
     title: string;
     carrier: string;
     product: string;
   };
-  key_topics: string[];
-  key_points: KeyPoint[];
-  sections: Section[];
-  tables: ExtractionTable[];
+  key_topics?: string[];
+  key_points?: KeyPoint[];
+  sections?: Section[];
+  tables?: ExtractionTable[];
   lessons: ExtractionLesson[];
   module_seed: ExtractionModuleSeed;
   pages: ExtractionPage[];
@@ -32,16 +32,14 @@ export interface Section {
 
 export interface ExtractionTable {
   table_id: string;
+  document_id?: string;
   page_number: number;
-  section_id: string;
-  section_header: string;
-  source_engine: string;
+  table_index?: number;
+  rows: number;
+  cols: number;
+  values: string[][];
   confidence: number;
-  row_count: number;
-  col_count: number;
-  headers: string[];
-  rows: Record<string, string>[];
-  html: string;
+  source_engine: string;
 }
 
 export interface KeyPoint {

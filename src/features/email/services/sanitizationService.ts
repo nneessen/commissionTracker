@@ -110,6 +110,7 @@ export function sanitizeHtml(html: string): string {
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'blockquote', 'code', 'pre', 'hr',
       'img', 'span', 'div',
+      'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
     ],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'class', 'style'],
     ALLOW_DATA_ATTR: false,

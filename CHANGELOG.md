@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-14 09:49:43
+
+### Changed Files
+- `package.json`
+- `scripts/invoke-slack-ip-leaderboard.js`
+- `src/features/email/services/sanitizationService.ts`
+- `src/features/training-modules/components/learner/ContentBlockRenderer.tsx`
+- `src/features/training-modules/services/pdfModuleService.ts`
+- `src/features/training-modules/types/pdf-extraction.types.ts`
+- `src/index.css`
+- `supabase/functions/slack-ip-leaderboard/index.ts`
+- `supabase/migrations/20260212165109_fix_audit_trigger_columns.sql`
+- `supabase/migrations/20260214085847_fix_leaderboard_ap_date_filter.sql`
+- `supabase/migrations/20260214090623_fix_leaderboard_ap_remove_status_filter.sql`
+- `supabase/migrations/20260214091116_fix_leaderboard_use_approved_status.sql`
+- `supabase/migrations/20260214091336_fix_agency_leaderboard_hierarchy.sql`
+- `supabase/migrations/20260214091630_fix_team_leaderboard_hierarchy.sql`
+- `supabase/migrations/20260214092253_fix_leaderboard_disconnected_hierarchy.sql`
+- `supabase/migrations/20260214093751_add_ip_leaderboard_functions.sql`
+
+### Statistics
+```
+ 16 files changed, 3715 insertions(+), 63 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-11 18:37:24
 
 ### Changed Files

@@ -78,16 +78,21 @@ interface ContentBlockRendererProps {
 
 export function ContentBlockRenderer({ block }: ContentBlockRendererProps) {
   switch (block.content_type) {
-    case "rich_text":
+    case "rich_text": {
+      const html = sanitizeHtml(block.rich_text_content || "");
+      const hasTable = html.includes("<table");
       return (
-        <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
-          <div
-            dangerouslySetInnerHTML={{
-              __html: sanitizeHtml(block.rich_text_content || ""),
-            }}
-          />
+        <div className="rich-text-content max-w-none text-xs leading-relaxed">
+          {hasTable ? (
+            <div className="rich-text-table-wrap">
+              <div dangerouslySetInnerHTML={{ __html: html }} />
+            </div>
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: html }} />
+          )}
         </div>
       );
+    }
 
     case "video": {
       if (!block.video_url) return null;

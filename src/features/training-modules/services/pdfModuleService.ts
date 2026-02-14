@@ -5,6 +5,7 @@ import type {
   PdfExtraction,
   ExtractionContentBlock,
   ExtractionQuiz,
+  ExtractionTable,
 } from "../types/pdf-extraction.types";
 import type {
   CreateModuleInput,
@@ -105,14 +106,6 @@ export async function extractPdf(file: File): Promise<PdfExtraction> {
     throw new Error("Unexpected API response: missing 'result' field");
   }
 
-  // Check for outdated extractor (pre-1.14 lacks document_metadata/sections/lessons)
-  if (!inner.document_metadata && inner.view_version) {
-    throw new Error(
-      `PDF extractor version ${inner.view_version} is outdated. ` +
-        `Version training-1.14.0+ is required. Please redeploy the extractor.`,
-    );
-  }
-
   return inner as PdfExtraction;
 }
 
@@ -126,9 +119,13 @@ export function transformExtraction(
 ): ModuleSeedData {
   validateExtraction(extraction);
 
-  const meta = extraction.document_metadata;
+  const meta = extraction.document_metadata || {
+    title: "",
+    carrier: "",
+    product: "",
+  };
   const extractorLessons =
-    extraction.lessons.length > 0
+    extraction.lessons && extraction.lessons.length > 0
       ? extraction.lessons
       : extraction.module_seed?.lessons || [];
 
@@ -142,6 +139,34 @@ export function transformExtraction(
   const contentLessons: LessonSeed[] = [];
   for (const lesson of extractorLessons) {
     const blocks = mapContentBlocks(lesson.content_blocks);
+
+    // Inject table HTML for tables not already represented in content blocks
+    const hasAnyTableHtml = blocks.some((b) =>
+      b.rich_text_content.includes("<table"),
+    );
+    if (!hasAnyTableHtml) {
+      const renderedTableIds = new Set(
+        lesson.content_blocks
+          .filter((b) => b.table_id && b.html && b.html.includes("<table"))
+          .map((b) => b.table_id),
+      );
+      const lessonTables = getTablesForPages(
+        extraction.tables,
+        lesson.page_numbers,
+      );
+      for (const table of lessonTables) {
+        if (renderedTableIds.has(table.table_id)) continue;
+        const tableHtml = tableValuesToHtml(table.values);
+        if (tableHtml) {
+          blocks.push({
+            content_type: "rich_text",
+            title: table.values[0]?.[0] || "Table",
+            rich_text_content: tableHtml,
+          });
+        }
+      }
+    }
+
     if (blocks.length > 0) {
       const totalWords = blocks.reduce((sum, b) => {
         const text = (b.rich_text_content || "").replace(/<[^>]+>/g, "");
@@ -171,17 +196,22 @@ export function transformExtraction(
   // Interleave
   const allLessons = interleave(contentLessons, quizSeeds);
 
+  const metaTitle =
+    meta.carrier && meta.product
+      ? meta.carrier + " " + meta.product + " Training"
+      : "Imported Training Module";
+  const metaDescription =
+    meta.carrier && meta.product
+      ? "Comprehensive training module for " + meta.carrier + " " + meta.product + "."
+      : "Training module imported from PDF.";
+  const metaTags =
+    meta.carrier && meta.product
+      ? [meta.carrier.toLowerCase(), meta.product.toLowerCase(), "training"]
+      : ["training"];
+
   const moduleInput: CreateModuleInput = {
-    title:
-      extraction.module_seed?.title ||
-      meta.carrier + " " + meta.product + " Training",
-    description:
-      extraction.module_seed?.description ||
-      "Comprehensive training module for " +
-        meta.carrier +
-        " " +
-        meta.product +
-        ".",
+    title: extraction.module_seed?.title || metaTitle,
+    description: extraction.module_seed?.description || metaDescription,
     category,
     difficulty_level: "intermediate",
     estimated_duration_minutes: allLessons.reduce(
@@ -189,11 +219,7 @@ export function transformExtraction(
       0,
     ),
     xp_reward: allLessons.reduce((sum, l) => sum + l.xp_reward, 0),
-    tags: extraction.module_seed?.tags || [
-      meta.carrier.toLowerCase(),
-      meta.product.toLowerCase(),
-      "training",
-    ],
+    tags: extraction.module_seed?.tags || metaTags,
   };
 
   return { moduleInput, lessons: allLessons };
@@ -314,6 +340,46 @@ function mapContentBlocks(
     }));
 }
 
+function tableValuesToHtml(values: string[][]): string {
+  if (!values || values.length === 0) return "";
+
+  const esc = (s: string): string =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const [headerRow, ...dataRows] = values;
+  let html = "<table><thead><tr>";
+  for (const cell of headerRow) {
+    html += `<th>${esc(cell)}</th>`;
+  }
+  html += "</tr></thead>";
+  if (dataRows.length > 0) {
+    html += "<tbody>";
+    for (const row of dataRows) {
+      html += "<tr>";
+      for (const cell of row) {
+        html += `<td>${esc(cell)}</td>`;
+      }
+      html += "</tr>";
+    }
+    html += "</tbody>";
+  }
+  html += "</table>";
+  return html;
+}
+
+function getTablesForPages(
+  tables: ExtractionTable[] | undefined,
+  pageNumbers: number[],
+): ExtractionTable[] {
+  if (!tables || tables.length === 0 || pageNumbers.length === 0) return [];
+  const pageSet = new Set(pageNumbers);
+  return tables.filter((t) => pageSet.has(t.page_number));
+}
+
 function mapExtractorQuizzes(quizzes: ExtractionQuiz[]): QuizSeed {
   const questions: QuizQuestionSeed[] = quizzes.map((q) => ({
     question_type: "multiple_choice" as const,
@@ -384,24 +450,13 @@ function interleave(
 }
 
 function validateExtraction(extraction: PdfExtraction): void {
-  const errors: string[] = [];
+  const hasLessons =
+    (extraction.lessons && extraction.lessons.length > 0) ||
+    (extraction.module_seed?.lessons && extraction.module_seed.lessons.length > 0);
 
-  if (!extraction.document_metadata) {
-    errors.push("Missing document_metadata");
-  } else {
-    if (!extraction.document_metadata.title)
-      errors.push("Missing document_metadata.title");
-    if (!extraction.document_metadata.carrier)
-      errors.push("Missing document_metadata.carrier");
-    if (!extraction.document_metadata.product)
-      errors.push("Missing document_metadata.product");
-  }
-
-  if (!extraction.sections || extraction.sections.length === 0) {
-    errors.push("Missing or empty sections[]");
-  }
-
-  if (errors.length > 0) {
-    throw new Error("Invalid extraction: " + errors.join(", "));
+  if (!hasLessons) {
+    throw new Error(
+      "Invalid extraction: no lessons found in lessons[] or module_seed.lessons[]",
+    );
   }
 }
