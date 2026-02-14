@@ -86,7 +86,8 @@ function getWeekRange(): string {
  */
 function buildIPLeaderboardMessage(
   agents: IPLeaderboardEntry[],
-  agencies: AgencyIPEntry[]
+  agencies: AgencyIPEntry[],
+  totalAgentCount: number
 ): string {
   const weekRange = getWeekRange();
 
@@ -96,44 +97,70 @@ function buildIPLeaderboardMessage(
   message += `:warning: *Accuracy depends on YOU:* Update your policies from pending to approved when policies go into effect.\n\n`;
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // Show agents with IP > 0
-  const agentsWithIP = agents.filter(a => a.wtd_ip > 0);
-  const agentsWithZeroIP = agents.length - agentsWithIP.length;
+  // Top Producers WTD - agents with WTD IP > 0
+  const agentsWithWTD = agents.filter(a => a.wtd_ip > 0).sort((a, b) => b.wtd_ip - a.wtd_ip);
+  const agentsWithZeroWTD = totalAgentCount - agentsWithWTD.length;
 
-  if (agentsWithIP.length > 0) {
+  if (agentsWithWTD.length > 0) {
     message += `*Top Producers (WTD):*\n`;
-    agentsWithIP.forEach((agent, index) => {
+    agentsWithWTD.forEach((agent, index) => {
       const rank = index + 1;
       const emoji = getRankEmoji(rank);
       const ip = formatCurrency(agent.wtd_ip);
       const policies = agent.wtd_policies;
       const paddedIP = ip.padStart(10, ' ');
-      message += `${emoji} ${paddedIP}  ·  *${agent.agent_name}*  (${policies} ${policies === 1 ? 'policy' : 'policies'})\n`;
+      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? 'policy' : 'policies'})\n`;
     });
     message += `\n`;
   }
 
-  // Show agents with zero
-  if (agentsWithZeroIP > 0) {
-    message += `_${agentsWithZeroIP} agent${agentsWithZeroIP === 1 ? '' : 's'} with zero IP this week_\n\n`;
+  // Show agents with zero WTD
+  if (agentsWithZeroWTD > 0) {
+    message += `_${agentsWithZeroWTD} agent${agentsWithZeroWTD === 1 ? '' : 's'} with $0 IP this week_\n\n`;
   }
 
-  // Calculate totals
-  const totalWTD = agents.reduce((sum, a) => sum + a.wtd_ip, 0);
-  const totalMTD = agents.reduce((sum, a) => sum + a.mtd_ip, 0);
+  message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  // Top Producers MTD - agents with MTD IP > 0 (all agents returned from DB have MTD > 0)
+  const agentsWithMTD = [...agents].sort((a, b) => b.mtd_ip - a.mtd_ip);
+  const agentsWithZeroMTD = totalAgentCount - agentsWithMTD.length;
+
+  if (agentsWithMTD.length > 0) {
+    message += `*Top Producers (MTD):*\n`;
+    agentsWithMTD.forEach((agent, index) => {
+      const rank = index + 1;
+      const emoji = getRankEmoji(rank);
+      const ip = formatCurrency(agent.mtd_ip);
+      const policies = agent.mtd_policies;
+      const paddedIP = ip.padStart(10, ' ');
+      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? 'policy' : 'policies'})\n`;
+    });
+    message += `\n`;
+  }
+
+  // Show agents with zero MTD
+  if (agentsWithZeroMTD > 0) {
+    message += `_${agentsWithZeroMTD} agent${agentsWithZeroMTD === 1 ? '' : 's'} with $0 IP this month_\n\n`;
+  }
+
+  // Use top-level agency (Self Made = highest MTD, first in list) for accurate totals
+  const sortedAgencies = [...agencies].sort((a, b) => b.mtd_ip - a.mtd_ip);
+  const topAgency = sortedAgencies[0];
+  const totalWTD = topAgency?.wtd_ip ?? 0;
+  const totalMTD = topAgency?.mtd_ip ?? 0;
 
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
   message += `:moneybag: *Total WTD:* ${formatCurrency(totalWTD)}\n`;
   message += `:calendar: *Total MTD:* ${formatCurrency(totalMTD)}\n\n`;
 
-  // Agency rankings
+  // Agency rankings (sorted by MTD IP descending)
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
   message += `:office: *Agency Rankings*\n\n`;
 
-  agencies
+  sortedAgencies
     .filter(a => a.mtd_ip > 0)
     .forEach(agency => {
-      message += `*${agency.agency_name}:*  WTD ${formatCurrency(agency.wtd_ip)} · MTD ${formatCurrency(agency.mtd_ip)}\n`;
+      message += `${agency.agency_name}:  WTD ${formatCurrency(agency.wtd_ip)} · MTD ${formatCurrency(agency.mtd_ip)}\n`;
     });
 
   return message;
@@ -266,7 +293,7 @@ serve(async (req) => {
       );
     }
 
-    if (!agents || agents.length === 0) {
+    if ((!agents || agents.length === 0) && (!agencies || agencies.every((a: AgencyIPEntry) => a.mtd_ip === 0))) {
       console.log("[slack-ip-leaderboard] No IP data available");
       return new Response(
         JSON.stringify({
@@ -281,10 +308,19 @@ serve(async (req) => {
       );
     }
 
+    // Get total active agent count for "agents with $0" calculation
+    const { count: totalAgentCount } = await supabase
+      .from("user_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("approval_status", "approved")
+      .is("archived_at", null)
+      .or("roles.cs.{agent},roles.cs.{active_agent}");
+
     // Build message
     const message = buildIPLeaderboardMessage(
-      agents as IPLeaderboardEntry[],
-      agencies as AgencyIPEntry[]
+      (agents || []) as IPLeaderboardEntry[],
+      (agencies || []) as AgencyIPEntry[],
+      totalAgentCount ?? 0
     );
 
     // Decrypt bot token
