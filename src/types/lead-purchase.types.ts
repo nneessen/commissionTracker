@@ -177,6 +177,7 @@ export interface VendorAdminOverview {
   agedLeads: number;
   freshSpent: number;
   agedSpent: number;
+  totalPremium: number;
 }
 
 // Per-user breakdown for a specific vendor (admin drill-down)
@@ -261,6 +262,75 @@ export interface VendorHeatScore {
     packEfficiency: number; // max 15
     recency: number; // max 15
     freshness: number; // max 10
+  };
+}
+
+// Pack-level row for admin tables (one per lead_purchase)
+export interface LeadPackRow {
+  packId: string;
+  purchaseName: string | null;
+  vendorId: string;
+  vendorName: string;
+  agentId: string;
+  agentName: string;
+  purchaseDate: string;
+  leadFreshness: string;
+  leadCount: number;
+  totalCost: number;
+  costPerLead: number;
+  policiesSold: number;
+  conversionRate: number;
+  commissionEarned: number;
+  roiPercentage: number;
+  totalPremium: number;
+}
+
+// Recent policy row from lead packs
+export interface LeadRecentPolicy {
+  policyId: string;
+  effectiveDate: string | null;
+  submitDate: string | null;
+  policyNumber: string | null;
+  clientName: string;
+  product: string;
+  annualPremium: number;
+  agentId: string;
+  agentName: string;
+  vendorId: string;
+  vendorName: string;
+  packId: string;
+  packName: string | null;
+  leadFreshness: string;
+  status: string;
+}
+
+// Per-pack heat metrics from RPC
+export interface PackHeatMetrics {
+  packId: string;
+  vendorId: string;
+  totalPremium: number;
+  totalCost: number;
+  leadCount: number;
+  policiesSold: number;
+  commissionEarned: number;
+  daysSincePurchase: number;
+  daysSinceLastSale: number;
+  salesLast30d: number;
+}
+
+// V2 heat score with conversion + ROI focus
+export interface HeatScoreV2 {
+  id: string; // packId or vendorId
+  score: number;
+  level: HeatLevel;
+  trend: TrendDirection;
+  breakdown: {
+    conversionRate: number; // max 25
+    roi: number; // max 20
+    premiumPerLead: number; // max 15
+    recency: number; // max 15
+    velocity: number; // max 15
+    agentConsistency: number; // max 10
   };
 }
 

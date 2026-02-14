@@ -12,6 +12,9 @@ import type {
   VendorPolicyTimelineRecord,
   VendorHeatMetrics,
   LeadPurchaseFilters,
+  LeadPackRow,
+  LeadRecentPolicy,
+  PackHeatMetrics,
 } from "@/types/lead-purchase.types";
 import {
   transformLeadPurchaseFromDB,
@@ -326,6 +329,7 @@ export class LeadPurchaseRepository extends BaseRepository<
         agedLeads: Number(row.aged_leads || 0),
         freshSpent: Number(row.fresh_spent || 0),
         agedSpent: Number(row.aged_spent || 0),
+        totalPremium: Number(row.total_premium || 0),
       })) || []
     );
   }
@@ -456,6 +460,114 @@ export class LeadPurchaseRepository extends BaseRepository<
         status: String(row.status || ""),
         agentId: String(row.agent_id),
         agentName: String(row.agent_name || "Unknown"),
+      })) || []
+    );
+  }
+
+  /**
+   * Get pack-level list for admin tables (V2)
+   */
+  async getLeadPackList(
+    freshness?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<LeadPackRow[]> {
+    const { data, error } = await this.client.rpc("get_lead_pack_list", {
+      p_imo_id: null,
+      p_freshness: freshness || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
+    });
+
+    if (error) {
+      throw this.handleError(error, "getLeadPackList");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => {
+        const leadCount = Number(row.lead_count || 0);
+        const policiesSold = Number(row.policies_sold || 0);
+        return {
+          packId: String(row.pack_id),
+          purchaseName: row.purchase_name ? String(row.purchase_name) : null,
+          vendorId: String(row.vendor_id),
+          vendorName: String(row.vendor_name),
+          agentId: String(row.agent_id),
+          agentName: String(row.agent_name || "Unknown"),
+          purchaseDate: String(row.purchase_date),
+          leadFreshness: String(row.lead_freshness),
+          leadCount,
+          totalCost: Number(row.total_cost || 0),
+          costPerLead: Number(row.cost_per_lead || 0),
+          policiesSold,
+          conversionRate: leadCount > 0 ? (policiesSold / leadCount) * 100 : 0,
+          commissionEarned: Number(row.commission_earned || 0),
+          roiPercentage: Number(row.roi_percentage || 0),
+          totalPremium: Number(row.total_premium || 0),
+        };
+      }) || []
+    );
+  }
+
+  /**
+   * Get recent policies from lead packs (V2)
+   */
+  async getLeadRecentPolicies(limit?: number): Promise<LeadRecentPolicy[]> {
+    const { data, error } = await this.client.rpc("get_lead_recent_policies", {
+      p_imo_id: null,
+      p_limit: limit || 100,
+    });
+
+    if (error) {
+      throw this.handleError(error, "getLeadRecentPolicies");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        policyId: String(row.policy_id),
+        effectiveDate: row.effective_date ? String(row.effective_date) : null,
+        submitDate: row.submit_date ? String(row.submit_date) : null,
+        policyNumber: row.policy_number ? String(row.policy_number) : null,
+        clientName: String(row.client_name || "Unknown"),
+        product: String(row.product || ""),
+        annualPremium: Number(row.annual_premium || 0),
+        agentId: String(row.agent_id),
+        agentName: String(row.agent_name || "Unknown"),
+        vendorId: String(row.vendor_id),
+        vendorName: String(row.vendor_name),
+        packId: String(row.pack_id),
+        packName: row.pack_name ? String(row.pack_name) : null,
+        leadFreshness: String(row.lead_freshness),
+        status: String(row.status || ""),
+      })) || []
+    );
+  }
+
+  /**
+   * Get per-pack heat metrics for V2 heat score computation
+   */
+  async getPackHeatMetrics(): Promise<PackHeatMetrics[]> {
+    const { data, error } = await this.client.rpc(
+      "get_lead_pack_heat_metrics",
+      { p_imo_id: null },
+    );
+
+    if (error) {
+      throw this.handleError(error, "getPackHeatMetrics");
+    }
+
+    return (
+      data?.map((row: Record<string, unknown>) => ({
+        packId: String(row.pack_id),
+        vendorId: String(row.vendor_id),
+        totalPremium: Number(row.total_premium || 0),
+        totalCost: Number(row.total_cost || 0),
+        leadCount: Number(row.lead_count || 0),
+        policiesSold: Number(row.policies_sold || 0),
+        commissionEarned: Number(row.commission_earned || 0),
+        daysSincePurchase: Number(row.days_since_purchase || 0),
+        daysSinceLastSale: Number(row.days_since_last_sale ?? 999),
+        salesLast30d: Number(row.sales_last_30d || 0),
       })) || []
     );
   }

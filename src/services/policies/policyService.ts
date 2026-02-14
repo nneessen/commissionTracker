@@ -67,6 +67,7 @@ class PolicyService {
   async checkPolicyNumberExists(
     policyNumber: string,
     excludePolicyId?: string,
+    userId?: string,
   ): Promise<boolean> {
     if (!policyNumber || policyNumber.trim() === "") {
       return false;
@@ -74,6 +75,7 @@ class PolicyService {
 
     const existing = await this.repository.findByPolicyNumber(
       policyNumber.trim(),
+      userId,
     );
     if (!existing) {
       return false;
@@ -91,10 +93,12 @@ class PolicyService {
    * Create a new policy and its associated commission record.
    */
   async create(policyData: CreatePolicyData): Promise<Policy> {
-    // Check for duplicate policy number before creating
+    // Check for duplicate policy number before creating (scoped to this user)
     if (policyData.policyNumber) {
       const isDuplicate = await this.checkPolicyNumberExists(
         policyData.policyNumber,
+        undefined,
+        policyData.userId,
       );
       if (isDuplicate) {
         throw new ValidationError(
@@ -223,12 +227,15 @@ class PolicyService {
     id: string,
     updates: Partial<CreatePolicyData>,
   ): Promise<Policy> {
-    // Check for duplicate policy number when updating
+    // Check for duplicate policy number when updating (scoped to this user)
     if (updates.policyNumber !== undefined) {
       if (updates.policyNumber && updates.policyNumber.trim() !== "") {
+        // Get the policy's userId to scope the duplicate check
+        const existingPolicy = await this.repository.findById(id);
         const isDuplicate = await this.checkPolicyNumberExists(
           updates.policyNumber,
           id,
+          existingPolicy?.userId,
         );
         if (isDuplicate) {
           throw new ValidationError(

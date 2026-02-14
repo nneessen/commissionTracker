@@ -395,6 +395,10 @@ export const WORKFLOW_EVENTS = {
   EMAIL_FAILED: "email.failed",
   EMAIL_BOUNCED: "email.bounced",
 
+  // Lead events
+  LEAD_PACK_PURCHASED: "lead.pack_purchased",
+  LEAD_CONVERSION_THRESHOLD: "lead.conversion_threshold",
+
   // Custom events
   CUSTOM_TRIGGER: "custom.trigger",
 } as const;

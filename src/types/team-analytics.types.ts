@@ -12,6 +12,7 @@ export interface TeamPolicyRow {
   lifecycle_status: string | null;
   annual_premium: number | null;
   effective_date: string;
+  submit_date: string | null;
   product: string | null;
   carrier_id: string | null;
   client_id: string | null;

@@ -363,27 +363,61 @@ class TeamAnalyticsService {
   /**
    * Calculate team policy status breakdown for the selected date range
    *
-   * Status counts use date-filtered policies (effective_date in range).
+   * Uses allPolicies with date-appropriate filtering per status:
+   * - Active: lifecycle_status='active' AND effective_date in range
+   * - Pending: status='pending' AND submit_date in range
+   * - Cancelled: lifecycle_status='cancelled' AND (cancellation_date || updated_at) in range
+   * - Lapsed: lifecycle_status='lapsed' AND updated_at in range
    * Persistency uses all-time data: active / (active + lapsed + cancelled).
-   * Pending policies are NOT included in persistency (not yet issued).
    */
   calculatePolicyStatusBreakdown(
     rawData: TeamAnalyticsRawData,
+    startDate: Date,
+    endDate: Date,
   ): TeamPolicyStatusBreakdown {
-    // Use date-filtered policies for status counts (current period view)
-    const periodPolicies = rawData.policies;
+    const toDateStr = (val: string | null | undefined): string | null => {
+      if (!val) return null;
+      if (val.length > 10) {
+        const d = new Date(val);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      return val;
+    };
 
-    // Use lifecycle_status for active/lapsed/cancelled (issued policy lifecycle)
-    // Use status for pending (application outcome)
-    const active = periodPolicies.filter(
-      (p) => p.lifecycle_status === "active",
+    const rangeStart = toDateStr(startDate.toISOString())!;
+    const rangeEnd = toDateStr(endDate.toISOString())!;
+
+    const inRange = (dateVal: string | null | undefined): boolean => {
+      const normalized = toDateStr(dateVal);
+      if (!normalized) return false;
+      return normalized >= rangeStart && normalized <= rangeEnd;
+    };
+
+    const allPolicies = rawData.allPolicies;
+
+    // Active: lifecycle_status='active' AND effective_date in range
+    const active = allPolicies.filter(
+      (p) => p.lifecycle_status === "active" && inRange(p.effective_date),
     );
-    const pending = periodPolicies.filter((p) => p.status === "pending");
-    const lapsed = periodPolicies.filter(
-      (p) => p.lifecycle_status === "lapsed",
+
+    // Pending: status='pending' AND submit_date in range
+    const pending = allPolicies.filter(
+      (p) => p.status === "pending" && inRange(p.submit_date),
     );
-    const cancelled = periodPolicies.filter(
-      (p) => p.lifecycle_status === "cancelled",
+
+    // Cancelled: lifecycle_status='cancelled' AND (cancellation_date OR updated_at) in range
+    const cancelled = allPolicies.filter(
+      (p) =>
+        p.lifecycle_status === "cancelled" &&
+        inRange(p.cancellation_date ?? p.updated_at),
+    );
+
+    // Lapsed: lifecycle_status='lapsed' AND updated_at in range
+    const lapsed = allPolicies.filter(
+      (p) => p.lifecycle_status === "lapsed" && inRange(p.updated_at),
     );
 
     const sumPremium = (policies: TeamPolicyRow[]) =>
@@ -391,28 +425,33 @@ class TeamAnalyticsService {
 
     // Persistency uses ALL-TIME data (not date-filtered)
     // active / issued (active + lapsed + cancelled)
-    const allActive = rawData.allPolicies.filter(
+    const allActive = allPolicies.filter(
       (p) => p.lifecycle_status === "active",
     ).length;
-    const allLapsed = rawData.allPolicies.filter(
+    const allLapsed = allPolicies.filter(
       (p) => p.lifecycle_status === "lapsed",
     ).length;
-    const allCancelled = rawData.allPolicies.filter(
+    const allCancelled = allPolicies.filter(
       (p) => p.lifecycle_status === "cancelled",
     ).length;
     const issuedPolicies = allActive + allLapsed + allCancelled;
     const persistencyRate =
       issuedPolicies > 0 ? (allActive / issuedPolicies) * 100 : 100;
 
+    const totalCount =
+      active.length + pending.length + cancelled.length + lapsed.length;
+    const totalPremium =
+      sumPremium(active) +
+      sumPremium(pending) +
+      sumPremium(cancelled) +
+      sumPremium(lapsed);
+
     return {
       active: { count: active.length, premium: sumPremium(active) },
       pending: { count: pending.length, premium: sumPremium(pending) },
       lapsed: { count: lapsed.length, premium: sumPremium(lapsed) },
       cancelled: { count: cancelled.length, premium: sumPremium(cancelled) },
-      total: {
-        count: periodPolicies.length,
-        premium: sumPremium(periodPolicies),
-      },
+      total: { count: totalCount, premium: totalPremium },
       persistencyRate,
     };
   }

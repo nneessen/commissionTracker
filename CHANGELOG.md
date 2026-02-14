@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-14 13:59:48
+
+### Changed Files
+- `docs/rpc-audit-2026-02-14.md`
+- `docs/rpc-batch00-rollout-commands-2026-02-14.md`
+- `docs/rpc-removal-safety-trace-2026-02-14.md`
+- `docs/rpc-removal-staged-plan-2026-02-14.md`
+- `docs/rpc-trace-2026-02-14.tsv`
+- `scripts/migrations/rpc-batch00-postcheck.sql`
+- `scripts/migrations/rpc-batch00-preflight.sql`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/LeadVendorsTab.tsx`
+- `src/features/admin/components/lead-vendors/LeadPackTable.tsx`
+- `src/features/admin/components/lead-vendors/LeadVendorsTab.tsx`
+- `src/features/admin/components/lead-vendors/PackHeatBadge.tsx`
+- `src/features/admin/components/lead-vendors/RecentPoliciesTable.tsx`
+- `src/features/admin/components/lead-vendors/SortableHead.tsx`
+- `src/features/admin/components/lead-vendors/VendorSummaryBar.tsx`
+- `src/features/admin/components/lead-vendors/index.ts`
+- `src/hooks/analytics/useTeamAnalyticsData.ts`
+- `src/hooks/lead-purchases/useLeadPurchases.ts`
+- `src/services/analytics/leadVendorHeatService.ts`
+- `src/services/analytics/teamAnalyticsService.ts`
+- `src/services/clients/client/ClientRepository.ts`
+- `src/services/events/workflowEventEmitter.ts`
+- `src/services/lead-purchases/LeadPurchaseRepository.ts`
+- `src/services/lead-purchases/LeadPurchaseService.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `src/services/users/UserRepository.ts`
+- `src/types/lead-purchase.types.ts`
+- `src/types/team-analytics.types.ts`
+- `supabase/functions/gmail-sync-inbox/index.ts`
+- `supabase/migrations/20260214113000_drop_rpc_batch00_candidates.sql`
+- `supabase/migrations/20260214133328_lead_vendor_admin_v2.sql`
+- `supabase/migrations/20260214133440_fix_lead_recent_policies.sql`
+- `supabase/migrations/20260214134700_restore_calculate_months_paid.sql`
+- `supabase/migrations/20260214135037_restore_calculate_earned_amount.sql`
+- `supabase/migrations/20260214135117_scope_policy_number_unique_per_user.sql`
+- `supabase/migrations/reverts/20260214_001_restore_rpc_batch00_candidates.sql`
+
+### Statistics
+```
+ 37 files changed, 3705 insertions(+), 1162 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-14 11:19:05
 
 ### Changed Files

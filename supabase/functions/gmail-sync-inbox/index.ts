@@ -549,22 +549,29 @@ async function fetchAndStoreMessage(
     if (existingInThread?.thread_id) {
       threadId = existingInThread.thread_id;
 
+      const { data: existingThreadCounts } = await supabase
+        .from("email_threads")
+        .select("unread_count, message_count")
+        .eq("id", threadId)
+        .maybeSingle();
+
+      const currentUnread =
+        typeof existingThreadCounts?.unread_count === "number"
+          ? existingThreadCounts.unread_count
+          : 0;
+      const currentMessages =
+        typeof existingThreadCounts?.message_count === "number"
+          ? existingThreadCounts.message_count
+          : 0;
+
       // Update thread
       await supabase
         .from("email_threads")
         .update({
           snippet: parsed.snippet,
           last_message_at: parsed.date,
-          unread_count: supabase.rpc("increment", {
-            row_id: threadId,
-            table_name: "email_threads",
-            column_name: "unread_count",
-          }),
-          message_count: supabase.rpc("increment", {
-            row_id: threadId,
-            table_name: "email_threads",
-            column_name: "message_count",
-          }),
+          unread_count: currentUnread + 1,
+          message_count: currentMessages + 1,
         })
         .eq("id", threadId);
     } else {

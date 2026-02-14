@@ -12,6 +12,7 @@ import type {
   ApprovalStatus,
   AgentStatus,
 } from "@/types/user.types";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 type UserBaseEntity = UserProfile & BaseEntity;
 
@@ -210,6 +211,46 @@ export class UserRepository extends BaseRepository<
     return data !== null;
   }
 
+  private isMissingFunctionError(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const code =
+      "code" in error && typeof error.code === "string" ? error.code : "";
+    const message =
+      "message" in error && typeof error.message === "string"
+        ? error.message
+        : "";
+
+    return code === "42883" || /function .* does not exist/i.test(message);
+  }
+
+  private async rpcWithLegacyFallback<T>(
+    primaryName: string,
+    legacyName: string,
+    args?: Record<string, unknown>,
+  ): Promise<{ data: T | null; error: PostgrestError | null }> {
+    const primaryResult = args
+      ? await this.client.rpc(primaryName, args)
+      : await this.client.rpc(primaryName);
+
+    if (!primaryResult.error) {
+      return { data: (primaryResult.data as T) ?? null, error: null };
+    }
+
+    if (!this.isMissingFunctionError(primaryResult.error)) {
+      return { data: null, error: primaryResult.error };
+    }
+
+    const legacyResult = args
+      ? await this.client.rpc(legacyName, args)
+      : await this.client.rpc(legacyName);
+
+    if (!legacyResult.error) {
+      return { data: (legacyResult.data as T) ?? null, error: null };
+    }
+
+    return { data: null, error: legacyResult.error };
+  }
+
   // -------------------------------------------------------------------------
   // ADMIN RPC OPERATIONS
   // These use RPC functions with built-in permission checks
@@ -222,16 +263,20 @@ export class UserRepository extends BaseRepository<
   async adminGetUserProfile(
     targetUserId: string,
   ): Promise<UserBaseEntity | null> {
-    const { data, error } = await this.client.rpc("admin_getuser_profile", {
-      target_user_id: targetUserId,
-    });
+    const { data, error } = await this.rpcWithLegacyFallback<UserBaseEntity[]>(
+      "admin_get_user_profile",
+      "admin_getuser_profile",
+      {
+        target_user_id: targetUserId,
+      },
+    );
 
     if (error) {
       throw this.handleError(error, "adminGetUserProfile");
     }
 
     const profile = Array.isArray(data) && data.length > 0 ? data[0] : null;
-    return profile ? this.transformFromDB(profile) : null;
+    return profile ?? null;
   }
 
   /**
@@ -253,7 +298,10 @@ export class UserRepository extends BaseRepository<
    * The RPC function validates admin permissions internally
    */
   async adminGetPendingUsers(): Promise<UserBaseEntity[]> {
-    const { data, error } = await this.client.rpc("admin_get_pendingusers");
+    const { data, error } = await this.rpcWithLegacyFallback<UserBaseEntity[]>(
+      "admin_get_pending_users",
+      "admin_get_pendingusers",
+    );
 
     if (error) {
       throw this.handleError(error, "adminGetPendingUsers");
@@ -270,10 +318,14 @@ export class UserRepository extends BaseRepository<
     targetUserId: string,
     approverId: string,
   ): Promise<void> {
-    const { error } = await this.client.rpc("admin_approveuser", {
-      target_user_id: targetUserId,
-      approver_id: approverId,
-    });
+    const { error } = await this.rpcWithLegacyFallback<boolean>(
+      "admin_approve_user",
+      "admin_approveuser",
+      {
+        target_user_id: targetUserId,
+        approver_id: approverId,
+      },
+    );
 
     if (error) {
       throw this.handleError(error, "adminApproveUser");
@@ -289,11 +341,15 @@ export class UserRepository extends BaseRepository<
     approverId: string,
     reason: string,
   ): Promise<void> {
-    const { error } = await this.client.rpc("admin_denyuser", {
-      target_user_id: targetUserId,
-      approver_id: approverId,
-      reason,
-    });
+    const { error } = await this.rpcWithLegacyFallback<boolean>(
+      "admin_deny_user",
+      "admin_denyuser",
+      {
+        target_user_id: targetUserId,
+        approver_id: approverId,
+        reason,
+      },
+    );
 
     if (error) {
       throw this.handleError(error, "adminDenyUser");
@@ -305,9 +361,13 @@ export class UserRepository extends BaseRepository<
    * The RPC function validates admin permissions internally
    */
   async adminSetPendingUser(targetUserId: string): Promise<void> {
-    const { error } = await this.client.rpc("admin_set_pendinguser", {
-      target_user_id: targetUserId,
-    });
+    const { error } = await this.rpcWithLegacyFallback<boolean>(
+      "admin_set_pending_user",
+      "admin_set_pendinguser",
+      {
+        target_user_id: targetUserId,
+      },
+    );
 
     if (error) {
       throw this.handleError(error, "adminSetPendingUser");

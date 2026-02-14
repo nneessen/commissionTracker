@@ -256,13 +256,30 @@ export class ClientRepository extends BaseRepository<
    * Only accessible by IMO admins
    */
   async findImoWithStats(): Promise<DownlineClientWithStats[]> {
-    const { data, error } = await this.client.rpc("get_imo_clients_with_stats");
+    const { data, error } = await this.client.rpc(
+      "get_downline_clients_with_stats",
+    );
 
-    if (error) {
+    if (!error) {
+      return (data || []) as DownlineClientWithStats[];
+    }
+
+    const isMissingFunction =
+      error.code === "42883" || /function .* does not exist/i.test(error.message);
+
+    if (!isMissingFunction) {
       throw this.handleError(error, "findImoWithStats");
     }
 
-    return (data || []) as DownlineClientWithStats[];
+    const { data: legacyData, error: legacyError } = await this.client.rpc(
+      "get_imo_clients_with_stats",
+    );
+
+    if (legacyError) {
+      throw this.handleError(legacyError, "findImoWithStats");
+    }
+
+    return (legacyData || []) as DownlineClientWithStats[];
   }
 
   /**

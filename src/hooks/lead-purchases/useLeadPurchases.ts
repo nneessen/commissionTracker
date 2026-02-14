@@ -17,8 +17,16 @@ import type {
   VendorPolicyTimelineRecord,
   VendorHeatMetrics,
   VendorHeatScore,
+  LeadPackRow,
+  LeadRecentPolicy,
+  PackHeatMetrics,
+  HeatScoreV2,
 } from "@/types/lead-purchase.types";
-import { calculateVendorHeatScores } from "@/services/analytics";
+import {
+  calculateVendorHeatScores,
+  calculatePackHeatScores,
+  calculateVendorHeatScoresV2,
+} from "@/services/analytics";
 
 // Query keys
 export const leadPurchaseKeys = {
@@ -40,6 +48,10 @@ export const leadPurchaseKeys = {
     [...leadPurchaseKeys.all, "vendor-policy-timeline"] as const,
   vendorHeatMetrics: () =>
     [...leadPurchaseKeys.all, "vendor-heat-metrics"] as const,
+  packList: () => [...leadPurchaseKeys.all, "pack-list"] as const,
+  recentPolicies: () => [...leadPurchaseKeys.all, "recent-policies"] as const,
+  packHeatMetrics: () =>
+    [...leadPurchaseKeys.all, "pack-heat-metrics"] as const,
 };
 
 /**
@@ -298,6 +310,88 @@ export function useVendorHeatScores() {
   }, [heatMetrics]);
 
   return { heatScores, isLoading };
+}
+
+/**
+ * Fetch pack-level list for admin tables (V2)
+ */
+export function useLeadPackList(
+  freshness?: string,
+  startDate?: string,
+  endDate?: string,
+) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [...leadPurchaseKeys.packList(), freshness, startDate, endDate],
+    queryFn: async () => {
+      const result = await leadPurchaseService.getLeadPackList(
+        freshness,
+        startDate,
+        endDate,
+      );
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as LeadPackRow[];
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Fetch recent policies from lead packs (V2)
+ */
+export function useLeadRecentPolicies(limit?: number) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [...leadPurchaseKeys.recentPolicies(), limit],
+    queryFn: async () => {
+      const result = await leadPurchaseService.getLeadRecentPolicies(limit);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as LeadRecentPolicy[];
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Fetch pack heat metrics + compute V2 scores client-side
+ */
+export function usePackHeatScores() {
+  const { user } = useAuth();
+
+  const { data: packMetrics, isLoading } = useQuery({
+    queryKey: leadPurchaseKeys.packHeatMetrics(),
+    queryFn: async () => {
+      const result = await leadPurchaseService.getPackHeatMetrics();
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as PackHeatMetrics[];
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user?.id,
+  });
+
+  const packScores = useMemo(() => {
+    if (!packMetrics || packMetrics.length === 0)
+      return new Map<string, HeatScoreV2>();
+    return calculatePackHeatScores(packMetrics);
+  }, [packMetrics]);
+
+  const vendorScores = useMemo(() => {
+    if (!packMetrics || packMetrics.length === 0)
+      return new Map<string, HeatScoreV2>();
+    return calculateVendorHeatScoresV2(packMetrics);
+  }, [packMetrics]);
+
+  return { packScores, vendorScores, isLoading };
 }
 
 /**

@@ -271,12 +271,15 @@ export class PolicyRepository extends BaseRepository<
     }
   }
 
-  async findByPolicyNumber(policyNumber: string): Promise<Policy | null> {
+  async findByPolicyNumber(
+    policyNumber: string,
+    userId?: string,
+  ): Promise<Policy | null> {
     try {
       // Use .limit(1) instead of .single() to avoid 406 error when multiple
       // users have the same policy number (RLS filters to current user, but
       // if user has duplicates from double-click, .single() would fail)
-      const { data, error } = await this.client
+      let query = this.client
         .from(this.tableName)
         .select(
           `
@@ -291,8 +294,14 @@ export class PolicyRepository extends BaseRepository<
           )
         `,
         )
-        .eq("policy_number", policyNumber)
-        .limit(1);
+        .eq("policy_number", policyNumber);
+
+      // Scope to specific user to avoid false positives from upline RLS visibility
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      const { data, error } = await query.limit(1);
 
       if (error) {
         throw this.handleError(error, "findByPolicyNumber");

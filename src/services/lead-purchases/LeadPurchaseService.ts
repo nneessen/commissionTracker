@@ -13,7 +13,14 @@ import type {
   VendorPolicyTimelineRecord,
   VendorHeatMetrics,
   LeadPurchaseFilters,
+  LeadPackRow,
+  LeadRecentPolicy,
+  PackHeatMetrics,
 } from "@/types/lead-purchase.types";
+import {
+  workflowEventEmitter,
+  WORKFLOW_EVENTS,
+} from "@/services/events/workflowEventEmitter";
 
 export class LeadPurchaseService extends BaseService<
   LeadPurchase,
@@ -304,6 +311,91 @@ export class LeadPurchaseService extends BaseService<
         startDate,
         endDate,
       );
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Override create to emit lead.pack_purchased workflow event
+   */
+  async create(
+    data: CreateLeadPurchaseData,
+  ): Promise<ServiceResponse<LeadPurchase>> {
+    const result = await super.create(data);
+
+    if (result.success && result.data) {
+      const purchase = result.data;
+      // Look up vendor name for context
+      try {
+        const vendorName = purchase.vendor?.name || "Unknown Vendor";
+        await workflowEventEmitter.emit(
+          WORKFLOW_EVENTS.LEAD_PACK_PURCHASED,
+          {
+            vendorName,
+            agentName: "", // Resolved by workflow at runtime
+            leadCount: purchase.leadCount,
+            totalCost: purchase.totalCost,
+            leadFreshness: purchase.leadFreshness,
+            costPerLead: purchase.costPerLead,
+            purchaseName: purchase.purchaseName || "Unnamed Pack",
+            purchaseId: purchase.id,
+          },
+        );
+      } catch (err) {
+        console.warn("[LeadPurchaseService] Failed to emit pack_purchased event:", err);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Get pack-level list for admin tables (V2)
+   */
+  async getLeadPackList(
+    freshness?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ServiceResponse<LeadPackRow[]>> {
+    try {
+      const data = await this.repository.getLeadPackList(freshness, startDate, endDate);
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get recent policies from lead packs (V2)
+   */
+  async getLeadRecentPolicies(
+    limit?: number,
+  ): Promise<ServiceResponse<LeadRecentPolicy[]>> {
+    try {
+      const data = await this.repository.getLeadRecentPolicies(limit);
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get per-pack heat metrics for V2 heat score computation
+   */
+  async getPackHeatMetrics(): Promise<ServiceResponse<PackHeatMetrics[]>> {
+    try {
+      const data = await this.repository.getPackHeatMetrics();
       return { success: true, data };
     } catch (error) {
       return {

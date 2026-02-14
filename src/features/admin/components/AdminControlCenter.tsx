@@ -39,7 +39,7 @@ import { RolesPermissionsTab } from "./RolesPermissionsTab";
 import { SystemSettingsTab } from "./SystemSettingsTab";
 import { SubscriptionPlansTab } from "./SubscriptionPlansTab";
 import { TierTestingPanel } from "./TierTestingPanel";
-import { LeadVendorsTab } from "./LeadVendorsTab";
+import { LeadVendorsTab } from "./lead-vendors";
 
 export default function AdminControlCenter() {
   // Tab navigation
