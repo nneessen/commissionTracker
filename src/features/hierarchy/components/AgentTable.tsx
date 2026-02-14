@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 import { policyRepository } from "@/services/policies";
+import type { PolicyMetricRow } from "@/services/policies";
 import { useCurrentUserProfile } from "@/hooks/admin";
 
 interface AgentWithMetrics extends UserProfile {
@@ -97,10 +98,14 @@ async function fetchAllAgentMetrics(
   if (agentIds.length === 0) return new Map();
 
   const now = new Date();
-  const startOfMonth = dateRange
-    ? new Date(dateRange.start)
-    : new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = dateRange ? new Date(dateRange.end) : now;
+  // Use YYYY-MM-DD strings for date comparison to avoid UTC vs local timezone drift
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const startStr = dateRange
+    ? dateRange.start
+    : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+  const endStr = dateRange
+    ? dateRange.end
+    : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
   // BATCH QUERY 1: Get all policies for all agents in a single query
   const allPolicies = await policyRepository.findMetricsByUserIds(agentIds);
@@ -120,39 +125,58 @@ async function fetchAllAgentMetrics(
     }
   }
 
+  // Pre-group policies by user_id (O(N) instead of O(N*M))
+  const policiesByUser = new Map<string, PolicyMetricRow[]>();
+  for (const p of allPolicies) {
+    if (!p.user_id) continue;
+    const existing = policiesByUser.get(p.user_id);
+    if (existing) {
+      existing.push(p);
+    } else {
+      policiesByUser.set(p.user_id, [p]);
+    }
+  }
+
   // Aggregate metrics in-memory by agent (no additional DB calls)
   const metricsMap = new Map<string, AgentMetrics>();
 
   for (const agentId of agentIds) {
-    // Filter policies for this agent
-    const agentPolicies = allPolicies.filter((p) => p.user_id === agentId);
+    const agentPolicies = policiesByUser.get(agentId) || [];
 
-    // Filter by date range (using submit_date for accurate MTD metrics)
-    const mtdPolicies = agentPolicies.filter((p) => {
-      // Use submit_date for filtering; fall back to created_at only if submit_date is null
-      const dateStr = p.submit_date || p.created_at;
-      if (!dateStr) return false;
-      const policyDate = new Date(dateStr);
-      return policyDate >= startOfMonth && policyDate <= endOfMonth;
-    });
+    // IP: lifecycle_status = 'active' + effective_date in range
+    const total_ip = agentPolicies
+      .filter((p) => {
+        if (!ISSUED_LIFECYCLE_STATUSES.includes(p.lifecycle_status || "")) return false;
+        if (!p.effective_date) return false;
+        // Compare as YYYY-MM-DD strings (lexicographic) to avoid timezone issues
+        return p.effective_date >= startStr && p.effective_date <= endStr;
+      })
+      .reduce((sum, p) => {
+        const val = parseFloat(String(p.annual_premium ?? 0));
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
 
-    // Calculate AP metrics
-    // IP (Issued Premium): Use lifecycle_status = 'active' for in-force policies
-    const total_ip = mtdPolicies
-      .filter((p) => ISSUED_LIFECYCLE_STATUSES.includes(p.lifecycle_status || ""))
-      .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
-
-    // Pending AP: Use status = 'pending' for application outcome
-    const pending_ap = mtdPolicies
+    // Pending AP: status = 'pending' — NO date filter (all current pipeline)
+    const pending_ap = agentPolicies
       .filter((p) => PENDING_AP_STATUSES.includes(p.status || ""))
-      .reduce((sum, p) => sum + parseFloat(String(p.annual_premium) || "0"), 0);
+      .reduce((sum, p) => {
+        const val = parseFloat(String(p.annual_premium ?? 0));
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
 
     // Total AP = IP + Pending
     const total_ap = total_ip + pending_ap;
 
+    // MTD policies count: issued policies with effective_date in range
+    const mtd_policies = agentPolicies.filter((p) => {
+      if (!ISSUED_LIFECYCLE_STATUSES.includes(p.lifecycle_status || "")) return false;
+      if (!p.effective_date) return false;
+      return p.effective_date >= startStr && p.effective_date <= endStr;
+    }).length;
+
     metricsMap.set(agentId, {
       mtd_ap: total_ip, // For backward compatibility
-      mtd_policies: mtdPolicies.length,
+      mtd_policies,
       override_amount: overridesByAgent.get(agentId) || 0,
       total_ip,
       pending_ap,

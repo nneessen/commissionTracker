@@ -1,5 +1,6 @@
 // src/services/policies/index.ts
 export { PolicyRepository } from "./PolicyRepository";
+export type { PolicyMetricRow } from "./PolicyRepository";
 export { PolicyService, policyService } from "./policyService";
 
 // Export singleton repository instance for direct access to batch methods

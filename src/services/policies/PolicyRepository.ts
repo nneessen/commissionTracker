@@ -19,6 +19,7 @@ export interface PolicyMetricRow {
   annual_premium: number | string | null;
   created_at: string | null;
   submit_date: string | null;
+  effective_date: string | null;
 }
 
 export interface PolicyWithRelations {
@@ -493,7 +494,7 @@ export class PolicyRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("user_id, status, lifecycle_status, annual_premium, created_at, submit_date")
+        .select("user_id, status, lifecycle_status, annual_premium, created_at, submit_date, effective_date")
         .in("user_id", userIds);
 
       if (error) {

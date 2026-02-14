@@ -969,9 +969,8 @@ class HierarchyService {
           // Use lifecycle_status for active policy counting (issued, in-force policies)
           if (policy.lifecycle_status === "active") {
             acc.activePolicies++;
-            acc.totalPremium += parseFloat(
-              String(policy.annual_premium) || "0",
-            );
+            const premVal = parseFloat(String(policy.annual_premium ?? 0));
+            acc.totalPremium += isNaN(premVal) ? 0 : premVal;
           }
           return acc;
         },
@@ -1399,7 +1398,8 @@ class HierarchyService {
         if (policy.lifecycle_status === "active") acc.active++;
         if (policy.lifecycle_status === "lapsed") acc.lapsed++;
         if (policy.lifecycle_status === "cancelled") acc.cancelled++;
-        acc.totalPremium += parseFloat(String(policy.annual_premium) || "0");
+        const premVal = parseFloat(String(policy.annual_premium ?? 0));
+        acc.totalPremium += isNaN(premVal) ? 0 : premVal;
         return acc;
       },
       { total: 0, active: 0, lapsed: 0, cancelled: 0, totalPremium: 0 },
