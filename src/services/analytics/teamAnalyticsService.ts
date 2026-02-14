@@ -94,38 +94,28 @@ class TeamAnalyticsService {
   /**
    * Calculate agent performance metrics for segmentation
    *
-   * Persistency is calculated as: active / (active + lapsed + cancelled)
-   * Pending policies are NOT included in persistency calculations.
+   * Total AP = ALL submissions with effective_date in the selected date range,
+   * regardless of status or lifecycle_status. The RPC handles date filtering.
    *
-   * For AP totals, only countable statuses are included (active, pending, submitted, underwriting)
-   * to match AgentTable calculations.
+   * Persistency is calculated as: active / (active + lapsed + cancelled)
+   * from allPolicies (all-time data). Pending policies are NOT included.
    */
   calculateAgentPerformance(
     rawData: TeamAnalyticsRawData,
     dateFilteredPolicies?: TeamPolicyRow[],
     dateFilteredCommissions?: TeamCommissionRow[],
   ): AgentPerformanceData[] {
-    // Statuses that count towards written AP (must match AgentTable)
-    const COUNTABLE_STATUSES = [
-      "active",
-      "pending",
-      "submitted",
-      "underwriting",
-    ];
-
     const policies = dateFilteredPolicies || rawData.policies;
     const commissions = dateFilteredCommissions || rawData.commissions;
     const allPolicies = rawData.allPolicies;
 
     // Group policies and commissions by user
-    // Only include policies with countable statuses for AP calculations
+    // ALL policies in the date range count toward Total AP (no status filter)
     const policyByUser = new Map<string, TeamPolicyRow[]>();
     const allPolicyByUser = new Map<string, TeamPolicyRow[]>();
     const commissionByUser = new Map<string, TeamCommissionRow[]>();
 
     policies.forEach((p) => {
-      // Only include countable statuses for period AP
-      if (!COUNTABLE_STATUSES.includes(p.status?.toLowerCase() || "")) return;
       const existing = policyByUser.get(p.user_id) || [];
       existing.push(p);
       policyByUser.set(p.user_id, existing);
@@ -151,7 +141,7 @@ class TeamAnalyticsService {
         const agentAllPolicies = allPolicyByUser.get(agent.id) || [];
         const agentCommissions = commissionByUser.get(agent.id) || [];
 
-        // totalAP only includes countable statuses (filtered above)
+        // totalAP = all submissions with effective_date in range (no status filter)
         const totalAP = agentPolicies.reduce(
           (sum, p) => sum + (p.annual_premium || 0),
           0,
@@ -283,9 +273,9 @@ class TeamAnalyticsService {
   /**
    * Calculate team pace metrics
    *
-   * Shows written premium in the period vs. target premium (not income).
-   * Only includes policies with "active", "pending", "submitted", "underwriting" status
-   * to match what AgentTable displays.
+   * Total AP = ALL submissions with effective_date in the selected date range,
+   * regardless of status or lifecycle_status. The RPC handles date filtering.
+   * Pace = Total AP MTD / dayOfMonth * daysInMonth.
    */
   calculateTeamPace(
     rawData: TeamAnalyticsRawData,
@@ -295,20 +285,10 @@ class TeamAnalyticsService {
   ): TeamPaceMetrics {
     const now = new Date();
 
-    // Statuses that count towards written AP (must match AgentTable)
-    const COUNTABLE_STATUSES = [
-      "active",
-      "pending",
-      "submitted",
-      "underwriting",
-    ];
+    // All policies in the date range count toward Total AP (no status filter)
+    const periodPolicies = rawData.policies;
 
-    // Filter policies to only include countable statuses
-    const periodPolicies = rawData.policies.filter((p) =>
-      COUNTABLE_STATUSES.includes(p.status?.toLowerCase() || ""),
-    );
-
-    // Calculate metrics - only from policies with countable statuses
+    // Calculate metrics from all submissions in the period
     const totalAPWritten = periodPolicies.reduce(
       (sum, p) => sum + (p.annual_premium || 0),
       0,
@@ -381,56 +361,73 @@ class TeamAnalyticsService {
   }
 
   /**
-   * Calculate team policy status breakdown
+   * Calculate team policy status breakdown for the selected date range
    *
-   * IMPORTANT: Persistency is calculated as:
-   *   active / (active + lapsed + cancelled)
-   *
-   * Pending policies are NOT included because they haven't been issued yet.
+   * Status counts use date-filtered policies (effective_date in range).
+   * Persistency uses all-time data: active / (active + lapsed + cancelled).
+   * Pending policies are NOT included in persistency (not yet issued).
    */
   calculatePolicyStatusBreakdown(
     rawData: TeamAnalyticsRawData,
   ): TeamPolicyStatusBreakdown {
-    const allPolicies = rawData.allPolicies;
+    // Use date-filtered policies for status counts (current period view)
+    const periodPolicies = rawData.policies;
 
     // Use lifecycle_status for active/lapsed/cancelled (issued policy lifecycle)
     // Use status for pending (application outcome)
-    const active = allPolicies.filter((p) => p.lifecycle_status === "active");
-    const pending = allPolicies.filter((p) => p.status === "pending");
-    const lapsed = allPolicies.filter((p) => p.lifecycle_status === "lapsed");
-    const cancelled = allPolicies.filter((p) => p.lifecycle_status === "cancelled");
+    const active = periodPolicies.filter(
+      (p) => p.lifecycle_status === "active",
+    );
+    const pending = periodPolicies.filter((p) => p.status === "pending");
+    const lapsed = periodPolicies.filter(
+      (p) => p.lifecycle_status === "lapsed",
+    );
+    const cancelled = periodPolicies.filter(
+      (p) => p.lifecycle_status === "cancelled",
+    );
 
     const sumPremium = (policies: TeamPolicyRow[]) =>
       policies.reduce((sum, p) => sum + (p.annual_premium || 0), 0);
 
-    // Persistency: active / issued (active + lapsed + cancelled)
-    // Pending policies are NOT counted - they haven't been issued yet
-    const issuedPolicies = active.length + lapsed.length + cancelled.length;
+    // Persistency uses ALL-TIME data (not date-filtered)
+    // active / issued (active + lapsed + cancelled)
+    const allActive = rawData.allPolicies.filter(
+      (p) => p.lifecycle_status === "active",
+    ).length;
+    const allLapsed = rawData.allPolicies.filter(
+      (p) => p.lifecycle_status === "lapsed",
+    ).length;
+    const allCancelled = rawData.allPolicies.filter(
+      (p) => p.lifecycle_status === "cancelled",
+    ).length;
+    const issuedPolicies = allActive + allLapsed + allCancelled;
     const persistencyRate =
-      issuedPolicies > 0 ? (active.length / issuedPolicies) * 100 : 100;
+      issuedPolicies > 0 ? (allActive / issuedPolicies) * 100 : 100;
 
     return {
       active: { count: active.length, premium: sumPremium(active) },
       pending: { count: pending.length, premium: sumPremium(pending) },
       lapsed: { count: lapsed.length, premium: sumPremium(lapsed) },
       cancelled: { count: cancelled.length, premium: sumPremium(cancelled) },
-      total: { count: allPolicies.length, premium: sumPremium(allPolicies) },
+      total: {
+        count: periodPolicies.length,
+        premium: sumPremium(periodPolicies),
+      },
       persistencyRate,
     };
   }
 
   /**
-   * Calculate geographic distribution by client state
-   * Groups policies by the client's state (from clients.address JSONB field)
+   * Calculate geographic distribution by client state for the selected date range
+   * Uses date-filtered policies (effective_date in range), not all-time data.
    */
   calculateGeographicBreakdown(
     rawData: TeamAnalyticsRawData,
   ): TeamGeographicBreakdown[] {
-    // Group by client's state (from policy's client_state field)
+    // Use date-filtered policies for current period view
     const stateMap = new Map<string, { count: number; premium: number }>();
 
-    rawData.allPolicies.forEach((policy) => {
-      // Use client_state from the policy (extracted from clients.address JSONB in RPC)
+    rawData.policies.forEach((policy) => {
       const state = policy.client_state || "Unknown";
 
       const existing = stateMap.get(state) || { count: 0, premium: 0 };
@@ -440,7 +437,7 @@ class TeamAnalyticsService {
     });
 
     // Convert to array and calculate percentages
-    const totalPolicies = rawData.allPolicies.length;
+    const totalPolicies = rawData.policies.length;
     const breakdown: TeamGeographicBreakdown[] = [];
 
     stateMap.forEach((data, state) => {
@@ -457,7 +454,8 @@ class TeamAnalyticsService {
   }
 
   /**
-   * Calculate carrier breakdown
+   * Calculate carrier breakdown for the selected date range
+   * Uses date-filtered policies and commissions, not all-time data.
    */
   calculateCarrierBreakdown(
     rawData: TeamAnalyticsRawData,
@@ -466,9 +464,9 @@ class TeamAnalyticsService {
     const carrierMap = new Map<string, TeamCarrierRow>();
     rawData.carriers.forEach((c) => carrierMap.set(c.id, c));
 
-    // Create commission lookup by policy
+    // Create commission lookup by policy (date-filtered)
     const commissionByPolicy = new Map<string, number>();
-    rawData.allCommissions.forEach((c) => {
+    rawData.commissions.forEach((c) => {
       if (c.policy_id) {
         const existing = commissionByPolicy.get(c.policy_id) || 0;
         commissionByPolicy.set(
@@ -499,7 +497,7 @@ class TeamAnalyticsService {
       }
     >();
 
-    rawData.allPolicies.forEach((policy) => {
+    rawData.policies.forEach((policy) => {
       const carrierId = policy.carrier_id || "unknown";
       const carrier = carrierMap.get(carrierId);
       const carrierName = carrier?.name || "Unknown Carrier";
