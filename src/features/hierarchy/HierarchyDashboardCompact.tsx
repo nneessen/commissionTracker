@@ -12,6 +12,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { SendInvitationModal } from "./components/SendInvitationModal";
 import { TeamMetricsCard } from "./components/TeamMetricsCard";
 import { AgentTable } from "./components/AgentTable";
+import { IssuedPremiumTable } from "./components/IssuedPremiumTable";
 import { InvitationsList } from "./components/InvitationsList";
 import { PendingInvitationBanner } from "./components/PendingInvitationBanner";
 import { TeamActivityFeed } from "./components/TeamActivityFeed";
@@ -38,10 +39,13 @@ export function HierarchyDashboardCompact() {
     useMyDownlines();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { user } = useAuth();
-  const { hasAccess: hasTeamAnalyticsAccess } = useFeatureAccess("team_analytics");
+  const { hasAccess: hasTeamAnalyticsAccess } =
+    useFeatureAccess("team_analytics");
 
   // Owner (super-admin) always has access to team analytics
-  const isOwner = OWNER_EMAILS.map(e => e.toLowerCase()).includes(user?.email?.toLowerCase() ?? "");
+  const isOwner = OWNER_EMAILS.map((e) => e.toLowerCase()).includes(
+    user?.email?.toLowerCase() ?? "",
+  );
   const canViewTeamAnalytics = isOwner || hasTeamAnalyticsAccess;
 
   // Timeframe state
@@ -204,8 +208,16 @@ export function HierarchyDashboardCompact() {
             timePeriod={timePeriod}
           />
 
-          {/* Agent Table - Full hierarchy (no filtering to preserve tree structure) */}
+          {/* Agent Table - Submissions (all policies by effective_date) */}
           <AgentTable
+            agents={downlines}
+            owner={owner}
+            isLoading={isLoading}
+            dateRange={{ start: startDate, end: endDate }}
+          />
+
+          {/* Issued Premium Table - Active policies only */}
+          <IssuedPremiumTable
             agents={downlines}
             owner={owner}
             isLoading={isLoading}

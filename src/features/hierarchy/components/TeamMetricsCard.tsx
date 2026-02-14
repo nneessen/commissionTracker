@@ -93,6 +93,7 @@ export function TeamMetricsCard({
 
   // Team performance metrics from stats
   const teamAPTotal = stats?.team_ap_total || 0;
+  const teamIPTotal = stats?.team_ip_total || 0;
   const teamPoliciesMTD = stats?.team_policies_count || 0;
   const avgPremiumPerAgent = stats?.avg_premium_per_agent || 0;
   const topPerformerName = stats?.top_performer_name || "No data";
@@ -102,11 +103,11 @@ export function TeamMetricsCard({
   const avgContractLevel = stats?.avg_contract_level || 0;
   const pendingInvitations = stats?.pending_invitations || 0;
 
-  // NEW: Pending AP metrics
+  // Pending AP metrics
   const teamPendingAP = stats?.team_pending_ap_total || 0;
   const teamPendingCount = stats?.team_pending_policies_count || 0;
 
-  // NEW: Team Pace metrics (AP-based)
+  // Team Pace metrics (AP-based)
   // Monthly
   const teamMonthlyAPTarget = stats?.team_monthly_ap_target || 0;
   const teamMonthlyPacePercentage = stats?.team_monthly_pace_percentage || 0;
@@ -253,10 +254,18 @@ export function TeamMetricsCard({
             <div className="space-y-1">
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  Team IP Total
+                  Team Total AP
                 </span>
                 <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
                   {formatCurrency(teamAPTotal)}
+                </span>
+              </div>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  Team IP Total
+                </span>
+                <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+                  {formatCurrency(teamIPTotal)}
                 </span>
               </div>
               <div className="flex justify-between text-[11px]">
@@ -400,7 +409,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamMonthlyAPTarget)}
                       </span>
                     </div>
-                    <div title="Active policies closed this month">
+                    <div title="All submissions this month (any status)">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         MTD:{" "}
                       </span>
@@ -408,7 +417,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamAPTotal)}
                       </span>
                     </div>
-                    <div title="(Active + Pending AP) ÷ day of month × days in month">
+                    <div title="Total AP MTD ÷ day of month × days in month">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         Projected:{" "}
                       </span>
@@ -459,7 +468,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamYearlyAPTarget)}
                       </span>
                     </div>
-                    <div title="Active policies closed year-to-date">
+                    <div title="All submissions year-to-date (any status)">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         YTD:{" "}
                       </span>
@@ -467,7 +476,7 @@ export function TeamMetricsCard({
                         {formatCurrency(teamYTDAPTotal)}
                       </span>
                     </div>
-                    <div title="(Active YTD + Pending AP) ÷ day of year × 365">
+                    <div title="Total AP YTD ÷ day of year × 365">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         Projected:{" "}
                       </span>

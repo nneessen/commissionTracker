@@ -126,7 +126,6 @@ class HierarchyService {
     }
   }
 
-
   /**
    * Get upline chain for current user (path from root to current user)
    */
@@ -464,7 +463,7 @@ class HierarchyService {
       // Get all downline IDs for policy aggregation
       const downlineIds = downlines.map((d) => d.id);
 
-      // Include owner + all downlines for pending AP calculation
+      // Include owner + all downlines for AP calculation
       const allTeamUserIds = [myProfile.id, ...downlineIds];
 
       // ==========================================
@@ -516,7 +515,8 @@ class HierarchyService {
       }
 
       // Aggregate metrics for all team members
-      let teamAPTotal = 0;
+      let teamAPTotal = 0; // All submissions (any status)
+      let teamIPTotal = 0; // Only active/issued policies
       let teamPoliciesCount = 0;
       let teamPendingAPTotal = 0;
       let teamPendingPoliciesCount = 0;
@@ -526,54 +526,55 @@ class HierarchyService {
         ap: number;
       }> = [];
 
-      // Parse date range for filtering
+      // Date objects for non-policy date comparisons (recruitment rate, etc.)
       const rangeStart = new Date(mtdStart);
       const rangeEnd = new Date(mtdEnd);
+      // YYYY-MM-DD strings for policy date comparison (avoids UTC vs local timezone drift)
+      const rangeStartStr = mtdStart.slice(0, 10);
+      const rangeEndStr = mtdEnd.slice(0, 10);
 
       // Aggregate policies for all team members (owner + downlines) using pre-fetched data
       for (const userId of allTeamUserIds) {
         // O(1) lookup from pre-grouped Map
         const policies = policiesByUserId.get(userId) || [];
 
-        // Filter PENDING policies within the selected date range
-        // Use submit_date (when policy was submitted) not created_at (DB record creation)
-        const pendingPolicies = policies.filter((p) => {
-          const submitDate = new Date(p.submit_date || p.created_at || "");
-          return (
-            submitDate >= rangeStart &&
-            submitDate <= rangeEnd &&
-            p.status === "pending"
-          );
-        });
-
-        const pendingAP = pendingPolicies.reduce(
-          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-          0,
-        );
-
-        teamPendingAPTotal += pendingAP;
-        teamPendingPoliciesCount += pendingPolicies.length;
-
-        // Aggregate active policies for entire team including owner
-        // Use submit_date (when policy was submitted) not created_at (DB record creation)
-        // lifecycle_status = "active" indicates an issued, in-force policy
+        // All policies with effective_date in range (any status = Total AP)
         const periodPolicies = policies.filter((p) => {
-          const submitDate = new Date(p.submit_date || p.created_at || "");
+          if (!p.effective_date) return false;
           return (
-            submitDate >= rangeStart &&
-            submitDate <= rangeEnd &&
-            p.lifecycle_status === "active"
+            p.effective_date >= rangeStartStr && p.effective_date <= rangeEndStr
           );
         });
 
-        // Sum AP for this agent
-        const agentAP = periodPolicies.reduce(
-          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-          0,
-        );
+        // Total AP: sum of ALL submissions in period
+        const agentAP = periodPolicies.reduce((sum, p) => {
+          const val = parseFloat(String(p.annual_premium ?? 0));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
 
         teamAPTotal += agentAP;
         teamPoliciesCount += periodPolicies.length;
+
+        // IP: lifecycle_status = 'active' + effective_date in range
+        const activePolicies = periodPolicies.filter(
+          (p) => p.lifecycle_status === "active",
+        );
+        const agentIP = activePolicies.reduce((sum, p) => {
+          const val = parseFloat(String(p.annual_premium ?? 0));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
+        teamIPTotal += agentIP;
+
+        // Pending AP: status = 'pending' + effective_date in range
+        const pendingPolicies = periodPolicies.filter(
+          (p) => p.status === "pending",
+        );
+        const pendingAP = pendingPolicies.reduce((sum, p) => {
+          const val = parseFloat(String(p.annual_premium ?? 0));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
+        teamPendingAPTotal += pendingAP;
+        teamPendingPoliciesCount += pendingPolicies.length;
 
         // Track agent performance for top performer (include owner)
         if (agentAP > 0) {
@@ -637,11 +638,7 @@ class HierarchyService {
             contractLevels.length
           : 0;
 
-      // pendingInvitations already fetched in parallelized queries above (line ~491)
-
       // Calculate RELATIVE max depth from user's position
-      // User's depth is myProfile.hierarchy_depth, downlines are at deeper levels
-      // max_depth should show how many levels deep the team goes RELATIVE to user
       const myDepth = myProfile.hierarchy_depth || 0;
       const maxDownlineDepth =
         downlines.length > 0
@@ -694,90 +691,60 @@ class HierarchyService {
       const teamYearlyAPTarget = myAPTargets.yearly + downlineTargetSums.yearly;
 
       // ==========================================
-      // Calculate YTD AP for yearly pace
+      // Calculate YTD AP for yearly pace (all submissions, any status)
       // ==========================================
       let teamYTDAPTotal = 0;
-      const ytdRangeStart = new Date(now.getFullYear(), 0, 1);
+      const ytdStartStr = `${now.getFullYear()}-01-01`;
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
       // Use pre-grouped policies (O(1) lookup)
       for (const userId of allTeamUserIds) {
         const policies = policiesByUserId.get(userId) || [];
 
-        // Filter YTD active policies
-        // Use submit_date (when policy was submitted) not created_at (DB record creation)
-        // lifecycle_status = "active" indicates an issued, in-force policy
+        // YTD: ALL policies with effective_date in year range (any status)
         const ytdPolicies = policies.filter((p) => {
-          const submitDate = new Date(p.submit_date || p.created_at || "");
-          return submitDate >= ytdRangeStart && p.lifecycle_status === "active";
+          if (!p.effective_date) return false;
+          return (
+            p.effective_date >= ytdStartStr && p.effective_date <= todayStr
+          );
         });
 
-        const ytdAP = ytdPolicies.reduce(
-          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-          0,
-        );
+        const ytdAP = ytdPolicies.reduce((sum, p) => {
+          const val = parseFloat(String(p.annual_premium ?? 0));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
 
         teamYTDAPTotal += ytdAP;
       }
 
       // ==========================================
       // Calculate FIXED MTD AP for monthly pace (not affected by selected time period)
+      // All submissions for current month (any status)
       // ==========================================
       let fixedMonthlyAPTotal = 0;
-      let fixedMonthlyPendingAPTotal = 0;
-      let fixedAllPendingAPTotal = 0;
-      const mtdRangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const mtdRangeEnd = now;
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const fixedMtdStartStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
 
       for (const userId of allTeamUserIds) {
         const policies = policiesByUserId.get(userId) || [];
 
-        // Filter MTD active policies (current month only)
-        // Use submit_date (when policy was submitted) not created_at (DB record creation)
-        // lifecycle_status = "active" indicates an issued, in-force policy
-        const mtdActivePolicies = policies.filter((p) => {
-          const submitDate = new Date(p.submit_date || p.created_at || "");
+        // MTD: ALL policies with effective_date in current month (any status)
+        const mtdPolicies = policies.filter((p) => {
+          if (!p.effective_date) return false;
           return (
-            submitDate >= mtdRangeStart &&
-            submitDate <= mtdRangeEnd &&
-            p.lifecycle_status === "active"
+            p.effective_date >= fixedMtdStartStr && p.effective_date <= todayStr
           );
         });
 
-        // Filter MTD pending policies (current month only)
-        // Use submit_date (when policy was submitted) not created_at (DB record creation)
-        const mtdPendingPolicies = policies.filter((p) => {
-          const submitDate = new Date(p.submit_date || p.created_at || "");
-          return (
-            submitDate >= mtdRangeStart &&
-            submitDate <= mtdRangeEnd &&
-            p.status === "pending"
-          );
-        });
-
-        // All pending policies (no date filter) for yearly pace
-        const allPendingPolicies = policies.filter(
-          (p) => p.status === "pending",
-        );
-
-        fixedMonthlyAPTotal += mtdActivePolicies.reduce(
-          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-          0,
-        );
-
-        fixedMonthlyPendingAPTotal += mtdPendingPolicies.reduce(
-          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-          0,
-        );
-
-        fixedAllPendingAPTotal += allPendingPolicies.reduce(
-          (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
-          0,
-        );
+        fixedMonthlyAPTotal += mtdPolicies.reduce((sum, p) => {
+          const val = parseFloat(String(p.annual_premium ?? 0));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
       }
 
       // ==========================================
       // Monthly Pace Calculations
-      // Formula: (Active AP MTD + Pending AP) / day of month × days in month
+      // Formula: Total AP MTD / day of month × days in month
       // ==========================================
       const daysInMonth = new Date(
         now.getFullYear(),
@@ -788,13 +755,11 @@ class HierarchyService {
       const expectedMonthlyAPAtThisPoint =
         (dayOfMonth / daysInMonth) * teamMonthlyAPTarget;
 
-      // Use FIXED Active MTD + Pending MTD AP for pace calculation (not affected by time period)
-      const teamMonthlyAPForPacePercentage =
-        fixedMonthlyAPTotal + fixedMonthlyPendingAPTotal;
+      // Monthly pace: all submissions for current month
+      const teamMonthlyAPForPace = fixedMonthlyAPTotal;
       const teamMonthlyPacePercentage =
         expectedMonthlyAPAtThisPoint > 0
-          ? (teamMonthlyAPForPacePercentage / expectedMonthlyAPAtThisPoint) *
-            100
+          ? (teamMonthlyAPForPace / expectedMonthlyAPAtThisPoint) * 100
           : teamMonthlyAPTarget > 0
             ? 0
             : 100;
@@ -806,16 +771,13 @@ class HierarchyService {
             ? "on_pace"
             : "behind";
 
-      // Projected month-end AP based on FIXED Active MTD + Pending MTD AP
-      // Formula: (Active AP MTD + Pending AP MTD) / day of month × days in month
-      const teamMonthlyAPForPace =
-        fixedMonthlyAPTotal + fixedMonthlyPendingAPTotal;
+      // Projected month-end AP: Total AP MTD / day of month × days in month
       const teamMonthlyProjected =
         dayOfMonth > 0 ? (teamMonthlyAPForPace / dayOfMonth) * daysInMonth : 0;
 
       // ==========================================
       // Yearly Pace Calculations
-      // Formula: (Active AP YTD + Pending AP) / day of year × days in year
+      // Formula: Total AP YTD / day of year × days in year
       // ==========================================
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       const dayOfYear =
@@ -831,8 +793,8 @@ class HierarchyService {
       const expectedYearlyAPAtThisPoint =
         (dayOfYear / daysInYear) * teamYearlyAPTarget;
 
-      // Use FIXED Active YTD + ALL Pending AP for pace calculation (not affected by time period)
-      const teamYearlyAPForPace = teamYTDAPTotal + fixedAllPendingAPTotal;
+      // Yearly pace: all submissions YTD (no separate pending addition)
+      const teamYearlyAPForPace = teamYTDAPTotal;
       const teamYearlyPacePercentage =
         expectedYearlyAPAtThisPoint > 0
           ? (teamYearlyAPForPace / expectedYearlyAPAtThisPoint) * 100
@@ -847,8 +809,7 @@ class HierarchyService {
             ? "on_pace"
             : "behind";
 
-      // Projected year-end AP based on FIXED Active YTD + ALL Pending AP
-      // Formula: (Active AP YTD + All Pending AP) / day of year × days in year
+      // Projected year-end AP: Total AP YTD / day of year × days in year
       const teamYearlyProjected =
         dayOfYear > 0 ? (teamYearlyAPForPace / dayOfYear) * daysInYear : 0;
 
@@ -864,7 +825,8 @@ class HierarchyService {
         total_override_income_ytd: ytdIncome,
 
         // Team performance
-        team_ap_total: teamAPTotal,
+        team_ap_total: teamAPTotal, // All submissions (any status)
+        team_ip_total: teamIPTotal, // Only active/issued policies
         team_policies_count: teamPoliciesCount,
         avg_premium_per_agent: avgPremiumPerAgent,
 
@@ -1039,7 +1001,9 @@ class HierarchyService {
       const policies = await this.policyRepo.findWithRelationsByUserId(agentId);
 
       // Use lifecycle_status for active policy counting (issued, in-force policies)
-      const active = policies.filter((p) => p.lifecycle_status === "active").length;
+      const active = policies.filter(
+        (p) => p.lifecycle_status === "active",
+      ).length;
       const total = policies.length;
 
       return {

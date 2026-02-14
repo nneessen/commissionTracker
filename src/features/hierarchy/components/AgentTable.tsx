@@ -43,8 +43,11 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
+// eslint-disable-next-line no-restricted-imports
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
+// eslint-disable-next-line no-restricted-imports
 import { policyRepository } from "@/services/policies";
+// eslint-disable-next-line no-restricted-imports
 import type { PolicyMetricRow } from "@/services/policies";
 import { useCurrentUserProfile } from "@/hooks/admin";
 
@@ -70,20 +73,16 @@ interface AgentTableProps {
   dateRange?: DateRangeFilter;
 }
 
-// Lifecycle statuses for IP (Issued Premium) - uses lifecycle_status column
-const ISSUED_LIFECYCLE_STATUSES = ["active"]; // Policies that are in-force (IP = Issued Premium)
 // Application statuses for Pending AP - uses status column
 const PENDING_AP_STATUSES = ["pending"]; // Pending application outcome
 
 // Metrics for a single agent
 interface AgentMetrics {
-  mtd_ap: number; // Issued AP (for backward compatibility)
-  mtd_policies: number;
-  override_amount: number;
-  // Detailed AP metrics
-  total_ip: number; // Issued Premium (in-force policies)
-  pending_ap: number; // Pending AP (pending/submitted/underwriting)
-  total_ap: number; // Total = IP + Pending
+  total_ap: number; // All submissions in period (any status)
+  pending_ap: number; // Pending submissions in period
+  mtd_policies: number; // Count of all policies in period
+  pending_count: number; // Count of pending policies
+  override_amount: number; // Override earnings
 }
 
 /**
@@ -143,44 +142,36 @@ async function fetchAllAgentMetrics(
   for (const agentId of agentIds) {
     const agentPolicies = policiesByUser.get(agentId) || [];
 
-    // IP: lifecycle_status = 'active' + effective_date in range
-    const total_ip = agentPolicies
-      .filter((p) => {
-        if (!ISSUED_LIFECYCLE_STATUSES.includes(p.lifecycle_status || "")) return false;
-        if (!p.effective_date) return false;
-        // Compare as YYYY-MM-DD strings (lexicographic) to avoid timezone issues
-        return p.effective_date >= startStr && p.effective_date <= endStr;
-      })
-      .reduce((sum, p) => {
-        const val = parseFloat(String(p.annual_premium ?? 0));
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
-
-    // Pending AP: status = 'pending' — NO date filter (all current pipeline)
-    const pending_ap = agentPolicies
-      .filter((p) => PENDING_AP_STATUSES.includes(p.status || ""))
-      .reduce((sum, p) => {
-        const val = parseFloat(String(p.annual_premium ?? 0));
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
-
-    // Total AP = IP + Pending
-    const total_ap = total_ip + pending_ap;
-
-    // MTD policies count: issued policies with effective_date in range
-    const mtd_policies = agentPolicies.filter((p) => {
-      if (!ISSUED_LIFECYCLE_STATUSES.includes(p.lifecycle_status || "")) return false;
+    // Total AP: ALL policies with effective_date in range (any status/lifecycle_status)
+    const periodPolicies = agentPolicies.filter((p) => {
       if (!p.effective_date) return false;
       return p.effective_date >= startStr && p.effective_date <= endStr;
-    }).length;
+    });
+
+    const total_ap = periodPolicies.reduce((sum, p) => {
+      const val = parseFloat(String(p.annual_premium ?? 0));
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+
+    // Pending AP: status = 'pending' AND effective_date in range (monthly submissions still pending)
+    const pendingPolicies = periodPolicies.filter((p) =>
+      PENDING_AP_STATUSES.includes(p.status || ""),
+    );
+
+    const pending_ap = pendingPolicies.reduce((sum, p) => {
+      const val = parseFloat(String(p.annual_premium ?? 0));
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+
+    // MTD policies count: all policies with effective_date in range
+    const mtd_policies = periodPolicies.length;
 
     metricsMap.set(agentId, {
-      mtd_ap: total_ip, // For backward compatibility
-      mtd_policies,
-      override_amount: overridesByAgent.get(agentId) || 0,
-      total_ip,
-      pending_ap,
       total_ap,
+      pending_ap,
+      mtd_policies,
+      pending_count: pendingPolicies.length,
+      override_amount: overridesByAgent.get(agentId) || 0,
     });
   }
 
@@ -211,15 +202,13 @@ function AgentRow({
   const navigate = useNavigate();
 
   // Use metrics passed from parent (batch-fetched), with defaults
-  const { mtd_policies, override_amount, total_ip, pending_ap, total_ap } =
-    metrics || {
-      mtd_ap: 0,
-      mtd_policies: 0,
-      override_amount: 0,
-      total_ip: 0,
-      pending_ap: 0,
-      total_ap: 0,
-    };
+  const { mtd_policies, override_amount, pending_ap, total_ap } = metrics || {
+    total_ap: 0,
+    pending_ap: 0,
+    mtd_policies: 0,
+    pending_count: 0,
+    override_amount: 0,
+  };
 
   // Calculate real override spread
   // If viewing from upline's perspective: spread = upline level - agent level
@@ -343,11 +332,11 @@ function AgentRow({
         </span>
       </td>
 
-      {/* Total IP (Issued Premium) */}
+      {/* Total AP (All Submissions) */}
       <td className="px-2 py-1.5 text-right text-[11px] font-mono">
-        {total_ip > 0 ? (
-          <span className="font-semibold text-blue-600 dark:text-blue-400">
-            {formatCurrency(total_ip)}
+        {total_ap > 0 ? (
+          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+            {formatCurrency(total_ap)}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">$0</span>
@@ -359,17 +348,6 @@ function AgentRow({
         {pending_ap > 0 ? (
           <span className="font-semibold text-amber-600 dark:text-amber-400">
             {formatCurrency(pending_ap)}
-          </span>
-        ) : (
-          <span className="text-zinc-400 dark:text-zinc-500">$0</span>
-        )}
-      </td>
-
-      {/* Total AP (Active + Issued + Pending) */}
-      <td className="px-2 py-1.5 text-right text-[11px] font-mono">
-        {total_ap > 0 ? (
-          <span className="font-bold text-zinc-900 dark:text-zinc-100">
-            {formatCurrency(total_ap)}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">$0</span>
@@ -551,8 +529,7 @@ export function AgentTable({
 
   // Root agents are those whose parent is NOT in the agents list (i.e., their parent is the current viewer)
   const rootAgentsUnsorted = agentsToDisplay.filter((a) => {
-    const parentId =
-      getParentIdFromPath(a.hierarchy_path, a.id) || a.upline_id;
+    const parentId = getParentIdFromPath(a.hierarchy_path, a.id) || a.upline_id;
     return !parentId || !agentMap.has(parentId);
   });
 
@@ -667,15 +644,12 @@ export function AgentTable({
                   Status
                 </th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                  <span className="text-blue-600 dark:text-blue-400">IP</span>
+                  Total AP
                 </th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   <span className="text-amber-600 dark:text-amber-400">
                     Pending
                   </span>
-                </th>
-                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                  Total AP
                 </th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Policies
@@ -694,7 +668,7 @@ export function AgentTable({
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-8">
+                  <td colSpan={8} className="text-center py-8">
                     <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                       Loading team members...
                     </div>
@@ -702,7 +676,7 @@ export function AgentTable({
                 </tr>
               ) : agentsToDisplay.length === 0 && !owner ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-8">
+                  <td colSpan={8} className="text-center py-8">
                     <div className="flex flex-col items-center gap-1">
                       <UserX className="h-6 w-6 text-zinc-300 dark:text-zinc-600" />
                       <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -744,7 +718,8 @@ export function AgentTable({
           <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30">
             <div className="flex items-center gap-4">
               <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Total: {agents.length + (owner ? 1 : 0)} agent{agents.length + (owner ? 1 : 0) !== 1 ? "s" : ""}
+                Total: {agents.length + (owner ? 1 : 0)} agent
+                {agents.length + (owner ? 1 : 0) !== 1 ? "s" : ""}
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400">

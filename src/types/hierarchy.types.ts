@@ -189,8 +189,9 @@ export interface HierarchyStats {
   total_override_income_ytd: number;
 
   // Team performance metrics (for selected period)
-  team_ap_total: number; // Sum of all downline annual premiums
-  team_policies_count: number; // Count of policies written by team
+  team_ap_total: number; // Sum of ALL submissions (any status) with effective_date in period
+  team_ip_total: number; // Sum of active/issued policies with effective_date in period
+  team_policies_count: number; // Count of all policies in period
   avg_premium_per_agent: number; // team_ap_total / active_agents
 
   // Top performer
@@ -205,8 +206,8 @@ export interface HierarchyStats {
   pending_invitations: number; // Count from invitations table
 
   // Pending AP Submission (policies not yet active)
-  team_pending_ap_total: number; // Sum of AP for status='pending' across owner + all downlines
-  team_pending_policies_count: number; // Count of pending policies
+  team_pending_ap_total: number; // Sum of AP for status='pending' with effective_date in period
+  team_pending_policies_count: number; // Count of pending policies in period
 
   // Team Pace Metrics (AP-based)
   // Monthly Pace
@@ -217,7 +218,7 @@ export interface HierarchyStats {
 
   // Yearly Pace
   team_yearly_ap_target: number; // Sum of all team members' annual AP targets
-  team_ytd_ap_total: number; // Actual team AP written YTD
+  team_ytd_ap_total: number; // Actual team AP (all submissions) written YTD
   team_yearly_pace_percentage: number; // (actual AP YTD / expected AP at this point in year) * 100
   team_yearly_pace_status: "ahead" | "on_pace" | "behind";
   team_yearly_projected: number; // Projected year-end AP at current pace
