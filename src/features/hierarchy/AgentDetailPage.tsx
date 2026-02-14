@@ -1,8 +1,8 @@
 // src/features/hierarchy/AgentDetailPage.tsx
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowLeft,
@@ -15,6 +15,9 @@ import {
   TrendingUp,
   Users,
   Edit,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   useAgentCommissions,
@@ -34,10 +37,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/services/base/supabase";
+import { policyService } from "@/services/policies";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { EditAgentModal } from "./components/EditAgentModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
 
 /** Type for policy objects returned from hierarchyService.getAgentPolicies */
 interface AgentPolicy {
@@ -50,6 +64,7 @@ interface AgentPolicy {
   status: string;
   lifecycleStatus: string | null;
   createdAt: string;
+  submitDate: string;
   effectiveDate: string;
   issueDate: string;
 }
@@ -68,13 +83,17 @@ interface AgentCommission {
   status: string;
 }
 
+const POLICIES_PER_PAGE = 15;
+
 export function AgentDetailPage() {
   const { agentId } = useParams({ from: "/hierarchy/agent/$agentId" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "policies" | "commissions" | "overrides" | "team"
   >("policies");
+  const [policyPage, setPolicyPage] = useState(0);
 
   // Fetch comprehensive agent data
   const { data: agentData, isLoading: loadingAgent } = useAgentDetails(
@@ -129,6 +148,45 @@ export function AgentDetailPage() {
   const { data: teamComparison } = useTeamComparison(agentId, {
     enabled: !!agentId,
   });
+
+  // Policy status update mutation for upline editing
+  const updatePolicyStatus = useMutation({
+    mutationFn: async ({
+      policyId,
+      updates,
+    }: {
+      policyId: string;
+      updates: Record<string, unknown>;
+    }) => {
+      return policyService.update(policyId, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: hierarchyKeys.rollup(agentId, undefined, "agent-policies"),
+      });
+      toast.success("Policy updated");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update policy: ${error.message}`);
+    },
+  });
+
+  const handleStatusChange = useCallback(
+    (policyId: string, status: string) => {
+      updatePolicyStatus.mutate({ policyId, updates: { status } });
+    },
+    [updatePolicyStatus],
+  );
+
+  const handleLifecycleChange = useCallback(
+    (policyId: string, lifecycleStatus: string | null) => {
+      updatePolicyStatus.mutate({
+        policyId,
+        updates: { lifecycleStatus },
+      });
+    },
+    [updatePolicyStatus],
+  );
 
   if (loadingAgent) {
     return (
@@ -393,104 +451,248 @@ export function AgentDetailPage() {
       {/* Content area */}
       <div className="flex-1 overflow-auto">
         {/* Policies Tab */}
-        {activeTab === "policies" && (
-          <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-            <Table>
-              <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
-                <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Policy #
-                  </TableHead>
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Client
-                  </TableHead>
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Product
-                  </TableHead>
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Carrier
-                  </TableHead>
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Effective
-                  </TableHead>
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
-                    Premium
-                  </TableHead>
-                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Status
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loadingPolicies ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
-                    >
-                      Loading policies...
-                    </TableCell>
-                  </TableRow>
-                ) : policyList.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
-                    >
-                      No policies found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  policyList.map((policy: AgentPolicy) => (
-                    <TableRow
-                      key={policy.id}
-                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
-                    >
-                      <TableCell className="py-1.5 text-[11px] font-mono text-zinc-900 dark:text-zinc-100">
-                        {policy.policyNumber}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
-                        {policy.clientName}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
-                        {policy.product}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
-                        {policy.carrier}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
-                        {formatDate(policy.issueDate)}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 text-right">
-                        {formatCurrency(policy.annualPremium)}
-                      </TableCell>
-                      <TableCell className="py-1.5">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[9px] h-4 px-1",
-                            // Use lifecycleStatus for active/lapsed/cancelled styling
-                            policy.lifecycleStatus === "active" &&
-                              "text-emerald-600 border-emerald-300 dark:border-emerald-700",
-                            policy.lifecycleStatus === "lapsed" &&
-                              "text-yellow-600 border-yellow-300 dark:border-yellow-700",
-                            policy.lifecycleStatus === "cancelled" &&
-                              "text-red-600 border-red-300 dark:border-red-700",
-                            // Use status for pending styling (application status)
-                            policy.status === "pending" &&
-                              "text-orange-600 border-orange-300 dark:border-orange-700",
-                          )}
-                        >
-                          {policy.lifecycleStatus || policy.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))
+        {activeTab === "policies" &&
+          (() => {
+            const totalPolicyPages = Math.ceil(
+              policyList.length / POLICIES_PER_PAGE,
+            );
+            const paginatedPolicies = policyList.slice(
+              policyPage * POLICIES_PER_PAGE,
+              (policyPage + 1) * POLICIES_PER_PAGE,
+            );
+            return (
+              <div className="space-y-2">
+                <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                      <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Policy #
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Client
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Product
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Carrier
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Submit Date
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Effective
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+                          Premium
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Status
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-8" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loadingPolicies ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={9}
+                            className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
+                          >
+                            Loading policies...
+                          </TableCell>
+                        </TableRow>
+                      ) : policyList.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={9}
+                            className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
+                          >
+                            No policies found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedPolicies.map((policy: AgentPolicy) => (
+                          <TableRow
+                            key={policy.id}
+                            className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
+                          >
+                            <TableCell className="py-1.5 text-[11px] font-mono text-zinc-900 dark:text-zinc-100">
+                              {policy.policyNumber}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                              {policy.clientName}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                              {policy.product}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                              {policy.carrier}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                              {formatDate(policy.submitDate)}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                              {formatDate(policy.effectiveDate)}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 text-right">
+                              {formatCurrency(policy.annualPremium)}
+                            </TableCell>
+                            <TableCell className="py-1.5">
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[9px] h-4 px-1",
+                                  policy.lifecycleStatus === "active" &&
+                                    "text-emerald-600 border-emerald-300 dark:border-emerald-700",
+                                  policy.lifecycleStatus === "lapsed" &&
+                                    "text-yellow-600 border-yellow-300 dark:border-yellow-700",
+                                  policy.lifecycleStatus === "cancelled" &&
+                                    "text-red-600 border-red-300 dark:border-red-700",
+                                  policy.status === "pending" &&
+                                    "text-orange-600 border-orange-300 dark:border-orange-700",
+                                  policy.status === "approved" &&
+                                    !policy.lifecycleStatus &&
+                                    "text-blue-600 border-blue-300 dark:border-blue-700",
+                                  policy.status === "denied" &&
+                                    "text-red-600 border-red-300 dark:border-red-700",
+                                )}
+                              >
+                                {policy.lifecycleStatus || policy.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-1.5 w-8">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0"
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-44"
+                                >
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger className="text-[11px]">
+                                      Application Status
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      {["pending", "approved", "denied"].map(
+                                        (s) => (
+                                          <DropdownMenuItem
+                                            key={s}
+                                            className={cn(
+                                              "text-[11px] capitalize",
+                                              policy.status === s &&
+                                                "font-semibold",
+                                            )}
+                                            disabled={policy.status === s}
+                                            onClick={() =>
+                                              handleStatusChange(policy.id, s)
+                                            }
+                                          >
+                                            {s}
+                                          </DropdownMenuItem>
+                                        ),
+                                      )}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger className="text-[11px]">
+                                      Lifecycle Status
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      {[
+                                        { value: "active", label: "Active" },
+                                        { value: "lapsed", label: "Lapsed" },
+                                        {
+                                          value: "cancelled",
+                                          label: "Cancelled",
+                                        },
+                                      ].map((s) => (
+                                        <DropdownMenuItem
+                                          key={s.value}
+                                          className={cn(
+                                            "text-[11px]",
+                                            policy.lifecycleStatus ===
+                                              s.value && "font-semibold",
+                                          )}
+                                          disabled={
+                                            policy.lifecycleStatus === s.value
+                                          }
+                                          onClick={() =>
+                                            handleLifecycleChange(
+                                              policy.id,
+                                              s.value,
+                                            )
+                                          }
+                                        >
+                                          {s.label}
+                                        </DropdownMenuItem>
+                                      ))}
+                                      {policy.lifecycleStatus && (
+                                        <DropdownMenuItem
+                                          className="text-[11px] text-zinc-500"
+                                          onClick={() =>
+                                            handleLifecycleChange(
+                                              policy.id,
+                                              null,
+                                            )
+                                          }
+                                        >
+                                          Clear
+                                        </DropdownMenuItem>
+                                      )}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                {/* Pagination */}
+                {totalPolicyPages > 1 && (
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      {policyList.length} policies
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        disabled={policyPage === 0}
+                        onClick={() => setPolicyPage((p) => p - 1)}
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </Button>
+                      <span className="text-[10px] text-zinc-600 dark:text-zinc-400 min-w-[4rem] text-center">
+                        {policyPage + 1} / {totalPolicyPages}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        disabled={policyPage >= totalPolicyPages - 1}
+                        onClick={() => setPolicyPage((p) => p + 1)}
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+              </div>
+            );
+          })()}
 
         {/* Commissions Tab */}
         {activeTab === "commissions" && (

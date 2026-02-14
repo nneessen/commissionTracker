@@ -52,13 +52,23 @@ async function fetchIPMetrics(
   if (agentIds.length === 0) return new Map();
 
   const now = new Date();
+  // Normalize dates to YYYY-MM-DD for comparison with DB date columns
   const pad = (n: number) => String(n).padStart(2, "0");
-  const startStr = dateRange
-    ? dateRange.start
-    : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
-  const endStr = dateRange
-    ? dateRange.end
-    : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const toDateStr = (isoOrDate: string): string => {
+    if (isoOrDate.length === 10) return isoOrDate;
+    const d = new Date(isoOrDate);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const startStr = toDateStr(
+    dateRange
+      ? dateRange.start
+      : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`,
+  );
+  const endStr = toDateStr(
+    dateRange
+      ? dateRange.end
+      : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+  );
 
   const allPolicies = await policyRepository.findMetricsByUserIds(agentIds);
 

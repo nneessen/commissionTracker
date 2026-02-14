@@ -1018,10 +1018,9 @@ class HierarchyService {
           annualPremium: p.annual_premium,
           status: p.status,
           lifecycleStatus: p.lifecycle_status,
-          // Include both dates for proper filtering
           createdAt: p.created_at || new Date().toISOString(),
+          submitDate: p.submit_date || p.created_at || new Date().toISOString(),
           effectiveDate: p.effective_date,
-          // Keep issueDate for backward compatibility
           issueDate:
             p.effective_date || p.created_at || new Date().toISOString(),
         })),

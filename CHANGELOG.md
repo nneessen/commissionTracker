@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-14 11:19:05
+
+### Changed Files
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/IssuedPremiumTable.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/policies/PolicyRepository.ts`
+
+### Statistics
+```
+ 5 files changed, 340 insertions(+), 119 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-14 10:12:01
 
 ### Changed Files

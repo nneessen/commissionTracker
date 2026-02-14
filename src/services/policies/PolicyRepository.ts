@@ -31,6 +31,7 @@ export interface PolicyWithRelations {
   annual_premium: number | string | null;
   product: string | null;
   carrier_id: string | null;
+  submit_date: string | null;
   effective_date: string | null;
   created_at: string | null;
   client: { name: string } | null;

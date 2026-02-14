@@ -97,14 +97,23 @@ async function fetchAllAgentMetrics(
   if (agentIds.length === 0) return new Map();
 
   const now = new Date();
-  // Use YYYY-MM-DD strings for date comparison to avoid UTC vs local timezone drift
+  // Normalize dates to YYYY-MM-DD for comparison with DB date columns
   const pad = (n: number) => String(n).padStart(2, "0");
-  const startStr = dateRange
-    ? dateRange.start
-    : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
-  const endStr = dateRange
-    ? dateRange.end
-    : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const toDateStr = (isoOrDate: string): string => {
+    if (isoOrDate.length === 10) return isoOrDate;
+    const d = new Date(isoOrDate);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const startStr = toDateStr(
+    dateRange
+      ? dateRange.start
+      : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`,
+  );
+  const endStr = toDateStr(
+    dateRange
+      ? dateRange.end
+      : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+  );
 
   // BATCH QUERY 1: Get all policies for all agents in a single query
   const allPolicies = await policyRepository.findMetricsByUserIds(agentIds);
@@ -142,10 +151,10 @@ async function fetchAllAgentMetrics(
   for (const agentId of agentIds) {
     const agentPolicies = policiesByUser.get(agentId) || [];
 
-    // Total AP: ALL policies with effective_date in range (any status/lifecycle_status)
+    // Total AP: ALL policies with submit_date in range (any status/lifecycle_status)
     const periodPolicies = agentPolicies.filter((p) => {
-      if (!p.effective_date) return false;
-      return p.effective_date >= startStr && p.effective_date <= endStr;
+      if (!p.submit_date) return false;
+      return p.submit_date >= startStr && p.submit_date <= endStr;
     });
 
     const total_ap = periodPolicies.reduce((sum, p) => {
@@ -153,7 +162,7 @@ async function fetchAllAgentMetrics(
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
 
-    // Pending AP: status = 'pending' AND effective_date in range (monthly submissions still pending)
+    // Pending AP: status = 'pending' AND submit_date in range
     const pendingPolicies = periodPolicies.filter((p) =>
       PENDING_AP_STATUSES.includes(p.status || ""),
     );
@@ -163,7 +172,7 @@ async function fetchAllAgentMetrics(
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
 
-    // MTD policies count: all policies with effective_date in range
+    // MTD policies count: all policies with submit_date in range
     const mtd_policies = periodPolicies.length;
 
     metricsMap.set(agentId, {
