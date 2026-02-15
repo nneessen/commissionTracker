@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Calculator,
   Trophy,
+  MessageSquare,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -152,6 +153,12 @@ const navigationItems: NavigationItem[] = [
     permission: "nav.messages",
     subscriptionFeature: "email",
   },
+  {
+    icon: MessageSquare,
+    label: "Community",
+    href: "/community",
+    permission: "nav.community",
+  },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
 
@@ -198,6 +205,12 @@ const staffNavigationItems: NavigationItem[] = [
     label: "Messages",
     href: "/messages",
     public: true, // Staff need unrestricted access to messaging
+  },
+  {
+    icon: MessageSquare,
+    label: "Community",
+    href: "/community",
+    permission: "nav.community",
   },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];

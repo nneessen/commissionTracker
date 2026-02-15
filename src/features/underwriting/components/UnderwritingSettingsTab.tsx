@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   DollarSign,
   Shield,
+  LayoutGrid,
 } from "lucide-react";
 import { useCanManageUnderwriting } from "../hooks/useUnderwritingFeatureFlag";
 import { SessionHistoryList } from "./SessionHistory/SessionHistoryList";
@@ -15,6 +16,7 @@ import { GuideList } from "./GuideManager";
 import { CriteriaReviewDashboard } from "./CriteriaReview";
 import { RateEntryTab } from "./RateEntry";
 import { AcceptanceRulesTab } from "./AcceptanceRules";
+import { CoverageTab } from "./CoverageBuilder";
 
 export function UnderwritingSettingsTab() {
   const { canManage, isLoading } = useCanManageUnderwriting();
@@ -78,6 +80,13 @@ export function UnderwritingSettingsTab() {
             <span>Acceptance</span>
           </TabsTrigger>
           <TabsTrigger
+            value="coverage"
+            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
+            <LayoutGrid className="h-3 w-3 shrink-0" />
+            <span>Coverage</span>
+          </TabsTrigger>
+          <TabsTrigger
             value="guides"
             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
@@ -104,6 +113,10 @@ export function UnderwritingSettingsTab() {
 
           <TabsContent value="acceptance" className="mt-0">
             <AcceptanceRulesTab />
+          </TabsContent>
+
+          <TabsContent value="coverage" className="mt-0">
+            <CoverageTab />
           </TabsContent>
 
           <TabsContent value="guides" className="mt-0">

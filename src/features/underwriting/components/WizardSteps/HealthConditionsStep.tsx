@@ -501,11 +501,28 @@ interface FollowUpQuestionFieldProps {
   onChange: (value: string | number | string[]) => void;
 }
 
+/** Sort options alphabetically, keeping catch-all values ("Other", "Unknown", "N/A", "None") at the end */
+function sortOptions(options: string[] | undefined): string[] {
+  if (!options) return [];
+  const tailValues = new Set(["Other", "Unknown", "N/A", "None"]);
+  const main = options.filter((o) => !tailValues.has(o));
+  const tail = options.filter((o) => tailValues.has(o));
+  return [
+    ...main.sort((a, b) => a.localeCompare(b)),
+    ...tail.sort((a, b) => a.localeCompare(b)),
+  ];
+}
+
 function FollowUpQuestionField({
   question,
   value,
   onChange,
 }: FollowUpQuestionFieldProps) {
+  const sortedOptions = useMemo(
+    () => sortOptions(question.options),
+    [question.options],
+  );
+
   const renderField = () => {
     switch (question.type) {
       case "select":
@@ -515,7 +532,7 @@ function FollowUpQuestionField({
               <SelectValue placeholder="Select an option..." />
             </SelectTrigger>
             <SelectContent>
-              {question.options?.map((option) => (
+              {sortedOptions.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
                 </SelectItem>
@@ -528,7 +545,7 @@ function FollowUpQuestionField({
         const selectedValues = (value as string[]) || [];
         return (
           <div className="space-y-2 max-h-[150px] overflow-y-auto p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700">
-            {question.options?.map((option) => (
+            {sortedOptions.map((option) => (
               <div key={option} className="flex items-center gap-2">
                 <Checkbox
                   id={`${question.id}-${option}`}

@@ -5,18 +5,18 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export type AdvancedTimePeriod =
-  | "MTD" // Month to Date
-  | "YTD" // Year to Date
-  | "L30" // Last 30 days
-  | "L60" // Last 60 days
-  | "L90" // Last 90 days
-  | "L12M" // Last 12 months
-  | "CUSTOM"; // Custom range
+  | "MTD"
+  | "YTD"
+  | "L30"
+  | "L60"
+  | "L90"
+  | "L12M"
+  | "CUSTOM";
 
 export interface AdvancedDateRange {
   startDate: Date;
-  endDate: Date; // Today's end (for data filtering)
-  actualEndDate: Date; // Real period end (for time calculations)
+  endDate: Date;
+  actualEndDate: Date;
   period: AdvancedTimePeriod;
 }
 
@@ -27,28 +27,22 @@ interface TimePeriodSelectorProps {
   onCustomRangeChange?: (range: { startDate: Date; endDate: Date }) => void;
 }
 
-/**
- * Get date range for advanced time period
- */
 export function getAdvancedDateRange(
   period: AdvancedTimePeriod,
   customRange?: { startDate: Date; endDate: Date },
 ): AdvancedDateRange {
-  // Create stable dates at midnight to prevent re-renders
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  const endDate = new Date(); // TODAY's end (for filtering)
+  const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
 
   let startDate: Date;
-  let actualEndDate: Date; // REAL period end (for time calculations)
+  let actualEndDate: Date;
 
   switch (period) {
     case "MTD":
-      // Month to date
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-      // actualEndDate = last day of current month
       actualEndDate = new Date(
         now.getFullYear(),
         now.getMonth() + 1,
@@ -61,23 +55,18 @@ export function getAdvancedDateRange(
       break;
 
     case "YTD":
-      // Year to date
       startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-      // actualEndDate = Dec 31 of current year
       actualEndDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       break;
 
     case "L30":
-      // Last 30 days
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 30);
       startDate.setHours(0, 0, 0, 0);
-      // For rolling windows, actualEndDate = endDate (today)
       actualEndDate = endDate;
       break;
 
     case "L60":
-      // Last 60 days
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 60);
       startDate.setHours(0, 0, 0, 0);
@@ -85,7 +74,6 @@ export function getAdvancedDateRange(
       break;
 
     case "L90":
-      // Last 90 days
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 90);
       startDate.setHours(0, 0, 0, 0);
@@ -93,7 +81,6 @@ export function getAdvancedDateRange(
       break;
 
     case "L12M":
-      // Last 12 months
       startDate = new Date(now);
       startDate.setFullYear(startDate.getFullYear() - 1);
       startDate.setHours(0, 0, 0, 0);
@@ -101,7 +88,6 @@ export function getAdvancedDateRange(
       break;
 
     case "CUSTOM":
-      // Custom range
       if (customRange) {
         return {
           startDate: customRange.startDate,
@@ -110,7 +96,6 @@ export function getAdvancedDateRange(
           period,
         };
       }
-      // Default to MTD if no custom range provided
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       actualEndDate = new Date(
         now.getFullYear(),
@@ -124,7 +109,6 @@ export function getAdvancedDateRange(
       break;
 
     default:
-      // Default to MTD
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       actualEndDate = new Date(
         now.getFullYear(),
@@ -161,9 +145,6 @@ export function formatAdvancedDateRange(range: AdvancedDateRange): string {
   return `${start} - ${end}`;
 }
 
-/**
- * Time Period Selector Component - Zinc styled tab bar
- */
 export function TimePeriodSelector({
   selectedPeriod,
   onPeriodChange,
@@ -178,10 +159,7 @@ export function TimePeriodSelector({
     if (!showCustomPicker) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(e.target as Node)
-      ) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setShowCustomPicker(false);
       }
     };

@@ -85,3 +85,11 @@ export {
   uwWizardUsageKeys,
   type UWWizardUsage,
 } from "./useUWWizardUsage";
+
+export {
+  useCoverageStats,
+  coverageStatsKeys,
+  getCoverageKey,
+  getProductCoverage,
+  getCarrierAggregateCoverage,
+} from "./useCoverageStats";

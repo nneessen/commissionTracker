@@ -25,6 +25,7 @@ export * from "./underwriting";
 export * from "./documents";
 export * from "./leads";
 export * from "./clients";
+export * from "./community";
 
 // Individual service exports for backward compatibility
 export { carrierService } from "./settings/carriers";

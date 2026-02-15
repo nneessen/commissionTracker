@@ -92,3 +92,6 @@ export * from "./dashboard";
 
 // Lead purchase hooks
 export * from "./lead-purchases";
+
+// Community hooks
+export * from "./community";
