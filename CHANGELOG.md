@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-15 09:21:04
+
+### Changed Files
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/lead-vendors/FreshVsAgedPanel.tsx`
+- `src/features/admin/components/lead-vendors/HeatDistribution.tsx`
+- `src/features/admin/components/lead-vendors/IntelligenceCommandBar.tsx`
+- `src/features/admin/components/lead-vendors/LeadIntelligenceDashboard.tsx`
+- `src/features/admin/components/lead-vendors/LeadPackTable.tsx`
+- `src/features/admin/components/lead-vendors/LeadVendorsTab.tsx`
+- `src/features/admin/components/lead-vendors/MarketPulse.tsx`
+- `src/features/admin/components/lead-vendors/RecentPoliciesTable.tsx`
+- `src/features/admin/components/lead-vendors/VendorExpandedRow.tsx`
+- `src/features/admin/components/lead-vendors/VendorIntelligenceTable.tsx`
+- `src/features/admin/components/lead-vendors/VendorSummaryBar.tsx`
+- `src/features/admin/components/lead-vendors/index.ts`
+
+### Statistics
+```
+ 13 files changed, 1642 insertions(+), 742 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-14 13:59:48
 
 ### Changed Files

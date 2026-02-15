@@ -39,7 +39,7 @@ import { RolesPermissionsTab } from "./RolesPermissionsTab";
 import { SystemSettingsTab } from "./SystemSettingsTab";
 import { SubscriptionPlansTab } from "./SubscriptionPlansTab";
 import { TierTestingPanel } from "./TierTestingPanel";
-import { LeadVendorsTab } from "./lead-vendors";
+import { LeadIntelligenceDashboard } from "./lead-vendors";
 
 export default function AdminControlCenter() {
   // Tab navigation
@@ -311,7 +311,7 @@ export default function AdminControlCenter() {
       </div>
 
       {/* Content area - Tab components */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {activeView === "users" && (
           <UsersAccessTab
             users={activeAgents}
@@ -349,7 +349,7 @@ export default function AdminControlCenter() {
           <SubscriptionPlansTab />
         )}
 
-        {activeView === "lead-vendors" && isSuperAdmin && <LeadVendorsTab />}
+        {activeView === "lead-vendors" && isSuperAdmin && <LeadIntelligenceDashboard />}
 
         {activeView === "testing" && isSuperAdmin && <TierTestingPanel />}
       </div>
