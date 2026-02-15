@@ -45,26 +45,36 @@ function toServiceError(context: string, message: string): Error {
   return new Error(`community.${context} failed: ${message}`);
 }
 
-function clampLimit(value: number | undefined, min: number, max: number): number {
+function clampLimit(
+  value: number | undefined,
+  min: number,
+  max: number,
+): number {
   const raw = value ?? min;
   return Math.min(max, Math.max(min, raw));
 }
 
-function normalizeTopicSummary(row: Database["public"]["Functions"]["forum_list_topics_v1"]["Returns"][number]): ForumTopicSummary {
+function normalizeTopicSummary(
+  row: Database["public"]["Functions"]["forum_list_topics_v1"]["Returns"][number],
+): ForumTopicSummary {
   return {
     ...row,
     accepted_post_id: row.accepted_post_id ?? null,
   };
 }
 
-function normalizeTopicDetail(row: Database["public"]["Functions"]["forum_get_topic_detail_v1"]["Returns"][number]): ForumTopicDetail {
+function normalizeTopicDetail(
+  row: Database["public"]["Functions"]["forum_get_topic_detail_v1"]["Returns"][number],
+): ForumTopicDetail {
   return {
     ...row,
     accepted_post_id: row.accepted_post_id ?? null,
   };
 }
 
-function normalizePost(row: Database["public"]["Functions"]["forum_list_posts_v1"]["Returns"][number]): ForumPost {
+function normalizePost(
+  row: Database["public"]["Functions"]["forum_list_posts_v1"]["Returns"][number],
+): ForumPost {
   return {
     ...row,
     edited_at: row.edited_at ?? null,
@@ -72,7 +82,9 @@ function normalizePost(row: Database["public"]["Functions"]["forum_list_posts_v1
   };
 }
 
-function normalizeFaqSummary(row: Database["public"]["Functions"]["faq_list_articles_v1"]["Returns"][number]): FaqArticleSummary {
+function normalizeFaqSummary(
+  row: Database["public"]["Functions"]["faq_list_articles_v1"]["Returns"][number],
+): FaqArticleSummary {
   return {
     ...row,
     source_topic_id: row.source_topic_id ?? null,
@@ -80,7 +92,9 @@ function normalizeFaqSummary(row: Database["public"]["Functions"]["faq_list_arti
   };
 }
 
-function normalizeFaqDetail(row: Database["public"]["Functions"]["faq_get_article_v1"]["Returns"][number]): FaqArticleDetail {
+function normalizeFaqDetail(
+  row: Database["public"]["Functions"]["faq_get_article_v1"]["Returns"][number],
+): FaqArticleDetail {
   return {
     ...row,
     source_topic_id: row.source_topic_id ?? null,
@@ -92,7 +106,6 @@ export class CommunityService {
   private async getCurrentUserContext(): Promise<{
     userId: string;
     imoId: string;
-    agencyId: string | null;
   }> {
     const {
       data: { user },
@@ -107,24 +120,20 @@ export class CommunityService {
       throw toServiceError("getCurrentUserContext", "User not authenticated");
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("imo_id, agency_id")
-      .eq("id", user.id)
-      .single();
+    const { data: imoId, error: imoError } =
+      await supabase.rpc("get_my_imo_id");
 
-    if (profileError) {
-      throw toServiceError("getCurrentUserContext", profileError.message);
+    if (imoError) {
+      throw toServiceError("getCurrentUserContext", imoError.message);
     }
 
-    if (!profile?.imo_id) {
+    if (!imoId) {
       throw toServiceError("getCurrentUserContext", "Missing IMO assignment");
     }
 
     return {
       userId: user.id,
-      imoId: profile.imo_id,
-      agencyId: profile.agency_id ?? null,
+      imoId,
     };
   }
 
@@ -142,7 +151,9 @@ export class CommunityService {
     return data ?? [];
   }
 
-  async createCategory(input: CreateForumCategoryInput): Promise<ForumCategory> {
+  async createCategory(
+    input: CreateForumCategoryInput,
+  ): Promise<ForumCategory> {
     const { userId, imoId } = await this.getCurrentUserContext();
 
     const { data, error } = await supabase
@@ -282,7 +293,11 @@ export class CommunityService {
     return data ?? [];
   }
 
-  async createTopic(input: CreateForumTopicInput): Promise<Database["public"]["Functions"]["forum_create_topic_v1"]["Returns"][number]> {
+  async createTopic(
+    input: CreateForumTopicInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_create_topic_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_create_topic_v1", {
       p_category_id: input.categoryId,
       p_title: input.title,
@@ -301,7 +316,11 @@ export class CommunityService {
     return row;
   }
 
-  async createPost(input: CreateForumPostInput): Promise<Database["public"]["Functions"]["forum_create_post_v1"]["Returns"][number]> {
+  async createPost(
+    input: CreateForumPostInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_create_post_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_create_post_v1", {
       p_topic_id: input.topicId,
       p_body_markdown: input.bodyMarkdown,
@@ -319,7 +338,11 @@ export class CommunityService {
     return row;
   }
 
-  async updateTopic(input: UpdateForumTopicInput): Promise<Database["public"]["Functions"]["forum_update_topic_v1"]["Returns"][number]> {
+  async updateTopic(
+    input: UpdateForumTopicInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_update_topic_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_update_topic_v1", {
       p_topic_id: input.topicId,
       p_title: input.title,
@@ -338,7 +361,11 @@ export class CommunityService {
     return row;
   }
 
-  async updatePost(input: UpdateForumPostInput): Promise<Database["public"]["Functions"]["forum_update_post_v1"]["Returns"][number]> {
+  async updatePost(
+    input: UpdateForumPostInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_update_post_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_update_post_v1", {
       p_post_id: input.postId,
       p_body_markdown: input.bodyMarkdown,
@@ -356,7 +383,11 @@ export class CommunityService {
     return row;
   }
 
-  async setTopicStatus(input: SetForumTopicStatusInput): Promise<Database["public"]["Functions"]["forum_set_topic_status_v1"]["Returns"][number]> {
+  async setTopicStatus(
+    input: SetForumTopicStatusInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_set_topic_status_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_set_topic_status_v1", {
       p_topic_id: input.topicId,
       p_status: input.status,
@@ -374,7 +405,11 @@ export class CommunityService {
     return row;
   }
 
-  async setAcceptedPost(input: SetForumAcceptedPostInput): Promise<Database["public"]["Functions"]["forum_set_accepted_post_v1"]["Returns"][number]> {
+  async setAcceptedPost(
+    input: SetForumAcceptedPostInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_set_accepted_post_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_set_accepted_post_v1", {
       p_topic_id: input.topicId,
       p_post_id: input.postId,
@@ -392,7 +427,11 @@ export class CommunityService {
     return row;
   }
 
-  async setPostVote(input: SetForumPostVoteInput): Promise<Database["public"]["Functions"]["forum_set_post_vote_v1"]["Returns"][number]> {
+  async setPostVote(
+    input: SetForumPostVoteInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_set_post_vote_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_set_post_vote_v1", {
       p_post_id: input.postId,
       p_vote: input.vote,
@@ -410,7 +449,12 @@ export class CommunityService {
     return row;
   }
 
-  async toggleTopicFollow(topicId: string, shouldFollow: boolean): Promise<Database["public"]["Functions"]["forum_toggle_follow_topic_v1"]["Returns"][number]> {
+  async toggleTopicFollow(
+    topicId: string,
+    shouldFollow: boolean,
+  ): Promise<
+    Database["public"]["Functions"]["forum_toggle_follow_topic_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_toggle_follow_topic_v1", {
       p_topic_id: topicId,
       p_follow: shouldFollow,
@@ -428,7 +472,11 @@ export class CommunityService {
     return row;
   }
 
-  async reportContent(input: ReportForumContentInput): Promise<Database["public"]["Functions"]["forum_report_content_v1"]["Returns"][number]> {
+  async reportContent(
+    input: ReportForumContentInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_report_content_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_report_content_v1", {
       p_entity_type: input.entityType,
       p_entity_id: input.entityId,
@@ -448,7 +496,11 @@ export class CommunityService {
     return row;
   }
 
-  async resolveReport(input: ResolveForumReportInput): Promise<Database["public"]["Functions"]["forum_resolve_report_v1"]["Returns"][number]> {
+  async resolveReport(
+    input: ResolveForumReportInput,
+  ): Promise<
+    Database["public"]["Functions"]["forum_resolve_report_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("forum_resolve_report_v1", {
       p_report_id: input.reportId,
       p_status: input.status,
@@ -519,7 +571,11 @@ export class CommunityService {
     }
   }
 
-  async upsertFaqArticle(input: UpsertFaqArticleInput): Promise<Database["public"]["Functions"]["faq_upsert_article_v1"]["Returns"][number]> {
+  async upsertFaqArticle(
+    input: UpsertFaqArticleInput,
+  ): Promise<
+    Database["public"]["Functions"]["faq_upsert_article_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("faq_upsert_article_v1", {
       p_article_id: input.articleId || null,
       p_slug: input.slug,
@@ -542,7 +598,11 @@ export class CommunityService {
     return row;
   }
 
-  async publishFaqFromTopic(input: PublishFaqFromTopicInput): Promise<Database["public"]["Functions"]["faq_publish_from_topic_v1"]["Returns"][number]> {
+  async publishFaqFromTopic(
+    input: PublishFaqFromTopicInput,
+  ): Promise<
+    Database["public"]["Functions"]["faq_publish_from_topic_v1"]["Returns"][number]
+  > {
     const { data, error } = await supabase.rpc("faq_publish_from_topic_v1", {
       p_topic_id: input.topicId,
       p_slug: input.slug,
