@@ -1,12 +1,16 @@
 // src/services/community/CommunityService.ts
 // Layer: infrastructure
 
-import { supabase } from "@/services/base/supabase";
+import { supabase } from "../base/supabase";
 import type { Database } from "@/types/database.types";
 import type {
   CreateForumCategoryInput,
   CreateForumPostInput,
   CreateForumTopicInput,
+  DeleteFaqArticleInput,
+  DeleteForumCategoryInput,
+  DeleteForumPostInput,
+  DeleteForumTopicInput,
   FaqArticleDetail,
   FaqArticleFilters,
   FaqArticleSummary,
@@ -27,6 +31,8 @@ import type {
   SetForumAcceptedPostInput,
   SetForumPostVoteInput,
   SetForumTopicStatusInput,
+  UpdateForumPostInput,
+  UpdateForumTopicInput,
   UpsertFaqArticleInput,
 } from "@/types/community.types";
 
@@ -83,21 +89,43 @@ function normalizeFaqDetail(row: Database["public"]["Functions"]["faq_get_articl
 }
 
 export class CommunityService {
-  private async getCurrentUserId(): Promise<string> {
+  private async getCurrentUserContext(): Promise<{
+    userId: string;
+    imoId: string;
+    agencyId: string | null;
+  }> {
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
 
     if (error) {
-      throw toServiceError("getCurrentUserId", error.message);
+      throw toServiceError("getCurrentUserContext", error.message);
     }
 
     if (!user) {
-      throw toServiceError("getCurrentUserId", "User not authenticated");
+      throw toServiceError("getCurrentUserContext", "User not authenticated");
     }
 
-    return user.id;
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("imo_id, agency_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      throw toServiceError("getCurrentUserContext", profileError.message);
+    }
+
+    if (!profile?.imo_id) {
+      throw toServiceError("getCurrentUserContext", "Missing IMO assignment");
+    }
+
+    return {
+      userId: user.id,
+      imoId: profile.imo_id,
+      agencyId: profile.agency_id ?? null,
+    };
   }
 
   async getCategories(): Promise<ForumCategory[]> {
@@ -115,11 +143,12 @@ export class CommunityService {
   }
 
   async createCategory(input: CreateForumCategoryInput): Promise<ForumCategory> {
-    const userId = await this.getCurrentUserId();
+    const { userId, imoId } = await this.getCurrentUserContext();
 
     const { data, error } = await supabase
       .from("forum_categories")
       .insert({
+        imo_id: imoId,
         slug: input.slug.trim().toLowerCase(),
         name: input.name.trim(),
         description: input.description?.trim() || null,
@@ -290,6 +319,43 @@ export class CommunityService {
     return row;
   }
 
+  async updateTopic(input: UpdateForumTopicInput): Promise<Database["public"]["Functions"]["forum_update_topic_v1"]["Returns"][number]> {
+    const { data, error } = await supabase.rpc("forum_update_topic_v1", {
+      p_topic_id: input.topicId,
+      p_title: input.title,
+      p_body_markdown: input.bodyMarkdown,
+    });
+
+    if (error) {
+      throw toServiceError("updateTopic", error.message);
+    }
+
+    const row = data?.[0];
+    if (!row) {
+      throw toServiceError("updateTopic", "No topic row returned");
+    }
+
+    return row;
+  }
+
+  async updatePost(input: UpdateForumPostInput): Promise<Database["public"]["Functions"]["forum_update_post_v1"]["Returns"][number]> {
+    const { data, error } = await supabase.rpc("forum_update_post_v1", {
+      p_post_id: input.postId,
+      p_body_markdown: input.bodyMarkdown,
+    });
+
+    if (error) {
+      throw toServiceError("updatePost", error.message);
+    }
+
+    const row = data?.[0];
+    if (!row) {
+      throw toServiceError("updatePost", "No post row returned");
+    }
+
+    return row;
+  }
+
   async setTopicStatus(input: SetForumTopicStatusInput): Promise<Database["public"]["Functions"]["forum_set_topic_status_v1"]["Returns"][number]> {
     const { data, error } = await supabase.rpc("forum_set_topic_status_v1", {
       p_topic_id: input.topicId,
@@ -399,6 +465,58 @@ export class CommunityService {
     }
 
     return row;
+  }
+
+  async deleteCategory(input: DeleteForumCategoryInput): Promise<void> {
+    const { imoId } = await this.getCurrentUserContext();
+    const { error } = await supabase
+      .from("forum_categories")
+      .delete()
+      .eq("id", input.categoryId)
+      .eq("imo_id", imoId);
+
+    if (error) {
+      throw toServiceError("deleteCategory", error.message);
+    }
+  }
+
+  async deleteTopic(input: DeleteForumTopicInput): Promise<void> {
+    const { imoId } = await this.getCurrentUserContext();
+    const { error } = await supabase
+      .from("forum_topics")
+      .delete()
+      .eq("id", input.topicId)
+      .eq("imo_id", imoId);
+
+    if (error) {
+      throw toServiceError("deleteTopic", error.message);
+    }
+  }
+
+  async deletePost(input: DeleteForumPostInput): Promise<void> {
+    const { imoId } = await this.getCurrentUserContext();
+    const { error } = await supabase
+      .from("forum_posts")
+      .delete()
+      .eq("id", input.postId)
+      .eq("imo_id", imoId);
+
+    if (error) {
+      throw toServiceError("deletePost", error.message);
+    }
+  }
+
+  async deleteFaqArticle(input: DeleteFaqArticleInput): Promise<void> {
+    const { imoId } = await this.getCurrentUserContext();
+    const { error } = await supabase
+      .from("faq_articles")
+      .delete()
+      .eq("id", input.articleId)
+      .eq("imo_id", imoId);
+
+    if (error) {
+      throw toServiceError("deleteFaqArticle", error.message);
+    }
   }
 
   async upsertFaqArticle(input: UpsertFaqArticleInput): Promise<Database["public"]["Functions"]["faq_upsert_article_v1"]["Returns"][number]> {

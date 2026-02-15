@@ -7,12 +7,18 @@ import type {
   CreateForumCategoryInput,
   CreateForumPostInput,
   CreateForumTopicInput,
+  DeleteFaqArticleInput,
+  DeleteForumCategoryInput,
+  DeleteForumPostInput,
+  DeleteForumTopicInput,
   PublishFaqFromTopicInput,
   ReportForumContentInput,
   ResolveForumReportInput,
   SetForumAcceptedPostInput,
   SetForumPostVoteInput,
   SetForumTopicStatusInput,
+  UpdateForumPostInput,
+  UpdateForumTopicInput,
   UpsertFaqArticleInput,
 } from "@/types/community.types";
 import { communityKeys } from "./communityKeys";
@@ -48,6 +54,36 @@ export function useCreateForumPost() {
 
   return useMutation({
     mutationFn: (input: CreateForumPostInput) => communityService.createPost(input),
+    onSuccess: (_row, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: communityKeys.topicDetail(variables.topicId),
+      });
+      queryClient.invalidateQueries({ queryKey: topicPostsPrefix });
+      queryClient.invalidateQueries({ queryKey: topicsPrefix });
+    },
+  });
+}
+
+export function useUpdateForumTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateForumTopicInput) =>
+      communityService.updateTopic(input),
+    onSuccess: (_row, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: communityKeys.topicDetail(variables.topicId),
+      });
+      queryClient.invalidateQueries({ queryKey: topicsPrefix });
+    },
+  });
+}
+
+export function useUpdateForumPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateForumPostInput) => communityService.updatePost(input),
     onSuccess: (_row, variables) => {
       queryClient.invalidateQueries({
         queryKey: communityKeys.topicDetail(variables.topicId),
@@ -141,6 +177,49 @@ export function useResolveForumReport() {
   });
 }
 
+export function useDeleteForumCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: DeleteForumCategoryInput) =>
+      communityService.deleteCategory(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: communityKeys.categories() });
+      queryClient.invalidateQueries({ queryKey: topicsPrefix });
+    },
+  });
+}
+
+export function useDeleteForumTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: DeleteForumTopicInput) => communityService.deleteTopic(input),
+    onSuccess: (_row, variables) => {
+      queryClient.removeQueries({
+        queryKey: communityKeys.topicDetail(variables.topicId),
+      });
+      queryClient.invalidateQueries({ queryKey: topicPostsPrefix });
+      queryClient.invalidateQueries({ queryKey: topicsPrefix });
+    },
+  });
+}
+
+export function useDeleteForumPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: DeleteForumPostInput) => communityService.deletePost(input),
+    onSuccess: (_row, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: communityKeys.topicDetail(variables.topicId),
+      });
+      queryClient.invalidateQueries({ queryKey: topicPostsPrefix });
+      queryClient.invalidateQueries({ queryKey: topicsPrefix });
+    },
+  });
+}
+
 export function useUpsertFaqArticle() {
   const queryClient = useQueryClient();
 
@@ -154,6 +233,26 @@ export function useUpsertFaqArticle() {
       if (row.slug) {
         queryClient.invalidateQueries({
           queryKey: communityKeys.faqDetail(row.slug),
+        });
+      }
+    },
+  });
+}
+
+export function useDeleteFaqArticle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: DeleteFaqArticleInput) =>
+      communityService.deleteFaqArticle(input),
+    onSuccess: (_row, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...communityKeys.all, "faq-list"],
+      });
+
+      if (variables.slug) {
+        queryClient.removeQueries({
+          queryKey: communityKeys.faqDetail(variables.slug),
         });
       }
     },

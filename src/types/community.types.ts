@@ -107,6 +107,18 @@ export interface CreateForumPostInput {
   bodyMarkdown: string;
 }
 
+export interface UpdateForumTopicInput {
+  topicId: string;
+  title: string;
+  bodyMarkdown: string;
+}
+
+export interface UpdateForumPostInput {
+  topicId: string;
+  postId: string;
+  bodyMarkdown: string;
+}
+
 export interface SetForumTopicStatusInput {
   topicId: string;
   status: ForumTopicStatus;
@@ -150,4 +162,22 @@ export interface PublishFaqFromTopicInput {
   slug: string;
   title: string;
   summary: string;
+}
+
+export interface DeleteForumCategoryInput {
+  categoryId: string;
+}
+
+export interface DeleteForumTopicInput {
+  topicId: string;
+}
+
+export interface DeleteForumPostInput {
+  topicId: string;
+  postId: string;
+}
+
+export interface DeleteFaqArticleInput {
+  articleId: string;
+  slug?: string;
 }

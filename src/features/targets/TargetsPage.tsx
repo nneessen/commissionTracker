@@ -30,29 +30,23 @@ export function TargetsPage() {
   const { data: commissionProfile } = useUserCommissionProfile();
 
   const [showInputDialog, setShowInputDialog] = useState(false);
-  const [calculatedTargets, setCalculatedTargets] =
-    useState<CalculatedTargets | null>(null);
-  const [annualTarget, setAnnualTarget] = useState<number>(0);
   const [isEditingInline, setIsEditingInline] = useState(false);
   const [inlineEditValue, setInlineEditValue] = useState<string>("");
 
   // Check if this is the first visit (no target set)
   const isFirstTime = targets && targets.annualIncomeTarget === 0;
 
-  // Calculate targets whenever annual target or averages change
-  // CRITICAL: Force recalculation when averages object changes (including avgPolicyPremium)
-  useEffect(() => {
-    if (targets && targets.annualIncomeTarget > 0 && !averagesLoading) {
-      const calculated = targetsCalculationService.calculateTargets({
-        annualIncomeTarget: targets.annualIncomeTarget,
-        historicalAverages: averages,
-        // Never use overrides - always use fresh calculated averages
-        overrides: undefined,
-      });
-      setCalculatedTargets(calculated);
-      setAnnualTarget(targets.annualIncomeTarget);
-    }
-  }, [targets, averages, averagesLoading, averages.avgPolicyPremium]);
+  // Derived values — recalculate every render from latest data
+  const annualTarget = targets?.annualIncomeTarget ?? 0;
+
+  const calculatedTargets =
+    targets && targets.annualIncomeTarget > 0 && !averagesLoading
+      ? targetsCalculationService.calculateTargets({
+          annualIncomeTarget: targets.annualIncomeTarget,
+          historicalAverages: averages,
+          overrides: undefined,
+        })
+      : null;
 
   // Show welcome dialog on first visit
   useEffect(() => {
@@ -84,8 +78,6 @@ export function TargetsPage() {
         expenseRatioTarget: calculated.expenseRatio,
       });
 
-      setCalculatedTargets(calculated);
-      setAnnualTarget(newAnnualTarget);
       toast.success("Target updated successfully");
     } catch (err) {
       toast.error("Failed to update target");
