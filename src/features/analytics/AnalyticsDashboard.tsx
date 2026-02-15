@@ -50,6 +50,18 @@ const CommissionPipeline = lazy(() =>
 const PredictiveAnalytics = lazy(() =>
   import("./components").then((m) => ({ default: m.PredictiveAnalytics })),
 );
+const LeadVendorSales = lazy(() =>
+  import("./components").then((m) => ({ default: m.LeadVendorSales })),
+);
+const AgentPerformance = lazy(() =>
+  import("./components").then((m) => ({ default: m.AgentPerformance })),
+);
+const TrendComparison = lazy(() =>
+  import("./components").then((m) => ({ default: m.TrendComparison })),
+);
+const ConversionFunnel = lazy(() =>
+  import("./components").then((m) => ({ default: m.ConversionFunnel })),
+);
 
 function AnalyticsDashboardContent() {
   const { timePeriod, setTimePeriod, customRange, setCustomRange, dateRange } =
@@ -213,6 +225,30 @@ function AnalyticsDashboardContent() {
               <AnalyticsSectionGate section="predictive_analytics">
                 <Suspense fallback={null}>
                   <PredictiveAnalytics />
+                </Suspense>
+              </AnalyticsSectionGate>
+
+              <AnalyticsSectionGate section="trend_comparison">
+                <Suspense fallback={null}>
+                  <TrendComparison />
+                </Suspense>
+              </AnalyticsSectionGate>
+
+              <AnalyticsSectionGate section="agent_performance">
+                <Suspense fallback={null}>
+                  <AgentPerformance />
+                </Suspense>
+              </AnalyticsSectionGate>
+
+              <AnalyticsSectionGate section="lead_vendor_sales">
+                <Suspense fallback={null}>
+                  <LeadVendorSales />
+                </Suspense>
+              </AnalyticsSectionGate>
+
+              <AnalyticsSectionGate section="conversion_funnel">
+                <Suspense fallback={null}>
+                  <ConversionFunnel />
                 </Suspense>
               </AnalyticsSectionGate>
             </div>

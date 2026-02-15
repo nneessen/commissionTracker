@@ -2,49 +2,24 @@
 
 import React from "react";
 import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
-import { useMetricsWithDateRange } from "@/hooks";
+import { useAnalyticsData } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 /**
- * PaceMetrics - Shows what you need to do to hit your goals
+ * PaceMetrics - Shows pace and projection metrics for the selected analytics period
  *
- * CRITICAL: This component now uses useMetricsWithDateRange (same as dashboard)
- * to ensure calculations are consistent across the entire app.
- *
- * Simple, actionable metrics:
- * - Are you profitable or behind?
- * - How many policies do you need to write?
- * - What's your daily/weekly/monthly target?
- * - How much time is left?
+ * Uses useAnalyticsData filtered by the analytics date context so metrics
+ * update when the user switches time periods.
  */
 export function PaceMetrics() {
   const { dateRange, timePeriod } = useAnalyticsDateRange();
 
-  // Map analytics time period to dashboard time period for useMetricsWithDateRange
-  // Default to 'monthly' for most cases
-  const dashboardTimePeriod = (() => {
-    switch (timePeriod) {
-      case "MTD":
-      case "L30":
-        return "monthly" as const;
-      case "YTD":
-      case "L12M":
-        return "yearly" as const;
-      case "L60":
-      case "L90":
-      case "CUSTOM":
-      default:
-        return "monthly" as const;
-    }
-  })();
-
-  // USE THE SAME HOOK AS THE DASHBOARD - Single source of truth!
-  const metrics = useMetricsWithDateRange({
-    timePeriod: dashboardTimePeriod,
-    periodOffset: 0,
+  const { raw, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
   });
 
-  if (metrics.isLoading) {
+  if (isLoading) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
         <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -57,18 +32,23 @@ export function PaceMetrics() {
     );
   }
 
-  // Extract the data from the SAME calculations as dashboard
-  const {
-    periodAnalytics,
-    periodPolicies,
-    periodCommissions: _periodCommissions,
-  } = metrics;
-  const {
-    surplusDeficit,
-    breakevenNeeded: _breakevenNeeded,
-    policiesNeeded,
-    netIncome,
-  } = periodAnalytics;
+  const { policies, commissions, expenses } = raw;
+
+  // Derive pace calculations from filtered data
+  const premiumWritten = policies.reduce(
+    (sum, p) => sum + (p.annualPremium ?? 0),
+    0,
+  );
+  const policyCount = policies.length;
+  const averagePremium = policyCount > 0 ? premiumWritten / policyCount : 0;
+
+  const totalCommissions = commissions.reduce(
+    (sum, c) => sum + (c.amount ?? 0),
+    0,
+  );
+  const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0);
+  const netIncome = totalCommissions - totalExpenses;
+  const surplusDeficit = netIncome;
   const isProfitable = surplusDeficit >= 0;
 
   // Calculate time remaining based on selected period
@@ -84,32 +64,34 @@ export function PaceMetrics() {
 
   // Calculate days elapsed in period
   const msElapsed = now.getTime() - dateRange.startDate.getTime();
-  const daysElapsed = Math.max(1, Math.ceil(msElapsed / (24 * 60 * 60 * 1000)));
+  const daysElapsed = Math.max(
+    1,
+    Math.ceil(msElapsed / (24 * 60 * 60 * 1000)),
+  );
 
-  // Total days in period (from start to actual end)
+  // Total days in period
   const totalDaysInPeriod = Math.ceil(
     (dateRange.actualEndDate.getTime() - dateRange.startDate.getTime()) /
       (24 * 60 * 60 * 1000),
   );
 
-  // Calculate current pace and projections
-  const currentAPPace = periodPolicies.premiumWritten / daysElapsed; // AP per day currently
-  const projectedAPTotal = currentAPPace * totalDaysInPeriod; // Projected total AP by period end
-
-  const currentPolicyPace = periodPolicies.newCount / daysElapsed; // Policies per day currently
+  // Pace projections
+  const currentAPPace = premiumWritten / daysElapsed;
+  const projectedAPTotal = currentAPPace * totalDaysInPeriod;
+  const currentPolicyPace = policyCount / daysElapsed;
   const projectedPolicyTotal = Math.round(
     currentPolicyPace * totalDaysInPeriod,
-  ); // Projected total policies
+  );
 
-  // Calculate pace targets (what's needed to break even)
+  // Breakeven target (rough estimate: need enough commissions to cover expenses)
   const totalDaysRemaining = daysRemaining + hoursRemaining / 24;
-  const policiesPerDayNeeded =
+  const deficitAmount = Math.max(0, -surplusDeficit);
+  const policiesNeeded =
+    averagePremium > 0 ? Math.ceil(deficitAmount / (averagePremium * 0.5)) : 0;
+  const dailyTarget =
     policiesNeeded > 0 && totalDaysRemaining > 0
-      ? policiesNeeded / totalDaysRemaining
+      ? Math.ceil(policiesNeeded / totalDaysRemaining)
       : 0;
-  const dailyTarget = Math.ceil(policiesPerDayNeeded);
-  const _weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
-  const _monthlyTarget = Math.ceil(policiesPerDayNeeded * totalDaysRemaining);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -147,7 +129,7 @@ export function PaceMetrics() {
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-      {/* Header - matching Targets page pattern */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -171,20 +153,20 @@ export function PaceMetrics() {
 
       {/* Metrics */}
       <div className="space-y-1">
-        {/* Current Performance Row */}
+        {/* AP Written */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400">AP Written</span>
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-              {formatCurrency(periodPolicies.premiumWritten)}
+              {formatCurrency(premiumWritten)}
             </span>
             <span className="text-zinc-400 dark:text-zinc-500">
-              ({periodPolicies.newCount} policies)
+              ({policyCount} policies)
             </span>
           </div>
         </div>
 
-        {/* Projected Row */}
+        {/* Projected AP */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400">Projected AP</span>
           <div className="flex items-center gap-2">
@@ -197,15 +179,15 @@ export function PaceMetrics() {
           </div>
         </div>
 
-        {/* Average Premium Row */}
+        {/* Average Premium */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400">Average AP</span>
           <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-            {formatCurrency(periodPolicies.averagePremium)}
+            {formatCurrency(averagePremium)}
           </span>
         </div>
 
-        {/* Projected Policies Row */}
+        {/* Projected Policies */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400">
             Projected Policies
@@ -220,10 +202,9 @@ export function PaceMetrics() {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
 
-        {/* Breakeven Status Row */}
+        {/* Surplus/Deficit */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400 uppercase">
             {isProfitable ? "Surplus" : "Deficit"}
@@ -247,7 +228,7 @@ export function PaceMetrics() {
           </div>
         </div>
 
-        {/* Time Remaining Row */}
+        {/* Time Remaining */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400">Time Left</span>
           <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">

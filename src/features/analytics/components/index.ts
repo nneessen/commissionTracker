@@ -10,3 +10,7 @@ export { CarriersProductsBreakdown } from './CarriersProductsBreakdown';
 export { GeographicAnalysis } from './GeographicAnalysis';
 export { PredictiveAnalytics } from './PredictiveAnalytics';
 export { GamePlan } from './GamePlan';
+export { LeadVendorSales } from './LeadVendorSales';
+export { AgentPerformance } from './AgentPerformance';
+export { TrendComparison } from './TrendComparison';
+export { ConversionFunnel } from './ConversionFunnel';

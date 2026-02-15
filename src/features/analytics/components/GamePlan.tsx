@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useAnalyticsData } from "../../../hooks";
+import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
 import { useUserTargets } from "../../../hooks/targets/useUserTargets";
 import { useExpenses } from "../../../hooks/expenses/useExpenses";
 import { gamePlanService } from "../../../services/analytics/gamePlanService";
@@ -27,10 +28,12 @@ import { CheckCircle2, Target, TrendingUp, AlertCircle } from "lucide-react";
  * - Proper MTD (month-to-date) calculations
  */
 export function GamePlan() {
-  // Fetch all policies and commissions
+  const { dateRange } = useAnalyticsDateRange();
+
+  // Fetch policies and commissions filtered by the selected date range
   const { raw, isLoading: isAnalyticsLoading } = useAnalyticsData({
-    startDate: new Date(2020, 0, 1), // Get all data for filtering
-    endDate: new Date(2030, 11, 31),
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
   });
 
   // Fetch user's actual targets from database
@@ -54,15 +57,11 @@ export function GamePlan() {
     );
   }
 
-  // Calculate MTD expenses (current month only)
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  const mtdExpenses = (allExpenses || [])
+  // Calculate expenses within the selected date range
+  const periodExpenses = (allExpenses || [])
     .filter((e) => {
       const expenseDate = new Date(e.date);
-      return expenseDate >= monthStart && expenseDate <= monthEnd;
+      return expenseDate >= dateRange.startDate && expenseDate <= dateRange.endDate;
     })
     .reduce((sum, e) => sum + e.amount, 0);
 
@@ -71,7 +70,7 @@ export function GamePlan() {
     raw.policies,
     raw.commissions,
     userTargets || null,
-    mtdExpenses,
+    periodExpenses,
   );
 
   // Calculate annual progress

@@ -20,7 +20,11 @@ export type AnalyticsSectionKey =
   | "client_segmentation"
   | "game_plan"
   | "commission_pipeline"
-  | "predictive_analytics";
+  | "predictive_analytics"
+  | "lead_vendor_sales"
+  | "agent_performance"
+  | "trend_comparison"
+  | "conversion_funnel";
 
 // Map sections to user-friendly names
 export const ANALYTICS_SECTION_NAMES: Record<AnalyticsSectionKey, string> = {
@@ -33,6 +37,10 @@ export const ANALYTICS_SECTION_NAMES: Record<AnalyticsSectionKey, string> = {
   game_plan: "Game Plan",
   commission_pipeline: "Commission Pipeline",
   predictive_analytics: "Predictive Analytics",
+  lead_vendor_sales: "Lead Vendor Sales",
+  agent_performance: "Agent Performance",
+  trend_comparison: "Trend Comparison",
+  conversion_funnel: "Conversion Funnel",
 };
 
 // Map sections to minimum required tier for display purposes (3-tier system)
@@ -46,6 +54,10 @@ export const ANALYTICS_SECTION_TIERS: Record<AnalyticsSectionKey, string> = {
   game_plan: "Pro",
   commission_pipeline: "Pro",
   predictive_analytics: "Pro",
+  lead_vendor_sales: "Pro",
+  agent_performance: "Pro",
+  trend_comparison: "Pro",
+  conversion_funnel: "Pro",
 };
 
 export interface UseAnalyticsSectionAccessResult {
@@ -177,6 +189,10 @@ export function useAccessibleAnalyticsSections(): {
       "game_plan",
       "commission_pipeline",
       "predictive_analytics",
+      "lead_vendor_sales",
+      "agent_performance",
+      "trend_comparison",
+      "conversion_funnel",
     ];
 
     // Super admin bypass - immediate access to all sections

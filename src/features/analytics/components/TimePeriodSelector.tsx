@@ -1,6 +1,6 @@
 // src/features/analytics/components/TimePeriodSelector.tsx
 
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -171,6 +171,24 @@ export function TimePeriodSelector({
   onCustomRangeChange,
 }: TimePeriodSelectorProps) {
   const [showCustomPicker, setShowCustomPicker] = React.useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside handler to dismiss the custom date picker
+  useEffect(() => {
+    if (!showCustomPicker) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(e.target as Node)
+      ) {
+        setShowCustomPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [showCustomPicker]);
 
   const periods: { value: AdvancedTimePeriod; label: string }[] = [
     { value: "MTD", label: "MTD" },
@@ -215,7 +233,10 @@ export function TimePeriodSelector({
       {showCustomPicker &&
         selectedPeriod === "CUSTOM" &&
         onCustomRangeChange && (
-          <div className="absolute top-full right-0 mt-2 p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-lg z-50">
+          <div
+            ref={pickerRef}
+            className="absolute top-full right-0 mt-2 p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-lg z-50"
+          >
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
@@ -229,7 +250,6 @@ export function TimePeriodSelector({
                       : format(new Date(), "yyyy-MM-dd")
                   }
                   onChange={(e) => {
-                    // Parse date string to create local date at start of day
                     const [year, month, day] = e.target.value
                       .split("-")
                       .map(Number);
@@ -254,7 +274,6 @@ export function TimePeriodSelector({
                       : format(new Date(), "yyyy-MM-dd")
                   }
                   onChange={(e) => {
-                    // Parse date string to create local date at end of day
                     const [year, month, day] = e.target.value
                       .split("-")
                       .map(Number);
@@ -276,6 +295,12 @@ export function TimePeriodSelector({
                 />
               </div>
             </div>
+            <button
+              onClick={() => setShowCustomPicker(false)}
+              className="mt-2 w-full px-3 py-1 text-[11px] font-medium text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 rounded hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+            >
+              Apply
+            </button>
           </div>
         )}
     </div>

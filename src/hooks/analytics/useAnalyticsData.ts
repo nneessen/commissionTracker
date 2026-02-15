@@ -80,7 +80,7 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
   // Client Segmentation - client value and chargeback risk (React 19.1 optimizes automatically)
   // Map commissions to the minimal shape needed for real-time at-risk calculation
   // Uses amount and advanceMonths to calculate unearned in real-time based on policy effective date
-  const commissionsForRisk = allCommissions.map((c) => ({
+  const commissionsForRisk = commissions.map((c) => ({
     policyId: c.policyId ?? null,
     amount: c.amount ?? 0, // The advance amount paid
     advanceMonths: c.advanceMonths ?? 9, // Typically 9 months
@@ -90,7 +90,7 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
   const segmentationData = {
     segments: segmentClientsByValue(policies),
     chargebackRisk: calculatePolicyChargebackRisk(
-      allPolicies,
+      policies,
       commissionsForRisk,
       5,
     ), // Top 5 highest at-risk (calculated real-time from policy effective date)
@@ -106,28 +106,26 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
   };
 
   // Performance Attribution - decomposition analysis
-  // Split policies/commissions into current month and previous month for comparison
-  const now = new Date();
-  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  // Derive current/previous period from the selected date range
+  const rangeStart = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const rangeEnd = endDate || new Date();
+  const rangeLengthMs = rangeEnd.getTime() - rangeStart.getTime();
+  const prevPeriodStart = new Date(rangeStart.getTime() - rangeLengthMs);
+  const prevPeriodEnd = new Date(rangeStart.getTime() - 1);
 
-  // React 19.1 optimizes automatically - no need for useMemo
-  const currentPolicies = policies.filter(
-    (p) => parseLocalDate(p.effectiveDate) >= currentMonth,
-  );
+  // Current period = the filtered data (already bounded by startDate/endDate)
+  const currentPolicies = policies;
+  const currentCommissions = commissions;
 
-  const previousPolicies = policies.filter((p) => {
+  // Previous period = same-length window before the selected range
+  const previousPolicies = allPolicies.filter((p) => {
     const date = parseLocalDate(p.effectiveDate);
-    return date >= previousMonth && date < currentMonth;
+    return date >= prevPeriodStart && date <= prevPeriodEnd;
   });
 
-  const currentCommissions = commissions.filter(
-    (c) => new Date(c.createdAt) >= currentMonth,
-  );
-
-  const previousCommissions = commissions.filter((c) => {
+  const previousCommissions = allCommissions.filter((c) => {
     const date = new Date(c.createdAt);
-    return date >= previousMonth && date < currentMonth;
+    return date >= prevPeriodStart && date <= prevPeriodEnd;
   });
 
   // React 19.1 optimizes automatically - no need for useMemo
