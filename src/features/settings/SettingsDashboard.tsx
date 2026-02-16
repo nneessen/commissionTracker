@@ -52,7 +52,7 @@ interface SettingsDashboardProps {
 export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
   const { can } = usePermissionCheck();
   const { isSuperAdmin, isImoAdmin, loading: _imoLoading } = useImo();
-  const { user } = useAuth();
+  const { user, supabaseUser } = useAuth();
   const { data: pendingAgencyRequestCount = 0 } =
     usePendingAgencyRequestCount();
   const { data: pendingJoinRequestCount = 0 } = usePendingJoinApprovalCount();
@@ -91,6 +91,11 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
   const canManageImos = isSuperAdmin;
   const canManageAgencies = isImoAdmin || isSuperAdmin;
   const canViewAuditTrail = isImoAdmin || isSuperAdmin;
+
+  // Billing tab restricted to super admin + specific test user during Stripe testing
+  const billingTestEmails = ["nick@nickneessen.com"];
+  const userEmail = supabaseUser?.email || "";
+  const canSeeBilling = isSuperAdmin || billingTestEmails.includes(userEmail);
 
   // Valid tab values
   const validTabs = [
@@ -282,7 +287,7 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
                 <span className="truncate">Audit</span>
               </TabsTrigger>
             )}
-            {!isStaffOnly && (
+            {canSeeBilling && (
               <TabsTrigger
                 value="billing"
                 className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -369,7 +374,7 @@ export function SettingsDashboard({ initialTab }: SettingsDashboardProps) {
               </TabsContent>
             )}
 
-            {!isStaffOnly && (
+            {canSeeBilling && (
               <TabsContent value="billing" className="mt-0">
                 <BillingTab />
               </TabsContent>
