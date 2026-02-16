@@ -129,10 +129,19 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
       packMap.set(p.packId, p);
     }
 
-    // Count policies per pack
-    const policyCounts = new Map<string, number>();
-    for (const p of policies) {
-      policyCounts.set(p.packId, (policyCounts.get(p.packId) || 0) + 1);
+    // Sort by packId then submitDate to assign sequential numbers
+    const sortedPolicies = [...policies].sort((a, b) => {
+      if (a.packId !== b.packId) return a.packId.localeCompare(b.packId);
+      return (a.submitDate || '').localeCompare(b.submitDate || '');
+    });
+
+    // Assign sequential policy numbers per pack
+    const policySequence = new Map<string, number>();
+    const policyNumberMap = new Map<string, number>();
+    for (const p of sortedPolicies) {
+      const seq = (policySequence.get(p.packId) || 0) + 1;
+      policySequence.set(p.packId, seq);
+      policyNumberMap.set(p.policyId, seq);
     }
 
     return policies.map((policy): EnrichedPolicy => {
@@ -148,7 +157,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
         policy,
         packPurchaseDate,
         daysToSale,
-        packPolicies: policyCounts.get(policy.packId) || 0,
+        packPolicies: policyNumberMap.get(policy.policyId) || 0,
         packRoi: pack?.roiPercentage ?? 0,
       };
     });
@@ -281,7 +290,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
                     {row.policy.leadFreshness === "fresh" ? "F" : "A"}
                   </span>
                 </TableCell>
-                {/* Pack policies count */}
+                {/* Sequential policy number within pack */}
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-right tabular-nums font-medium">
                   {row.packPolicies}
                 </TableCell>
