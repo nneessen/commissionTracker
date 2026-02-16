@@ -1538,6 +1538,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          state: string | null
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -1551,6 +1552,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1564,6 +1566,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -15471,6 +15474,7 @@ export type Database = {
           agent_name: string
           annual_premium: number
           client_name: string
+          client_state: string
           effective_date: string
           lead_freshness: string
           pack_id: string

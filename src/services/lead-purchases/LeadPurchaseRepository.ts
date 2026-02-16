@@ -529,6 +529,7 @@ export class LeadPurchaseRepository extends BaseRepository<
         submitDate: row.submit_date ? String(row.submit_date) : null,
         policyNumber: row.policy_number ? String(row.policy_number) : null,
         clientName: String(row.client_name || "Unknown"),
+        clientState: row.client_state ? String(row.client_state) : null,
         product: String(row.product || ""),
         annualPremium: Number(row.annual_premium || 0),
         agentId: String(row.agent_id),

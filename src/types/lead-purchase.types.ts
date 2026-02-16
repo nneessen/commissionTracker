@@ -292,6 +292,7 @@ export interface LeadRecentPolicy {
   submitDate: string | null;
   policyNumber: string | null;
   clientName: string;
+  clientState: string | null;
   product: string;
   annualPremium: number;
   agentId: string;

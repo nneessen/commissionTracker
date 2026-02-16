@@ -1,6 +1,6 @@
 // src/features/admin/components/lead-vendors/LeadPoliciesTable.tsx
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { formatDate, formatCompactCurrency, formatPercent } from "@/lib/format";
+import { formatDate, formatCompactCurrency, formatCurrency, formatPercent, formatNumber } from "@/lib/format";
 import { SortableHead, type SortDir } from "./SortableHead";
 import type { LeadRecentPolicy, LeadPackRow } from "@/types/lead-purchase.types";
 
@@ -34,6 +34,7 @@ type PolicySortField =
   | "annualPremium"
   | "agentName"
   | "vendorName"
+  | "clientState"
   | "packName"
   | "leadFreshness"
   | "packPolicies"
@@ -72,6 +73,8 @@ function getSortValue(row: EnrichedPolicy, field: PolicySortField): string | num
       return row.policy.agentName;
     case "vendorName":
       return row.policy.vendorName;
+    case "clientState":
+      return row.policy.clientState || "";
     case "packName":
       return row.policy.packName || "";
     case "leadFreshness":
@@ -107,6 +110,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [expandedPackId, setExpandedPackId] = useState<string | null>(null);
 
   const handleSort = (field: PolicySortField) => {
     if (sortField === field) {
@@ -122,13 +126,17 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
     setPage(1);
   };
 
-  // Build pack lookup + per-pack policy counts
-  const enriched = useMemo((): EnrichedPolicy[] => {
-    const packMap = new Map<string, LeadPackRow>();
+  // Build pack lookup
+  const packMap = useMemo(() => {
+    const map = new Map<string, LeadPackRow>();
     for (const p of packs) {
-      packMap.set(p.packId, p);
+      map.set(p.packId, p);
     }
+    return map;
+  }, [packs]);
 
+  // Build enriched rows with pack-level derived signals
+  const enriched = useMemo((): EnrichedPolicy[] => {
     // Sort by packId then submitDate to assign sequential numbers
     const sortedPolicies = [...policies].sort((a, b) => {
       if (a.packId !== b.packId) return a.packId.localeCompare(b.packId);
@@ -161,7 +169,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
         packRoi: pack?.roiPercentage ?? 0,
       };
     });
-  }, [policies, packs]);
+  }, [policies, packMap]);
 
   // Sort
   const sorted = useMemo(() => {
@@ -211,7 +219,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
       </div>
 
       {/* Table */}
-      <Table className="min-w-[950px]">
+      <Table className="min-w-[990px]">
         <TableHeader>
           <TableRow className="bg-zinc-50 dark:bg-zinc-800/50">
             <SortableHead field="submitDate" label="Submitted" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[72px]" />
@@ -221,6 +229,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
             <SortableHead field="annualPremium" label="Premium" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[64px] text-right" />
             <SortableHead field="agentName" label="Agent" handleSort={handleSort} sortField={sortField} sortDir={sortDir} />
             <SortableHead field="vendorName" label="Vendor" handleSort={handleSort} sortField={sortField} sortDir={sortDir} />
+            <SortableHead field="clientState" label="St" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[36px] text-center" />
             <SortableHead field="packName" label="Pack" handleSort={handleSort} sortField={sortField} sortDir={sortDir} />
             <SortableHead field="leadFreshness" label="F/A" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[36px] text-center" />
             <SortableHead field="packPolicies" label="Pol#" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[40px] text-right" />
@@ -231,7 +240,7 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
           {paginated.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={11}
+                colSpan={12}
                 className="text-center text-[10px] text-zinc-500 py-6"
               >
                 No sold policies linked to lead packages
@@ -239,7 +248,8 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
             </TableRow>
           ) : (
             paginated.map((row) => (
-              <TableRow key={row.policy.policyId}>
+              <Fragment key={row.policy.policyId}>
+              <TableRow>
                 {/* Policy submit date */}
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-500 whitespace-nowrap">
                   {row.policy.submitDate
@@ -271,9 +281,21 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[110px]" title={row.policy.agentName}>
                   {row.policy.agentName}
                 </TableCell>
-                {/* Vendor */}
-                <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[100px]" title={row.policy.vendorName}>
-                  {row.policy.vendorName}
+                {/* Vendor (clickable to expand pack details) */}
+                <TableCell className="text-[10px] px-1.5 py-0.5 truncate max-w-[100px]">
+                  <button
+                    onClick={() => setExpandedPackId(prev =>
+                      prev === row.policy.packId ? null : row.policy.packId
+                    )}
+                    className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer truncate"
+                    title={`Click to expand pack: ${row.policy.vendorName}`}
+                  >
+                    {row.policy.vendorName}
+                  </button>
+                </TableCell>
+                {/* State */}
+                <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-500 text-center">
+                  {row.policy.clientState || "\u2014"}
                 </TableCell>
                 {/* Pack */}
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[100px]" title={row.policy.packName || undefined}>
@@ -302,6 +324,14 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
                   {formatPercent(row.packRoi)}
                 </TableCell>
               </TableRow>
+              {expandedPackId === row.policy.packId && (
+                <PackExpandedDetail
+                  packId={row.policy.packId}
+                  packMap={packMap}
+                  allEnriched={enriched}
+                />
+              )}
+              </Fragment>
             ))
           )}
         </TableBody>
@@ -389,5 +419,165 @@ export function LeadPoliciesTable({ policies, packs, isLoading }: LeadPoliciesTa
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pack Expanded Detail Row
+// ---------------------------------------------------------------------------
+function PackExpandedDetail({
+  packId,
+  packMap,
+  allEnriched,
+}: {
+  packId: string;
+  packMap: Map<string, LeadPackRow>;
+  allEnriched: EnrichedPolicy[];
+}) {
+  const pack = packMap.get(packId);
+  const packPolicies = allEnriched.filter((e) => e.policy.packId === packId);
+
+  return (
+    <TableRow className="bg-zinc-50/50 dark:bg-zinc-800/20">
+      <TableCell colSpan={12} className="p-0">
+        <div className="grid grid-cols-[220px_1fr] gap-3 p-3 border-t border-zinc-100 dark:border-zinc-800">
+          {/* Left: Pack summary metrics */}
+          <div>
+            <div className="text-[9px] uppercase text-zinc-400 font-semibold tracking-wider mb-1.5">
+              Pack Summary
+            </div>
+            <div className="space-y-0.5">
+              <MetricLine label="Vendor" value={pack?.vendorName || "\u2014"} />
+              <MetricLine label="Pack Name" value={pack?.purchaseName || "\u2014"} />
+              <MetricLine label="Agent" value={pack?.agentName || "\u2014"} />
+              <MetricLine
+                label="Purchase Date"
+                value={pack?.purchaseDate ? formatDate(pack.purchaseDate, { month: "short", day: "numeric", year: "2-digit" }) : "\u2014"}
+              />
+              <MetricLine label="Freshness" value={pack?.leadFreshness || "\u2014"} />
+              <div className="border-t border-zinc-200 dark:border-zinc-700 my-1" />
+              <MetricLine label="Leads" value={formatNumber(pack?.leadCount ?? 0)} />
+              <MetricLine label="Total Cost" value={formatCurrency(pack?.totalCost ?? 0)} />
+              <MetricLine label="CPL" value={formatCurrency(pack?.costPerLead ?? 0)} />
+              <MetricLine label="Policies Sold" value={formatNumber(packPolicies.length)} />
+              <MetricLine label="Conversion" value={formatPercent(pack?.conversionRate ?? 0)} />
+              <MetricLine label="Commission" value={formatCompactCurrency(pack?.commissionEarned ?? 0)} />
+              <MetricLine label="Total Premium" value={formatCompactCurrency(pack?.totalPremium ?? 0)} />
+              <MetricLine
+                label="ROI"
+                value={formatPercent(pack?.roiPercentage ?? 0)}
+                highlight={(pack?.roiPercentage ?? 0) > 0}
+              />
+            </div>
+          </div>
+
+          {/* Right: All policies in this pack */}
+          <div>
+            <div className="text-[9px] uppercase text-zinc-400 font-semibold tracking-wider mb-1.5">
+              Pack Policies
+              <span className="ml-1 text-zinc-500">({packPolicies.length})</span>
+            </div>
+            {packPolicies.length === 0 ? (
+              <div className="text-[10px] text-zinc-400 py-2">No policies in this pack</div>
+            ) : (
+              <div className="overflow-auto max-h-[240px]">
+                <table className="w-full text-[10px]">
+                  <thead>
+                    <tr className="text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
+                      <th className="text-left font-semibold py-1 pr-2">Submit Date</th>
+                      <th className="text-left font-semibold py-1 px-1.5">Client</th>
+                      <th className="text-center font-semibold py-1 px-1.5">St</th>
+                      <th className="text-left font-semibold py-1 px-1.5">Product</th>
+                      <th className="text-right font-semibold py-1 px-1.5">Premium</th>
+                      <th className="text-left font-semibold py-1 px-1.5">Agent</th>
+                      <th className="text-left font-semibold py-1 px-1.5">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {packPolicies.map((ep) => (
+                      <tr
+                        key={ep.policy.policyId}
+                        className="border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+                      >
+                        <td className="py-1 pr-2 text-zinc-500 whitespace-nowrap">
+                          {ep.policy.submitDate
+                            ? formatDate(ep.policy.submitDate, { month: "numeric", day: "numeric", year: "2-digit" })
+                            : "\u2014"}
+                        </td>
+                        <td className="py-1 px-1.5 text-zinc-700 dark:text-zinc-300 font-medium max-w-[120px] truncate">
+                          {ep.policy.clientName}
+                        </td>
+                        <td className="py-1 px-1.5 text-zinc-500 text-center">
+                          {ep.policy.clientState || "\u2014"}
+                        </td>
+                        <td className="py-1 px-1.5 text-zinc-600 dark:text-zinc-400 max-w-[120px] truncate">
+                          {ep.policy.product}
+                        </td>
+                        <td className="py-1 px-1.5 text-right tabular-nums text-zinc-600 dark:text-zinc-400">
+                          {formatCompactCurrency(ep.policy.annualPremium)}
+                        </td>
+                        <td className="py-1 px-1.5 text-zinc-600 dark:text-zinc-400 max-w-[100px] truncate">
+                          {ep.policy.agentName}
+                        </td>
+                        <td className="py-1 px-1.5">
+                          <StatusBadge status={ep.policy.status} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shared sub-components
+// ---------------------------------------------------------------------------
+function MetricLine({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between text-[10px]">
+      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+      <span
+        className={cn(
+          "font-medium",
+          highlight
+            ? "text-emerald-600 dark:text-emerald-400"
+            : "text-zinc-700 dark:text-zinc-300",
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colorMap: Record<string, string> = {
+    submitted: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    declined: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    lapsed: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  };
+  const colors = colorMap[status.toLowerCase()] || "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+
+  return (
+    <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-medium", colors)}>
+      {status}
+    </span>
   );
 }
