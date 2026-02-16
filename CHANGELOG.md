@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-16 13:02:32
+
+### Changed Files
+- `src/features/admin/components/lead-vendors/ConversionPanel.tsx`
+- `src/features/admin/components/lead-vendors/LeadIntelligenceDashboard.tsx`
+- `src/features/admin/components/lead-vendors/LeadKpiTabs.tsx`
+- `src/features/admin/components/lead-vendors/LeadPoliciesTable.tsx`
+- `src/features/admin/components/lead-vendors/SpeedPanel.tsx`
+- `src/features/admin/components/lead-vendors/TopPerformersPanel.tsx`
+
+### Statistics
+```
+ 6 files changed, 1377 insertions(+), 13 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-16 09:17:24
 
 ### Changed Files
