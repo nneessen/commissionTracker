@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-16 15:49:32
+
+### Changed Files
+- `docs/CODE_REVIEW_GUIDE.md`
+- `docs/lemon-squeezy-setup.md`
+- `package-lock.json`
+- `package.json`
+- `src/features/admin/components/AddonTierEditor.tsx`
+- `src/features/admin/components/AddonsManagementPanel.tsx`
+- `src/features/admin/components/PlanEditorDialog.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/components/CurrentPlanCard.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/PremiumAddonsSection.tsx`
+- `src/features/settings/billing/components/PricingCards.tsx`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/__tests__/subscriptionService.test.ts`
+- `src/services/subscription/adminSubscriptionService.ts`
+- `src/services/subscription/subscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/create-checkout-session/index.ts`
+- `supabase/functions/create-portal-session/index.ts`
+- `supabase/functions/lemon-webhook/index.ts`
+- `supabase/functions/stripe-webhook/index.ts`
+- `supabase/migrations/20260216141453_stripe_migration.sql`
+- `supabase/migrations/20260216144006_fix_stripe_idempotency.sql`
+
+### Statistics
+```
+ 23 files changed, 2552 insertions(+), 2282 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-16 13:02:32
 
 ### Changed Files

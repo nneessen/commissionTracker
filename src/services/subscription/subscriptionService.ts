@@ -223,68 +223,114 @@ class SubscriptionService {
   }
 
   /**
-   * Generate Lemon Squeezy checkout URL for a plan
+   * Create a Stripe Checkout Session for a plan subscription
+   * Returns the checkout URL to redirect the user to
    */
-  generateCheckoutUrl(
+  async createCheckoutSession(
     plan: SubscriptionPlan,
-    userId: string,
-    userEmail: string,
     billingInterval: "monthly" | "annual" = "monthly",
     discountCode?: string,
-  ): string | null {
-    const variantId =
+  ): Promise<string | null> {
+    const priceId =
       billingInterval === "annual"
-        ? plan.lemon_variant_id_annual
-        : plan.lemon_variant_id_monthly;
+        ? plan.stripe_price_id_annual
+        : plan.stripe_price_id_monthly;
 
-    if (!variantId) {
+    if (!priceId) {
       console.error(
-        `No Lemon Squeezy variant ID configured for plan: ${plan.name} (${billingInterval})`,
+        `No Stripe Price ID configured for plan: ${plan.name} (${billingInterval})`,
       );
       return null;
     }
 
-    const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
+    try {
+      const { data, error } = await this.repository.invokeEdgeFunction(
+        "create-checkout-session",
+        {
+          priceId,
+          successUrl: `${window.location.origin}/settings?tab=billing&checkout=success`,
+          cancelUrl: `${window.location.origin}/settings?tab=billing`,
+          discountCode: discountCode || undefined,
+        },
+      );
 
-    if (!LEMON_STORE_ID) {
-      console.error("VITE_LEMON_SQUEEZY_STORE_ID not configured");
+      if (error) {
+        console.error("Failed to create checkout session:", error);
+        return null;
+      }
+
+      return (data?.url as string) || null;
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
       return null;
     }
-
-    const checkoutUrl = new URL(
-      `https://${LEMON_STORE_ID}.lemonsqueezy.com/buy/${variantId}`,
-    );
-
-    checkoutUrl.searchParams.set("checkout[email]", userEmail);
-    checkoutUrl.searchParams.set("checkout[custom][user_id]", userId);
-
-    const redirectUrl = `${window.location.origin}/settings?tab=billing&checkout=success`;
-    checkoutUrl.searchParams.set("checkout[redirect_url]", redirectUrl);
-
-    if (discountCode && discountCode.trim()) {
-      checkoutUrl.searchParams.set("discount", discountCode.trim());
-    }
-
-    return checkoutUrl.toString();
   }
 
   /**
-   * Get Lemon Squeezy customer portal URL
+   * Create a Stripe Customer Portal session
+   * Returns the portal URL to redirect the user to
    */
-  async getCustomerPortalUrl(userId: string): Promise<string | null> {
+  async createPortalSession(userId: string): Promise<string | null> {
     const data = await this.repository.getCustomerPortalInfo(userId);
 
-    if (!data?.lemon_customer_id) {
+    if (!data?.stripe_customer_id) {
       return null;
     }
 
-    const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
+    try {
+      const { data: result, error } =
+        await this.repository.invokeEdgeFunction("create-portal-session", {
+          returnUrl: `${window.location.origin}/settings?tab=billing`,
+        });
 
-    if (!LEMON_STORE_ID) {
+      if (error) {
+        console.error("Failed to create portal session:", error);
+        return null;
+      }
+
+      return (result?.url as string) || null;
+    } catch (error) {
+      console.error("Error creating portal session:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Create a Stripe Checkout Session for an addon subscription
+   * Returns the checkout URL to redirect the user to
+   */
+  async createAddonCheckoutSession(
+    priceId: string,
+    addonId: string,
+    tierId?: string,
+  ): Promise<string | null> {
+    if (!priceId) {
+      console.error("No Stripe Price ID provided for addon checkout");
       return null;
     }
 
-    return `https://${LEMON_STORE_ID}.lemonsqueezy.com/billing`;
+    try {
+      const { data, error } = await this.repository.invokeEdgeFunction(
+        "create-checkout-session",
+        {
+          priceId,
+          addonId,
+          tierId: tierId || undefined,
+          successUrl: `${window.location.origin}/settings?tab=billing&addon_checkout=success`,
+          cancelUrl: `${window.location.origin}/settings?tab=billing`,
+        },
+      );
+
+      if (error) {
+        console.error("Failed to create addon checkout session:", error);
+        return null;
+      }
+
+      return (data?.url as string) || null;
+    } catch (error) {
+      console.error("Error creating addon checkout session:", error);
+      return null;
+    }
   }
 
   /**

@@ -67,8 +67,8 @@ const mockPlan = {
   email_limit: 1000,
   is_active: true,
   sort_order: 2,
-  lemon_variant_id_monthly: "variant-monthly-1",
-  lemon_variant_id_annual: "variant-annual-1",
+  stripe_price_id_monthly: "price_monthly_1",
+  stripe_price_id_annual: "price_annual_1",
   features: {
     dashboard: true,
     policies: true,
@@ -101,8 +101,8 @@ const mockSubscription = {
   user_id: "user-123",
   plan_id: "plan-1",
   status: "active",
-  lemon_subscription_id: "lemon-123",
-  lemon_customer_id: "customer-123",
+  stripe_subscription_id: "sub_123",
+  stripe_customer_id: "cus_123",
   current_period_start: new Date().toISOString(),
   current_period_end: futureEndDate.toISOString(),
   grandfathered_until: null,
@@ -620,44 +620,31 @@ describe("SubscriptionService", () => {
     });
   });
 
-  describe("generateCheckoutUrl", () => {
-    beforeEach(() => {
-      // Mock environment variable
-      vi.stubGlobal("import", {
-        meta: {
-          env: {
-            VITE_LEMON_SQUEEZY_STORE_ID: "test-store",
-          },
-        },
-      });
-    });
-
-    it("should return null when variant ID is missing", () => {
-      const planNoVariant = {
+  describe("createCheckoutSession", () => {
+    it("should return null when price ID is missing", async () => {
+      const planNoPrice = {
         ...mockPlan,
-        lemon_variant_id_monthly: null,
-        lemon_variant_id_annual: null,
+        stripe_price_id_monthly: null,
+        stripe_price_id_annual: null,
       };
-      const result = subscriptionService.generateCheckoutUrl(
-        planNoVariant as never,
-        "user-123",
-        "test@example.com",
+      const result = await subscriptionService.createCheckoutSession(
+        planNoPrice as never,
         "monthly",
       );
       expect(result).toBeNull();
     });
   });
 
-  describe("getCustomerPortalUrl", () => {
+  describe("createPortalSession", () => {
     it("should return null when no customer ID exists", async () => {
       const mockChain = createMockChain();
       mockChain.single.mockResolvedValue({
-        data: { lemon_customer_id: null },
+        data: { stripe_customer_id: null },
         error: null,
       });
       vi.mocked(supabase.from).mockReturnValue(mockChain as never);
 
-      const result = await subscriptionService.getCustomerPortalUrl("user-123");
+      const result = await subscriptionService.createPortalSession("user-123");
 
       expect(result).toBeNull();
     });

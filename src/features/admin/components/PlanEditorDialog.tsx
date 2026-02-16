@@ -44,8 +44,8 @@ export function PlanEditorDialog({
   const [emailLimit, setEmailLimit] = useState(0);
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [teamSizeLimit, setTeamSizeLimit] = useState<number | null>(null);
-  const [lemonVariantMonthly, setLemonVariantMonthly] = useState("");
-  const [lemonVariantAnnual, setLemonVariantAnnual] = useState("");
+  const [stripePriceMonthly, setStripePriceMonthly] = useState("");
+  const [stripePriceAnnual, setStripePriceAnnual] = useState("");
 
   // Mutations
   const updatePricing = useUpdatePlanPricing();
@@ -67,8 +67,8 @@ export function PlanEditorDialog({
       setEmailLimit(plan.email_limit);
       setSmsEnabled(plan.sms_enabled);
       setTeamSizeLimit(plan.team_size_limit);
-      setLemonVariantMonthly(plan.lemon_variant_id_monthly || "");
-      setLemonVariantAnnual(plan.lemon_variant_id_annual || "");
+      setStripePriceMonthly(plan.stripe_price_id_monthly || "");
+      setStripePriceAnnual(plan.stripe_price_id_annual || "");
     }
   }, [plan]);
 
@@ -79,8 +79,8 @@ export function PlanEditorDialog({
       planId: plan.id,
       displayName,
       description: description || undefined,
-      lemonVariantIdMonthly: lemonVariantMonthly || null,
-      lemonVariantIdAnnual: lemonVariantAnnual || null,
+      stripePriceIdMonthly: stripePriceMonthly || null,
+      stripePriceIdAnnual: stripePriceAnnual || null,
     });
     onOpenChange(false);
   };
@@ -176,36 +176,36 @@ export function PlanEditorDialog({
 
             <div className="border-t pt-4 mt-4">
               <h4 className="text-xs font-medium text-zinc-500 mb-3">
-                Lemon Squeezy Integration
+                Stripe Integration
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="lemonMonthly" className="text-xs">
-                    Monthly Variant ID
+                  <Label htmlFor="stripePriceMonthly" className="text-xs">
+                    Stripe Monthly Price ID
                   </Label>
                   <Input
-                    id="lemonMonthly"
-                    value={lemonVariantMonthly}
-                    onChange={(e) => setLemonVariantMonthly(e.target.value)}
+                    id="stripePriceMonthly"
+                    value={stripePriceMonthly}
+                    onChange={(e) => setStripePriceMonthly(e.target.value)}
                     className="h-8 text-sm font-mono"
-                    placeholder="e.g., 123456"
+                    placeholder="e.g., price_1Abc..."
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lemonAnnual" className="text-xs">
-                    Annual Variant ID
+                  <Label htmlFor="stripePriceAnnual" className="text-xs">
+                    Stripe Annual Price ID
                   </Label>
                   <Input
-                    id="lemonAnnual"
-                    value={lemonVariantAnnual}
-                    onChange={(e) => setLemonVariantAnnual(e.target.value)}
+                    id="stripePriceAnnual"
+                    value={stripePriceAnnual}
+                    onChange={(e) => setStripePriceAnnual(e.target.value)}
                     className="h-8 text-sm font-mono"
-                    placeholder="e.g., 123457"
+                    placeholder="e.g., price_1Def..."
                   />
                 </div>
               </div>
               <p className="text-[10px] text-zinc-500 mt-2">
-                These IDs link this plan to Lemon Squeezy products for checkout.
+                These IDs link this plan to Stripe prices for checkout.
               </p>
             </div>
 

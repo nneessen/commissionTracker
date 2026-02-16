@@ -221,8 +221,8 @@ function AddonEditorDialog({
   const [description, setDescription] = useState("");
   const [priceMonthly, setPriceMonthly] = useState(0);
   const [priceAnnual, setPriceAnnual] = useState(0);
-  const [lemonVariantMonthly, setLemonVariantMonthly] = useState("");
-  const [lemonVariantAnnual, setLemonVariantAnnual] = useState("");
+  const [stripePriceMonthly, setStripePriceMonthly] = useState("");
+  const [stripePriceAnnual, setStripePriceAnnual] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
 
@@ -235,8 +235,8 @@ function AddonEditorDialog({
       setDescription(addon.description || "");
       setPriceMonthly(addon.price_monthly);
       setPriceAnnual(addon.price_annual);
-      setLemonVariantMonthly(addon.lemon_variant_id_monthly || "");
-      setLemonVariantAnnual(addon.lemon_variant_id_annual || "");
+      setStripePriceMonthly(addon.stripe_price_id_monthly || "");
+      setStripePriceAnnual(addon.stripe_price_id_annual || "");
       setIsActive(addon.is_active ?? true);
       // Parse tier_config from addon (it's stored as JSONB)
       const rawTierConfig = (addon as { tier_config?: TierConfig | null })
@@ -255,8 +255,8 @@ function AddonEditorDialog({
     setDescription(addon.description || "");
     setPriceMonthly(addon.price_monthly);
     setPriceAnnual(addon.price_annual);
-    setLemonVariantMonthly(addon.lemon_variant_id_monthly || "");
-    setLemonVariantAnnual(addon.lemon_variant_id_annual || "");
+    setStripePriceMonthly(addon.stripe_price_id_monthly || "");
+    setStripePriceAnnual(addon.stripe_price_id_annual || "");
     setIsActive(addon.is_active ?? true);
     const rawTierConfig = (addon as { tier_config?: TierConfig | null })
       .tier_config;
@@ -276,8 +276,8 @@ function AddonEditorDialog({
         description: description || undefined,
         priceMonthly,
         priceAnnual,
-        lemonVariantIdMonthly: lemonVariantMonthly || null,
-        lemonVariantIdAnnual: lemonVariantAnnual || null,
+        stripePriceIdMonthly: stripePriceMonthly || null,
+        stripePriceIdAnnual: stripePriceAnnual || null,
         isActive,
         tierConfig: supportsTiers ? tierConfig : undefined,
       },
@@ -359,34 +359,34 @@ function AddonEditorDialog({
             </div>
           </div>
 
-          {/* Lemon Squeezy IDs */}
+          {/* Stripe Price IDs */}
           <div className="border-t pt-4">
             <h4 className="text-xs font-medium text-zinc-500 mb-3">
-              Lemon Squeezy Integration
+              Stripe Integration
             </h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="addonLemonMonthly" className="text-xs">
-                  Monthly Variant ID
+                <Label htmlFor="addonStripeMonthly" className="text-xs">
+                  Stripe Monthly Price ID
                 </Label>
                 <Input
-                  id="addonLemonMonthly"
-                  value={lemonVariantMonthly}
-                  onChange={(e) => setLemonVariantMonthly(e.target.value)}
+                  id="addonStripeMonthly"
+                  value={stripePriceMonthly}
+                  onChange={(e) => setStripePriceMonthly(e.target.value)}
                   className="h-8 text-sm font-mono"
-                  placeholder="e.g., 654321"
+                  placeholder="e.g., price_1Abc..."
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="addonLemonAnnual" className="text-xs">
-                  Annual Variant ID
+                <Label htmlFor="addonStripeAnnual" className="text-xs">
+                  Stripe Annual Price ID
                 </Label>
                 <Input
-                  id="addonLemonAnnual"
-                  value={lemonVariantAnnual}
-                  onChange={(e) => setLemonVariantAnnual(e.target.value)}
+                  id="addonStripeAnnual"
+                  value={stripePriceAnnual}
+                  onChange={(e) => setStripePriceAnnual(e.target.value)}
                   className="h-8 text-sm font-mono"
-                  placeholder="e.g., 654322"
+                  placeholder="e.g., price_1Def..."
                 />
               </div>
             </div>

@@ -8292,12 +8292,12 @@ export type Database = {
           display_name: string
           id: string
           is_active: boolean | null
-          lemon_variant_id_annual: string | null
-          lemon_variant_id_monthly: string | null
           name: string
           price_annual: number
           price_monthly: number
           sort_order: number | null
+          stripe_price_id_annual: string | null
+          stripe_price_id_monthly: string | null
           tier_config: Json | null
           updated_at: string | null
         }
@@ -8307,12 +8307,12 @@ export type Database = {
           display_name: string
           id?: string
           is_active?: boolean | null
-          lemon_variant_id_annual?: string | null
-          lemon_variant_id_monthly?: string | null
           name: string
           price_annual?: number
           price_monthly?: number
           sort_order?: number | null
+          stripe_price_id_annual?: string | null
+          stripe_price_id_monthly?: string | null
           tier_config?: Json | null
           updated_at?: string | null
         }
@@ -8322,12 +8322,12 @@ export type Database = {
           display_name?: string
           id?: string
           is_active?: boolean | null
-          lemon_variant_id_annual?: string | null
-          lemon_variant_id_monthly?: string | null
           name?: string
           price_annual?: number
           price_monthly?: number
           sort_order?: number | null
+          stripe_price_id_annual?: string | null
+          stripe_price_id_monthly?: string | null
           tier_config?: Json | null
           updated_at?: string | null
         }
@@ -8341,9 +8341,9 @@ export type Database = {
           event_name: string | null
           event_type: string
           id: string
-          lemon_event_id: string | null
-          lemon_webhook_id: string | null
           processed_at: string | null
+          stripe_event_id: string | null
+          stripe_webhook_id: string | null
           subscription_id: string | null
           user_id: string | null
         }
@@ -8354,9 +8354,9 @@ export type Database = {
           event_name?: string | null
           event_type: string
           id?: string
-          lemon_event_id?: string | null
-          lemon_webhook_id?: string | null
           processed_at?: string | null
+          stripe_event_id?: string | null
+          stripe_webhook_id?: string | null
           subscription_id?: string | null
           user_id?: string | null
         }
@@ -8367,9 +8367,9 @@ export type Database = {
           event_name?: string | null
           event_type?: string
           id?: string
-          lemon_event_id?: string | null
-          lemon_webhook_id?: string | null
           processed_at?: string | null
+          stripe_event_id?: string | null
+          stripe_webhook_id?: string | null
           subscription_id?: string | null
           user_id?: string | null
         }
@@ -8415,14 +8415,14 @@ export type Database = {
           discount_amount: number
           id: string
           invoice_url: string | null
-          lemon_invoice_id: string | null
-          lemon_order_id: string | null
-          lemon_subscription_id: string | null
           paid_at: string | null
           receipt_url: string | null
           refund_amount: number | null
           refunded_at: string | null
           status: string
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
           subscription_id: string | null
           tax_amount: number
           updated_at: string
@@ -8438,14 +8438,14 @@ export type Database = {
           discount_amount?: number
           id?: string
           invoice_url?: string | null
-          lemon_invoice_id?: string | null
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           paid_at?: string | null
           receipt_url?: string | null
           refund_amount?: number | null
           refunded_at?: string | null
           status?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_id?: string | null
           tax_amount?: number
           updated_at?: string
@@ -8461,14 +8461,14 @@ export type Database = {
           discount_amount?: number
           id?: string
           invoice_url?: string | null
-          lemon_invoice_id?: string | null
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           paid_at?: string | null
           receipt_url?: string | null
           refund_amount?: number | null
           refunded_at?: string | null
           status?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_id?: string | null
           tax_amount?: number
           updated_at?: string
@@ -8577,14 +8577,14 @@ export type Database = {
           features: Json
           id: string
           is_active: boolean
-          lemon_product_id: string | null
-          lemon_variant_id_annual: string | null
-          lemon_variant_id_monthly: string | null
           name: string
           price_annual: number
           price_monthly: number
           sms_enabled: boolean
           sort_order: number
+          stripe_price_id_annual: string | null
+          stripe_price_id_monthly: string | null
+          stripe_product_id: string | null
           team_size_limit: number | null
           updated_at: string
         }
@@ -8597,14 +8597,14 @@ export type Database = {
           features?: Json
           id?: string
           is_active?: boolean
-          lemon_product_id?: string | null
-          lemon_variant_id_annual?: string | null
-          lemon_variant_id_monthly?: string | null
           name: string
           price_annual?: number
           price_monthly?: number
           sms_enabled?: boolean
           sort_order?: number
+          stripe_price_id_annual?: string | null
+          stripe_price_id_monthly?: string | null
+          stripe_product_id?: string | null
           team_size_limit?: number | null
           updated_at?: string
         }
@@ -8617,14 +8617,14 @@ export type Database = {
           features?: Json
           id?: string
           is_active?: boolean
-          lemon_product_id?: string | null
-          lemon_variant_id_annual?: string | null
-          lemon_variant_id_monthly?: string | null
           name?: string
           price_annual?: number
           price_monthly?: number
           sms_enabled?: boolean
           sort_order?: number
+          stripe_price_id_annual?: string | null
+          stripe_price_id_monthly?: string | null
+          stripe_product_id?: string | null
           team_size_limit?: number | null
           updated_at?: string
         }
@@ -11949,9 +11949,9 @@ export type Database = {
           current_period_start: string | null
           granted_by: string | null
           id: string
-          lemon_order_id: string | null
-          lemon_subscription_id: string | null
           status: string
+          stripe_checkout_session_id: string | null
+          stripe_subscription_id: string | null
           tier_id: string | null
           updated_at: string | null
           user_id: string
@@ -11965,9 +11965,9 @@ export type Database = {
           current_period_start?: string | null
           granted_by?: string | null
           id?: string
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_subscription_id?: string | null
           tier_id?: string | null
           updated_at?: string | null
           user_id: string
@@ -11981,9 +11981,9 @@ export type Database = {
           current_period_start?: string | null
           granted_by?: string | null
           id?: string
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_subscription_id?: string | null
           tier_id?: string | null
           updated_at?: string | null
           user_id?: string
@@ -12050,11 +12050,11 @@ export type Database = {
           current_period_start: string | null
           grandfathered_until: string | null
           id: string
-          lemon_customer_id: string | null
-          lemon_order_id: string | null
-          lemon_subscription_id: string | null
           plan_id: string
           status: string
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           trial_ends_at: string | null
           updated_at: string
           user_id: string
@@ -12068,11 +12068,11 @@ export type Database = {
           current_period_start?: string | null
           grandfathered_until?: string | null
           id?: string
-          lemon_customer_id?: string | null
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           plan_id: string
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
@@ -12086,11 +12086,11 @@ export type Database = {
           current_period_start?: string | null
           grandfathered_until?: string | null
           id?: string
-          lemon_customer_id?: string | null
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           plan_id?: string
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
@@ -15845,8 +15845,8 @@ export type Database = {
         }
         Returns: string
       }
-      get_plan_by_lemon_variant: {
-        Args: { p_variant_id: string }
+      get_plan_by_stripe_price: {
+        Args: { p_price_id: string }
         Returns: {
           analytics_sections: string[]
           created_at: string
@@ -15856,14 +15856,14 @@ export type Database = {
           features: Json
           id: string
           is_active: boolean
-          lemon_product_id: string | null
-          lemon_variant_id_annual: string | null
-          lemon_variant_id_monthly: string | null
           name: string
           price_annual: number
           price_monthly: number
           sms_enabled: boolean
           sort_order: number
+          stripe_price_id_annual: string | null
+          stripe_price_id_monthly: string | null
+          stripe_product_id: string | null
           team_size_limit: number | null
           updated_at: string
         }
@@ -16719,26 +16719,6 @@ export type Database = {
         Returns: Json
       }
       normalize_email_subject: { Args: { subject: string }; Returns: string }
-      process_lemon_subscription_event: {
-        Args: {
-          p_billing_interval: string
-          p_cancelled_at: string
-          p_current_period_end: string
-          p_current_period_start: string
-          p_event_data: Json
-          p_event_name: string
-          p_event_type: string
-          p_lemon_customer_id: string
-          p_lemon_event_id: string
-          p_lemon_order_id: string
-          p_lemon_subscription_id: string
-          p_lemon_variant_id: string
-          p_status: string
-          p_trial_ends_at: string
-          p_user_id: string
-        }
-        Returns: string
-      }
       process_pending_workflow_runs: {
         Args: never
         Returns: {
@@ -16747,6 +16727,26 @@ export type Database = {
           status: string
           workflow_id: string
         }[]
+      }
+      process_stripe_subscription_event: {
+        Args: {
+          p_billing_interval: string
+          p_cancelled_at: string
+          p_current_period_end: string
+          p_current_period_start: string
+          p_event_data: Json
+          p_event_name: string
+          p_event_type: string
+          p_status: string
+          p_stripe_checkout_session_id: string
+          p_stripe_customer_id: string
+          p_stripe_event_id: string
+          p_stripe_price_id: string
+          p_stripe_subscription_id: string
+          p_trial_ends_at: string
+          p_user_id: string
+        }
+        Returns: string
       }
       process_workflow_trigger: {
         Args: { p_context: Json; p_event_name: string }
@@ -16814,7 +16814,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      record_lemon_payment: {
+      record_stripe_payment: {
         Args: {
           p_amount: number
           p_billing_reason: string
@@ -16823,12 +16823,12 @@ export type Database = {
           p_currency: string
           p_discount_amount: number
           p_invoice_url: string
-          p_lemon_invoice_id: string
-          p_lemon_order_id: string
-          p_lemon_subscription_id: string
           p_paid_at: string
           p_receipt_url: string
           p_status: string
+          p_stripe_invoice_id: string
+          p_stripe_payment_intent_id: string
+          p_stripe_subscription_id: string
           p_tax_amount: number
           p_user_id: string
         }

@@ -13,8 +13,8 @@ export interface AddonTier {
   runs_per_month: number;
   price_monthly: number;
   price_annual: number;
-  lemon_variant_id_monthly?: string;
-  lemon_variant_id_annual?: string;
+  stripe_price_id_monthly?: string;
+  stripe_price_id_annual?: string;
 }
 
 export interface TierConfig {
@@ -191,24 +191,24 @@ export function AddonTierEditor({ tierConfig, onChange }: AddonTierEditorProps) 
                   </div>
                 </div>
 
-                {/* Lemon Squeezy Variant IDs */}
+                {/* Stripe Price IDs */}
                 <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Lemon Monthly ID</Label>
+                  <Label className="text-[10px] text-muted-foreground">Stripe Monthly Price ID</Label>
                   <Input
-                    value={tier.lemon_variant_id_monthly || ""}
-                    onChange={(e) => handleTierChange(index, "lemon_variant_id_monthly", e.target.value)}
+                    value={tier.stripe_price_id_monthly || ""}
+                    onChange={(e) => handleTierChange(index, "stripe_price_id_monthly", e.target.value)}
                     className="h-7 text-xs font-mono"
-                    placeholder="Optional"
+                    placeholder="e.g., price_1Abc..."
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Lemon Annual ID</Label>
+                  <Label className="text-[10px] text-muted-foreground">Stripe Annual Price ID</Label>
                   <Input
-                    value={tier.lemon_variant_id_annual || ""}
-                    onChange={(e) => handleTierChange(index, "lemon_variant_id_annual", e.target.value)}
+                    value={tier.stripe_price_id_annual || ""}
+                    onChange={(e) => handleTierChange(index, "stripe_price_id_annual", e.target.value)}
                     className="h-7 text-xs font-mono"
-                    placeholder="Optional"
+                    placeholder="e.g., price_1Def..."
                   />
                 </div>
               </div>

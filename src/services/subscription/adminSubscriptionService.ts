@@ -71,8 +71,8 @@ export interface UpdatePlanMetadataParams {
   planId: string;
   displayName?: string;
   description?: string;
-  lemonVariantIdMonthly?: string | null;
-  lemonVariantIdAnnual?: string | null;
+  stripePriceIdMonthly?: string | null;
+  stripePriceIdAnnual?: string | null;
   changedBy: string;
 }
 
@@ -82,8 +82,8 @@ export interface CreateAddonParams {
   description?: string;
   priceMonthly: number;
   priceAnnual: number;
-  lemonVariantIdMonthly?: string;
-  lemonVariantIdAnnual?: string;
+  stripePriceIdMonthly?: string;
+  stripePriceIdAnnual?: string;
 }
 
 export interface UpdateAddonParams {
@@ -91,8 +91,8 @@ export interface UpdateAddonParams {
   description?: string;
   priceMonthly?: number;
   priceAnnual?: number;
-  lemonVariantIdMonthly?: string | null;
-  lemonVariantIdAnnual?: string | null;
+  stripePriceIdMonthly?: string | null;
+  stripePriceIdAnnual?: string | null;
   isActive?: boolean;
   tierConfig?: AddonTierConfig | null;
 }
@@ -103,8 +103,8 @@ export interface AddonTier {
   runs_per_month: number;
   price_monthly: number;
   price_annual: number;
-  lemon_variant_id_monthly?: string;
-  lemon_variant_id_annual?: string;
+  stripe_price_id_monthly?: string;
+  stripe_price_id_annual?: string;
 }
 
 export interface AddonTierConfig {
@@ -368,7 +368,7 @@ class AdminSubscriptionService {
   }
 
   /**
-   * Update plan metadata (name, description, Lemon Squeezy IDs)
+   * Update plan metadata (name, description, Stripe Price IDs)
    */
   async updatePlanMetadata(params: UpdatePlanMetadataParams): Promise<void> {
     const { planId, changedBy, ...updates } = params;
@@ -395,16 +395,16 @@ class AdminSubscriptionService {
         oldValues.description = currentPlan.description;
         newValues.description = updates.description;
       }
-      if (updates.lemonVariantIdMonthly !== undefined) {
-        updateData.lemon_variant_id_monthly = updates.lemonVariantIdMonthly;
-        oldValues.lemon_variant_id_monthly =
-          currentPlan.lemon_variant_id_monthly;
-        newValues.lemon_variant_id_monthly = updates.lemonVariantIdMonthly;
+      if (updates.stripePriceIdMonthly !== undefined) {
+        updateData.stripe_price_id_monthly = updates.stripePriceIdMonthly;
+        oldValues.stripe_price_id_monthly =
+          currentPlan.stripe_price_id_monthly;
+        newValues.stripe_price_id_monthly = updates.stripePriceIdMonthly;
       }
-      if (updates.lemonVariantIdAnnual !== undefined) {
-        updateData.lemon_variant_id_annual = updates.lemonVariantIdAnnual;
-        oldValues.lemon_variant_id_annual = currentPlan.lemon_variant_id_annual;
-        newValues.lemon_variant_id_annual = updates.lemonVariantIdAnnual;
+      if (updates.stripePriceIdAnnual !== undefined) {
+        updateData.stripe_price_id_annual = updates.stripePriceIdAnnual;
+        oldValues.stripe_price_id_annual = currentPlan.stripe_price_id_annual;
+        newValues.stripe_price_id_annual = updates.stripePriceIdAnnual;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -538,8 +538,8 @@ class AdminSubscriptionService {
           description: params.description,
           price_monthly: params.priceMonthly,
           price_annual: params.priceAnnual,
-          lemon_variant_id_monthly: params.lemonVariantIdMonthly,
-          lemon_variant_id_annual: params.lemonVariantIdAnnual,
+          stripe_price_id_monthly: params.stripePriceIdMonthly,
+          stripe_price_id_annual: params.stripePriceIdAnnual,
         })
         .select()
         .single();
@@ -577,10 +577,10 @@ class AdminSubscriptionService {
         updateData.price_monthly = params.priceMonthly;
       if (params.priceAnnual !== undefined)
         updateData.price_annual = params.priceAnnual;
-      if (params.lemonVariantIdMonthly !== undefined)
-        updateData.lemon_variant_id_monthly = params.lemonVariantIdMonthly;
-      if (params.lemonVariantIdAnnual !== undefined)
-        updateData.lemon_variant_id_annual = params.lemonVariantIdAnnual;
+      if (params.stripePriceIdMonthly !== undefined)
+        updateData.stripe_price_id_monthly = params.stripePriceIdMonthly;
+      if (params.stripePriceIdAnnual !== undefined)
+        updateData.stripe_price_id_annual = params.stripePriceIdAnnual;
       if (params.isActive !== undefined) updateData.is_active = params.isActive;
       if (params.tierConfig !== undefined)
         updateData.tier_config = params.tierConfig;

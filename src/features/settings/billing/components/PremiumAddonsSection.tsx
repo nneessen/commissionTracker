@@ -21,14 +21,14 @@ import {
   type AddonTier,
 } from "@/hooks/admin";
 import { useUnderwritingFeatureFlag, useUWWizardUsage } from "@/features/underwriting";
+import { subscriptionService } from "@/services/subscription";
 
 interface TierWithAddon extends AddonTier {
   addonId: string;
 }
 
 export function PremiumAddonsSection() {
-  const { user, supabaseUser } = useAuth();
-  const userEmail = supabaseUser?.email || user?.email || "";
+  const { user } = useAuth();
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">(
     "monthly",
   );
@@ -54,74 +54,50 @@ export function PremiumAddonsSection() {
     return raw;
   };
 
-  const generateTierCheckoutUrl = (tier: TierWithAddon): string | null => {
-    if (!user?.id || !userEmail) return null;
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
-    const variantId =
+  const handlePurchaseTier = async (tier: TierWithAddon) => {
+    if (!user?.id) return;
+
+    const priceId =
       billingInterval === "annual"
-        ? tier.lemon_variant_id_annual
-        : tier.lemon_variant_id_monthly;
+        ? tier.stripe_price_id_annual
+        : tier.stripe_price_id_monthly;
 
-    if (!variantId) return null;
+    if (!priceId) return;
 
-    const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
-    if (!LEMON_STORE_ID) return null;
-
-    const checkoutUrl = new URL(
-      `https://${LEMON_STORE_ID}.lemonsqueezy.com/buy/${variantId}`,
-    );
-
-    checkoutUrl.searchParams.set("checkout[email]", userEmail);
-    checkoutUrl.searchParams.set("checkout[custom][user_id]", user.id);
-    checkoutUrl.searchParams.set("checkout[custom][addon_id]", tier.addonId);
-    checkoutUrl.searchParams.set("checkout[custom][tier_id]", tier.id);
-
-    const redirectUrl = `${window.location.origin}/settings?tab=billing&addon_checkout=success`;
-    checkoutUrl.searchParams.set("checkout[redirect_url]", redirectUrl);
-
-    return checkoutUrl.toString();
-  };
-
-  const generateAddonCheckoutUrl = (
-    addon: SubscriptionAddon,
-  ): string | null => {
-    if (!user?.id || !userEmail) return null;
-
-    const variantId =
-      billingInterval === "annual"
-        ? addon.lemon_variant_id_annual
-        : addon.lemon_variant_id_monthly;
-
-    if (!variantId) return null;
-
-    const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
-    if (!LEMON_STORE_ID) return null;
-
-    const checkoutUrl = new URL(
-      `https://${LEMON_STORE_ID}.lemonsqueezy.com/buy/${variantId}`,
-    );
-
-    checkoutUrl.searchParams.set("checkout[email]", userEmail);
-    checkoutUrl.searchParams.set("checkout[custom][user_id]", user.id);
-    checkoutUrl.searchParams.set("checkout[custom][addon_id]", addon.id);
-
-    const redirectUrl = `${window.location.origin}/settings?tab=billing&addon_checkout=success`;
-    checkoutUrl.searchParams.set("checkout[redirect_url]", redirectUrl);
-
-    return checkoutUrl.toString();
-  };
-
-  const handlePurchaseTier = (tier: TierWithAddon) => {
-    const checkoutUrl = generateTierCheckoutUrl(tier);
-    if (checkoutUrl) {
-      window.open(checkoutUrl, "_blank");
+    setIsCheckoutLoading(true);
+    try {
+      const url = await subscriptionService.createAddonCheckoutSession(
+        priceId,
+        tier.addonId,
+        tier.id,
+      );
+      if (url) window.open(url, "_blank");
+    } finally {
+      setIsCheckoutLoading(false);
     }
   };
 
-  const handlePurchaseAddon = (addon: SubscriptionAddon) => {
-    const checkoutUrl = generateAddonCheckoutUrl(addon);
-    if (checkoutUrl) {
-      window.open(checkoutUrl, "_blank");
+  const handlePurchaseAddon = async (addon: SubscriptionAddon) => {
+    if (!user?.id) return;
+
+    const priceId =
+      billingInterval === "annual"
+        ? addon.stripe_price_id_annual
+        : addon.stripe_price_id_monthly;
+
+    if (!priceId) return;
+
+    setIsCheckoutLoading(true);
+    try {
+      const url = await subscriptionService.createAddonCheckoutSession(
+        priceId,
+        addon.id,
+      );
+      if (url) window.open(url, "_blank");
+    } finally {
+      setIsCheckoutLoading(false);
     }
   };
 
@@ -243,8 +219,8 @@ export function PremiumAddonsSection() {
               };
 
               const hasVariantIds =
-                selectedTier.lemon_variant_id_monthly ||
-                selectedTier.lemon_variant_id_annual;
+                selectedTier.stripe_price_id_monthly ||
+                selectedTier.stripe_price_id_annual;
 
               return (
                 <div
@@ -398,7 +374,7 @@ export function PremiumAddonsSection() {
 
             // For non-tiered addons, show original simple display
             const hasVariantIds =
-              addon.lemon_variant_id_monthly || addon.lemon_variant_id_annual;
+              addon.stripe_price_id_monthly || addon.stripe_price_id_annual;
 
             return (
               <div

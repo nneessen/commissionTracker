@@ -285,15 +285,15 @@ export class SubscriptionRepository extends BaseRepository<
   }
 
   /**
-   * Get customer portal info (lemon_customer_id)
+   * Get customer portal info (stripe_customer_id)
    */
   async getCustomerPortalInfo(
     userId: string,
-  ): Promise<{ lemon_customer_id: string | null } | null> {
+  ): Promise<{ stripe_customer_id: string | null } | null> {
     try {
       const { data, error } = await this.client
         .from("user_subscriptions")
-        .select("lemon_customer_id")
+        .select("stripe_customer_id")
         .eq("user_id", userId)
         .single();
 
@@ -305,6 +305,32 @@ export class SubscriptionRepository extends BaseRepository<
       return data;
     } catch (error) {
       throw this.wrapError(error, "getCustomerPortalInfo");
+    }
+  }
+
+  /**
+   * Invoke a Supabase Edge Function
+   */
+  async invokeEdgeFunction(
+    functionName: string,
+    body: Record<string, unknown>,
+  ): Promise<{ data: Record<string, unknown> | null; error: string | null }> {
+    try {
+      const { data, error } = await this.client.functions.invoke(
+        functionName,
+        { body },
+      );
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
