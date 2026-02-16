@@ -158,6 +158,7 @@ const navigationItems: NavigationItem[] = [
     label: "Community",
     href: "/community",
     permission: "nav.community",
+    allowedEmails: ["nickneessen@thestandardhq.com"],
   },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
@@ -211,6 +212,7 @@ const staffNavigationItems: NavigationItem[] = [
     label: "Community",
     href: "/community",
     permission: "nav.community",
+    allowedEmails: ["nickneessen@thestandardhq.com"],
   },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];

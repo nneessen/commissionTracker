@@ -636,7 +636,10 @@ const communityRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "community",
   component: () => (
-    <RouteGuard permission="nav.community">
+    <RouteGuard
+      permission="nav.community"
+      allowedEmails={["nickneessen@thestandardhq.com"]}
+    >
       <CommunityPage />
     </RouteGuard>
   ),
