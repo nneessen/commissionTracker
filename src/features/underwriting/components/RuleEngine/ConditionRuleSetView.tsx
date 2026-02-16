@@ -16,10 +16,10 @@ import {
   Loader2,
   Settings2,
   FileText,
+  Trash2,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { RuleSetWithRules } from "@/services/underwriting/ruleService";
-import { parsePredicate } from "@/services/underwriting/ruleEngineDSL";
+import { parsePredicate, type RuleSetWithRules } from "../../hooks/useRuleSets";
 import { ConditionInfoPanel } from "./ConditionInfoPanel";
 import { RuleCard } from "./RuleCard";
 import type { RuleFormData } from "./RuleEditor";
@@ -43,6 +43,7 @@ interface ConditionRuleSetViewProps {
   onEditRule: (ruleId: string, data: RuleFormData) => void;
   onDeleteRule: (ruleId: string) => Promise<void>;
   onReorderRules: (ruleIds: string[]) => Promise<void>;
+  onDeleteRuleSet?: () => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -96,6 +97,7 @@ export function ConditionRuleSetView({
   onEditRule,
   onDeleteRule,
   onReorderRules,
+  onDeleteRuleSet,
   isLoading,
 }: ConditionRuleSetViewProps) {
   const [showSettings, setShowSettings] = useState(false);
@@ -105,6 +107,8 @@ export function ConditionRuleSetView({
   );
   const [editedActive, setEditedActive] = useState(ruleSet.is_active ?? true);
   const [isSavingMetadata, setIsSavingMetadata] = useState(false);
+  const [confirmDeleteRuleSet, setConfirmDeleteRuleSet] = useState(false);
+  const [isDeletingRuleSet, setIsDeletingRuleSet] = useState(false);
 
   const displayConditionName =
     conditionName ||
@@ -290,6 +294,59 @@ export function ConditionRuleSetView({
                   )}
                   Save Changes
                 </Button>
+              </div>
+            )}
+
+            {onDeleteRuleSet && (
+              <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-zinc-700">
+                {!confirmDeleteRuleSet ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setConfirmDeleteRuleSet(true)}
+                    className="h-6 text-[10px]"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete Rule Set
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-red-600 dark:text-red-400">
+                      Delete this rule set and all its rules?
+                    </span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      disabled={isDeletingRuleSet}
+                      onClick={async () => {
+                        setIsDeletingRuleSet(true);
+                        try {
+                          await onDeleteRuleSet();
+                        } finally {
+                          setIsDeletingRuleSet(false);
+                          setConfirmDeleteRuleSet(false);
+                        }
+                      }}
+                      className="h-6 text-[10px]"
+                    >
+                      {isDeletingRuleSet ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : null}
+                      Confirm
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmDeleteRuleSet(false)}
+                      className="h-6 text-[10px]"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

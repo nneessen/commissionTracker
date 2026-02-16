@@ -1,7 +1,7 @@
 // src/features/underwriting/components/CoverageBuilder/GuidedRuleBuilderDialog.tsx
-// Multi-step guided dialog for quickly creating condition acceptance rules with tiered support
+// Multi-step guided dialog for creating condition acceptance rules with flexible multi-criteria tiers
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Minus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateRuleSet,
@@ -30,11 +30,15 @@ import {
 } from "../../hooks/useRuleSets";
 import { useCreateRule } from "../../hooks/useRules";
 import { coverageStatsKeys } from "../../hooks/useCoverageStats";
-import type { PredicateGroup } from "@/services/underwriting/ruleEngineDSL";
 import type {
+  PredicateGroup,
   HealthClass,
   TableRating,
-} from "@/services/underwriting/ruleService";
+} from "../../hooks/useRuleSets";
+import type {
+  FollowUpSchema,
+  FollowUpQuestion,
+} from "../../types/underwriting.types";
 
 // ============================================================================
 // Types
@@ -46,13 +50,33 @@ type Decision =
   | "case_by_case"
   | "always_accept";
 
+type CatchAllOutcome = "decline" | "refer";
+
+type DslType = "numeric" | "date" | "boolean" | "string" | "array";
+
+interface CriteriaFieldDef {
+  fieldId: string;
+  label: string;
+  dslType: DslType;
+  operators: { value: string; label: string }[];
+  options?: string[];
+}
+
+interface CriterionEntry {
+  fieldId: string;
+  dslType: DslType;
+  operator: string;
+  value: number | string | boolean | string[];
+}
+
+type CriteriaLogic = "all" | "any";
+
 interface TierRow {
-  yearsAgo: number;
+  criteria: CriterionEntry[];
+  criteriaLogic: CriteriaLogic;
   healthClass: HealthClass;
   tableRating: TableRating;
 }
-
-type CatchAllOutcome = "decline" | "refer";
 
 interface GuidedRuleBuilderDialogProps {
   open: boolean;
@@ -63,7 +87,12 @@ interface GuidedRuleBuilderDialogProps {
   productName: string;
   conditionCode: string;
   conditionName: string;
+  followUpSchema: FollowUpSchema | null;
 }
+
+// ============================================================================
+// Constants
+// ============================================================================
 
 const HEALTH_CLASS_OPTIONS: { value: HealthClass; label: string }[] = [
   { value: "preferred_plus", label: "Preferred Plus" },
@@ -85,11 +114,148 @@ const TABLE_RATING_OPTIONS: { value: TableRating; label: string }[] = [
   { value: "H", label: "H (+200%)" },
 ];
 
-const DEFAULT_TIER: TierRow = {
-  yearsAgo: 5,
-  healthClass: "standard",
-  tableRating: "none",
+const DATE_OPERATORS = [
+  { value: "years_since_gte", label: "at least X years ago" },
+  { value: "years_since_lte", label: "at most X years ago" },
+  { value: "months_since_gte", label: "at least X months ago" },
+  { value: "months_since_lte", label: "at most X months ago" },
+];
+
+const NUMERIC_OPERATORS = [
+  { value: "gte", label: "at least" },
+  { value: "lte", label: "at most" },
+  { value: "eq", label: "equals" },
+];
+
+const STRING_OPERATORS = [
+  { value: "eq", label: "is" },
+  { value: "neq", label: "is not" },
+];
+
+const ARRAY_OPERATORS = [
+  { value: "includes_any", label: "includes any of" },
+  { value: "includes_all", label: "includes all of" },
+  { value: "is_empty", label: "is empty" },
+  { value: "is_not_empty", label: "is not empty" },
+];
+
+const BOOLEAN_OPERATORS = [{ value: "eq", label: "is" }];
+
+const FALLBACK_DIAGNOSIS_DATE_FIELD: CriteriaFieldDef = {
+  fieldId: "diagnosis_date",
+  label: "Time since diagnosis",
+  dslType: "date",
+  operators: DATE_OPERATORS,
 };
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function questionToDslType(q: FollowUpQuestion): DslType {
+  switch (q.type) {
+    case "date":
+      return "date";
+    case "number":
+      return "numeric";
+    case "multiselect":
+      return "array";
+    case "select": {
+      // Detect boolean-like selects
+      const opts = (q.options ?? []).map((o) => o.toLowerCase());
+      if (
+        opts.length === 2 &&
+        ((opts.includes("yes") && opts.includes("no")) ||
+          (opts.includes("true") && opts.includes("false")))
+      ) {
+        return "boolean";
+      }
+      return "string";
+    }
+    case "text":
+      return "string";
+    default:
+      return "string";
+  }
+}
+
+function operatorsForDslType(dslType: DslType) {
+  switch (dslType) {
+    case "date":
+      return DATE_OPERATORS;
+    case "numeric":
+      return NUMERIC_OPERATORS;
+    case "string":
+      return STRING_OPERATORS;
+    case "array":
+      return ARRAY_OPERATORS;
+    case "boolean":
+      return BOOLEAN_OPERATORS;
+  }
+}
+
+function defaultValueForDslType(
+  dslType: DslType,
+  options?: string[],
+): number | string | boolean | string[] {
+  switch (dslType) {
+    case "date":
+      return 5;
+    case "numeric":
+      return 0;
+    case "string":
+      return options?.[0] ?? "";
+    case "boolean":
+      return true;
+    case "array":
+      return [];
+  }
+}
+
+function buildCriteriaFields(
+  followUpSchema: FollowUpSchema | null,
+): CriteriaFieldDef[] {
+  if (!followUpSchema?.questions?.length) {
+    return [FALLBACK_DIAGNOSIS_DATE_FIELD];
+  }
+
+  const fields: CriteriaFieldDef[] = followUpSchema.questions.map((q) => {
+    const dslType = questionToDslType(q);
+    return {
+      fieldId: q.id,
+      label: q.label,
+      dslType,
+      operators: operatorsForDslType(dslType),
+      options: q.options,
+    };
+  });
+
+  // Ensure there's always a date option if none exist
+  if (!fields.some((f) => f.dslType === "date")) {
+    fields.unshift(FALLBACK_DIAGNOSIS_DATE_FIELD);
+  }
+
+  return fields;
+}
+
+function defaultCriterion(field: CriteriaFieldDef): CriterionEntry {
+  return {
+    fieldId: field.fieldId,
+    dslType: field.dslType,
+    operator: field.operators[0].value,
+    value: defaultValueForDslType(field.dslType, field.options),
+  };
+}
+
+function describeCriteria(criteria: CriterionEntry[]): string {
+  return criteria
+    .map((c) => {
+      if (c.dslType === "date") return `${c.value}+ yrs`;
+      if (c.dslType === "boolean") return `${c.fieldId}=${c.value}`;
+      return `${c.fieldId} ${c.operator} ${c.value}`;
+    })
+    .join(", ");
+}
 
 // ============================================================================
 // Component
@@ -104,11 +270,17 @@ export function GuidedRuleBuilderDialog({
   productName,
   conditionCode,
   conditionName,
+  followUpSchema,
 }: GuidedRuleBuilderDialogProps) {
   const queryClient = useQueryClient();
   const createRuleSetMutation = useCreateRuleSet();
   const createRuleMutation = useCreateRule();
   const updateRuleSetMutation = useUpdateRuleSet();
+
+  const criteriaFields = useMemo(
+    () => buildCriteriaFields(followUpSchema),
+    [followUpSchema],
+  );
 
   // Step state
   const [step, setStep] = useState<1 | 2>(1);
@@ -122,7 +294,7 @@ export function GuidedRuleBuilderDialog({
   const [notes, setNotes] = useState("");
 
   // Step 2 — Tiered Acceptance state
-  const [tiers, setTiers] = useState<TierRow[]>([{ ...DEFAULT_TIER }]);
+  const [tiers, setTiers] = useState<TierRow[]>([]);
   const [catchAllOutcome, setCatchAllOutcome] =
     useState<CatchAllOutcome>("decline");
 
@@ -134,7 +306,7 @@ export function GuidedRuleBuilderDialog({
     setHealthClass("standard");
     setTableRating("none");
     setNotes("");
-    setTiers([{ ...DEFAULT_TIER }]);
+    setTiers([]);
     setCatchAllOutcome("decline");
   };
 
@@ -154,23 +326,98 @@ export function GuidedRuleBuilderDialog({
 
   // ---- Tier management ----
   const addTier = () => {
-    const lastTier = tiers[tiers.length - 1];
-    const nextYears = Math.max(1, (lastTier?.yearsAgo ?? 5) - 2);
     setTiers([
       ...tiers,
-      { yearsAgo: nextYears, healthClass: "substandard", tableRating: "none" },
+      {
+        criteria: [defaultCriterion(criteriaFields[0])],
+        criteriaLogic: "all",
+        healthClass: tiers.length === 0 ? "standard" : "substandard",
+        tableRating: "none",
+      },
     ]);
   };
 
   const removeTier = (index: number) => {
-    if (tiers.length <= 1) return;
     setTiers(tiers.filter((_, i) => i !== index));
   };
 
-  const updateTier = (index: number, updates: Partial<TierRow>) => {
+  const updateTier = (
+    index: number,
+    updates: Partial<
+      Pick<TierRow, "healthClass" | "tableRating" | "criteriaLogic">
+    >,
+  ) => {
     setTiers(
       tiers.map((tier, i) => (i === index ? { ...tier, ...updates } : tier)),
     );
+  };
+
+  // ---- Criterion management ----
+  const addCriterion = (tierIndex: number) => {
+    setTiers(
+      tiers.map((tier, i) => {
+        if (i !== tierIndex) return tier;
+        return {
+          ...tier,
+          criteria: [...tier.criteria, defaultCriterion(criteriaFields[0])],
+        };
+      }),
+    );
+  };
+
+  const removeCriterion = (tierIndex: number, criterionIndex: number) => {
+    setTiers(
+      tiers.map((tier, i) => {
+        if (i !== tierIndex || tier.criteria.length <= 1) return tier;
+        return {
+          ...tier,
+          criteria: tier.criteria.filter((_, ci) => ci !== criterionIndex),
+        };
+      }),
+    );
+  };
+
+  const updateCriterion = (
+    tierIndex: number,
+    criterionIndex: number,
+    updates: Partial<CriterionEntry>,
+  ) => {
+    setTiers(
+      tiers.map((tier, i) => {
+        if (i !== tierIndex) return tier;
+        return {
+          ...tier,
+          criteria: tier.criteria.map((c, ci) =>
+            ci === criterionIndex ? { ...c, ...updates } : c,
+          ),
+        };
+      }),
+    );
+  };
+
+  const handleFieldChange = (
+    tierIndex: number,
+    criterionIndex: number,
+    fieldId: string,
+  ) => {
+    const field = criteriaFields.find((f) => f.fieldId === fieldId);
+    if (!field) return;
+    updateCriterion(tierIndex, criterionIndex, {
+      fieldId: field.fieldId,
+      dslType: field.dslType,
+      operator: field.operators[0].value,
+      value: defaultValueForDslType(field.dslType, field.options),
+    });
+  };
+
+  // ---- Validation ----
+  const validateTiers = (): string | null => {
+    for (let i = 0; i < tiers.length; i++) {
+      if (tiers[i].criteria.length === 0) {
+        return `Tier ${i + 1} must have at least one criterion.`;
+      }
+    }
+    return null;
   };
 
   // ---- Build rules ----
@@ -218,6 +465,15 @@ export function GuidedRuleBuilderDialog({
 
   const handleSave = async () => {
     if (!decision) return;
+
+    if (decision === "tiered_acceptance") {
+      const validationError = validateTiers();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -237,43 +493,45 @@ export function GuidedRuleBuilderDialog({
       ruleSetId = ruleSet.id;
 
       if (decision === "tiered_acceptance") {
-        // Sort tiers by years descending (longest lookback = highest priority)
-        const sortedTiers = [...tiers].sort(
-          (a, b) => b.yearsAgo - a.yearsAgo,
-        );
+        // Create a rule for each tier (if any)
+        for (let i = 0; i < tiers.length; i++) {
+          const tier = tiers[i];
 
-        // Create a rule for each tier
-        for (let i = 0; i < sortedTiers.length; i++) {
-          const tier = sortedTiers[i];
+          const predicates = tier.criteria.map((c) => ({
+            type: c.dslType as string,
+            field: `${conditionCode}.${c.fieldId}`,
+            operator: c.operator,
+            value: c.value,
+          }));
+
           const predicate: PredicateGroup = {
-            all: [
-              {
-                type: "date" as const,
-                field: `${conditionCode}.diagnosis_date`,
-                operator: "years_since_gte" as const,
-                value: tier.yearsAgo,
-              },
-            ],
+            [tier.criteriaLogic]: predicates,
           };
+
+          const criteriaDesc = describeCriteria(tier.criteria);
 
           await createRuleMutation.mutateAsync({
             ruleSetId: ruleSet.id,
             priority: i + 1,
-            name: `${conditionName} - ${tier.yearsAgo}+ years`,
+            name: `${conditionName} - Tier ${i + 1}`,
             predicate,
             outcomeEligibility: "eligible",
             outcomeHealthClass: tier.healthClass,
             outcomeTableRating: tier.tableRating,
-            outcomeReason: `${conditionName} - Diagnosed ${tier.yearsAgo}+ years ago`,
+            outcomeReason: `${conditionName} - ${criteriaDesc}`,
             outcomeConcerns: [],
           });
         }
 
-        // Create catch-all rule (highest priority number = last evaluated)
+        // Create catch-all rule (always created — sole rule when 0 tiers)
+        const catchAllName =
+          tiers.length === 0
+            ? `${conditionName} rule`
+            : `${conditionName} - Default`;
         await createRuleMutation.mutateAsync({
           ruleSetId: ruleSet.id,
-          priority: sortedTiers.length + 1,
-          name: `${conditionName} - Default`,
+          priority: tiers.length + 1,
+          name: catchAllName,
           predicate: {},
           outcomeEligibility:
             catchAllOutcome === "decline" ? "ineligible" : "refer",
@@ -282,7 +540,7 @@ export function GuidedRuleBuilderDialog({
           outcomeTableRating: "none",
           outcomeReason:
             catchAllOutcome === "decline"
-              ? `${conditionName} - Does not meet lookback requirements`
+              ? `${conditionName} - Does not meet acceptance criteria`
               : `${conditionName} - Refer for review`,
           outcomeConcerns: [],
         });
@@ -327,9 +585,7 @@ export function GuidedRuleBuilderDialog({
       // Clean up orphan rule set on failure
       if (ruleSetId) {
         try {
-          const { deleteRuleSet } = await import(
-            "@/services/underwriting/ruleService"
-          );
+          const { deleteRuleSet } = await import("../../hooks/useRuleSets");
           await deleteRuleSet(ruleSetId);
         } catch {
           // Silently fail cleanup
@@ -343,9 +599,152 @@ export function GuidedRuleBuilderDialog({
   const needsStep2 =
     decision === "tiered_acceptance" || decision === "always_accept";
 
+  // ---- Value input renderer ----
+  const renderValueInput = (
+    tierIndex: number,
+    criterionIndex: number,
+    criterion: CriterionEntry,
+  ) => {
+    const field = criteriaFields.find((f) => f.fieldId === criterion.fieldId);
+
+    // For array operators that don't need a value
+    if (
+      criterion.operator === "is_empty" ||
+      criterion.operator === "is_not_empty"
+    ) {
+      return null;
+    }
+
+    switch (criterion.dslType) {
+      case "date":
+      case "numeric":
+        return (
+          <Input
+            type="number"
+            min={field?.fieldId === "diagnosis_date" ? 1 : undefined}
+            value={criterion.value as number}
+            onChange={(e) =>
+              updateCriterion(tierIndex, criterionIndex, {
+                value: parseFloat(e.target.value) || 0,
+              })
+            }
+            className="h-6 w-16 text-[10px] px-1.5"
+          />
+        );
+      case "boolean":
+        return (
+          <Select
+            value={String(criterion.value)}
+            onValueChange={(v) =>
+              updateCriterion(tierIndex, criterionIndex, {
+                value: v === "true",
+              })
+            }
+          >
+            <SelectTrigger className="h-6 text-[10px] w-16 px-1.5">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true" className="text-[11px]">
+                Yes
+              </SelectItem>
+              <SelectItem value="false" className="text-[11px]">
+                No
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        );
+      case "string":
+        if (field?.options?.length) {
+          return (
+            <Select
+              value={criterion.value as string}
+              onValueChange={(v) =>
+                updateCriterion(tierIndex, criterionIndex, { value: v })
+              }
+            >
+              <SelectTrigger className="h-6 text-[10px] w-28 px-1.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {field.options.map((opt) => (
+                  <SelectItem key={opt} value={opt} className="text-[11px]">
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        }
+        return (
+          <Input
+            type="text"
+            value={criterion.value as string}
+            onChange={(e) =>
+              updateCriterion(tierIndex, criterionIndex, {
+                value: e.target.value,
+              })
+            }
+            className="h-6 w-24 text-[10px] px-1.5"
+            placeholder="Value..."
+          />
+        );
+      case "array":
+        if (field?.options?.length) {
+          const selected = (criterion.value as string[]) ?? [];
+          return (
+            <div className="flex flex-wrap gap-1">
+              {field.options.map((opt) => {
+                const isSelected = selected.includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      const next = isSelected
+                        ? selected.filter((s) => s !== opt)
+                        : [...selected, opt];
+                      updateCriterion(tierIndex, criterionIndex, {
+                        value: next,
+                      });
+                    }}
+                    className={`px-1.5 py-0.5 rounded text-[9px] border transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/30 text-muted-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        }
+        return (
+          <Input
+            type="text"
+            value={(criterion.value as string[]).join(", ")}
+            onChange={(e) =>
+              updateCriterion(tierIndex, criterionIndex, {
+                value: e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
+            className="h-6 w-28 text-[10px] px-1.5"
+            placeholder="val1, val2..."
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg p-4">
+      <DialogContent className="max-w-xl p-4">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-sm font-semibold">
             {conditionName}
@@ -481,7 +880,7 @@ export function GuidedRuleBuilderDialog({
           </div>
         )}
 
-        {/* Step 2: Tiered Acceptance — multi-tier lookback rules */}
+        {/* Step 2: Tiered Acceptance — multi-criteria tiers */}
         {step === 2 && decision === "tiered_acceptance" && (
           <div className="space-y-3 py-2">
             <Button
@@ -497,94 +896,207 @@ export function GuidedRuleBuilderDialog({
             </Button>
 
             <Label className="text-[11px] text-muted-foreground">
-              Acceptance tiers based on time since diagnosis
+              {tiers.length > 0
+                ? "IF → ELSE IF → ELSE (evaluated top to bottom)"
+                : "Optionally add tiers for conditional acceptance"}
             </Label>
 
-            {/* Tier rows */}
+            {/* Tier cards */}
             <div className="space-y-2">
-              {tiers.map((tier, index) => (
+              {tiers.length === 0 && (
+                <div className="py-4 text-center border border-dashed border-zinc-300 dark:border-zinc-600 rounded">
+                  <p className="text-[11px] text-zinc-400">
+                    No tiers — will use default outcome below
+                  </p>
+                  <p className="text-[9px] text-zinc-400 mt-1">
+                    Add tiers for conditional acceptance (IF → ELSE IF → ELSE)
+                  </p>
+                </div>
+              )}
+              {tiers.map((tier, tierIndex) => (
                 <div
-                  key={index}
-                  className="flex items-center gap-1.5 p-2 rounded border bg-muted/30"
+                  key={tierIndex}
+                  className="rounded border bg-muted/30 overflow-hidden"
                 >
-                  {/* Years ago */}
-                  <div className="flex items-center gap-1 min-w-0">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={30}
-                      value={tier.yearsAgo}
-                      onChange={(e) =>
-                        updateTier(index, {
-                          yearsAgo: Math.max(
-                            1,
-                            parseInt(e.target.value) || 1,
-                          ),
+                  {/* Tier header row */}
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 border-b bg-muted/20">
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      Tier {tierIndex + 1}
+                    </span>
+
+                    {/* Logic toggle */}
+                    {tier.criteria.length > 1 && (
+                      <Select
+                        value={tier.criteriaLogic}
+                        onValueChange={(v) =>
+                          updateTier(tierIndex, {
+                            criteriaLogic: v as CriteriaLogic,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-5 text-[9px] w-14 px-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="text-[10px]">
+                            ALL
+                          </SelectItem>
+                          <SelectItem value="any" className="text-[10px]">
+                            ANY
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    <div className="flex-1" />
+
+                    {/* Health Class */}
+                    <Select
+                      value={tier.healthClass}
+                      onValueChange={(v) =>
+                        updateTier(tierIndex, {
+                          healthClass: v as HealthClass,
                         })
                       }
-                      className="h-6 w-12 text-[11px] px-1.5"
-                    />
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      yr+
-                    </span>
+                    >
+                      <SelectTrigger className="h-5 text-[9px] w-24 px-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {HEALTH_CLASS_OPTIONS.map((opt) => (
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            className="text-[11px]"
+                          >
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Table Rating */}
+                    <Select
+                      value={tier.tableRating}
+                      onValueChange={(v) =>
+                        updateTier(tierIndex, {
+                          tableRating: v as TableRating,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-5 text-[9px] w-20 px-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TABLE_RATING_OPTIONS.map((opt) => (
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            className="text-[11px]"
+                          >
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Remove tier */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 flex-shrink-0"
+                      onClick={() => removeTier(tierIndex)}
+                    >
+                      <Trash2 className="h-3 w-3 text-muted-foreground" />
+                    </Button>
                   </div>
 
-                  {/* Health Class */}
-                  <Select
-                    value={tier.healthClass}
-                    onValueChange={(v) =>
-                      updateTier(index, { healthClass: v as HealthClass })
-                    }
-                  >
-                    <SelectTrigger className="h-6 text-[10px] w-28 px-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {HEALTH_CLASS_OPTIONS.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          className="text-[11px]"
+                  {/* Criteria rows */}
+                  <div className="px-2 py-1.5 space-y-1">
+                    {tier.criteria.map((criterion, criterionIndex) => (
+                      <div
+                        key={criterionIndex}
+                        className="flex items-center gap-1 flex-wrap"
+                      >
+                        {/* Field dropdown */}
+                        <Select
+                          value={criterion.fieldId}
+                          onValueChange={(v) =>
+                            handleFieldChange(tierIndex, criterionIndex, v)
+                          }
                         >
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <SelectTrigger className="h-6 text-[10px] w-32 px-1.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {criteriaFields.map((f) => (
+                              <SelectItem
+                                key={f.fieldId}
+                                value={f.fieldId}
+                                className="text-[11px]"
+                              >
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
-                  {/* Table Rating */}
-                  <Select
-                    value={tier.tableRating}
-                    onValueChange={(v) =>
-                      updateTier(index, { tableRating: v as TableRating })
-                    }
-                  >
-                    <SelectTrigger className="h-6 text-[10px] w-20 px-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TABLE_RATING_OPTIONS.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          className="text-[11px]"
+                        {/* Operator dropdown */}
+                        <Select
+                          value={criterion.operator}
+                          onValueChange={(v) =>
+                            updateCriterion(tierIndex, criterionIndex, {
+                              operator: v,
+                            })
+                          }
                         >
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <SelectTrigger className="h-6 text-[10px] w-36 px-1.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {operatorsForDslType(criterion.dslType).map(
+                              (op) => (
+                                <SelectItem
+                                  key={op.value}
+                                  value={op.value}
+                                  className="text-[11px]"
+                                >
+                                  {op.label}
+                                </SelectItem>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
 
-                  {/* Remove button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 flex-shrink-0"
-                    onClick={() => removeTier(index)}
-                    disabled={tiers.length <= 1}
-                  >
-                    <Trash2 className="h-3 w-3 text-muted-foreground" />
-                  </Button>
+                        {/* Value input */}
+                        {renderValueInput(tierIndex, criterionIndex, criterion)}
+
+                        {/* Remove criterion */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 flex-shrink-0"
+                          onClick={() =>
+                            removeCriterion(tierIndex, criterionIndex)
+                          }
+                          disabled={tier.criteria.length <= 1}
+                        >
+                          <Minus className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+
+                    {/* Add criterion */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 text-[9px] text-muted-foreground px-1"
+                      onClick={() => addCriterion(tierIndex)}
+                    >
+                      <Plus className="h-3 w-3 mr-0.5" />
+                      Add Criterion
+                    </Button>
+                  </div>
                 </div>
               ))}
 
@@ -603,13 +1115,11 @@ export function GuidedRuleBuilderDialog({
             {/* Catch-all / default */}
             <div className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">
-                Default (when no tier matches)
+                {tiers.length > 0 ? "ELSE (when no tier matches)" : "Outcome"}
               </Label>
               <Select
                 value={catchAllOutcome}
-                onValueChange={(v) =>
-                  setCatchAllOutcome(v as CatchAllOutcome)
-                }
+                onValueChange={(v) => setCatchAllOutcome(v as CatchAllOutcome)}
               >
                 <SelectTrigger className="h-7 text-[11px]">
                   <SelectValue />
@@ -640,9 +1150,7 @@ export function GuidedRuleBuilderDialog({
           </div>
         )}
 
-        {error && (
-          <p className="text-[11px] text-destructive">{error}</p>
-        )}
+        {error && <p className="text-[11px] text-destructive">{error}</p>}
 
         {/* Footer: Save buttons for step 1 (decline/case-by-case) and step 2 */}
         {((step === 1 && decision && !needsStep2) || step === 2) && (
@@ -662,9 +1170,7 @@ export function GuidedRuleBuilderDialog({
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving && (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              )}
+              {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
               Save Rule{decision === "tiered_acceptance" ? "s" : ""}
             </Button>
           </DialogFooter>

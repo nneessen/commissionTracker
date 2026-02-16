@@ -16,7 +16,7 @@ import {
   useHealthConditions,
   groupConditionsByCategory,
 } from "../../hooks/useHealthConditions";
-import { useRuleSets } from "../../hooks/useRuleSets";
+import { useRuleSets, useDeleteRuleSet } from "../../hooks/useRuleSets";
 import {
   useCoverageStats,
   getProductCoverage,
@@ -25,11 +25,17 @@ import {
   CONDITION_CATEGORY_LABELS,
   type ConditionCategory,
   type HealthCondition,
+  type FollowUpSchema,
 } from "../../types/underwriting.types";
-import type { RuleSetWithRules } from "@/services/underwriting/ruleService";
+import type { RuleSetWithRules } from "../../hooks/useRuleSets";
 import { GuidedRuleBuilderDialog } from "./GuidedRuleBuilderDialog";
 import { RuleSetEditor } from "../RuleEngine/RuleSetEditor";
-import { useCreateRule } from "../../hooks/useRules";
+import {
+  useCreateRule,
+  useUpdateRule,
+  useDeleteRule,
+  useReorderRules,
+} from "../../hooks/useRules";
 import { useUpdateRuleSet } from "../../hooks/useRuleSets";
 
 interface ConditionChecklistProps {
@@ -57,16 +63,18 @@ export function ConditionChecklist({
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
     new Set(),
   );
-  const [builderCondition, setBuilderCondition] = useState<{
-    code: string;
-    name: string;
-  } | null>(null);
-  const [editingRuleSet, setEditingRuleSet] =
-    useState<RuleSetWithRules | null>(null);
+  const [builderCondition, setBuilderCondition] =
+    useState<HealthCondition | null>(null);
+  // Track editing by rule set ID so we always derive from fresh query data
+  const [editingRuleSetId, setEditingRuleSetId] = useState<string | null>(null);
 
-  // Mutation hooks for RuleSetEditor callbacks
+  // Mutation hooks
   const createRuleMutation = useCreateRule();
+  const updateRuleMutation = useUpdateRule();
+  const deleteRuleMutation = useDeleteRule();
+  const reorderRulesMutation = useReorderRules();
   const updateRuleSetMutation = useUpdateRuleSet();
+  const deleteRuleSetMutation = useDeleteRuleSet();
 
   const configuredCodes = getProductCoverage(coverageMap, carrierId, productId);
 
@@ -82,6 +90,12 @@ export function ConditionChecklist({
     if (!ruleSets) return [];
     return ruleSets.filter((rs) => rs.product_id === productId);
   }, [ruleSets, productId]);
+
+  // Derive editingRuleSet from fresh query data (reactive to cache updates)
+  const editingRuleSet = useMemo((): RuleSetWithRules | null => {
+    if (!editingRuleSetId || !productRuleSets.length) return null;
+    return productRuleSets.find((rs) => rs.id === editingRuleSetId) ?? null;
+  }, [editingRuleSetId, productRuleSets]);
 
   // Group conditions by category and filter by search
   type GroupedConditions = Partial<
@@ -99,8 +113,7 @@ export function ConditionChecklist({
     ][]) {
       const matches = items.filter(
         (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.code.toLowerCase().includes(q),
+          c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
       );
       if (matches.length > 0) {
         filtered[cat] = matches;
@@ -126,23 +139,30 @@ export function ConditionChecklist({
     conditionCode: string,
   ): RuleSetWithRules | undefined => {
     return productRuleSets.find(
-      (rs) =>
-        rs.scope === "condition" && rs.condition_code === conditionCode,
+      (rs) => rs.scope === "condition" && rs.condition_code === conditionCode,
     );
   };
 
-  const handleConditionClick = (code: string, name: string) => {
-    if (configuredCodes.has(code)) {
+  const handleConditionClick = (condition: HealthCondition) => {
+    if (configuredCodes.has(condition.code)) {
       // Open existing rule set for editing
-      const rs = findRuleSetForCondition(code);
+      const rs = findRuleSetForCondition(condition.code);
       if (rs) {
-        setEditingRuleSet(rs);
+        setEditingRuleSetId(rs.id);
       }
     } else {
       // Open guided builder for creating
-      setBuilderCondition({ code, name });
+      setBuilderCondition(condition);
     }
   };
+
+  const isMutating =
+    createRuleMutation.isPending ||
+    updateRuleMutation.isPending ||
+    deleteRuleMutation.isPending ||
+    reorderRulesMutation.isPending ||
+    updateRuleSetMutation.isPending ||
+    deleteRuleSetMutation.isPending;
 
   return (
     <div className="space-y-2">
@@ -215,9 +235,8 @@ export function ConditionChecklist({
                   <ChevronDown className="h-3 w-3" />
                 )}
                 <span>
-                  {CONDITION_CATEGORY_LABELS[
-                    category as ConditionCategory
-                  ] ?? category}
+                  {CONDITION_CATEGORY_LABELS[category as ConditionCategory] ??
+                    category}
                 </span>
                 <span className="ml-auto text-[9px] font-normal tabular-nums">
                   {catConfigured}/{items.length}
@@ -230,9 +249,7 @@ export function ConditionChecklist({
                     return (
                       <button
                         key={condition.code}
-                        onClick={() =>
-                          handleConditionClick(condition.code, condition.name)
-                        }
+                        onClick={() => handleConditionClick(condition)}
                         className="w-full flex items-center gap-2 px-2 py-1 rounded hover:bg-accent/50 transition-colors text-left group"
                       >
                         {isConfigured ? (
@@ -263,12 +280,17 @@ export function ConditionChecklist({
         productName={productName}
         conditionCode={builderCondition?.code ?? ""}
         conditionName={builderCondition?.name ?? ""}
+        followUpSchema={
+          builderCondition?.follow_up_schema
+            ? (builderCondition.follow_up_schema as unknown as FollowUpSchema)
+            : null
+        }
       />
 
       {/* RuleSetEditor for editing existing condition rules */}
       <RuleSetEditor
-        open={!!editingRuleSet}
-        onOpenChange={(open) => !open && setEditingRuleSet(null)}
+        open={!!editingRuleSetId}
+        onOpenChange={(open) => !open && setEditingRuleSetId(null)}
         ruleSet={editingRuleSet}
         carrierId={carrierId}
         carrierName={carrierName}
@@ -304,41 +326,53 @@ export function ConditionChecklist({
           });
         }}
         onUpdateRule={async (ruleId, data) => {
-          const { updateRule } = await import(
-            "@/services/underwriting/ruleService"
-          );
-          await updateRule(ruleId, {
-            name: data.name,
-            description: data.description ?? null,
-            ageBandMin: data.ageBandMin,
-            ageBandMax: data.ageBandMax,
-            gender: data.gender,
-            predicate: data.predicate,
-            outcomeEligibility: data.outcome.eligibility,
-            outcomeHealthClass: data.outcome.healthClass,
-            outcomeTableRating: data.outcome.tableRating,
-            outcomeFlatExtraPerThousand: data.outcome.flatExtraPerThousand,
-            outcomeFlatExtraYears: data.outcome.flatExtraYears,
-            outcomeReason: data.outcome.reason,
-            outcomeConcerns: data.outcome.concerns,
+          if (!editingRuleSet) return;
+          await updateRuleMutation.mutateAsync({
+            id: ruleId,
+            carrierId,
+            ruleSetId: editingRuleSet.id,
+            updates: {
+              name: data.name,
+              description: data.description ?? null,
+              ageBandMin: data.ageBandMin,
+              ageBandMax: data.ageBandMax,
+              gender: data.gender,
+              predicate: data.predicate,
+              outcomeEligibility: data.outcome.eligibility,
+              outcomeHealthClass: data.outcome.healthClass,
+              outcomeTableRating: data.outcome.tableRating,
+              outcomeFlatExtraPerThousand: data.outcome.flatExtraPerThousand,
+              outcomeFlatExtraYears: data.outcome.flatExtraYears,
+              outcomeReason: data.outcome.reason,
+              outcomeConcerns: data.outcome.concerns,
+            },
           });
         }}
         onDeleteRule={async (ruleId) => {
-          const { deleteRule } = await import(
-            "@/services/underwriting/ruleService"
-          );
-          await deleteRule(ruleId);
+          if (!editingRuleSet) return;
+          await deleteRuleMutation.mutateAsync({
+            id: ruleId,
+            carrierId,
+            ruleSetId: editingRuleSet.id,
+          });
         }}
         onReorderRules={async (ruleIds) => {
-          const { reorderRules } = await import(
-            "@/services/underwriting/ruleService"
-          );
           if (!editingRuleSet) return;
-          await reorderRules(editingRuleSet.id, ruleIds);
+          await reorderRulesMutation.mutateAsync({
+            ruleSetId: editingRuleSet.id,
+            carrierId,
+            ruleIds,
+          });
         }}
-        isLoading={
-          createRuleMutation.isPending || updateRuleSetMutation.isPending
-        }
+        onDeleteRuleSet={async () => {
+          if (!editingRuleSet) return;
+          await deleteRuleSetMutation.mutateAsync({
+            id: editingRuleSet.id,
+            carrierId,
+          });
+          setEditingRuleSetId(null);
+        }}
+        isLoading={isMutating}
       />
     </div>
   );

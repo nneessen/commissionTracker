@@ -10,6 +10,7 @@ import {
   type CreateRuleInput,
 } from "@/services/underwriting/ruleService";
 import { ruleEngineKeys } from "./useRuleSets";
+import { coverageStatsKeys } from "./useCoverageStats";
 
 // ============================================================================
 // Mutation Hooks
@@ -45,21 +46,27 @@ export function useUpdateRule() {
   return useMutation({
     mutationFn: ({
       id,
+      carrierId: _carrierId,
       ruleSetId: _ruleSetId,
       updates,
     }: {
       id: string;
+      carrierId: string;
       ruleSetId: string;
       updates: Parameters<typeof updateRule>[1];
     }) => updateRule(id, updates),
     onSuccess: (_, variables) => {
-      // Invalidate the parent rule set to refresh rules list
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.ruleSet(variables.ruleSetId),
       });
-      // Also invalidate needing review
+      queryClient.invalidateQueries({
+        queryKey: ruleEngineKeys.ruleSets(variables.carrierId),
+      });
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.needingReview(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: coverageStatsKeys.all,
       });
     },
   });
@@ -74,19 +81,25 @@ export function useDeleteRule() {
   return useMutation({
     mutationFn: ({
       id,
+      carrierId: _carrierId,
       ruleSetId: _ruleSetId,
     }: {
       id: string;
+      carrierId: string;
       ruleSetId: string;
     }) => deleteRule(id),
     onSuccess: (_, variables) => {
-      // Invalidate the parent rule set to refresh rules list
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.ruleSet(variables.ruleSetId),
       });
-      // Also invalidate needing review
+      queryClient.invalidateQueries({
+        queryKey: ruleEngineKeys.ruleSets(variables.carrierId),
+      });
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.needingReview(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: coverageStatsKeys.all,
       });
     },
   });
@@ -101,15 +114,19 @@ export function useReorderRules() {
   return useMutation({
     mutationFn: ({
       ruleSetId,
+      carrierId: _carrierId,
       ruleIds,
     }: {
       ruleSetId: string;
+      carrierId: string;
       ruleIds: string[];
     }) => reorderRules(ruleSetId, ruleIds),
     onSuccess: (_, variables) => {
-      // Invalidate the parent rule set to refresh rules list
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.ruleSet(variables.ruleSetId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ruleEngineKeys.ruleSets(variables.carrierId),
       });
     },
   });

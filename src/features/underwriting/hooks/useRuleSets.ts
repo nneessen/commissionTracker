@@ -14,6 +14,16 @@ import {
   type RuleSetWithRules,
   type RuleReviewStatus,
 } from "@/services/underwriting/ruleService";
+import type {
+  HealthClass,
+  TableRating,
+} from "@/services/underwriting/ruleService";
+import { parsePredicate } from "@/services/underwriting/ruleEngineDSL";
+import type {
+  PredicateGroup,
+  RuleSetScope,
+} from "@/services/underwriting/ruleEngineDSL";
+import { coverageStatsKeys } from "./useCoverageStats";
 
 // ============================================================================
 // Query Keys
@@ -150,6 +160,10 @@ export function useUpdateRuleSet() {
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.needingReview(),
       });
+      // Invalidate coverage stats (active/inactive changes affect coverage)
+      queryClient.invalidateQueries({
+        queryKey: coverageStatsKeys.all,
+      });
     },
   });
 }
@@ -181,9 +195,22 @@ export function useDeleteRuleSet() {
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.needingReview(),
       });
+      // Invalidate coverage stats
+      queryClient.invalidateQueries({
+        queryKey: coverageStatsKeys.all,
+      });
     },
   });
 }
 
 // Re-export types for convenience
-export type { RuleSetWithRules, CreateRuleSetInput, RuleReviewStatus };
+export type {
+  RuleSetWithRules,
+  CreateRuleSetInput,
+  RuleReviewStatus,
+  HealthClass,
+  TableRating,
+  PredicateGroup,
+  RuleSetScope,
+};
+export { parsePredicate, deleteRuleSet };

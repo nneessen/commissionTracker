@@ -228,6 +228,7 @@ export function AcceptanceRulesTab() {
     try {
       await updateRule.mutateAsync({
         id: ruleId,
+        carrierId: selectedCarrierId,
         ruleSetId: selectedRuleSet.id,
         updates: {
           priority: data.priority,
@@ -259,6 +260,7 @@ export function AcceptanceRulesTab() {
     try {
       await deleteRule.mutateAsync({
         id: ruleId,
+        carrierId: selectedCarrierId,
         ruleSetId: selectedRuleSet.id,
       });
       toast.success("Rule deleted");
@@ -274,6 +276,7 @@ export function AcceptanceRulesTab() {
     try {
       await reorderRules.mutateAsync({
         ruleSetId: selectedRuleSet.id,
+        carrierId: selectedCarrierId,
         ruleIds,
       });
     } catch (error) {

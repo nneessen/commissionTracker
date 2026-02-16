@@ -22,8 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import type { RuleSetWithRules } from "@/services/underwriting/ruleService";
-import type { RuleSetScope } from "@/services/underwriting/ruleEngineDSL";
+import type { RuleSetWithRules, RuleSetScope } from "../../hooks/useRuleSets";
 import { useHealthConditions } from "../../hooks/useAcceptance";
 import { RuleEditor, type RuleFormData } from "./RuleEditor";
 import { ConditionRuleSetView } from "./ConditionRuleSetView";
@@ -45,6 +44,7 @@ interface RuleSetEditorProps {
   onUpdateRule: (ruleId: string, data: RuleFormData) => Promise<void>;
   onDeleteRule: (ruleId: string) => Promise<void>;
   onReorderRules: (ruleIds: string[]) => Promise<void>;
+  onDeleteRuleSet?: () => Promise<void>;
   // State
   isLoading?: boolean;
 }
@@ -86,6 +86,7 @@ export function RuleSetEditor({
   onUpdateRule,
   onDeleteRule,
   onReorderRules,
+  onDeleteRuleSet,
   isLoading,
 }: RuleSetEditorProps) {
   const { data: healthConditions } = useHealthConditions();
@@ -389,6 +390,7 @@ export function RuleSetEditor({
               onEditRule={handleEditRule}
               onDeleteRule={onDeleteRule}
               onReorderRules={onReorderRules}
+              onDeleteRuleSet={onDeleteRuleSet}
               isLoading={isLoading}
             />
           )}

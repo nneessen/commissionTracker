@@ -22,3 +22,18 @@ export {
   type Recommendation,
   type GenderType,
 } from "./decisionEngine";
+export {
+  deleteRuleSet,
+  type RuleSetWithRules,
+  type HealthClass,
+  type TableRating,
+  type RuleReviewStatus,
+} from "./ruleService";
+export {
+  parsePredicate,
+  validatePredicate,
+  isFieldCondition,
+  type PredicateGroup,
+  type FieldCondition,
+  type RuleSetScope,
+} from "./ruleEngineDSL";
