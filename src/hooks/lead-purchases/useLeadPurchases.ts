@@ -391,7 +391,7 @@ export function usePackHeatScores() {
     return calculateVendorHeatScoresV2(packMetrics);
   }, [packMetrics]);
 
-  return { packScores, vendorScores, isLoading };
+  return { packScores, vendorScores, packMetrics: packMetrics ?? [], isLoading };
 }
 
 /**

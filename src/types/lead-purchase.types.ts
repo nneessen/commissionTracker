@@ -316,6 +316,7 @@ export interface PackHeatMetrics {
   daysSincePurchase: number;
   daysSinceLastSale: number;
   salesLast30d: number;
+  daysToFirstSale: number;
 }
 
 // V2 heat score with conversion + ROI focus

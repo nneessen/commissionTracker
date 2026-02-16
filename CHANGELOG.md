@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-16 09:17:24
+
+### Changed Files
+- `src/features/admin/components/lead-vendors/LeadIntelligenceDashboard.tsx`
+- `src/features/admin/components/lead-vendors/PackPurchaseTable.tsx`
+- `src/hooks/lead-purchases/useLeadPurchases.ts`
+- `src/services/lead-purchases/LeadPurchaseRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/lead-purchase.types.ts`
+- `supabase/migrations/20260216085839_pack_heat_add_days_to_first_sale.sql`
+
+### Statistics
+```
+ 7 files changed, 779 insertions(+), 16 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-15 12:37:26
 
 ### Changed Files

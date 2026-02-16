@@ -15416,6 +15416,7 @@ export type Database = {
           commission_earned: number
           days_since_last_sale: number
           days_since_purchase: number
+          days_to_first_sale: number
           lead_count: number
           pack_id: string
           policies_sold: number

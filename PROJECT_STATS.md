@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-02-15 12:37:26
+Last Updated: 2026-02-16 09:17:24
 
 ## Metrics
-- Total Files: 30056
-- Total Lines of Code: 904539
-- Total Commits: 957
+- Total Files: 30057
+- Total Lines of Code: 905968
+- Total Commits: 961
 
 ## Recent Activity
+b9d93eed fix: restrict community page access to owner only
+1ca610a7 fix: coverage builder CRUD, cache invalidation, and guided rule builder
+23bfb60d refactor: simplify getCurrentUserContext to use get_my_imo_id RPC
+d0d1086e docs: multiple changes in .,src/features/community,src/features/targets
 55e6f728 docs: multiple changes in .,.serena/memories,docs/features
-fbc2404f docs: multiple changes in .,src/features/analytics,src/features/analytics/components
-2c6d0622 docs: multiple changes in .,src/features/admin/components,src/features/admin/components/lead-vendors
-a6792b2a docs: multiple changes in .,docs,scripts/migrations
-e61e135e docs: multiple changes in .,src/features/hierarchy,src/features/hierarchy/components

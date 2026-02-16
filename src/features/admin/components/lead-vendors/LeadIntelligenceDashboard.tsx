@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   useLeadVendorAdminOverview,
   useLeadPackList,
@@ -11,12 +12,14 @@ import type {
   LeadPackRow,
   HeatScoreV2,
   HeatLevel,
+  PackHeatMetrics,
 } from "@/types/lead-purchase.types";
 import { IntelligenceCommandBar } from "./IntelligenceCommandBar";
 import { MarketPulse } from "./MarketPulse";
 import { HeatDistribution } from "./HeatDistribution";
 import { FreshVsAgedPanel } from "./FreshVsAgedPanel";
 import { VendorIntelligenceTable } from "./VendorIntelligenceTable";
+import { PackPurchaseTable } from "./PackPurchaseTable";
 
 // ---------------------------------------------------------------------------
 // Filter state
@@ -79,6 +82,7 @@ export interface VendorIntelligenceRow {
 // ---------------------------------------------------------------------------
 export function LeadIntelligenceDashboard() {
   const [filters, setFilters] = useState<IntelligenceFilterState>(DEFAULT_FILTERS);
+  const [viewMode, setViewMode] = useState<"vendor" | "purchases">("vendor");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -89,7 +93,7 @@ export function LeadIntelligenceDashboard() {
     filters.endDate || undefined,
   );
 
-  const { vendorScores, isLoading: heatLoading } = usePackHeatScores();
+  const { vendorScores, packMetrics, isLoading: heatLoading } = usePackHeatScores();
 
   const { data: vendors, isLoading: vendorsLoading } = useLeadVendorAdminOverview(
     filters.startDate || undefined,
@@ -368,20 +372,54 @@ export function LeadIntelligenceDashboard() {
         </div>
       </div>
 
-      {/* Vendor Intelligence Table */}
-      <VendorIntelligenceTable
-        rows={vendorIntelligenceRows}
-        isLoading={isLoading}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(1);
-        }}
-        startDate={filters.startDate || undefined}
-        endDate={filters.endDate || undefined}
-      />
+      {/* View Toggle */}
+      <div className="flex items-center gap-0.5 border border-zinc-200 dark:border-zinc-700 rounded overflow-hidden w-fit">
+        <button
+          onClick={() => setViewMode("vendor")}
+          className={cn(
+            "px-2 py-1 text-[11px] font-medium transition-colors",
+            viewMode === "vendor"
+              ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+              : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          )}
+        >
+          By Vendor
+        </button>
+        <button
+          onClick={() => setViewMode("purchases")}
+          className={cn(
+            "px-2 py-1 text-[11px] font-medium transition-colors",
+            viewMode === "purchases"
+              ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+              : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          )}
+        >
+          All Purchases
+        </button>
+      </div>
+
+      {/* Table */}
+      {viewMode === "vendor" ? (
+        <VendorIntelligenceTable
+          rows={vendorIntelligenceRows}
+          isLoading={isLoading}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          startDate={filters.startDate || undefined}
+          endDate={filters.endDate || undefined}
+        />
+      ) : (
+        <PackPurchaseTable
+          packs={filteredPacks}
+          packMetrics={packMetrics}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 }

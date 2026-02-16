@@ -568,6 +568,7 @@ export class LeadPurchaseRepository extends BaseRepository<
         daysSincePurchase: Number(row.days_since_purchase || 0),
         daysSinceLastSale: Number(row.days_since_last_sale ?? 999),
         salesLast30d: Number(row.sales_last_30d || 0),
+        daysToFirstSale: Number(row.days_to_first_sale ?? -1),
       })) || []
     );
   }
