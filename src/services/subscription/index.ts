@@ -11,6 +11,8 @@ export {
   type UsageStatus,
   type SubscriptionPayment,
   type SubscriptionEvent,
+  type TeamUWWizardSeat,
+  type EligibleDownlineAgent,
 } from "./subscriptionService";
 
 export { SubscriptionRepository } from "./SubscriptionRepository";

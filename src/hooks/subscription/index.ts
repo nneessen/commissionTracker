@@ -39,5 +39,17 @@ export {
 
 export { useUserActiveAddons, userAddonKeys } from "./useUserActiveAddons";
 
+export {
+  useTeamUWWizardSeats,
+  useTeamSeatLimit,
+  useEligibleDownlines,
+  useGrantTeamUWSeat,
+  useRevokeTeamUWSeat,
+  teamSeatKeys,
+} from "./useTeamUWWizardSeats";
+
 // Re-export billing utilities for UI components
-export { subscriptionService } from "@/services/subscription";
+export {
+  subscriptionService,
+  type SubscriptionPlan,
+} from "@/services/subscription";

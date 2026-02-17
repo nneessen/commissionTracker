@@ -26,16 +26,15 @@ serve(async (req) => {
   try {
     const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+      "SUPABASE_SERVICE_ROLE_KEY",
+    )!;
 
     if (!STRIPE_SECRET_KEY) {
-      return new Response(
-        JSON.stringify({ error: "Stripe not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Stripe not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY, {
@@ -52,9 +51,10 @@ serve(async (req) => {
       });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", ""),
-    );
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -70,16 +70,14 @@ serve(async (req) => {
       discountCode,
       addonId,
       tierId,
+      seatPack,
     } = body;
 
     if (!priceId) {
-      return new Response(
-        JSON.stringify({ error: "priceId is required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "priceId is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Look up existing Stripe customer ID for this user
@@ -93,19 +91,21 @@ serve(async (req) => {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       success_url:
-        successUrl || "{CHECKOUT_SESSION_URL}/settings?tab=billing&checkout=success",
-      cancel_url:
-        cancelUrl || "{CHECKOUT_SESSION_URL}/settings?tab=billing",
+        successUrl ||
+        "{CHECKOUT_SESSION_URL}/settings?tab=billing&checkout=success",
+      cancel_url: cancelUrl || "{CHECKOUT_SESSION_URL}/settings?tab=billing",
       metadata: {
         user_id: user.id,
         ...(addonId ? { addon_id: addonId } : {}),
         ...(tierId ? { tier_id: tierId } : {}),
+        ...(seatPack ? { seat_pack: "true", owner_id: user.id } : {}),
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
           ...(addonId ? { addon_id: addonId } : {}),
           ...(tierId ? { tier_id: tierId } : {}),
+          ...(seatPack ? { seat_pack: "true", owner_id: user.id } : {}),
         },
       },
     };
@@ -149,12 +149,9 @@ serve(async (req) => {
     console.error("[create-checkout-session] Error:", err);
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
 
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

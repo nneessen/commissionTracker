@@ -152,19 +152,18 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+      "SUPABASE_SERVICE_ROLE_KEY",
+    )!;
     const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
     const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
     if (!STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET) {
       console.error("Stripe keys not configured");
-      return new Response(
-        JSON.stringify({ error: "Stripe not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Stripe not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY, {
@@ -284,13 +283,44 @@ serve(async (req) => {
             .eq("user_id", userId);
         }
 
+        // Handle seat pack purchases — create team_seat_packs record
+        if (session.metadata?.seat_pack === "true") {
+          const ownerId = session.metadata?.owner_id || userId;
+          const seatPackSubId =
+            typeof session.subscription === "string"
+              ? session.subscription
+              : (session.subscription as Stripe.Subscription | null)?.id ||
+                null;
+
+          const { error: seatPackError } = await supabase
+            .from("team_seat_packs")
+            .upsert(
+              {
+                owner_id: ownerId,
+                quantity: 1,
+                stripe_subscription_id: seatPackSubId,
+                status: "active",
+              },
+              { onConflict: "stripe_subscription_id" },
+            );
+
+          if (seatPackError) {
+            console.error("Error creating seat pack:", seatPackError);
+          } else {
+            console.log(
+              `[stripe-webhook] Seat pack created for owner: ${ownerId}`,
+            );
+          }
+        }
+
         // Handle addon purchases — create user_subscription_addons record
         const addonId = session.metadata?.addon_id;
         if (addonId) {
           const subscriptionId =
             typeof session.subscription === "string"
               ? session.subscription
-              : (session.subscription as Stripe.Subscription | null)?.id || null;
+              : (session.subscription as Stripe.Subscription | null)?.id ||
+                null;
 
           const tierId = session.metadata?.tier_id || null;
 
@@ -301,13 +331,18 @@ serve(async (req) => {
 
           if (subscriptionId) {
             try {
-              const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-              periodStart = timestampToISO(stripeSub.current_period_start) || periodStart;
+              const stripeSub =
+                await stripe.subscriptions.retrieve(subscriptionId);
+              periodStart =
+                timestampToISO(stripeSub.current_period_start) || periodStart;
               periodEnd = timestampToISO(stripeSub.current_period_end);
-              const interval = stripeSub.items?.data?.[0]?.price?.recurring?.interval;
+              const interval =
+                stripeSub.items?.data?.[0]?.price?.recurring?.interval;
               billingInterval = getBillingInterval(interval);
             } catch {
-              console.warn(`Could not retrieve subscription ${subscriptionId} for addon period data`);
+              console.warn(
+                `Could not retrieve subscription ${subscriptionId} for addon period data`,
+              );
             }
           }
 
@@ -354,10 +389,7 @@ serve(async (req) => {
             ? subscription.customer
             : subscription.customer?.id;
 
-        const userId = await resolveUserId(
-          subscription.metadata,
-          customerId,
-        );
+        const userId = await resolveUserId(subscription.metadata, customerId);
 
         if (!userId) {
           console.error(`${event.type}: Could not determine user_id`, {
@@ -419,8 +451,7 @@ serve(async (req) => {
             "Customer";
 
           if (userEmail) {
-            const planName =
-              subscription.items?.data?.[0]?.price?.product;
+            const planName = subscription.items?.data?.[0]?.price?.product;
             let productName = "Premium";
             if (typeof planName === "string") {
               try {
@@ -442,8 +473,7 @@ serve(async (req) => {
                 amount: formatCents(
                   subscription.items?.data?.[0]?.price?.unit_amount || 0,
                 ),
-                billing_interval:
-                  priceInterval === "year" ? "year" : "month",
+                billing_interval: priceInterval === "year" ? "year" : "month",
                 next_billing_date: formatDate(
                   timestampToISO(subscription.current_period_end),
                 ),
@@ -468,7 +498,8 @@ serve(async (req) => {
             );
           }
           if (priceInterval) {
-            addonPeriodUpdate.billing_interval = getBillingInterval(priceInterval);
+            addonPeriodUpdate.billing_interval =
+              getBillingInterval(priceInterval);
           }
           // Map subscription status to addon status
           const addonStatus = mapSubscriptionStatus(subscription.status);
@@ -502,10 +533,7 @@ serve(async (req) => {
             ? subscription.customer
             : subscription.customer?.id;
 
-        const userId = await resolveUserId(
-          subscription.metadata,
-          customerId,
-        );
+        const userId = await resolveUserId(subscription.metadata, customerId);
 
         if (!userId) {
           console.error("subscription.deleted: Could not determine user_id");
@@ -540,6 +568,16 @@ serve(async (req) => {
           .update({
             status: "cancelled",
             cancelled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", subscription.id);
+
+        // Cancel any seat packs tied to this Stripe subscription
+        // (do NOT auto-remove seated agents — owner can re-purchase)
+        await supabase
+          .from("team_seat_packs")
+          .update({
+            status: "cancelled",
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
@@ -602,10 +640,7 @@ serve(async (req) => {
             ? subscription.customer
             : subscription.customer?.id;
 
-        const userId = await resolveUserId(
-          subscription.metadata,
-          customerId,
-        );
+        const userId = await resolveUserId(subscription.metadata, customerId);
 
         if (!userId) break;
 
@@ -648,9 +683,7 @@ serve(async (req) => {
           break;
         }
 
-        console.log(
-          `[stripe-webhook] Subscription paused for user: ${userId}`,
-        );
+        console.log(`[stripe-webhook] Subscription paused for user: ${userId}`);
         break;
       }
 
@@ -702,18 +735,17 @@ serve(async (req) => {
             p_stripe_subscription_id: subscriptionId || null,
             p_amount: invoice.amount_paid || 0,
             p_tax_amount: invoice.tax || 0,
-            p_discount_amount: invoice.total_discount_amounts?.reduce(
-              (sum, d) => sum + d.amount,
-              0,
-            ) || 0,
+            p_discount_amount:
+              invoice.total_discount_amounts?.reduce(
+                (sum, d) => sum + d.amount,
+                0,
+              ) || 0,
             p_currency: (invoice.currency || "usd").toUpperCase(),
             p_status: "paid",
             p_billing_reason: mapBillingReason(invoice.billing_reason),
             p_receipt_url: invoice.hosted_invoice_url || null,
             p_invoice_url: invoice.invoice_pdf || null,
-            p_card_brand: invoice.charge
-              ? null
-              : null,
+            p_card_brand: invoice.charge ? null : null,
             p_card_last_four: null,
             p_paid_at: new Date().toISOString(),
           },
@@ -894,9 +926,7 @@ serve(async (req) => {
           );
         }
 
-        console.log(
-          `[stripe-webhook] Payment failed for user: ${userId}`,
-        );
+        console.log(`[stripe-webhook] Payment failed for user: ${userId}`);
         break;
       }
 
@@ -904,13 +934,10 @@ serve(async (req) => {
         console.log(`[stripe-webhook] Unhandled event type: ${event.type}`);
     }
 
-    return new Response(
-      JSON.stringify({ success: true, event: event.type }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ success: true, event: event.type }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
     console.error("[stripe-webhook] Error:", err);
     const errorMessage = err instanceof Error ? err.message : "Unknown error";

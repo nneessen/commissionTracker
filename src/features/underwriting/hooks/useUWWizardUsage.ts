@@ -14,6 +14,7 @@ export interface UWWizardUsage {
   billing_period_end: string;
   tier_id: string;
   tier_name: string;
+  source: "team_owner" | "team_seat" | "addon";
 }
 
 export const uwWizardUsageKeys = {
@@ -47,13 +48,14 @@ export function useUWWizardUsage() {
         // Return default values for users without usage records yet
         return {
           runs_used: 0,
-          runs_limit: 150, // Default starter tier
-          runs_remaining: 150,
+          runs_limit: 100, // Default starter tier
+          runs_remaining: 100,
           usage_percent: 0,
           billing_period_start: new Date().toISOString().split("T")[0],
           billing_period_end: new Date().toISOString().split("T")[0],
           tier_id: "starter",
           tier_name: "Starter",
+          source: "addon",
         };
       }
 
@@ -117,7 +119,9 @@ export function getUsageStatus(usage: UWWizardUsage | null | undefined): {
 /**
  * Calculate days remaining in current billing period
  */
-export function getDaysRemaining(usage: UWWizardUsage | null | undefined): number {
+export function getDaysRemaining(
+  usage: UWWizardUsage | null | undefined,
+): number {
   if (!usage?.billing_period_end) return 0;
 
   const endDate = new Date(usage.billing_period_end);

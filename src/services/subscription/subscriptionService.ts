@@ -10,7 +10,10 @@ import {
   SubscriptionEvent,
 } from "./SubscriptionRepository";
 import { supabase } from "@/services/base";
-import type { AddonTierConfig, SubscriptionAddon } from "./adminSubscriptionService";
+import type {
+  AddonTierConfig,
+  SubscriptionAddon,
+} from "./adminSubscriptionService";
 import type { Database } from "@/types/database.types";
 
 type UserSubscriptionAddonRow =
@@ -295,10 +298,12 @@ class SubscriptionService {
     }
 
     try {
-      const { data: result, error } =
-        await this.repository.invokeEdgeFunction("create-portal-session", {
+      const { data: result, error } = await this.repository.invokeEdgeFunction(
+        "create-portal-session",
+        {
           returnUrl: `${window.location.origin}/billing`,
-        });
+        },
+      );
 
       if (error) {
         console.error("Failed to create portal session:", error);
@@ -430,6 +435,180 @@ class SubscriptionService {
     }
     return Math.round(plan.price_annual / 12);
   }
+
+  // ──────────────────────────────────────────────
+  // Team UW Wizard Seat Management
+  // ──────────────────────────────────────────────
+
+  /**
+   * Get all team UW wizard seats for a team owner
+   */
+  async getTeamUWWizardSeats(ownerId: string): Promise<TeamUWWizardSeat[]> {
+    const { data, error } = await supabase
+      .from("team_uw_wizard_seats")
+      .select(
+        `
+        id,
+        team_owner_id,
+        agent_id,
+        runs_limit,
+        created_at,
+        agent:user_profiles!team_uw_wizard_seats_agent_id_fkey(
+          id, first_name, last_name, email
+        )
+      `,
+      )
+      .eq("team_owner_id", ownerId);
+
+    if (error) {
+      console.error("Failed to fetch team UW wizard seats:", error);
+      return [];
+    }
+
+    return (data || []).map((row) => ({
+      ...row,
+      agent: Array.isArray(row.agent) ? row.agent[0] : row.agent,
+    })) as TeamUWWizardSeat[];
+  }
+
+  /**
+   * Get team seat limit for an owner (base 5 + seat packs)
+   */
+  async getTeamSeatLimit(ownerId: string): Promise<number> {
+    const { data, error } = await supabase.rpc("get_team_seat_limit", {
+      p_owner_id: ownerId,
+    });
+
+    if (error) {
+      console.error("Failed to get team seat limit:", error);
+      return 5; // default base
+    }
+
+    return data as number;
+  }
+
+  /**
+   * Get eligible downline agents (not already seated) for seat assignment
+   */
+  async getEligibleDownlines(
+    ownerId: string,
+  ): Promise<EligibleDownlineAgent[]> {
+    // Get agents in downline via hierarchy_path containing owner ID
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("id, first_name, last_name, email")
+      .like("hierarchy_path", `%${ownerId}%`)
+      .neq("id", ownerId)
+      .order("last_name");
+
+    if (error) {
+      console.error("Failed to fetch eligible downlines:", error);
+      return [];
+    }
+
+    // Filter out agents already seated by anyone
+    const { data: seated } = await supabase
+      .from("team_uw_wizard_seats")
+      .select("agent_id");
+
+    const seatedIds = new Set((seated || []).map((s) => s.agent_id));
+
+    return (data || []).filter(
+      (agent) => !seatedIds.has(agent.id),
+    ) as EligibleDownlineAgent[];
+  }
+
+  /**
+   * Grant a team UW wizard seat to an agent
+   */
+  async grantTeamUWSeat(
+    ownerId: string,
+    agentId: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc("manage_team_uw_seat", {
+      p_owner_id: ownerId,
+      p_agent_id: agentId,
+      p_action: "grant",
+    });
+
+    if (error) {
+      console.error("Failed to grant team UW seat:", error);
+      return { success: false, error: error.message };
+    }
+
+    const result = data as { success: boolean; error?: string };
+    return result;
+  }
+
+  /**
+   * Revoke a team UW wizard seat from an agent
+   */
+  async revokeTeamUWSeat(
+    ownerId: string,
+    agentId: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc("manage_team_uw_seat", {
+      p_owner_id: ownerId,
+      p_agent_id: agentId,
+      p_action: "revoke",
+    });
+
+    if (error) {
+      console.error("Failed to revoke team UW seat:", error);
+      return { success: false, error: error.message };
+    }
+
+    const result = data as { success: boolean; error?: string };
+    return result;
+  }
+
+  /**
+   * Create a Stripe checkout session for a team seat pack ($100/mo for 5 seats)
+   */
+  async createSeatPackCheckoutSession(): Promise<string | null> {
+    try {
+      const { data, error } = await this.repository.invokeEdgeFunction(
+        "create-checkout-session",
+        {
+          priceId: "price_1T1tU4RYi2kelWQkYkNFnthp",
+          seatPack: true,
+          successUrl: `${window.location.origin}/billing?seat_pack_checkout=success`,
+          cancelUrl: `${window.location.origin}/billing`,
+        },
+      );
+
+      if (error) {
+        console.error("Failed to create seat pack checkout session:", error);
+        return null;
+      }
+
+      return (data?.url as string) || null;
+    } catch (error) {
+      console.error("Error creating seat pack checkout session:", error);
+      return null;
+    }
+  }
+}
+
+export interface TeamUWWizardSeat {
+  id: string;
+  team_owner_id: string;
+  agent_id: string;
+  runs_limit: number;
+  created_at: string;
+  agent: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+  } | null;
+}
+
+export interface EligibleDownlineAgent {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
 }
 
 export const subscriptionService = new SubscriptionService();

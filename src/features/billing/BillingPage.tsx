@@ -7,10 +7,13 @@ import { Wallet, ChevronRight, HelpCircle, Wrench } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 import { useQueryClient } from "@tanstack/react-query";
-import { subscriptionKeys } from "@/hooks/subscription";
+import {
+  subscriptionKeys,
+  teamSeatKeys,
+  type SubscriptionPlan,
+} from "@/hooks/subscription";
 import { CurrentPlanCard } from "./components/CurrentPlanCard";
 import { PricingCards } from "./components/PricingCards";
 import { UsageOverview } from "./components/UsageOverview";
@@ -19,10 +22,8 @@ import { PremiumAddonsSection } from "./components/PremiumAddonsSection";
 import { AddonUpsellDialog } from "./components/AddonUpsellDialog";
 import { CheckoutSuccessDialog } from "./components/CheckoutSuccessDialog";
 import { AdminBillingPanel } from "./components/admin/AdminBillingPanel";
-import type { SubscriptionPlan } from "@/services/subscription";
 
 export function BillingPage() {
-  const { supabaseUser } = useAuth();
   const { isSuperAdmin } = useImo();
   const [faqOpen, setFaqOpen] = useState(false);
 
@@ -73,12 +74,27 @@ export function BillingPage() {
       shouldClearParams = true;
       toast.success("Add-on activated successfully!");
     }
+    if (searchParams?.seat_pack_checkout === "success") {
+      shouldClearParams = true;
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+      queryClient.invalidateQueries({ queryKey: teamSeatKeys.all });
+      toast.success("Seat pack added! You now have 5 additional agent seats.");
+    }
 
     // Clear search params to prevent re-firing on remount
     if (shouldClearParams) {
       navigate({ to: "/billing", search: {}, replace: true });
     }
-  }, [searchParams?.checkout, searchParams?.addon_checkout, searchParams?.pending_addon_id, navigate, queryClient]);
+  }, [
+    searchParams?.checkout,
+    searchParams?.addon_checkout,
+    searchParams?.seat_pack_checkout,
+    searchParams?.pending_addon_id,
+    searchParams?.billing_interval,
+    searchParams?.plan_name,
+    navigate,
+    queryClient,
+  ]);
 
   const handlePlanSelect = (
     plan: SubscriptionPlan,
@@ -169,7 +185,7 @@ export function BillingPage() {
                 />
                 <FaqItem
                   q="What's in the Team tier?"
-                  a="Visibility into all connected downlines, recruiting pipeline, override tracking. Flat $50/mo regardless of team size."
+                  a="Full downline visibility, recruiting pipeline, override tracking, and UW Wizard built-in with seat assignment for your agents. $250/mo."
                 />
                 <FaqItem
                   q="Do my downlines need to pay?"
@@ -210,9 +226,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
       <p className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
         {q}
       </p>
-      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-        {a}
-      </p>
+      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">{a}</p>
     </div>
   );
 }
