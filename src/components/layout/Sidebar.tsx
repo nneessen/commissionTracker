@@ -27,6 +27,7 @@ import {
   Trophy,
   MessageSquare,
   Wallet,
+  Store,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -139,6 +140,19 @@ const navigationItems: NavigationItem[] = [
       "kerryglass.ffl@gmail.com",
       "teagkeys@gmail.com",
     ],
+  },
+  {
+    icon: Store,
+    label: "Lead Vendors",
+    href: "/lead-vendors",
+    allowedEmails: [
+      "nickneessen@thestandardhq.com",
+      "hunterthornhillsm@gmail.com",
+      "andrewengel1999@gmail.com",
+      "minyojames@gmail.com",
+      "james.wadleigh.insurance@gmail.com",
+    ],
+    allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   },
   {
     icon: UserPlus,

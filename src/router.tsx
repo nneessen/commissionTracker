@@ -60,6 +60,7 @@ import { WorkflowAdminPage } from "./features/workflows";
 import { LeaderboardPage } from "./features/leaderboard";
 import { TheStandardTeamPage } from "./features/the-standard-team";
 import { BillingPage } from "./features/billing/BillingPage";
+import { LeadIntelligenceDashboard } from "./features/admin/components/lead-vendors";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -727,6 +728,27 @@ const billingRoute = createRoute({
   ),
 });
 
+// Lead Vendors route - restricted to specific users in The Standard agency
+const leadVendorsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "lead-vendors",
+  component: () => (
+    <RouteGuard
+      noRecruits
+      noStaffRoles
+      allowedEmails={[
+        "hunterthornhillsm@gmail.com",
+        "andrewengel1999@gmail.com",
+        "minyojames@gmail.com",
+        "james.wadleigh.insurance@gmail.com",
+      ]}
+      allowedAgencyId="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    >
+      <LeadIntelligenceDashboard />
+    </RouteGuard>
+  ),
+});
+
 // The Standard Team route - restricted to The Standard agency only
 // Supports tab search param: ?tab=writing-numbers or ?tab=state-licenses
 const theStandardTeamRoute = createRoute({
@@ -803,6 +825,7 @@ const routeTree = rootRoute.addChildren([
   privacyRoute,
   billingRoute,
   theStandardTeamRoute,
+  leadVendorsRoute,
   publicJoinAltRoute, // Catch-all for /join-* pattern - must be last
 ]);
 

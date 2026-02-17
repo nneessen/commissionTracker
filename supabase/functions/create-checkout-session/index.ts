@@ -63,15 +63,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const {
-      priceId,
-      successUrl,
-      cancelUrl,
-      discountCode,
-      addonId,
-      tierId,
-      seatPack,
-    } = body;
+    const { priceId, successUrl, cancelUrl, discountCode } = body;
 
     if (!priceId) {
       return new Response(JSON.stringify({ error: "priceId is required" }), {
@@ -96,16 +88,10 @@ serve(async (req) => {
       cancel_url: cancelUrl || "{CHECKOUT_SESSION_URL}/settings?tab=billing",
       metadata: {
         user_id: user.id,
-        ...(addonId ? { addon_id: addonId } : {}),
-        ...(tierId ? { tier_id: tierId } : {}),
-        ...(seatPack ? { seat_pack: "true", owner_id: user.id } : {}),
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
-          ...(addonId ? { addon_id: addonId } : {}),
-          ...(tierId ? { tier_id: tierId } : {}),
-          ...(seatPack ? { seat_pack: "true", owner_id: user.id } : {}),
         },
       },
     };

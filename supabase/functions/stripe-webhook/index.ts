@@ -283,96 +283,6 @@ serve(async (req) => {
             .eq("user_id", userId);
         }
 
-        // Handle seat pack purchases — create team_seat_packs record
-        if (session.metadata?.seat_pack === "true") {
-          const ownerId = session.metadata?.owner_id || userId;
-          const seatPackSubId =
-            typeof session.subscription === "string"
-              ? session.subscription
-              : (session.subscription as Stripe.Subscription | null)?.id ||
-                null;
-
-          const { error: seatPackError } = await supabase
-            .from("team_seat_packs")
-            .upsert(
-              {
-                owner_id: ownerId,
-                quantity: 1,
-                stripe_subscription_id: seatPackSubId,
-                status: "active",
-              },
-              { onConflict: "stripe_subscription_id" },
-            );
-
-          if (seatPackError) {
-            console.error("Error creating seat pack:", seatPackError);
-          } else {
-            console.log(
-              `[stripe-webhook] Seat pack created for owner: ${ownerId}`,
-            );
-          }
-        }
-
-        // Handle addon purchases — create user_subscription_addons record
-        const addonId = session.metadata?.addon_id;
-        if (addonId) {
-          const subscriptionId =
-            typeof session.subscription === "string"
-              ? session.subscription
-              : (session.subscription as Stripe.Subscription | null)?.id ||
-                null;
-
-          const tierId = session.metadata?.tier_id || null;
-
-          // Retrieve the Stripe subscription for period and billing interval data
-          let periodStart: string | null = new Date().toISOString();
-          let periodEnd: string | null = null;
-          let billingInterval: string | null = null;
-
-          if (subscriptionId) {
-            try {
-              const stripeSub =
-                await stripe.subscriptions.retrieve(subscriptionId);
-              periodStart =
-                timestampToISO(stripeSub.current_period_start) || periodStart;
-              periodEnd = timestampToISO(stripeSub.current_period_end);
-              const interval =
-                stripeSub.items?.data?.[0]?.price?.recurring?.interval;
-              billingInterval = getBillingInterval(interval);
-            } catch {
-              console.warn(
-                `Could not retrieve subscription ${subscriptionId} for addon period data`,
-              );
-            }
-          }
-
-          const { error: addonError } = await supabase
-            .from("user_subscription_addons")
-            .upsert(
-              {
-                user_id: userId,
-                addon_id: addonId,
-                status: "active",
-                stripe_subscription_id: subscriptionId,
-                stripe_checkout_session_id: session.id,
-                tier_id: tierId,
-                billing_interval: billingInterval,
-                current_period_start: periodStart,
-                current_period_end: periodEnd,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id,addon_id" },
-            );
-
-          if (addonError) {
-            console.error("Error creating addon subscription:", addonError);
-          } else {
-            console.log(
-              `[stripe-webhook] Addon subscription created: addon=${addonId}, tier=${tierId}, user=${userId}`,
-            );
-          }
-        }
-
         console.log(`[stripe-webhook] Checkout completed for user: ${userId}`);
         break;
       }
@@ -407,10 +317,42 @@ serve(async (req) => {
           break;
         }
 
-        // Get the price ID from the first item
-        const priceId = subscription.items?.data?.[0]?.price?.id || null;
-        const priceInterval =
-          subscription.items?.data?.[0]?.price?.recurring?.interval;
+        // Find the plan item among subscription line items.
+        // With multi-item subscriptions (plan + addons + seat packs),
+        // items.data[0] is NOT guaranteed to be the plan.
+        // Match against known plan prices in subscription_plans.
+        let planItem = subscription.items?.data?.[0] || null;
+
+        if (subscription.items?.data && subscription.items.data.length > 1) {
+          const itemPriceIds = subscription.items.data.map(
+            (item) => item.price.id,
+          );
+          const { data: matchedPlan } = await supabase
+            .from("subscription_plans")
+            .select("stripe_price_id_monthly, stripe_price_id_annual")
+            .or(
+              itemPriceIds
+                .map(
+                  (pid) =>
+                    `stripe_price_id_monthly.eq.${pid},stripe_price_id_annual.eq.${pid}`,
+                )
+                .join(","),
+            )
+            .limit(1)
+            .maybeSingle();
+
+          if (matchedPlan) {
+            const found = subscription.items.data.find(
+              (item) =>
+                item.price.id === matchedPlan.stripe_price_id_monthly ||
+                item.price.id === matchedPlan.stripe_price_id_annual,
+            );
+            if (found) planItem = found;
+          }
+        }
+
+        const priceId = planItem?.price?.id || null;
+        const priceInterval = planItem?.price?.recurring?.interval;
 
         const { data: eventId, error: eventError } = await supabase.rpc(
           "process_stripe_subscription_event",
@@ -451,11 +393,11 @@ serve(async (req) => {
             "Customer";
 
           if (userEmail) {
-            const planName = subscription.items?.data?.[0]?.price?.product;
+            const planProductId = planItem?.price?.product;
             let productName = "Premium";
-            if (typeof planName === "string") {
+            if (typeof planProductId === "string") {
               try {
-                const product = await stripe.products.retrieve(planName);
+                const product = await stripe.products.retrieve(planProductId);
                 productName = product.name;
               } catch {
                 // Use default
@@ -471,7 +413,7 @@ serve(async (req) => {
                 first_name: userDetails?.first_name || "there",
                 plan_name: productName,
                 amount: formatCents(
-                  subscription.items?.data?.[0]?.price?.unit_amount || 0,
+                  planItem?.price?.unit_amount || 0,
                 ),
                 billing_interval: priceInterval === "year" ? "year" : "month",
                 next_billing_date: formatDate(
@@ -514,6 +456,79 @@ serve(async (req) => {
             .from("user_subscription_addons")
             .update(addonPeriodUpdate)
             .eq("stripe_subscription_id", subscription.id);
+        }
+
+        // Detect removed line items — mark addons/seat packs as cancelled
+        // when their stripe_subscription_item_id no longer exists in the subscription
+        if (subscription.id && subscription.items?.data) {
+          const currentItemIds = new Set(
+            subscription.items.data.map((item) => item.id),
+          );
+
+          // Check addons with tracked item IDs
+          const { data: trackedAddons } = await supabase
+            .from("user_subscription_addons")
+            .select("id, stripe_subscription_item_id")
+            .eq("stripe_subscription_id", subscription.id)
+            .not("stripe_subscription_item_id", "is", null)
+            .in("status", ["active", "manual_grant"]);
+
+          if (trackedAddons && trackedAddons.length > 0) {
+            const removedAddonIds = trackedAddons
+              .filter(
+                (a) =>
+                  a.stripe_subscription_item_id &&
+                  !currentItemIds.has(a.stripe_subscription_item_id),
+              )
+              .map((a) => a.id);
+
+            if (removedAddonIds.length > 0) {
+              await supabase
+                .from("user_subscription_addons")
+                .update({
+                  status: "cancelled",
+                  cancelled_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                })
+                .in("id", removedAddonIds);
+
+              console.log(
+                `[stripe-webhook] Marked ${removedAddonIds.length} addon(s) as cancelled (item removed from subscription)`,
+              );
+            }
+          }
+
+          // Check seat packs with tracked item IDs
+          const { data: trackedSeatPacks } = await supabase
+            .from("team_seat_packs")
+            .select("id, stripe_subscription_item_id")
+            .eq("stripe_subscription_id", subscription.id)
+            .not("stripe_subscription_item_id", "is", null)
+            .eq("status", "active");
+
+          if (trackedSeatPacks && trackedSeatPacks.length > 0) {
+            const removedSeatPackIds = trackedSeatPacks
+              .filter(
+                (sp) =>
+                  sp.stripe_subscription_item_id &&
+                  !currentItemIds.has(sp.stripe_subscription_item_id),
+              )
+              .map((sp) => sp.id);
+
+            if (removedSeatPackIds.length > 0) {
+              await supabase
+                .from("team_seat_packs")
+                .update({
+                  status: "cancelled",
+                  updated_at: new Date().toISOString(),
+                })
+                .in("id", removedSeatPackIds);
+
+              console.log(
+                `[stripe-webhook] Marked ${removedSeatPackIds.length} seat pack(s) as cancelled (item removed from subscription)`,
+              );
+            }
+          }
         }
 
         console.log(`[stripe-webhook] Processed ${event.type}:`, {

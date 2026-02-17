@@ -318,40 +318,57 @@ class SubscriptionService {
   }
 
   /**
-   * Create a Stripe Checkout Session for an addon subscription
-   * Returns the checkout URL to redirect the user to
+   * Add an addon as a line item on the user's existing subscription.
+   * Price resolution is handled server-side based on the subscription's billing interval.
    */
-  async createAddonCheckoutSession(
-    priceId: string,
+  async addSubscriptionAddon(
     addonId: string,
     tierId?: string,
-  ): Promise<string | null> {
-    if (!priceId) {
-      console.error("No Stripe Price ID provided for addon checkout");
-      return null;
-    }
-
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const { data, error } = await this.repository.invokeEdgeFunction(
-        "create-checkout-session",
+        "manage-subscription-items",
         {
-          priceId,
+          action: "add_addon",
           addonId,
           tierId: tierId || undefined,
-          successUrl: `${window.location.origin}/billing?addon_checkout=success`,
-          cancelUrl: `${window.location.origin}/billing`,
         },
       );
 
       if (error) {
-        console.error("Failed to create addon checkout session:", error);
-        return null;
+        return { success: false, error };
       }
 
-      return (data?.url as string) || null;
+      return { success: !!data?.success, error: (data?.error as string) || undefined };
     } catch (error) {
-      console.error("Error creating addon checkout session:", error);
-      return null;
+      const msg = error instanceof Error ? error.message : String(error);
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Remove an addon line item from the user's subscription.
+   */
+  async removeSubscriptionAddon(
+    addonId: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await this.repository.invokeEdgeFunction(
+        "manage-subscription-items",
+        {
+          action: "remove_addon",
+          addonId,
+        },
+      );
+
+      if (error) {
+        return { success: false, error };
+      }
+
+      return { success: !!data?.success, error: (data?.error as string) || undefined };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return { success: false, error: msg };
     }
   }
 
@@ -563,29 +580,52 @@ class SubscriptionService {
   }
 
   /**
-   * Create a Stripe checkout session for a team seat pack ($100/mo for 5 seats)
+   * Add a seat pack as a line item on the user's existing subscription.
+   * Price is resolved server-side.
    */
-  async createSeatPackCheckoutSession(): Promise<string | null> {
+  async addSeatPack(): Promise<{ success: boolean; error?: string }> {
     try {
       const { data, error } = await this.repository.invokeEdgeFunction(
-        "create-checkout-session",
+        "manage-subscription-items",
         {
-          priceId: "price_1T1tU4RYi2kelWQkYkNFnthp",
-          seatPack: true,
-          successUrl: `${window.location.origin}/billing?seat_pack_checkout=success`,
-          cancelUrl: `${window.location.origin}/billing`,
+          action: "add_seat_pack",
         },
       );
 
       if (error) {
-        console.error("Failed to create seat pack checkout session:", error);
-        return null;
+        return { success: false, error };
       }
 
-      return (data?.url as string) || null;
+      return { success: !!data?.success, error: (data?.error as string) || undefined };
     } catch (error) {
-      console.error("Error creating seat pack checkout session:", error);
-      return null;
+      const msg = error instanceof Error ? error.message : String(error);
+      return { success: false, error: msg };
+    }
+  }
+
+  /**
+   * Remove a seat pack line item from the user's subscription.
+   */
+  async removeSeatPack(
+    seatPackId: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await this.repository.invokeEdgeFunction(
+        "manage-subscription-items",
+        {
+          action: "remove_seat_pack",
+          seatPackId,
+        },
+      );
+
+      if (error) {
+        return { success: false, error };
+      }
+
+      return { success: !!data?.success, error: (data?.error as string) || undefined };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return { success: false, error: msg };
     }
   }
 }

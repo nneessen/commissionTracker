@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   useTeamUWWizardSeats,
   useTeamSeatLimit,
@@ -14,6 +16,8 @@ import {
   useGrantTeamUWSeat,
   useRevokeTeamUWSeat,
   subscriptionService,
+  subscriptionKeys,
+  teamSeatKeys,
 } from "@/hooks/subscription";
 import { useUWWizardUsage } from "@/features/underwriting";
 
@@ -29,6 +33,7 @@ export function TeamUWWizardManager() {
   const grantMutation = useGrantTeamUWSeat();
   const revokeMutation = useRevokeTeamUWSeat();
 
+  const queryClient = useQueryClient();
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [seatPackLoading, setSeatPackLoading] = useState(false);
 
@@ -52,8 +57,14 @@ export function TeamUWWizardManager() {
   const handleBuySeatPack = async () => {
     setSeatPackLoading(true);
     try {
-      const url = await subscriptionService.createSeatPackCheckoutSession();
-      if (url) window.open(url, "_blank");
+      const result = await subscriptionService.addSeatPack();
+      if (result.success) {
+        toast.success("Seat pack added! You now have 5 additional agent seats.");
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+        queryClient.invalidateQueries({ queryKey: teamSeatKeys.all });
+      } else {
+        toast.error(result.error || "Failed to add seat pack");
+      }
     } finally {
       setSeatPackLoading(false);
     }

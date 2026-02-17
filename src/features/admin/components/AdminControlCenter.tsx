@@ -11,7 +11,6 @@ import {
   XCircle,
   UserPlus,
   TestTube,
-  Store,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAllUsers, useCreateUser } from "@/hooks/admin";
@@ -37,8 +36,6 @@ import { RecruitingPipelineTab } from "./RecruitingPipelineTab";
 import { RolesPermissionsTab } from "./RolesPermissionsTab";
 import { SystemSettingsTab } from "./SystemSettingsTab";
 import { TierTestingPanel } from "./TierTestingPanel";
-import { LeadIntelligenceDashboard } from "./lead-vendors";
-
 export default function AdminControlCenter() {
   // Tab navigation
   const [activeView, setActiveView] = useState<
@@ -46,7 +43,6 @@ export default function AdminControlCenter() {
     | "recruits"
     | "roles"
     | "system"
-    | "lead-vendors"
     | "testing"
   >("users");
 
@@ -268,19 +264,6 @@ export default function AdminControlCenter() {
         </button>
         {isSuperAdmin && (
           <button
-            onClick={() => setActiveView("lead-vendors")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
-              activeView === "lead-vendors"
-                ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            }`}
-          >
-            <Store className="h-3.5 w-3.5" />
-            Lead Vendors
-          </button>
-        )}
-        {isSuperAdmin && (
-          <button
             onClick={() => setActiveView("testing")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
               activeView === "testing"
@@ -328,8 +311,6 @@ export default function AdminControlCenter() {
         )}
 
         {activeView === "system" && <SystemSettingsTab />}
-
-        {activeView === "lead-vendors" && isSuperAdmin && <LeadIntelligenceDashboard />}
 
         {activeView === "testing" && isSuperAdmin && <TierTestingPanel />}
       </div>

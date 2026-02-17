@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-17 17:07:40
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/billing/BillingPage.tsx`
+- `src/features/billing/components/PremiumAddonsSection.tsx`
+- `src/features/billing/components/TeamUWWizardManager.tsx`
+- `src/router.tsx`
+- `src/services/subscription/subscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/create-checkout-session/index.ts`
+- `supabase/functions/manage-subscription-items/index.ts`
+- `supabase/functions/stripe-webhook/index.ts`
+- `supabase/migrations/20260217162956_add_stripe_subscription_item_ids.sql`
+
+### Statistics
+```
+ 12 files changed, 15617 insertions(+), 15064 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-17 13:34:48
 
 ### Changed Files

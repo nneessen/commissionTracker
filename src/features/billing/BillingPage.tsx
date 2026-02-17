@@ -11,7 +11,6 @@ import { useImo } from "@/contexts/ImoContext";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   subscriptionKeys,
-  teamSeatKeys,
   type SubscriptionPlan,
 } from "@/hooks/subscription";
 import { CurrentPlanCard } from "./components/CurrentPlanCard";
@@ -70,25 +69,12 @@ export function BillingPage() {
         });
       }
     }
-    if (searchParams?.addon_checkout === "success") {
-      shouldClearParams = true;
-      toast.success("Add-on activated successfully!");
-    }
-    if (searchParams?.seat_pack_checkout === "success") {
-      shouldClearParams = true;
-      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
-      queryClient.invalidateQueries({ queryKey: teamSeatKeys.all });
-      toast.success("Seat pack added! You now have 5 additional agent seats.");
-    }
-
     // Clear search params to prevent re-firing on remount
     if (shouldClearParams) {
       navigate({ to: "/billing", search: {}, replace: true });
     }
   }, [
     searchParams?.checkout,
-    searchParams?.addon_checkout,
-    searchParams?.seat_pack_checkout,
     searchParams?.pending_addon_id,
     searchParams?.billing_interval,
     searchParams?.plan_name,

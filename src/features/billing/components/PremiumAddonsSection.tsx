@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   Sparkles,
   Check,
-  ExternalLink,
   Loader2,
   Wand2,
   Zap,
@@ -14,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   useAdminSubscriptionAddons,
   type SubscriptionAddon,
@@ -24,7 +25,12 @@ import {
   useUnderwritingFeatureFlag,
   useUWWizardUsage,
 } from "@/features/underwriting";
-import { useSubscription, subscriptionService } from "@/hooks/subscription";
+import {
+  useSubscription,
+  subscriptionService,
+  subscriptionKeys,
+} from "@/hooks/subscription";
+import { userAddonKeys } from "@/hooks/subscription";
 import { TeamUWWizardManager } from "./TeamUWWizardManager";
 
 interface TierWithAddon extends AddonTier {
@@ -33,10 +39,9 @@ interface TierWithAddon extends AddonTier {
 
 export function PremiumAddonsSection() {
   const { user } = useAuth();
-  const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">(
-    "monthly",
-  );
   const [selectedTierId, setSelectedTierId] = useState<string>("professional");
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   // Get available add-ons (only show active ones)
   const { data: allAddons, isLoading: addonsLoading } =
@@ -52,6 +57,9 @@ export function PremiumAddonsSection() {
   const isTeamPlan =
     subscription?.plan?.name === "team" &&
     ["active", "trialing"].includes(subscription?.status || "");
+  const hasActiveSubscription =
+    subscription &&
+    ["active", "trialing"].includes(subscription?.status || "");
 
   const formatPrice = (cents: number) => {
     if (cents === 0) return "Free";
@@ -64,39 +72,64 @@ export function PremiumAddonsSection() {
     return raw;
   };
 
+  const invalidateCaches = () => {
+    queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+    if (user?.id) {
+      queryClient.invalidateQueries({
+        queryKey: userAddonKeys.activeAddons(user.id),
+      });
+    }
+  };
+
   const handlePurchaseTier = async (tier: TierWithAddon) => {
-    if (!user?.id) return;
+    if (!user?.id || purchaseLoading) return;
 
-    const priceId =
-      billingInterval === "annual"
-        ? tier.stripe_price_id_annual
-        : tier.stripe_price_id_monthly;
+    if (!hasActiveSubscription) {
+      toast.error("Please subscribe to a plan before adding add-ons.");
+      return;
+    }
 
-    if (!priceId) return;
+    setPurchaseLoading(true);
+    try {
+      const result = await subscriptionService.addSubscriptionAddon(
+        tier.addonId,
+        tier.id,
+      );
 
-    const url = await subscriptionService.createAddonCheckoutSession(
-      priceId,
-      tier.addonId,
-      tier.id,
-    );
-    if (url) window.open(url, "_blank");
+      if (result.success) {
+        toast.success("Add-on activated successfully!");
+        invalidateCaches();
+      } else {
+        toast.error(result.error || "Failed to add addon");
+      }
+    } finally {
+      setPurchaseLoading(false);
+    }
   };
 
   const handlePurchaseAddon = async (addon: SubscriptionAddon) => {
-    if (!user?.id) return;
+    if (!user?.id || purchaseLoading) return;
 
-    const priceId =
-      billingInterval === "annual"
-        ? addon.stripe_price_id_annual
-        : addon.stripe_price_id_monthly;
+    if (!hasActiveSubscription) {
+      toast.error("Please subscribe to a plan before adding add-ons.");
+      return;
+    }
 
-    if (!priceId) return;
+    setPurchaseLoading(true);
+    try {
+      const result = await subscriptionService.addSubscriptionAddon(
+        addon.id,
+      );
 
-    const url = await subscriptionService.createAddonCheckoutSession(
-      priceId,
-      addon.id,
-    );
-    if (url) window.open(url, "_blank");
+      if (result.success) {
+        toast.success("Add-on activated successfully!");
+        invalidateCaches();
+      } else {
+        toast.error(result.error || "Failed to add addon");
+      }
+    } finally {
+      setPurchaseLoading(false);
+    }
   };
 
   if (addonsLoading) {
@@ -275,10 +308,6 @@ export function PremiumAddonsSection() {
                       <div className="grid grid-cols-2 gap-2">
                         {availableTiers.map((tier) => {
                           const isSelected = selectedTierId === tier.id;
-                          const price =
-                            billingInterval === "annual"
-                              ? tier.price_annual / 12
-                              : tier.price_monthly;
 
                           return (
                             <button
@@ -295,7 +324,7 @@ export function PremiumAddonsSection() {
                                 {tier.name}
                               </div>
                               <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                                {formatPrice(price)}
+                                {formatPrice(tier.price_monthly)}
                                 <span className="text-[9px] font-normal text-zinc-500">
                                   /mo
                                 </span>
@@ -335,56 +364,26 @@ export function PremiumAddonsSection() {
 
                     {/* Action Area */}
                     <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                      {/* Billing Toggle */}
-                      <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5">
-                        <button
-                          onClick={() => setBillingInterval("monthly")}
-                          className={cn(
-                            "px-2 py-1 text-[10px] rounded transition-colors",
-                            billingInterval === "monthly"
-                              ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                              : "text-zinc-500 dark:text-zinc-400",
-                          )}
-                        >
-                          Monthly
-                        </button>
-                        <button
-                          onClick={() => setBillingInterval("annual")}
-                          className={cn(
-                            "px-2 py-1 text-[10px] rounded transition-colors",
-                            billingInterval === "annual"
-                              ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                              : "text-zinc-500 dark:text-zinc-400",
-                          )}
-                        >
-                          Annual{" "}
-                          {selectedTier.price_annual > 0 &&
-                            selectedTier.price_monthly > 0 && (
-                              <span className="text-emerald-600">
-                                (-
-                                {Math.round(
-                                  (1 -
-                                    selectedTier.price_annual /
-                                      (selectedTier.price_monthly * 12)) *
-                                    100,
-                                )}
-                                %)
-                              </span>
-                            )}
-                        </button>
-                      </div>
+                      <p className="text-[9px] text-zinc-400">
+                        Billed with your plan
+                      </p>
 
                       {/* Purchase Button */}
                       {hasVariantIds ? (
                         <Button
                           size="sm"
                           className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700"
+                          disabled={purchaseLoading || !hasActiveSubscription}
                           onClick={() =>
                             handlePurchaseTier(selectedTierWithAddon)
                           }
                         >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Subscribe to {selectedTier.name}
+                          {purchaseLoading ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : null}
+                          {hasActiveSubscription
+                            ? `Add ${selectedTier.name}`
+                            : "Subscribe to a plan first"}
                         </Button>
                       ) : (
                         <Badge variant="outline" className="text-[9px]">
@@ -436,11 +435,7 @@ export function PremiumAddonsSection() {
                     {!hasAccess && (
                       <div className="flex-shrink-0 text-right">
                         <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                          {formatPrice(
-                            billingInterval === "annual"
-                              ? addon.price_annual / 12
-                              : addon.price_monthly,
-                          )}
+                          {formatPrice(addon.price_monthly)}
                         </div>
                         <div className="text-[10px] text-zinc-500">/month</div>
                       </div>
@@ -449,39 +444,23 @@ export function PremiumAddonsSection() {
 
                   {!hasAccess && (
                     <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                      <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5">
-                        <button
-                          onClick={() => setBillingInterval("monthly")}
-                          className={cn(
-                            "px-2 py-1 text-[10px] rounded transition-colors",
-                            billingInterval === "monthly"
-                              ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                              : "text-zinc-500 dark:text-zinc-400",
-                          )}
-                        >
-                          Monthly
-                        </button>
-                        <button
-                          onClick={() => setBillingInterval("annual")}
-                          className={cn(
-                            "px-2 py-1 text-[10px] rounded transition-colors",
-                            billingInterval === "annual"
-                              ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                              : "text-zinc-500 dark:text-zinc-400",
-                          )}
-                        >
-                          Annual
-                        </button>
-                      </div>
+                      <p className="text-[9px] text-zinc-400">
+                        Billed with your plan
+                      </p>
 
                       {hasVariantIds ? (
                         <Button
                           size="sm"
                           className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700"
+                          disabled={purchaseLoading || !hasActiveSubscription}
                           onClick={() => handlePurchaseAddon(addon)}
                         >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Purchase Add-on
+                          {purchaseLoading ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : null}
+                          {hasActiveSubscription
+                            ? "Add to Subscription"
+                            : "Subscribe to a plan first"}
                         </Button>
                       ) : (
                         <Badge variant="outline" className="text-[9px]">

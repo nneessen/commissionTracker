@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-02-17 13:34:48
+Last Updated: 2026-02-17 17:07:41
 
 ## Metrics
-- Total Files: 30655
-- Total Lines of Code: 163499
-- Total Commits: 972
+- Total Files: 30658
+- Total Lines of Code: 164392
+- Total Commits: 976
 
 ## Recent Activity
+6583c87a fix: add unique constraint on team_seat_packs.stripe_subscription_id
+3ddb88e6 feat: add UW Wizard and Agent Seats rows to PlanComparisonTable
+ccf5535d feat: add Stripe live mode, Team UW Wizard seat management, and security hardening
+b7b1ea9f docs: multiple changes in .,src,src/features/billing
 732f33ad docs: multiple changes in .,docs,src/features/billing
-9f6129ca fix: enable RLS on 9 unprotected tables and set security_invoker on all views
-f01cde05 docs: multiple changes in .,src,src/components/layout
-970da438 refactor: align commission & chargeback service layers with actual DB schema
-ca718230 docs: multiple changes in .,src/features/admin/components/lead-vendors,src/services/lead-purchases
