@@ -68,7 +68,7 @@ export function PlanComparisonTable() {
       category,
       label: FEATURE_CATEGORIES[category].label,
       features: byCategory[category].filter(
-        (f) => !EXCLUDED_FEATURES.has(f.key)
+        (f) => !EXCLUDED_FEATURES.has(f.key),
       ),
     })).filter((group) => group.features.length > 0);
   }, []);
@@ -122,7 +122,7 @@ export function PlanComparisonTable() {
                         className={cn(
                           "text-[11px] font-semibold text-center min-w-[80px]",
                           plan.name === currentPlanName &&
-                            "bg-zinc-100 dark:bg-zinc-800"
+                            "bg-zinc-100 dark:bg-zinc-800",
                         )}
                       >
                         <div className="flex flex-col items-center gap-0.5">
@@ -155,10 +155,71 @@ export function PlanComparisonTable() {
                         className={cn(
                           "text-[11px] text-center font-medium",
                           plan.name === currentPlanName &&
-                            "bg-zinc-100/50 dark:bg-zinc-800/50"
+                            "bg-zinc-100/50 dark:bg-zinc-800/50",
                         )}
                       >
                         {analyticsCountByTier[plan.name] || 0}/9
+                      </TableCell>
+                    ))}
+                  </TableRow>
+
+                  {/* UW Wizard Row */}
+                  <TableRow>
+                    <TableCell className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                      UW Wizard (built-in)
+                    </TableCell>
+                    {plans.map((plan) => (
+                      <TableCell
+                        key={`uw-wizard-${plan.id}`}
+                        className={cn(
+                          "text-center",
+                          plan.name === currentPlanName &&
+                            "bg-zinc-100/50 dark:bg-zinc-800/50",
+                        )}
+                      >
+                        {plan.name === "team" ? (
+                          <div className="flex flex-col items-center">
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            <span className="text-[9px] text-zinc-500">
+                              500 runs/mo
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <X className="h-3.5 w-3.5 text-zinc-300 dark:text-zinc-600" />
+                            <span className="text-[9px] text-zinc-400">
+                              Add-on
+                            </span>
+                          </div>
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+
+                  {/* Agent Seats Row */}
+                  <TableRow>
+                    <TableCell className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                      Agent Seats (UW Wizard)
+                    </TableCell>
+                    {plans.map((plan) => (
+                      <TableCell
+                        key={`agent-seats-${plan.id}`}
+                        className={cn(
+                          "text-center",
+                          plan.name === currentPlanName &&
+                            "bg-zinc-100/50 dark:bg-zinc-800/50",
+                        )}
+                      >
+                        {plan.name === "team" ? (
+                          <div className="flex flex-col items-center">
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            <span className="text-[9px] text-zinc-500">
+                              5 included
+                            </span>
+                          </div>
+                        ) : (
+                          <X className="h-3.5 w-3.5 text-zinc-300 dark:text-zinc-600 mx-auto" />
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -199,7 +260,7 @@ export function PlanComparisonTable() {
                                 className={cn(
                                   "text-center",
                                   plan.name === currentPlanName &&
-                                    "bg-zinc-100/50 dark:bg-zinc-800/50"
+                                    "bg-zinc-100/50 dark:bg-zinc-800/50",
                                 )}
                               >
                                 {hasFeature ? (
@@ -228,8 +289,8 @@ export function PlanComparisonTable() {
             {/* Footer */}
             <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-100 dark:border-zinc-800">
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Training Hub and Admin access are role-based, not tier-based. Annual
-                billing saves ~17%.
+                Training Hub and Admin access are role-based, not tier-based.
+                Annual billing saves ~17%.
               </p>
             </div>
           </div>
