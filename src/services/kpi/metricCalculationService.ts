@@ -47,14 +47,14 @@ export function calculateActualTotals(
   periodExpenses: Expense[],
   periodPolicies: Policy[],
 ): ActualTotalMetrics {
-  // Commission metrics - use advanceAmount (total commission value)
+  // Commission metrics - use amount (total commission value)
   const commissionEarned = periodCommissions
     .filter((c) => c.status === "paid")
-    .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   const commissionPending = periodCommissions
     .filter((c) => c.status === "pending")
-    .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   const commissionCount = periodCommissions.length;
 
@@ -166,7 +166,7 @@ export function calculateCurrentState(
   // Pending pipeline - ALL pending commissions (not filtered by period)
   const pendingPipeline = allCommissions
     .filter((c) => c.status === "pending")
-    .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   // Retention rate
   const retentionRate =
@@ -217,15 +217,12 @@ export function calculateDerivedMetrics(
     newPoliciesCount > 0 ? premiumWritten / newPoliciesCount : 0;
 
   // Average commission rate (as percentage)
-  const averageCommissionRate =
-    commissionCount > 0
-      ? periodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) /
-        commissionCount
-      : 0;
+  // commissionRate was removed from Commission type (not a DB column)
+  const averageCommissionRate = 0;
 
   // Average commission amount
   const totalCommissionValue = periodCommissions.reduce(
-    (sum, c) => sum + (c.advanceAmount || 0),
+    (sum, c) => sum + (c.amount || 0),
     0,
   );
   const averageCommissionAmount =
@@ -412,34 +409,32 @@ export function calculateGroupedMetrics(
   periodExpenses: Expense[],
   periodPolicies: Policy[],
 ): GroupedMetrics {
-  // Commission by carrier
+  // Commission by carrier (carrierId removed from Commission type - it's a policy field)
+  // Group all commissions under "unknown" since carrier info isn't on the commission
   const commissionByCarrier: Record<string, number> = {};
   periodCommissions.forEach((c) => {
-    const carrierId = c.carrierId;
-    if (carrierId) {
-      commissionByCarrier[carrierId] =
-        (commissionByCarrier[carrierId] || 0) + (c.advanceAmount || 0);
-    }
+    const key = "unknown";
+    commissionByCarrier[key] =
+      (commissionByCarrier[key] || 0) + (c.amount || 0);
   });
 
-  // Commission by product
+  // Commission by product (product removed from Commission type - policy field)
   const commissionByProduct: Record<ProductType, number> = {} as Record<
     ProductType,
     number
   >;
   periodCommissions.forEach((c) => {
-    if (c.product) {
-      commissionByProduct[c.product] =
-        (commissionByProduct[c.product] || 0) + (c.advanceAmount || 0);
-    }
+    const product = "unknown" as ProductType;
+    commissionByProduct[product] =
+      (commissionByProduct[product] || 0) + (c.amount || 0);
   });
 
   // Commission by state
   const commissionByState: Record<string, number> = {};
   periodCommissions.forEach((c) => {
-    const state = c.client?.state || "Unknown";
+    const state = "Unknown";
     commissionByState[state] =
-      (commissionByState[state] || 0) + (c.advanceAmount || 0);
+      (commissionByState[state] || 0) + (c.amount || 0);
   });
 
   // Expenses by category

@@ -93,9 +93,20 @@ class CommissionService {
 
   async createWithAutoCalculation(
     commissionData: CreateCommissionData,
+    policyContext?: {
+      carrierId?: string;
+      product?: string;
+      productId?: string;
+      monthlyPremium?: number;
+      annualPremium?: number;
+      contractCompLevel?: number;
+      termLength?: number;
+      autoCalculate?: boolean;
+    },
   ): Promise<Commission> {
     return commissionCalculationService.createWithAutoCalculation(
       commissionData,
+      policyContext,
     );
   }
 

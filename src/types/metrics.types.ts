@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/types/metrics.types.ts
 
-import {ProductType} from './commission.types';
+import { ProductType } from "./product.types";
 
 export interface ClientMetrics {
   totalClients: number;
@@ -130,7 +130,7 @@ export interface ForecastMetrics {
   projectedMonthlyCommission: Array<{
     month: string;
     projected: number;
-    confidence: 'high' | 'medium' | 'low';
+    confidence: "high" | "medium" | "low";
   }>;
   projectedAnnualRevenue: number;
   projectedClientGrowth: number;
@@ -151,7 +151,12 @@ export interface DashboardMetrics {
   lastUpdated: Date;
 }
 
-export type MetricPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+export type MetricPeriod =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "annual";
 
 export interface MetricFilter {
   period: MetricPeriod;

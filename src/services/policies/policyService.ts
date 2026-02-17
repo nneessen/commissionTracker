@@ -125,44 +125,32 @@ class PolicyService {
 
     // Create commission record for this policy
     try {
-      // Extract client info for commission record
-      const clientInfo = policy.client
-        ? {
-            firstName: policy.client.name?.split(" ")[0] || "Unknown",
-            lastName: policy.client.name?.split(" ").slice(1).join(" ") || "",
-            email: policy.client.email,
-            phone: policy.client.phone,
-            state: policy.client.state,
-          }
-        : {
-            firstName: "Unknown",
-            lastName: "Client",
-          };
-
       // DO NOT pass commissionRate - it MUST be looked up from comp_guide
       // using the user's contract_level, not the policy's stored percentage
-      await commissionService.createWithAutoCalculation({
-        policyId: policy.id,
-        userId: policy.userId,
-        carrierId: policy.carrierId,
-        productId: policy.productId, // CRITICAL: Pass productId for accurate comp_guide lookup
-        product: policy.product,
-        termLength: policy.termLength ?? undefined, // For term_life commission modifiers
-        client: clientInfo,
-        calculationBasis: "annual_premium",
-        annualPremium: policy.annualPremium,
-        monthlyPremium: policy.monthlyPremium,
-        // commissionRate intentionally NOT passed - must come from comp_guide lookup
-        advanceMonths: 9, // Standard advance period
-        status: "pending",
-        type: "advance",
-        isAutoCalculated: true,
-      });
+      await commissionService.createWithAutoCalculation(
+        {
+          policyId: policy.id,
+          userId: policy.userId,
+          advanceMonths: 9, // Standard advance period
+          status: "pending",
+          type: "advance",
+        },
+        {
+          carrierId: policy.carrierId,
+          productId: policy.productId, // CRITICAL: Pass productId for accurate comp_guide lookup
+          product: policy.product,
+          termLength: policy.termLength ?? undefined, // For term_life commission modifiers
+          annualPremium: policy.annualPremium,
+          monthlyPremium: policy.monthlyPremium,
+          autoCalculate: true,
+        },
+      );
       console.log(`Commission created for policy ${policy.id}`);
     } catch (error) {
       // CRITICAL: Commission creation MUST succeed for policy to be valid
       // Never silently fail - always notify user so they can take action
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("Failed to create commission for policy:", error);
       logger.error(
         "PolicyService.create",
@@ -572,7 +560,10 @@ class PolicyService {
       }
 
       // Validate policy is not already cancelled or lapsed (lifecycle_status)
-      if (policy.lifecycleStatus === "cancelled" || policy.lifecycleStatus === "lapsed") {
+      if (
+        policy.lifecycleStatus === "cancelled" ||
+        policy.lifecycleStatus === "lapsed"
+      ) {
         throw new ValidationError("Policy is already cancelled or lapsed", [
           {
             field: "lifecycleStatus",
@@ -693,7 +684,10 @@ class PolicyService {
       }
 
       // Validate policy is not already lapsed or cancelled (check lifecycle_status)
-      if (policy.lifecycleStatus === "cancelled" || policy.lifecycleStatus === "lapsed") {
+      if (
+        policy.lifecycleStatus === "cancelled" ||
+        policy.lifecycleStatus === "lapsed"
+      ) {
         throw new ValidationError("Policy is already cancelled or lapsed", [
           {
             field: "lifecycleStatus",
@@ -800,7 +794,10 @@ class PolicyService {
       }
 
       // Validate policy is cancelled or lapsed (check lifecycle_status)
-      if (policy.lifecycleStatus !== "cancelled" && policy.lifecycleStatus !== "lapsed") {
+      if (
+        policy.lifecycleStatus !== "cancelled" &&
+        policy.lifecycleStatus !== "lapsed"
+      ) {
         throw new ValidationError(
           "Policy must be cancelled or lapsed to reinstate",
           [

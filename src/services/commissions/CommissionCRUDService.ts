@@ -17,42 +17,17 @@ import {
 } from "../events/workflowEventEmitter";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * DB row type - uses Record<string, unknown> to handle joined/computed fields
- * The actual runtime data includes fields from JOINs and views beyond base schema
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB rows have dynamic fields from joins/views
-type CommissionRow = Record<string, any>;
-
 export interface CreateCommissionData {
   policyId?: string;
   userId?: string;
-  client: {
-    firstName: string;
-    lastName: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-  };
-  carrierId: string;
-  productId?: string; // Specific product ID for accurate comp_guide lookup
-  product: string;
-  termLength?: number; // Term length for term_life products (affects commission rate)
   type: string;
   status: string;
-  calculationBasis: string;
-  annualPremium: number;
-  monthlyPremium?: number;
 
   // ADVANCE (upfront payment)
-  amount?: number; // Canonical field name for commission amount
-  advanceAmount?: number; // @deprecated Use 'amount' instead
+  amount?: number;
   advanceMonths?: number;
 
-  // CAPPED ADVANCE (when carrier has advance cap)
+  // CAPPED ADVANCE
   originalAdvance?: number | null;
   overageAmount?: number | null;
   overageStartMonth?: number | null;
@@ -63,17 +38,12 @@ export interface CreateCommissionData {
   unearnedAmount?: number;
   lastPaymentDate?: Date;
 
-  // COMMISSION RATE
-  commissionRate?: number;
-  contractCompLevel?: number;
-  isAutoCalculated?: boolean;
-
   // Dates
-  expectedDate?: Date;
-  actualDate?: Date;
-  monthEarned?: number;
-  yearEarned?: number;
+  paymentDate?: Date | string;
   notes?: string;
+  monthNumber?: number | null;
+  relatedAdvanceId?: string | null;
+  imoId?: string | null;
 }
 
 export interface UpdateCommissionData extends Partial<CreateCommissionData> {
@@ -83,14 +53,12 @@ export interface UpdateCommissionData extends Partial<CreateCommissionData> {
 export interface CommissionFilters {
   status?: string;
   type?: string;
-  carrierId?: string;
   userId?: string;
   startDate?: Date;
   endDate?: Date;
   minAmount?: number;
   maxAmount?: number;
-  product?: string;
-  calculationBasis?: string;
+  policyId?: string;
 }
 
 class CommissionCRUDService {
@@ -111,7 +79,6 @@ class CommissionCRUDService {
       error instanceof Error ? error : new Error(String(error)),
     );
 
-    // Re-throw if already a structured error
     if (
       error instanceof NotFoundError ||
       error instanceof DatabaseError ||
@@ -120,7 +87,6 @@ class CommissionCRUDService {
       throw error;
     }
 
-    // Wrap in appropriate error type
     throw new DatabaseError(
       context,
       error instanceof Error ? error : new Error(message),
@@ -132,7 +98,6 @@ class CommissionCRUDService {
     try {
       return await withRetry(
         async () => {
-          // CommissionRepository already transforms the data in its findAll method
           return await this.repository.findAll();
         },
         { maxAttempts: 2 },
@@ -156,7 +121,6 @@ class CommissionCRUDService {
           if (!commission) {
             throw new NotFoundError("Commission", id);
           }
-          // Repository already transforms the data
           return commission;
         },
         { maxAttempts: 2 },
@@ -171,7 +135,6 @@ class CommissionCRUDService {
 
   async getByPolicyId(policyId: string): Promise<Commission[]> {
     try {
-      // Repository already transforms the data
       return await this.repository.findByPolicy(policyId);
     } catch (error) {
       throw this.handleError(error, "getByPolicyId");
@@ -180,7 +143,6 @@ class CommissionCRUDService {
 
   async getCommissionsByUser(userId: string): Promise<Commission[]> {
     try {
-      // Repository already transforms the data
       return await this.repository.findByAgent(userId);
     } catch (error) {
       throw this.handleError(error, "getCommissionsByUser");
@@ -188,27 +150,17 @@ class CommissionCRUDService {
   }
 
   async create(data: CreateCommissionData): Promise<Commission> {
-    // Validate required fields
     const errors: Array<{ field: string; message: string; value?: unknown }> =
       [];
 
-    if (!data.client) {
+    if (!data.type) {
+      errors.push({ field: "type", message: "Commission type is required" });
+    }
+    if (!data.amount || data.amount <= 0) {
       errors.push({
-        field: "client",
-        message: "Client information is required",
-      });
-    }
-    if (!data.carrierId) {
-      errors.push({ field: "carrierId", message: "Carrier ID is required" });
-    }
-    if (!data.product) {
-      errors.push({ field: "product", message: "Product is required" });
-    }
-    if (!data.annualPremium || data.annualPremium <= 0) {
-      errors.push({
-        field: "annualPremium",
-        message: "Annual premium must be greater than 0",
-        value: data.annualPremium,
+        field: "amount",
+        message: "Amount must be greater than 0",
+        value: data.amount,
       });
     }
 
@@ -217,26 +169,17 @@ class CommissionCRUDService {
     }
 
     try {
-      // NOTE: Do NOT call transformToDB or transformFromDB here!
-      // The repository.create() calls its own transforms internally.
-      // repository.create() returns a Commission object already transformed.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
       const commission = await this.repository.create(data as any);
 
-      // Emit commission earned event if this is a paid commission
-      if (
-        commission.status === "paid" ||
-        (commission.advanceAmount && commission.advanceAmount > 0)
-      ) {
+      if (commission.status === "paid") {
         await workflowEventEmitter.emit(WORKFLOW_EVENTS.COMMISSION_EARNED, {
           commissionId: commission.id,
           policyId: commission.policyId,
           agentId: commission.userId,
-          amount: commission.advanceAmount || commission.amount,
+          amount: commission.amount,
           commissionType: commission.type,
           status: commission.status,
-          carrierId: commission.carrierId,
-          product: commission.product,
           earnedAt: new Date().toISOString(),
         });
       }
@@ -258,17 +201,9 @@ class CommissionCRUDService {
     }
 
     try {
-      // Verify commission exists first
       await this.getById(id);
-
-      // NOTE: Do NOT call transformToDB or transformFromDB here!
-      // The repository.update() calls its own transforms internally.
-      // repository.update() returns a Commission object already transformed via
-      // CommissionRepository.transformFromDB - calling this.transformFromDB again
-      // would cause a double-transform bug (expecting DB field names on a Commission object)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Repository handles both formats
       const updated = await this.repository.update(id, data as any);
-
       return updated;
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -286,9 +221,7 @@ class CommissionCRUDService {
     }
 
     try {
-      // Verify commission exists first
       await this.getById(id);
-
       await this.repository.delete(id);
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -306,13 +239,11 @@ class CommissionCRUDService {
     }
 
     try {
-      // First, get the commission to validate status
       const commission = await this.getById(id);
       if (!commission) {
         throw new NotFoundError("Commission", id);
       }
 
-      // Validate commission status is 'pending' (can be marked as paid)
       if (commission.status !== "pending") {
         throw new ValidationError(
           `Cannot mark commission as paid. Current status is ${commission.status}, must be pending.`,
@@ -326,7 +257,6 @@ class CommissionCRUDService {
         );
       }
 
-      // Get the linked policy to validate it's active
       if (commission.policyId) {
         const { data: policy, error: policyError } = await (
           this.repository as unknown as { client: SupabaseClient }
@@ -354,14 +284,13 @@ class CommissionCRUDService {
         }
       }
 
-      // Update the commission status to 'paid' and set payment_date
       const updateData = {
         status: "paid",
         payment_date: paymentDate || new Date(),
         updated_at: new Date(),
       };
 
-      const { data: updated, error: updateError } = await (
+      const { error: updateError } = await (
         this.repository as unknown as { client: SupabaseClient }
       ).client
         .from("commissions")
@@ -374,16 +303,20 @@ class CommissionCRUDService {
         throw new DatabaseError("markAsPaid", updateError);
       }
 
-      // Transform and return the updated commission
-      const updatedCommission = this.transformFromDB(updated);
+      // Use repository's transform (via findById) for consistent conversion
+      const updatedCommission = await this.getById(id);
+      if (!updatedCommission) {
+        throw new NotFoundError("Commission", id);
+      }
 
-      // Emit commission paid event
       await workflowEventEmitter.emit(WORKFLOW_EVENTS.COMMISSION_PAID, {
         commissionId: updatedCommission.id,
         policyId: updatedCommission.policyId,
         agentId: updatedCommission.userId,
         amount: updatedCommission.amount,
-        paidDate: updatedCommission.paidDate?.toISOString(),
+        paidDate: updatedCommission.paymentDate
+          ? new Date(updatedCommission.paymentDate).toISOString()
+          : undefined,
         timestamp: new Date().toISOString(),
       });
 
@@ -400,7 +333,6 @@ class CommissionCRUDService {
     try {
       let commissions = await this.repository.findAll();
 
-      // Apply filters
       if (filters.status) {
         commissions = commissions.filter((c) => c.status === filters.status);
       }
@@ -409,138 +341,40 @@ class CommissionCRUDService {
         commissions = commissions.filter((c) => c.type === filters.type);
       }
 
-      if (filters.carrierId) {
-        commissions = commissions.filter(
-          (c) =>
-            (c as unknown as CommissionRow).carrier_id === filters.carrierId,
-        );
-      }
-
       if (filters.userId) {
-        commissions = commissions.filter(
-          (c) => (c as unknown as CommissionRow).user_id === filters.userId,
-        );
+        commissions = commissions.filter((c) => c.userId === filters.userId);
       }
 
-      if (filters.product) {
-        commissions = commissions.filter((c) =>
-          c.product.toLowerCase().includes(filters.product!.toLowerCase()),
-        );
-      }
-
-      if (filters.calculationBasis) {
+      if (filters.policyId) {
         commissions = commissions.filter(
-          (c) =>
-            (c as unknown as CommissionRow).calculation_basis ===
-            filters.calculationBasis,
+          (c) => c.policyId === filters.policyId,
         );
       }
 
       if (filters.startDate) {
-        commissions = commissions.filter((c) => {
-          const row = c as unknown as CommissionRow;
-          const commDate = row.expected_date
-            ? new Date(row.expected_date)
-            : null;
-          return commDate && commDate >= filters.startDate!;
-        });
+        commissions = commissions.filter(
+          (c) => c.createdAt >= filters.startDate!,
+        );
       }
 
       if (filters.endDate) {
-        commissions = commissions.filter((c) => {
-          const row = c as unknown as CommissionRow;
-          const commDate = row.expected_date
-            ? new Date(row.expected_date)
-            : null;
-          return commDate && commDate <= filters.endDate!;
-        });
+        commissions = commissions.filter(
+          (c) => c.createdAt <= filters.endDate!,
+        );
       }
 
       if (filters.minAmount !== undefined) {
-        commissions = commissions.filter((c) => {
-          const row = c as unknown as CommissionRow;
-          return parseFloat(String(row.amount || 0)) >= filters.minAmount!;
-        });
+        commissions = commissions.filter((c) => c.amount >= filters.minAmount!);
       }
 
       if (filters.maxAmount !== undefined) {
-        commissions = commissions.filter((c) => {
-          const row = c as unknown as CommissionRow;
-          return parseFloat(String(row.amount || 0)) <= filters.maxAmount!;
-        });
+        commissions = commissions.filter((c) => c.amount <= filters.maxAmount!);
       }
 
-      return commissions.map(this.transformFromDB);
+      return commissions;
     } catch (error) {
       throw this.handleError(error, "getFiltered");
     }
-  }
-
-  private transformFromDB(dbRecord: CommissionRow): Commission {
-    return {
-      id: dbRecord.id,
-      policyId: dbRecord.policy_id,
-      userId: dbRecord.user_id,
-      client: dbRecord.client,
-      carrierId: dbRecord.carrier_id,
-      product: dbRecord.product,
-      type: dbRecord.type,
-      status: dbRecord.status,
-      calculationBasis: dbRecord.calculation_basis,
-      annualPremium: parseFloat(dbRecord.annual_premium || 0),
-      monthlyPremium: parseFloat(
-        dbRecord.monthly_premium || dbRecord.annual_premium / 12 || 0,
-      ),
-
-      // ADVANCE (upfront payment) - Database field names
-      amount: parseFloat(dbRecord.amount || 0), // Total commission amount (DB 'amount' field)
-      rate: parseFloat(dbRecord.rate || 0), // Commission rate percentage (DB 'rate' field)
-      advanceMonths: dbRecord.advance_months ?? 9,
-
-      // DEPRECATED: Keep for backward compatibility
-      advanceAmount: parseFloat(dbRecord.amount || 0), // Deprecated - use 'amount' instead
-
-      // CAPPED ADVANCE (when carrier has advance cap)
-      originalAdvance: dbRecord.original_advance
-        ? parseFloat(dbRecord.original_advance)
-        : null,
-      overageAmount: dbRecord.overage_amount
-        ? parseFloat(dbRecord.overage_amount)
-        : null,
-      overageStartMonth: dbRecord.overage_start_month ?? null,
-
-      // EARNING TRACKING
-      monthsPaid: dbRecord.months_paid || 0,
-      earnedAmount: parseFloat(dbRecord.earned_amount || 0),
-      unearnedAmount: parseFloat(dbRecord.unearned_amount || 0),
-      lastPaymentDate: dbRecord.last_payment_date
-        ? new Date(dbRecord.last_payment_date)
-        : undefined,
-
-      // COMMISSION RATE (for calculations)
-      commissionRate: parseFloat(
-        dbRecord.rate || dbRecord.commission_rate || 0,
-      ),
-
-      contractCompLevel: dbRecord.contract_comp_level,
-      isAutoCalculated: dbRecord.is_auto_calculated || false,
-      expectedDate: dbRecord.expected_date
-        ? new Date(dbRecord.expected_date)
-        : undefined,
-      actualDate: dbRecord.actual_date
-        ? new Date(dbRecord.actual_date)
-        : undefined,
-      paidDate: dbRecord.payment_date
-        ? new Date(dbRecord.payment_date)
-        : undefined,
-      monthEarned: dbRecord.month_earned,
-      yearEarned: dbRecord.year_earned,
-      notes: dbRecord.notes,
-      createdAt: new Date(dbRecord.created_at),
-      updatedAt: dbRecord.updated_at
-        ? new Date(dbRecord.updated_at)
-        : undefined,
-    };
   }
 }
 

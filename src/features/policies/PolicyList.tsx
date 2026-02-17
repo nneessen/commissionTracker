@@ -67,8 +67,13 @@ import {
   useCheckSharedClient,
 } from "../../hooks/policies";
 import type { SortConfig } from "./hooks/usePolicies";
-import { Policy, PolicyFilters, PolicyStatus, PolicyLifecycleStatus } from "../../types/policy.types";
-import { ProductType } from "../../types/commission.types";
+import {
+  Policy,
+  PolicyFilters,
+  PolicyStatus,
+  PolicyLifecycleStatus,
+} from "../../types/policy.types";
+import { ProductType } from "../../types/product.types";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { LeadPurchaseLinkDialog } from "./components/LeadPurchaseLinkDialog";
 import { useQueryClient } from "@tanstack/react-query";
@@ -611,7 +616,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             onValueChange={(value) =>
               setFilters({
                 ...filters,
-                lifecycleStatus: value === "all" ? undefined : (value as PolicyLifecycleStatus),
+                lifecycleStatus:
+                  value === "all"
+                    ? undefined
+                    : (value as PolicyLifecycleStatus),
               })
             }
           >
@@ -942,12 +950,19 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                               updates: {
                                 status: value as PolicyStatus,
                                 // Set default lifecycle status when approving
-                                ...(value === "approved" && !policy.lifecycleStatus
-                                  ? { lifecycleStatus: "active" as PolicyLifecycleStatus }
+                                ...(value === "approved" &&
+                                !policy.lifecycleStatus
+                                  ? {
+                                      lifecycleStatus:
+                                        "active" as PolicyLifecycleStatus,
+                                    }
                                   : {}),
                                 // Clear lifecycle status when changing to non-approved
                                 ...(value !== "approved"
-                                  ? { lifecycleStatus: null as unknown as PolicyLifecycleStatus }
+                                  ? {
+                                      lifecycleStatus:
+                                        null as unknown as PolicyLifecycleStatus,
+                                    }
                                   : {}),
                               },
                             });
@@ -981,14 +996,25 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             value={policy.lifecycleStatus || "active"}
                             onValueChange={(value) => {
                               const newStatus = value as PolicyLifecycleStatus;
-                              const currentStatus = policy.lifecycleStatus || "active";
+                              const currentStatus =
+                                policy.lifecycleStatus || "active";
 
                               // Handle special cases for cancel/lapse/reinstate
-                              if (newStatus === "cancelled" && currentStatus === "active") {
+                              if (
+                                newStatus === "cancelled" &&
+                                currentStatus === "active"
+                              ) {
                                 handleCancelPolicy(policy.id);
-                              } else if (newStatus === "lapsed" && currentStatus === "active") {
+                              } else if (
+                                newStatus === "lapsed" &&
+                                currentStatus === "active"
+                              ) {
                                 handleLapsePolicy(policy.id);
-                              } else if (newStatus === "active" && (currentStatus === "cancelled" || currentStatus === "lapsed")) {
+                              } else if (
+                                newStatus === "active" &&
+                                (currentStatus === "cancelled" ||
+                                  currentStatus === "lapsed")
+                              ) {
                                 handleReinstatePolicy(policy.id, currentStatus);
                               } else {
                                 // Direct update for other changes (e.g., expired)
@@ -1002,7 +1028,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             <SelectTrigger
                               className={cn(
                                 "h-6 text-[10px] w-[85px] px-1.5 gap-1 font-medium border",
-                                (policy.lifecycleStatus === "active" || !policy.lifecycleStatus) &&
+                                (policy.lifecycleStatus === "active" ||
+                                  !policy.lifecycleStatus) &&
                                   "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
                                 policy.lifecycleStatus === "lapsed" &&
                                   "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
@@ -1017,7 +1044,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             <SelectContent>
                               <SelectItem value="active">Active</SelectItem>
                               <SelectItem value="lapsed">Lapsed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                              <SelectItem value="cancelled">
+                                Cancelled
+                              </SelectItem>
                               <SelectItem value="expired">Expired</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1126,40 +1155,44 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             </DropdownMenuItem>
                           )}
                           {/* Cancel/Lapse actions - only for approved+active policies */}
-                          {policy.status === "approved" && policy.lifecycleStatus === "active" && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => handleCancelPolicy(policy.id)}
-                                className="text-amber-600 dark:text-amber-400 text-[11px]"
-                              >
-                                <XCircle className="mr-2 h-3.5 w-3.5" />
-                                Cancel Policy
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleLapsePolicy(policy.id)}
-                                className="text-amber-600 dark:text-amber-400 text-[11px]"
-                              >
-                                <AlertCircle className="mr-2 h-3.5 w-3.5" />
-                                Mark as Lapsed
-                              </DropdownMenuItem>
-                            </>
-                          )}
+                          {policy.status === "approved" &&
+                            policy.lifecycleStatus === "active" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => handleCancelPolicy(policy.id)}
+                                  className="text-amber-600 dark:text-amber-400 text-[11px]"
+                                >
+                                  <XCircle className="mr-2 h-3.5 w-3.5" />
+                                  Cancel Policy
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleLapsePolicy(policy.id)}
+                                  className="text-amber-600 dark:text-amber-400 text-[11px]"
+                                >
+                                  <AlertCircle className="mr-2 h-3.5 w-3.5" />
+                                  Mark as Lapsed
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           {/* Reinstate action - only for cancelled/lapsed lifecycle */}
-                          {policy.status === "approved" && (policy.lifecycleStatus === "cancelled" ||
-                            policy.lifecycleStatus === "lapsed") && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleReinstatePolicy(
-                                  policy.id,
-                                  policy.lifecycleStatus as "cancelled" | "lapsed",
-                                )
-                              }
-                              className="text-emerald-600 dark:text-emerald-400 text-[11px]"
-                            >
-                              <CheckCircle className="mr-2 h-3.5 w-3.5" />
-                              Reinstate Policy
-                            </DropdownMenuItem>
-                          )}
+                          {policy.status === "approved" &&
+                            (policy.lifecycleStatus === "cancelled" ||
+                              policy.lifecycleStatus === "lapsed") && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleReinstatePolicy(
+                                    policy.id,
+                                    policy.lifecycleStatus as
+                                      | "cancelled"
+                                      | "lapsed",
+                                  )
+                                }
+                                className="text-emerald-600 dark:text-emerald-400 text-[11px]"
+                              >
+                                <CheckCircle className="mr-2 h-3.5 w-3.5" />
+                                Reinstate Policy
+                              </DropdownMenuItem>
+                            )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() =>

@@ -175,38 +175,8 @@ export interface UserPreferences {
   };
 }
 
-// =============================================================================
-// CHARGEBACK TYPES (should move to commission.types.ts in future)
-// =============================================================================
-
-export interface Chargeback {
-  id: string;
-  policyId: string;
-  commissionId: string;
-  userId?: string;
-  chargebackType: "policy_lapse" | "refund" | "cancellation";
-  chargebackAmount: number;
-  chargebackReason?: string;
-  policyLapseDate?: Date;
-  chargebackDate: Date;
-  status: "pending" | "processed" | "disputed" | "resolved";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CreateChargebackData {
-  policyId: string;
-  commissionId: string;
-  userId?: string;
-  chargebackType: "policy_lapse" | "refund" | "cancellation";
-  chargebackAmount: number;
-  chargebackReason?: string;
-  policyLapseDate?: Date;
-  chargebackDate: Date;
-  status?: "pending" | "processed" | "disputed" | "resolved";
-  // Multi-tenant fields (for data isolation)
-  imoId?: string | null;
-}
+// Chargeback types moved to commission.types.ts
+// Import from there: import { Chargeback, CreateChargebackData } from './commission.types'
 
 // =============================================================================
 // UI TYPES

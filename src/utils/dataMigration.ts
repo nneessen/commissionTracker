@@ -6,7 +6,7 @@ import {
   constantsService,
 } from "../services";
 import { Policy } from "../types/policy.types";
-import { Commission } from "../types/commission.types";
+
 import { CreateExpenseData } from "../types/expense.types";
 import { Carrier } from "../types/carrier.types";
 import { logger } from "../services/base/logger";
@@ -45,7 +45,8 @@ export interface MigrationResult {
 
 interface LocalStorageData {
   policies?: Policy[];
-  commissions?: Commission[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy data with fields that no longer exist on Commission
+  commissions?: Record<string, any>[];
   expenses?: LegacyExpenseData;
   carriers?: Carrier[];
   constants?: Constants;
@@ -258,33 +259,22 @@ class DataMigrationService {
   }
 
   private async migrateCommissions(
-    commissions: Commission[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy data has fields that no longer exist on Commission
+    commissions: Record<string, any>[],
     result: MigrationResult,
   ): Promise<void> {
     for (const commission of commissions) {
       try {
         await commissionService.create({
           policyId: commission.policyId,
-          client: {
-            firstName: commission.client.name.split(" ")[0] || "",
-            lastName:
-              commission.client.name.split(" ").slice(1).join(" ") || "",
-            state: commission.client.state,
-          },
-          carrierId: commission.carrierId,
-          product: commission.product,
           type: commission.type,
           status: commission.status,
-          calculationBasis: commission.calculationBasis,
-          annualPremium: commission.annualPremium,
-          advanceAmount: commission.advanceAmount,
-          commissionRate: commission.commissionRate,
-          expectedDate: commission.expectedDate
-            ? new Date(commission.expectedDate)
-            : undefined,
-          actualDate: commission.actualDate
-            ? new Date(commission.actualDate)
-            : undefined,
+          amount: commission.advanceAmount ?? commission.amount ?? 0,
+          advanceMonths: commission.advanceMonths ?? 0,
+          earnedAmount: commission.earnedAmount ?? 0,
+          unearnedAmount: commission.unearnedAmount ?? 0,
+          monthsPaid: commission.monthsPaid ?? 0,
+          userId: commission.userId,
           notes: commission.notes,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy data migration type assertion
         } as any);

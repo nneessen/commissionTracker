@@ -214,41 +214,46 @@ export function useMetricsWithDateRange(
       .filter((c) => c.status === "pending")
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
-    // Group by carrier - use amount (total commission value)
+    // Group by carrier - look up carrier from the related policy
     const byCarrier: Record<string, number> = {};
     filteredCommissions.forEach((c) => {
-      const carrierId = c.carrierId;
-      if (carrierId) {
-        byCarrier[carrierId] = (byCarrier[carrierId] || 0) + (c.amount || 0);
+      if (c.policyId) {
+        const policy = policies.find((p) => p.id === c.policyId);
+        const carrierId = policy?.carrierId;
+        if (carrierId) {
+          byCarrier[carrierId] = (byCarrier[carrierId] || 0) + (c.amount || 0);
+        }
       }
     });
 
-    // Group by product - use amount (total commission value)
+    // Group by product - look up product from the related policy
     const byProduct: Record<ProductType, number> = {} as Record<
       ProductType,
       number
     >;
     filteredCommissions.forEach((c) => {
-      if (c.product) {
-        byProduct[c.product] = (byProduct[c.product] || 0) + (c.amount || 0);
+      if (c.policyId) {
+        const policy = policies.find((p) => p.id === c.policyId);
+        const product = policy?.product;
+        if (product) {
+          byProduct[product] = (byProduct[product] || 0) + (c.amount || 0);
+        }
       }
     });
 
-    // Group by state - use amount (total commission value)
+    // Group by state - look up state from the related policy's client
     const byState: Record<string, number> = {};
     filteredCommissions.forEach((c) => {
-      const state = c.client?.state || "Unknown";
-      byState[state] = (byState[state] || 0) + (c.amount || 0);
+      if (c.policyId) {
+        const policy = policies.find((p) => p.id === c.policyId);
+        const state = policy?.client?.state || "Unknown";
+        byState[state] = (byState[state] || 0) + (c.amount || 0);
+      }
     });
 
     const count = filteredCommissions.length;
-    const averageRate =
-      count > 0
-        ? filteredCommissions.reduce(
-            (sum, c) => sum + (c.rate || c.commissionRate || 0),
-            0,
-          ) / count
-        : 0;
+    // Rate is no longer on Commission type; default to 0
+    const averageRate = 0;
 
     // Average based on total commission value, not just earned + pending
     const totalCommissionValue = filteredCommissions.reduce(
@@ -318,7 +323,9 @@ export function useMetricsWithDateRange(
     const cancelled = filteredPolicies.filter(
       (p) => p.lifecycleStatus === "cancelled",
     ).length;
-    const lapsed = filteredPolicies.filter((p) => p.lifecycleStatus === "lapsed").length;
+    const lapsed = filteredPolicies.filter(
+      (p) => p.lifecycleStatus === "lapsed",
+    ).length;
 
     // Calculate total commissionable value
     const commissionableValue = filteredPolicies.reduce((sum, p) => {
@@ -386,7 +393,9 @@ export function useMetricsWithDateRange(
 
   // Calculate current state metrics (point-in-time, not filtered by date)
   const currentState = (() => {
-    const activePolicies = policies.filter((p) => p.lifecycleStatus === "active").length;
+    const activePolicies = policies.filter(
+      (p) => p.lifecycleStatus === "active",
+    ).length;
     const pendingPolicies = policies.filter(
       (p) => p.status === "pending",
     ).length;
@@ -408,7 +417,8 @@ export function useMetricsWithDateRange(
 
         // Only include if policy exists and is active (lifecycleStatus) or pending (status)
         return (
-          policy && (policy.lifecycleStatus === "active" || policy.status === "pending")
+          policy &&
+          (policy.lifecycleStatus === "active" || policy.status === "pending")
         );
       })
       .reduce((sum, c) => sum + (c.amount || 0), 0);

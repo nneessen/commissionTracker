@@ -1,5 +1,3 @@
-// Import and re-export ProductType from product.types.ts instead of redefining
-import type { ProductType } from "./product.types";
 import type { Database } from "./database.types";
 
 // ============================================================================
@@ -81,61 +79,9 @@ export type CommissionInsert =
 export type CommissionUpdate =
   Database["public"]["Tables"]["commissions"]["Update"];
 
-/**
- * Extended DB record type that includes:
- * - Standard CommissionRow fields
- * - Legacy field aliases (for backward compatibility)
- * - Joined/computed fields from queries
- */
-export interface CommissionDBRecord extends Partial<CommissionRow> {
-  id: string;
-  // Legacy aliases
-  commission_amount?: number;
-  advance_amount?: number;
-  paid_date?: string | null;
-  // Extended fields from joins/queries
-  carrier_id?: string;
-  calculation_basis?: string;
-  annual_premium?: number;
-  monthly_premium?: number;
-  rate?: number;
-  contract_comp_level?: number;
-  is_auto_calculated?: boolean;
-  expected_date?: string | null;
-  actual_date?: string | null;
-  month_earned?: number;
-  year_earned?: number;
-  quarter_earned?: number;
-  client?: CommissionClientInfo | Record<string, unknown>;
-  product?: string;
-}
-
-/** Type for data passed to transformToDB */
-export type CommissionToDB =
-  | Partial<CreateCommissionData>
-  | Partial<UpdateCommissionData>
-  | Partial<Commission>;
-
 // ============================================================================
 // Commission Types
 // ============================================================================
-
-/**
- * Minimal client info for commission records
- * This is NOT the full Client entity - use client.types.ts for that
- * This is just the embedded client snapshot in a commission
- */
-export interface CommissionClientInfo {
-  name: string;
-  age: number;
-  state: string;
-}
-
-/**
- * @deprecated Use CommissionClientInfo instead
- * Kept for backward compatibility
- */
-export type Client = CommissionClientInfo;
 
 export type CommissionType =
   | "first_year"
@@ -170,97 +116,105 @@ export type CommissionStatus =
   | "disputed"
   | "clawback"
   | "charged_back";
-export type CalculationBasis = "premium" | "fixed" | "tiered";
 
+/**
+ * Commission — maps 1:1 to the `commissions` DB table.
+ *
+ * Fields that belong to the *Policy* (client, carrier, product, premium, etc.)
+ * are intentionally NOT on this type. If you need commission + policy data
+ * together, use the `CommissionWithPolicy` type from CommissionRepository.
+ */
 export interface Commission {
   id: string;
-  policyId?: string; // Links to Policy when available
-  userId: string; // Links to auth.users (required)
-  client: CommissionClientInfo;
-  carrierId: string;
-  product: ProductType;
+  policyId?: string;
+  userId: string;
 
   // Commission Details
   type: CommissionType;
   status: CommissionStatus;
-  calculationBasis: CalculationBasis;
 
-  // Financial - Commission Advance Model
-  annualPremium: number;
-  monthlyPremium?: number; // Optional for backward compatibility
+  // ADVANCE (upfront payment)
+  amount: number;
+  advanceMonths: number;
 
-  // ADVANCE (upfront payment) - Database field names
-  amount: number; // Total commission amount (maps to DB 'commission_amount' field)
-  rate: number; // Commission rate as percentage (maps to DB 'rate' field)
-  advanceMonths: number; // Number of months in advance (default 9, maps to DB 'advance_months')
+  // CAPPED ADVANCE (when carrier has advance_cap)
+  originalAdvance?: number | null;
+  overageAmount?: number | null;
+  overageStartMonth?: number | null;
 
-  // CAPPED ADVANCE (when carrier has advance cap)
-  originalAdvance?: number | null; // Full calculated advance before cap was applied
-  overageAmount?: number | null; // Amount exceeding cap, paid as-earned after recoupment
-  overageStartMonth?: number | null; // Month when overage payments begin
-
-  // EARNING TRACKING (as client pays premiums) - Database field names
-  monthsPaid: number; // How many premiums the client has paid (maps to DB 'months_paid')
-  earnedAmount: number; // Portion of advance that's been earned (maps to DB 'earned_amount')
-  unearnedAmount: number; // Portion of advance still at risk of chargeback (maps to DB 'unearned_amount')
-  lastPaymentDate?: Date; // When the last premium was paid (maps to DB 'last_payment_date')
+  // EARNING TRACKING (as client pays premiums)
+  monthsPaid: number;
+  earnedAmount: number;
+  unearnedAmount: number;
+  lastPaymentDate?: Date;
 
   // CHARGEBACK TRACKING (when policy lapses/cancels)
-  chargebackAmount?: number; // Amount that must be repaid if policy cancels/lapses (maps to DB 'chargeback_amount')
-  chargebackDate?: Date; // When the chargeback was applied (maps to DB 'chargeback_date')
-  chargebackReason?: string; // Reason for chargeback (maps to DB 'chargeback_reason')
-
-  // DEPRECATED: Use 'amount' instead
-  /** @deprecated Use 'amount' field instead - kept for backward compatibility */
-  advanceAmount?: number;
-
-  // COMMISSION RATE
-  commissionRate: number; // Commission rate as DECIMAL from comp guide (e.g., 0.95 for 95%)
-
-  // Comp Guide Integration
-  contractCompLevel?: number; // Agent's contract level (80-145)
-  isAutoCalculated?: boolean; // True if comp rate was looked up from comp guide
-  compGuidePercentage?: number; // Original percentage from comp guide
-
-  // Performance tracking fields (generated columns) - optional for backward compatibility
-  monthEarned?: number; // 1-12
-  yearEarned?: number; // e.g., 2024
-  quarterEarned?: number; // 1-4
+  chargebackAmount?: number;
+  chargebackDate?: Date;
+  chargebackReason?: string;
 
   // Dates
-  expectedDate?: Date;
-  actualDate?: Date;
-  paymentDate?: Date | string; // Maps to DB field 'payment_date' - when commission was paid
-  paidDate?: Date; // @deprecated - use paymentDate instead (kept for backward compatibility)
+  paymentDate?: Date | string;
   createdAt: Date;
-  updatedAt?: Date; // Optional for backward compatibility
-  created_at?: Date; // Optional for BaseEntity compatibility
-  updated_at?: Date; // Optional for BaseEntity compatibility
+  updatedAt?: Date;
 
   // Additional
   notes?: string;
+  monthNumber?: number | null;
+  relatedAdvanceId?: string | null;
 
-  // Multi-tenant fields (for data isolation)
-  imoId?: string | null; // Maps to DB 'imo_id' - auto-populated if not provided
+  // Multi-tenant
+  imoId?: string | null;
 }
 
-export type { ProductType } from "./product.types";
+// ============================================================================
+// Chargeback Types (DB-first from chargebacks table)
+// ============================================================================
 
-export interface NewCommissionForm {
-  clientName: string;
-  clientAge: number;
-  clientState: string;
-  carrierId: string;
-  product: ProductType;
-  annualPremium: number;
-  policyId?: string;
-  type?: CommissionType;
-  status?: CommissionStatus;
-  calculationBasis?: CalculationBasis;
-  expectedDate?: Date | string;
-  actualDate?: Date | string;
-  paidDate?: Date | string;
-  notes?: string;
+/** Raw database row from chargebacks table */
+export type ChargebackRow = Database["public"]["Tables"]["chargebacks"]["Row"];
+/** Insert type for chargebacks table */
+export type ChargebackInsert =
+  Database["public"]["Tables"]["chargebacks"]["Insert"];
+/** Update type for chargebacks table */
+export type ChargebackUpdate =
+  Database["public"]["Tables"]["chargebacks"]["Update"];
+
+/** Chargeback status enum (matches DB enum chargeback_status) */
+export type ChargebackStatus =
+  | "pending"
+  | "processed"
+  | "disputed"
+  | "resolved";
+
+/**
+ * Chargeback — maps 1:1 to the `chargebacks` DB table.
+ */
+export interface Chargeback {
+  id: string;
+  commissionId: string | null;
+  chargebackAmount: number;
+  chargebackDate: Date;
+  reason?: string;
+  status: ChargebackStatus;
+  resolutionDate?: Date;
+  resolutionNotes?: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * Data required to create a new chargeback record.
+ * Maps to ChargebackInsert but with camelCase naming.
+ */
+export interface CreateChargebackData {
+  commissionId: string;
+  chargebackAmount: number;
+  chargebackDate: Date;
+  reason?: string;
+  status?: ChargebackStatus;
+  resolutionDate?: Date;
+  resolutionNotes?: string;
 }
 
 export interface CommissionSummary {
@@ -275,7 +229,7 @@ export interface CommissionSummary {
     count: number;
   }>;
   productBreakdown: Array<{
-    product: ProductType;
+    product: string;
     count: number;
     totalCommissions: number;
   }>;
@@ -291,22 +245,9 @@ export interface CommissionSummary {
   }>;
 }
 
-export interface CommissionFilters {
-  startDate?: Date;
-  endDate?: Date;
-  carrierId?: string;
-  product?: ProductType;
-  state?: string;
-  status?: CommissionStatus;
-  type?: CommissionType;
-  minPremium?: number;
-  maxPremium?: number;
-  policyId?: string;
-}
-
 // Service layer types
 export type CreateCommissionData = Omit<
   Commission,
-  "id" | "createdAt" | "updatedAt" | "created_at" | "updated_at"
+  "id" | "createdAt" | "updatedAt"
 >;
 export type UpdateCommissionData = Partial<CreateCommissionData>;

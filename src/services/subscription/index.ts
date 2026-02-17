@@ -16,9 +16,10 @@ export { SubscriptionRepository } from "./SubscriptionRepository";
 export type { SubscriptionBaseEntity } from "./SubscriptionRepository";
 
 // Admin subscription service exports
+// SubscriptionPlan is now defined in SubscriptionRepository (single source of truth)
+export { type SubscriptionPlan as AdminSubscriptionPlan } from "./SubscriptionRepository";
 export {
   adminSubscriptionService,
-  type SubscriptionPlan as AdminSubscriptionPlan,
   type SubscriptionAddon,
   type UserSubscriptionAddon,
   type SubscriptionPlanChange,

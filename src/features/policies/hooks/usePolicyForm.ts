@@ -8,8 +8,12 @@ import {
   PaymentFrequency,
   Policy,
 } from "../../../types/policy.types";
-import { ProductType } from "../../../types/commission.types";
-import { formatDateForDB, parseLocalDate, getTodayString } from "../../../lib/date";
+import { ProductType } from "../../../types/product.types";
+import {
+  formatDateForDB,
+  parseLocalDate,
+  getTodayString,
+} from "../../../lib/date";
 import {
   calculatePaymentAmount,
   validatePremium,
@@ -40,7 +44,7 @@ export interface UsePolicyFormReturn {
   initialProductId: string | null;
   setInitialProductId: React.Dispatch<React.SetStateAction<string | null>>;
   handleInputChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
   handleSelectChange: (name: string, value: string) => void;
   handlePhoneChange: (value: string) => void;
@@ -54,7 +58,7 @@ export interface UsePolicyFormReturn {
  */
 export function createInitialFormData(
   policyId?: string,
-  policy?: Policy | null
+  policy?: Policy | null,
 ): NewPolicyForm {
   if (policyId && policy) {
     return {
@@ -75,7 +79,7 @@ export function createInitialFormData(
       termLength: policy.termLength,
       premium: calculatePaymentAmount(
         policy.annualPremium || 0,
-        policy.paymentFrequency
+        policy.paymentFrequency,
       ),
       paymentFrequency: policy.paymentFrequency || "monthly",
       commissionPercentage: (policy.commissionPercentage || 0) * 100,
@@ -114,7 +118,7 @@ export function createInitialFormData(
  */
 export function validatePolicyForm(
   formData: NewPolicyForm,
-  products: Array<{ id: string; product_type: string }>
+  products: Array<{ id: string; product_type: string }>,
 ): Record<string, string> {
   const newErrors: Record<string, string> = {};
 
@@ -176,14 +180,14 @@ export function usePolicyForm({
   products,
 }: UsePolicyFormOptions): UsePolicyFormReturn {
   const [formData, setFormData] = useState<NewPolicyForm>(() =>
-    createInitialFormData(policyId, policy)
+    createInitialFormData(policyId, policy),
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Track initial productId to detect user-initiated changes in edit mode
   const [initialProductId, setInitialProductId] = useState<string | null>(
-    policyId && policy ? policy.productId || null : null
+    policyId && policy ? policy.productId || null : null,
   );
 
   const handleInputChange = useCallback(
@@ -202,7 +206,7 @@ export function usePolicyForm({
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     },
-    [errors]
+    [errors],
   );
 
   const handleSelectChange = useCallback(
@@ -219,7 +223,9 @@ export function usePolicyForm({
             ...prev,
             carrierId: value,
             productId: carrierChanged ? "" : prev.productId,
-            commissionPercentage: carrierChanged ? 0 : prev.commissionPercentage,
+            commissionPercentage: carrierChanged
+              ? 0
+              : prev.commissionPercentage,
           };
         });
       } else if (name === "productId") {
@@ -227,7 +233,8 @@ export function usePolicyForm({
         setFormData((prev) => ({
           ...prev,
           productId: value,
-          product: (selectedProduct?.product_type as ProductType) || "term_life",
+          product:
+            (selectedProduct?.product_type as ProductType) || "term_life",
           termLength:
             selectedProduct?.product_type === "term_life"
               ? prev.termLength
@@ -250,7 +257,7 @@ export function usePolicyForm({
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     },
-    [errors, products]
+    [errors, products],
   );
 
   const handlePhoneChange = useCallback((value: string) => {

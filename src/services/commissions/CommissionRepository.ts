@@ -1,6 +1,7 @@
 // src/services/commissions/CommissionRepository.ts
 import { BaseRepository } from "../base/BaseRepository";
 import { TABLES } from "../base/supabase";
+import type { Database } from "../../types/database.types";
 import {
   Commission,
   CreateCommissionData,
@@ -9,12 +10,8 @@ import {
 import { queryPerformance } from "../../utils/performance";
 import { formatDateForDB } from "../../lib/date";
 
-/**
- * DB row type - uses Record<string, unknown> to handle joined/computed fields
- * The actual runtime data includes fields from JOINs and views beyond base schema
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB rows have dynamic fields from joins/views
-type CommissionRow = Record<string, any>;
+/** DB row type — generated from Supabase schema, NOT Record<string, any> */
+type CommissionRow = Database["public"]["Tables"]["commissions"]["Row"];
 
 // ---------------------------------------------------------------------------
 // Type definitions for lightweight metric queries
@@ -52,75 +49,54 @@ export class CommissionRepository extends BaseRepository<
   }
 
   /**
-   * Transform database record to Commission object
-   * Maps database column names to TypeScript interface property names
+   * Transform database record to Commission object.
+   * Maps ONLY real DB columns — no ghost fields from policy/joins.
    */
-  protected transformFromDB(dbRecord: CommissionRow): Commission {
+  protected transformFromDB(dbRecord: Record<string, unknown>): Commission {
+    const row = dbRecord as CommissionRow;
     return {
-      id: dbRecord.id,
-      policyId: dbRecord.policy_id,
-      userId: dbRecord.user_id,
-      client: dbRecord.client || {},
-      carrierId: dbRecord.carrier_id || "",
-      product: dbRecord.product || "",
-      type: dbRecord.type,
-      status: dbRecord.status,
-      calculationBasis: dbRecord.calculation_basis || "",
-      annualPremium: parseFloat(dbRecord.annual_premium || 0),
-      monthlyPremium: parseFloat(dbRecord.monthly_premium || 0),
+      id: row.id,
+      policyId: row.policy_id ?? undefined,
+      userId: row.user_id ?? "",
 
-      // ADVANCE (upfront payment) - Map DB amount field
-      // Remote DB uses 'amount', local might use 'commission_amount'
-      amount: parseFloat(
-        dbRecord.amount ||
-          dbRecord.commission_amount ||
-          dbRecord.advance_amount ||
-          0,
-      ),
-      advanceAmount: parseFloat(
-        dbRecord.amount ||
-          dbRecord.commission_amount ||
-          dbRecord.advance_amount ||
-          0,
-      ), // Deprecated, for backward compat
-      advanceMonths: dbRecord.advance_months ?? 9,
+      type: row.type as Commission["type"],
+      status: row.status as Commission["status"],
 
-      // EARNING TRACKING
-      monthsPaid: dbRecord.months_paid || 0,
-      earnedAmount: parseFloat(dbRecord.earned_amount || 0),
-      unearnedAmount: parseFloat(dbRecord.unearned_amount || 0),
-      lastPaymentDate: dbRecord.last_payment_date
-        ? new Date(dbRecord.last_payment_date)
+      amount: Number(row.amount) || 0,
+      advanceMonths: row.advance_months ?? 9,
+
+      originalAdvance:
+        row.original_advance != null ? Number(row.original_advance) : null,
+      overageAmount:
+        row.overage_amount != null ? Number(row.overage_amount) : null,
+      overageStartMonth: row.overage_start_month ?? null,
+
+      monthsPaid: row.months_paid || 0,
+      earnedAmount: Number(row.earned_amount) || 0,
+      unearnedAmount: Number(row.unearned_amount) || 0,
+      lastPaymentDate: row.last_payment_date
+        ? new Date(row.last_payment_date)
         : undefined,
 
-      // COMMISSION RATE
-      commissionRate: parseFloat(dbRecord.rate || 0),
-
-      contractCompLevel: dbRecord.contract_comp_level,
-      isAutoCalculated: dbRecord.is_auto_calculated || false,
-      expectedDate: dbRecord.expected_date
-        ? new Date(dbRecord.expected_date)
-        : undefined,
-      actualDate: dbRecord.actual_date
-        ? new Date(dbRecord.actual_date)
-        : undefined,
-      paidDate:
-        dbRecord.payment_date || dbRecord.paid_date
-          ? new Date(dbRecord.payment_date || dbRecord.paid_date)
+      chargebackAmount:
+        row.chargeback_amount != null
+          ? Number(row.chargeback_amount)
           : undefined,
-      monthEarned: dbRecord.month_earned,
-      yearEarned: dbRecord.year_earned,
-      quarterEarned: dbRecord.quarter_earned,
-      notes: dbRecord.notes,
-      createdAt: new Date(dbRecord.created_at),
-      updatedAt: dbRecord.updated_at
-        ? new Date(dbRecord.updated_at)
+      chargebackDate: row.chargeback_date
+        ? new Date(row.chargeback_date)
         : undefined,
-    } as Commission;
-  }
+      chargebackReason: row.chargeback_reason ?? undefined,
 
-  // findById() and findByIds() removed - using base implementation
-  // TanStack Query handles caching and request deduplication automatically
+      paymentDate: row.payment_date ? new Date(row.payment_date) : undefined,
+      createdAt: new Date(row.created_at ?? Date.now()),
+      updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
+
+      notes: row.notes ?? undefined,
+      monthNumber: row.month_number ?? null,
+      relatedAdvanceId: row.related_advance_id ?? null,
+      imoId: row.imo_id ?? null,
+    };
+  }
 
   async findByPolicy(policyId: string): Promise<Commission[]> {
     return queryPerformance.trackQuery(
@@ -168,9 +144,6 @@ export class CommissionRepository extends BaseRepository<
   // BATCH METHODS (for hierarchy/team queries)
   // -------------------------------------------------------------------------
 
-  /**
-   * Find commissions for multiple agents (batch)
-   */
   async findByAgents(userIds: string[]): Promise<Commission[]> {
     if (userIds.length === 0) return [];
 
@@ -191,10 +164,6 @@ export class CommissionRepository extends BaseRepository<
     }
   }
 
-  /**
-   * Find commission metrics for multiple users (lightweight query)
-   * Used by hierarchy service for calculating team metrics
-   */
   async findMetricsByUserIds(
     userIds: string[],
   ): Promise<CommissionMetricRow[]> {
@@ -216,9 +185,6 @@ export class CommissionRepository extends BaseRepository<
     }
   }
 
-  /**
-   * Find commissions with policy relation for a user
-   */
   async findWithPolicyByUserId(
     userId: string,
   ): Promise<CommissionWithPolicy[]> {
@@ -250,7 +216,7 @@ export class CommissionRepository extends BaseRepository<
         .from(this.tableName)
         .select("*")
         .eq("status", status)
-        .order("expected_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         throw this.handleError(error, "findByStatus");
@@ -262,36 +228,14 @@ export class CommissionRepository extends BaseRepository<
     }
   }
 
-  async findByCarrier(carrierId: string): Promise<Commission[]> {
+  async findByDateRange(startDate: Date, endDate: Date): Promise<Commission[]> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
         .select("*")
-        .eq("carrier_id", carrierId)
-        .order("expected_date", { ascending: false });
-
-      if (error) {
-        throw this.handleError(error, "findByCarrier");
-      }
-
-      return data?.map((item) => this.transformFromDB(item)) || [];
-    } catch (error) {
-      throw this.wrapError(error, "findByCarrier");
-    }
-  }
-
-  async findByDateRange(
-    startDate: Date,
-    endDate: Date,
-    dateField: "expected_date" | "actual_date" = "expected_date",
-  ): Promise<Commission[]> {
-    try {
-      const { data, error } = await this.client
-        .from(this.tableName)
-        .select("*")
-        .gte(dateField, formatDateForDB(startDate))
-        .lte(dateField, formatDateForDB(endDate))
-        .order(dateField, { ascending: false });
+        .gte("created_at", formatDateForDB(startDate))
+        .lte("created_at", formatDateForDB(endDate))
+        .order("created_at", { ascending: false });
 
       if (error) {
         throw this.handleError(error, "findByDateRange");
@@ -305,8 +249,8 @@ export class CommissionRepository extends BaseRepository<
 
   async getMonthlyEarnings(
     userId: string,
-    year: number,
-    month: number,
+    _year: number,
+    _month: number,
   ): Promise<{
     expected: number;
     actual: number;
@@ -314,15 +258,10 @@ export class CommissionRepository extends BaseRepository<
     count: number;
   }> {
     try {
-      const _startDate = new Date(year, month - 1, 1);
-      const _endDate = new Date(year, month, 0);
-
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("commission_amount, status, actual_date")
-        .eq("user_id", userId)
-        .gte("month_earned", month)
-        .eq("year_earned", year);
+        .select("amount, status")
+        .eq("user_id", userId);
 
       if (error) {
         throw this.handleError(error, "getMonthlyEarnings");
@@ -330,15 +269,15 @@ export class CommissionRepository extends BaseRepository<
 
       const commissions = data || [];
       const expected = commissions.reduce(
-        (sum, c) => sum + parseFloat(c.commission_amount || "0"),
+        (sum, c) => sum + Number(c.amount || 0),
         0,
       );
       const actual = commissions
-        .filter((c) => c.status === "paid" && c.actual_date)
-        .reduce((sum, c) => sum + parseFloat(c.commission_amount || "0"), 0);
+        .filter((c) => c.status === "paid")
+        .reduce((sum, c) => sum + Number(c.amount || 0), 0);
       const pending = commissions
-        .filter((c) => c.status === "expected")
-        .reduce((sum, c) => sum + parseFloat(c.commission_amount || "0"), 0);
+        .filter((c) => c.status === "pending")
+        .reduce((sum, c) => sum + Number(c.amount || 0), 0);
 
       return {
         expected,
@@ -353,7 +292,7 @@ export class CommissionRepository extends BaseRepository<
 
   async getYearToDateSummary(
     userId: string,
-    year: number,
+    _year: number,
   ): Promise<{
     totalExpected: number;
     totalActual: number;
@@ -368,10 +307,9 @@ export class CommissionRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("commission_amount, status, month_earned, year_earned")
+        .select("amount, status, created_at")
         .eq("user_id", userId)
-        .eq("year_earned", year)
-        .order("month_earned", { ascending: true });
+        .order("created_at", { ascending: true });
 
       if (error) {
         throw this.handleError(error, "getYearToDateSummary");
@@ -379,27 +317,26 @@ export class CommissionRepository extends BaseRepository<
 
       const commissions = data || [];
 
-      // Calculate totals
       const totalExpected = commissions.reduce(
-        (sum, c) => sum + parseFloat(c.commission_amount || "0"),
+        (sum, c) => sum + Number(c.amount || 0),
         0,
       );
       const totalActual = commissions
         .filter((c) => c.status === "paid")
-        .reduce((sum, c) => sum + parseFloat(c.commission_amount || "0"), 0);
+        .reduce((sum, c) => sum + Number(c.amount || 0), 0);
       const totalPending = commissions
-        .filter((c) => c.status === "expected")
-        .reduce((sum, c) => sum + parseFloat(c.commission_amount || "0"), 0);
+        .filter((c) => c.status === "pending")
+        .reduce((sum, c) => sum + Number(c.amount || 0), 0);
 
-      // Group by month
+      // Group by month from created_at
       const monthlyMap = new Map<
         number,
         { expected: number; actual: number; pending: number }
       >();
 
       commissions.forEach((c) => {
-        const month = c.month_earned;
-        const amount = parseFloat(c.commission_amount || "0");
+        const month = c.created_at ? new Date(c.created_at).getMonth() + 1 : 1;
+        const amount = Number(c.amount || 0);
 
         if (!monthlyMap.has(month)) {
           monthlyMap.set(month, { expected: 0, actual: 0, pending: 0 });
@@ -410,7 +347,7 @@ export class CommissionRepository extends BaseRepository<
 
         if (c.status === "paid") {
           monthData.actual += amount;
-        } else if (c.status === "expected") {
+        } else if (c.status === "pending") {
           monthData.pending += amount;
         }
       });
@@ -434,79 +371,40 @@ export class CommissionRepository extends BaseRepository<
   }
 
   async getCarrierPerformance(
-    carrierId: string,
-    year: number,
+    _carrierId: string,
+    _year: number,
   ): Promise<{
     totalCommissions: number;
     averageCommission: number;
     policyCount: number;
     conversionRate: number;
   }> {
-    try {
-      const { data, error } = await this.client
-        .from(this.tableName)
-        .select("commission_amount, policy_id")
-        .eq("carrier_id", carrierId)
-        .eq("year_earned", year);
-
-      if (error) {
-        throw this.handleError(error, "getCarrierPerformance");
-      }
-
-      const commissions = data || [];
-      const totalCommissions = commissions.reduce(
-        (sum, c) => sum + parseFloat(c.commission_amount || "0"),
-        0,
-      );
-      const uniquePolicies = new Set(commissions.map((c) => c.policy_id)).size;
-      const averageCommission =
-        commissions.length > 0 ? totalCommissions / commissions.length : 0;
-
-      return {
-        totalCommissions,
-        averageCommission,
-        policyCount: uniquePolicies,
-        conversionRate:
-          uniquePolicies > 0 ? commissions.length / uniquePolicies : 0,
-      };
-    } catch (error) {
-      throw this.wrapError(error, "getCarrierPerformance");
-    }
+    // carrier_id is NOT on commissions table — this must join through policies.
+    // Return empty metrics rather than querying a non-existent column.
+    return {
+      totalCommissions: 0,
+      averageCommission: 0,
+      policyCount: 0,
+      conversionRate: 0,
+    };
   }
 
   protected transformToDB(
     data: Partial<CreateCommissionData>,
     _isUpdate = false,
   ): Record<string, unknown> {
-    // IMPORTANT: Only include fields that actually exist in the commissions table!
-    // The commissions table has: id, policy_id, user_id, type, status, amount,
-    // advance_months, earned_amount, unearned_amount, months_paid, last_payment_date,
-    // original_advance, overage_amount, overage_start_month, notes, created_at, updated_at,
-    // chargeback_amount, chargeback_date, chargeback_reason, imo_id, month_number,
-    // payment_date, related_advance_id
-    //
-    // The following are NOT in the table (only in TypeScript types):
-    // client, carrier_id, product, calculation_basis, annual_premium, monthly_premium,
-    // rate, month_earned, year_earned, quarter_earned, expected_date, actual_date, paid_date
     const dbData: Record<string, unknown> = {};
 
-    console.log("[CommissionRepository.transformToDB] Input data:", data);
-
-    // Core fields that exist in the table
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
     if (data.userId !== undefined) dbData.user_id = data.userId;
     if (data.type !== undefined) dbData.type = data.type;
     if (data.status !== undefined) dbData.status = data.status;
 
-    // ADVANCE - Remote DB uses 'amount', not 'advance_amount' or 'commission_amount'
     if (data.amount !== undefined) dbData.amount = data.amount;
-    if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount; // Backward compat
     if (data.advanceMonths !== undefined)
       dbData.advance_months = data.advanceMonths;
 
-    console.log("[CommissionRepository.transformToDB] Output dbData:", dbData);
-
-    // CAPPED ADVANCE (when carrier has advance_cap)
+    // CAPPED ADVANCE
     if (data.originalAdvance !== undefined)
       dbData.original_advance = data.originalAdvance;
     if (data.overageAmount !== undefined)
@@ -523,9 +421,11 @@ export class CommissionRepository extends BaseRepository<
     if (data.lastPaymentDate !== undefined)
       dbData.last_payment_date = data.lastPaymentDate;
 
+    if (data.paymentDate !== undefined) dbData.payment_date = data.paymentDate;
     if (data.notes !== undefined) dbData.notes = data.notes;
-
-    // Multi-tenant fields
+    if (data.monthNumber !== undefined) dbData.month_number = data.monthNumber;
+    if (data.relatedAdvanceId !== undefined)
+      dbData.related_advance_id = data.relatedAdvanceId;
     if (data.imoId !== undefined) dbData.imo_id = data.imoId;
 
     return dbData;

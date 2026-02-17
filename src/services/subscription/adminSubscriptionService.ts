@@ -4,7 +4,11 @@
 import { supabase } from "@/services/base";
 import { logger } from "../base/logger";
 import type { Database } from "@/types/database.types";
+import { SubscriptionRepository } from "./SubscriptionRepository";
 import type { SubscriptionFeatures } from "./SubscriptionRepository";
+import type { SubscriptionPlan } from "./SubscriptionRepository";
+
+const subscriptionRepo = new SubscriptionRepository();
 
 // Database row types
 type SubscriptionPlanRow =
@@ -16,13 +20,7 @@ type UserSubscriptionAddonRow =
 type SubscriptionPlanChangeRow =
   Database["public"]["Tables"]["subscription_plan_changes"]["Row"];
 
-// Entity types
-export interface SubscriptionPlan extends Omit<
-  SubscriptionPlanRow,
-  "features"
-> {
-  features: SubscriptionFeatures;
-}
+// SubscriptionPlan is imported from SubscriptionRepository (single source of truth)
 
 export type SubscriptionAddon = SubscriptionAddonRow;
 
@@ -120,60 +118,14 @@ class AdminSubscriptionService {
    * Get all subscription plans (including inactive)
    */
   async getAllPlans(): Promise<SubscriptionPlan[]> {
-    try {
-      const { data, error } = await supabase
-        .from("subscription_plans")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) {
-        logger.error("AdminSubscriptionService.getAllPlans", error);
-        throw error;
-      }
-
-      return (data || []).map((plan) => ({
-        ...plan,
-        features: plan.features as unknown as SubscriptionFeatures,
-      }));
-    } catch (error) {
-      logger.error(
-        "AdminSubscriptionService.getAllPlans",
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      throw error;
-    }
+    return subscriptionRepo.findAllPlans();
   }
 
   /**
    * Get a specific plan by ID
    */
   async getPlanById(planId: string): Promise<SubscriptionPlan | null> {
-    try {
-      const { data, error } = await supabase
-        .from("subscription_plans")
-        .select("*")
-        .eq("id", planId)
-        .single();
-
-      if (error) {
-        if (error.code === "PGRST116") return null;
-        logger.error("AdminSubscriptionService.getPlanById", error);
-        throw error;
-      }
-
-      return data
-        ? {
-            ...data,
-            features: data.features as unknown as SubscriptionFeatures,
-          }
-        : null;
-    } catch (error) {
-      logger.error(
-        "AdminSubscriptionService.getPlanById",
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      throw error;
-    }
+    return subscriptionRepo.findPlanById(planId);
   }
 
   /**
@@ -397,8 +349,7 @@ class AdminSubscriptionService {
       }
       if (updates.stripePriceIdMonthly !== undefined) {
         updateData.stripe_price_id_monthly = updates.stripePriceIdMonthly;
-        oldValues.stripe_price_id_monthly =
-          currentPlan.stripe_price_id_monthly;
+        oldValues.stripe_price_id_monthly = currentPlan.stripe_price_id_monthly;
         newValues.stripe_price_id_monthly = updates.stripePriceIdMonthly;
       }
       if (updates.stripePriceIdAnnual !== undefined) {
@@ -890,10 +841,7 @@ class AdminSubscriptionService {
         throw error;
       }
 
-      return {
-        ...data,
-        features: data.features as unknown as SubscriptionFeatures,
-      };
+      return subscriptionRepo.transformPlan(data);
     } catch (error) {
       logger.error(
         "AdminSubscriptionService.createPlan",
@@ -1108,12 +1056,7 @@ class AdminSubscriptionService {
 
       return {
         subscription: data,
-        plan: planData
-          ? {
-              ...planData,
-              features: planData.features as unknown as SubscriptionFeatures,
-            }
-          : null,
+        plan: planData ? subscriptionRepo.transformPlan(planData) : null,
       };
     } catch (error) {
       logger.error(

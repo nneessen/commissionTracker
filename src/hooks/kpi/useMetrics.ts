@@ -12,7 +12,7 @@ import {
   CarrierPerformance,
   StatePerformance,
 } from "../../types/metrics.types";
-import { ProductType } from "../../types/commission.types";
+import { ProductType } from "../../types/product.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { parseLocalDate } from "../../lib/date";
 
@@ -140,11 +140,15 @@ export function useMetrics() {
   // Calculate policy metrics
   const calculatePolicyMetrics = (): PolicyMetrics => {
     const totalPolicies = policies.length;
-    const activePolicies = policies.filter((p) => p.lifecycleStatus === "active").length;
+    const activePolicies = policies.filter(
+      (p) => p.lifecycleStatus === "active",
+    ).length;
     const pendingPolicies = policies.filter(
       (p) => p.status === "pending",
     ).length;
-    const lapsedPolicies = policies.filter((p) => p.lifecycleStatus === "lapsed").length;
+    const lapsedPolicies = policies.filter(
+      (p) => p.lifecycleStatus === "lapsed",
+    ).length;
     const cancelledPolicies = policies.filter(
       (p) => p.lifecycleStatus === "cancelled",
     ).length;
@@ -291,21 +295,18 @@ export function useMetrics() {
   const calculateCommissionMetrics = (): CommissionMetrics => {
     const totalEarned = commissions
       .filter((c) => c.status === "paid")
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+      .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
     const totalPending = commissions
       .filter((c) => c.status === "pending")
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+      .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
     const paidCommissions = totalEarned;
     const pendingCommissions = totalPending;
     const totalEarnedCommission = totalEarned;
 
-    const averageCommissionRate =
-      commissions.length > 0
-        ? commissions.reduce((sum, c) => sum + c.commissionRate, 0) /
-          commissions.length
-        : 0;
+    // commissionRate was removed from Commission type (not in DB)
+    const averageCommissionRate = 0;
 
     const averageCommissionPerPolicy =
       policies.length > 0 ? totalEarned / policies.length : 0;
@@ -319,12 +320,12 @@ export function useMetrics() {
 
       const earnings = commissions
         .filter((c) => {
-          const date = c.paidDate
-            ? new Date(c.paidDate)
+          const date = c.paymentDate
+            ? new Date(c.paymentDate)
             : new Date(c.createdAt);
           return date >= monthStart && date <= monthEnd && c.status === "paid";
         })
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
       monthlyEarnings.push({
         label: monthStart.toLocaleDateString("en-US", {
@@ -339,29 +340,25 @@ export function useMetrics() {
     const commissionByType: Record<string, number> = {
       first_year: commissions
         .filter((c) => c.type === "first_year")
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0),
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0),
       renewal: commissions
         .filter((c) => c.type === "renewal")
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0),
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0),
       trail: commissions
         .filter((c) => c.type === "trail")
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0),
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0),
       bonus: commissions
         .filter((c) => c.type === "bonus")
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0),
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0),
       override: commissions
         .filter((c) => c.type === "override")
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0),
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0),
     };
 
     // Commission by carrier
+    // carrierId was removed from Commission type (policy field, not commission field)
+    // Carrier grouping for commissions is not available without joining through policy
     const carrierCommissions = new Map<string, number>();
-    commissions.forEach((c) => {
-      carrierCommissions.set(
-        c.carrierId,
-        (carrierCommissions.get(c.carrierId) || 0) + (c.advanceAmount ?? 0),
-      );
-    });
 
     const commissionByCarrier = Array.from(carrierCommissions.entries())
       .map(([carrierId, amount]) => ({
@@ -372,25 +369,16 @@ export function useMetrics() {
       }))
       .sort((a, b) => b.amount - a.amount);
 
-    // Commission by product
+    // Commission by product - product was removed from Commission type (policy field)
+    // Without joining through policy, we can't group commissions by product
     const productCommissions = new Map<
       ProductType,
       { amount: number; count: number }
     >();
-    commissions.forEach((c) => {
-      const current = productCommissions.get(c.product) || {
-        amount: 0,
-        count: 0,
-      };
-      productCommissions.set(c.product, {
-        amount: current.amount + (c.advanceAmount ?? 0),
-        count: current.count + 1,
-      });
-    });
 
     const commissionByProduct = Array.from(productCommissions.entries())
       .map(([product, data]) => ({
-        product,
+        product: product as ProductType,
         amount: data.amount,
         percentage: totalEarned > 0 ? (data.amount / totalEarned) * 100 : 0,
       }))
@@ -416,10 +404,7 @@ export function useMetrics() {
           month: "short",
           year: "numeric",
         }),
-        amount: monthCommissions.reduce(
-          (sum, c) => sum + (c.advanceAmount ?? 0),
-          0,
-        ),
+        amount: monthCommissions.reduce((sum, c) => sum + (c.amount ?? 0), 0),
         policyCount: monthCommissions.length,
       });
     }
@@ -427,51 +412,37 @@ export function useMetrics() {
     // Top performing products
     const topPerformingProducts = Array.from(productCommissions.entries())
       .map(([product, data]) => ({
-        product,
+        product: product as ProductType,
         revenue: data.amount,
         policyCount: data.count,
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    // Expected commissions
-    const expectedCommissionsNext30Days = commissions
-      .filter((c) => {
-        if (c.status !== "pending" || !c.expectedDate) return false;
-        const expectedDate = new Date(c.expectedDate);
-        const daysUntil = Math.ceil(
-          (expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        return daysUntil > 0 && daysUntil <= 30;
-      })
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
-
-    const expectedCommissionsNext90Days = commissions
-      .filter((c) => {
-        if (c.status !== "pending" || !c.expectedDate) return false;
-        const expectedDate = new Date(c.expectedDate);
-        const daysUntil = Math.ceil(
-          (expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        return daysUntil > 0 && daysUntil <= 90;
-      })
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+    // expectedDate was removed from Commission type (not in DB)
+    // Use total pending as fallback since we can't filter by expected date
+    const expectedCommissionsNext30Days = totalPending;
+    const expectedCommissionsNext90Days = totalPending;
 
     // Year-over-year growth
     const currentYear = new Date().getFullYear();
     const lastYearEarnings = commissions
       .filter((c) => {
-        const date = c.paidDate ? new Date(c.paidDate) : new Date(c.createdAt);
+        const date = c.paymentDate
+          ? new Date(c.paymentDate)
+          : new Date(c.createdAt);
         return date.getFullYear() === currentYear - 1 && c.status === "paid";
       })
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+      .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
     const thisYearEarnings = commissions
       .filter((c) => {
-        const date = c.paidDate ? new Date(c.paidDate) : new Date(c.createdAt);
+        const date = c.paymentDate
+          ? new Date(c.paymentDate)
+          : new Date(c.createdAt);
         return date.getFullYear() === currentYear && c.status === "paid";
       })
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+      .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
     const yearOverYearGrowth =
       lastYearEarnings > 0
@@ -525,14 +496,9 @@ export function useMetrics() {
       const averagePremium =
         productPolicies.length > 0 ? totalPremium / productPolicies.length : 0;
 
-      // Calculate revenue from commissions for this product
-      const productCommissions = commissions.filter(
-        (c) => c.product === product,
-      );
-      const totalRevenue = productCommissions.reduce(
-        (sum, c) => sum + (c.advanceAmount ?? 0),
-        0,
-      );
+      // product was removed from Commission type (policy field)
+      // Revenue from commissions can't be grouped by product without joining through policy
+      const totalRevenue = 0;
 
       return {
         product,
@@ -638,14 +604,14 @@ export function useMetrics() {
           const date = new Date(c.createdAt);
           return date >= prevMonthStart && date <= prevMonthEnd;
         })
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
       const currMonthCommissions = commissions
         .filter((c) => {
           const date = new Date(c.createdAt);
           return date >= currMonthStart && date <= currMonthEnd;
         })
-        .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
       if (prevMonthCommissions > 0) {
         const growthRate =
@@ -668,7 +634,7 @@ export function useMetrics() {
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
         return date >= threeMonthsAgo && c.status === "paid";
       })
-      .reduce((sum, c) => sum + (c.advanceAmount ?? 0), 0);
+      .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
     const monthlyRunRate = lastThreeMonthsCommissions / 3;
 

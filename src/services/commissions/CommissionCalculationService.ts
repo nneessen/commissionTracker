@@ -311,61 +311,58 @@ class CommissionCalculationService {
    *
    * @example
    * ```ts
-   * const commission = await commissionCalculationService.createWithAutoCalculation({
-   *   client: { firstName: 'Jane', lastName: 'Smith' },
-   *   carrierId: 'carrier-123',
-   *   product: 'term',
-   *   type: 'new_business',
-   *   status: 'pending',
-   *   calculationBasis: 'annual_premium',
-   *   annualPremium: 2400,
-   *   isAutoCalculated: true
-   * });
+   * const commission = await commissionCalculationService.createWithAutoCalculation(
+   *   { policyId: 'policy-456', userId: 'user-789', type: 'advance', status: 'pending', advanceMonths: 9 },
+   *   { carrierId: 'carrier-123', product: 'term', annualPremium: 2400, autoCalculate: true }
+   * );
    * ```
    */
   async createWithAutoCalculation(
     commissionData: CreateCommissionData,
+    policyContext?: {
+      carrierId?: string;
+      product?: string;
+      productId?: string;
+      monthlyPremium?: number;
+      annualPremium?: number;
+      contractCompLevel?: number;
+      termLength?: number;
+      autoCalculate?: boolean;
+    },
   ): Promise<Commission> {
     try {
-      let finalData = { ...commissionData };
+      const finalData = { ...commissionData };
 
-      // Derive monthlyPremium from annualPremium if not provided
-      if (!finalData.monthlyPremium && finalData.annualPremium) {
-        finalData.monthlyPremium = finalData.annualPremium / 12;
-      }
+      // Derive monthlyPremium from policy context
+      const monthlyPremium =
+        policyContext?.monthlyPremium ||
+        (policyContext?.annualPremium ? policyContext.annualPremium / 12 : 0);
 
       // If auto-calculation is requested and we have the required data
       if (
-        commissionData.isAutoCalculated !== false &&
-        commissionData.carrierId &&
-        commissionData.product &&
-        finalData.monthlyPremium &&
-        finalData.monthlyPremium > 0
+        policyContext?.autoCalculate !== false &&
+        policyContext?.carrierId &&
+        policyContext?.product &&
+        monthlyPremium > 0
       ) {
         const calculation = await this.calculateCommissionWithCompGuide({
-          carrierId: commissionData.carrierId,
-          productId: commissionData.productId, // CRITICAL: Pass productId for accurate lookup
-          product: commissionData.product,
-          monthlyPremium: finalData.monthlyPremium,
+          carrierId: policyContext.carrierId,
+          productId: policyContext.productId,
+          product: policyContext.product,
+          monthlyPremium,
           userId: commissionData.userId,
-          contractCompLevel: commissionData.contractCompLevel,
+          contractCompLevel: policyContext.contractCompLevel,
           advanceMonths: commissionData.advanceMonths,
-          termLength: commissionData.termLength, // For term_life commission modifiers
+          termLength: policyContext.termLength,
         });
 
         if (calculation) {
-          finalData = {
-            ...finalData,
-            advanceAmount: calculation.advanceAmount,
-            commissionRate: calculation.commissionRate,
-            contractCompLevel: calculation.contractCompLevel,
-            isAutoCalculated: calculation.isAutoCalculated,
-            advanceMonths: commissionData.advanceMonths || 9,
-            // Capped advance fields (only populated when carrier has advance_cap)
-            originalAdvance: calculation.originalAdvance,
-            overageAmount: calculation.overageAmount,
-            overageStartMonth: calculation.overageStartMonth,
-          };
+          finalData.amount = calculation.advanceAmount;
+          finalData.advanceMonths = commissionData.advanceMonths || 9;
+          // Capped advance fields (only populated when carrier has advance_cap)
+          finalData.originalAdvance = calculation.originalAdvance;
+          finalData.overageAmount = calculation.overageAmount;
+          finalData.overageStartMonth = calculation.overageStartMonth;
         } else {
           // CRITICAL: comp_guide lookup failed - DO NOT fall back to a wrong rate
           // This means there's no comp_guide entry for this carrier/product/contract_level combination
@@ -374,8 +371,8 @@ class CommissionCalculationService {
             "No comp_guide entry found for this carrier/product/contract_level combination. " +
               "Please add a comp_guide entry before creating policies.",
             {
-              carrierId: commissionData.carrierId,
-              product: commissionData.product,
+              carrierId: policyContext.carrierId,
+              product: policyContext.product,
               userId: commissionData.userId,
             },
           );
@@ -384,10 +381,6 @@ class CommissionCalculationService {
 
       if (!finalData.advanceMonths) {
         finalData.advanceMonths = 9;
-      }
-
-      if (finalData.isAutoCalculated === undefined) {
-        finalData.isAutoCalculated = false;
       }
 
       return commissionCRUDService.create(finalData);
@@ -423,19 +416,27 @@ class CommissionCalculationService {
         throw new Error("Commission not found");
       }
 
-      if (!commission.isAutoCalculated) {
-        throw new Error("Cannot recalculate manually entered commission");
+      if (!commission.policyId) {
+        throw new Error(
+          "Commission has no associated policy - cannot recalculate",
+        );
       }
 
-      const monthlyPremium =
-        commission.monthlyPremium || commission.annualPremium / 12;
+      // Get policy data for carrier, product, and premium info
+      const { policyService } = await import("../index");
+      const policy = await policyService.getById(commission.policyId);
+      if (!policy) {
+        throw new Error(`Policy not found: ${commission.policyId}`);
+      }
+
+      const monthlyPremium = policy.monthlyPremium || policy.annualPremium / 12;
 
       const calculation = await this.calculateCommissionWithCompGuide({
-        carrierId: commission.carrierId,
-        product: commission.product,
-        monthlyPremium: monthlyPremium,
+        carrierId: policy.carrierId,
+        product: policy.product,
+        monthlyPremium,
         userId: commission.userId,
-        contractCompLevel: newContractLevel || commission.contractCompLevel,
+        contractCompLevel: newContractLevel,
         advanceMonths: commission.advanceMonths,
       });
 
@@ -446,9 +447,10 @@ class CommissionCalculationService {
       }
 
       return commissionCRUDService.update(commissionId, {
-        advanceAmount: calculation.advanceAmount,
-        commissionRate: calculation.commissionRate,
-        contractCompLevel: calculation.contractCompLevel,
+        amount: calculation.advanceAmount,
+        originalAdvance: calculation.originalAdvance,
+        overageAmount: calculation.overageAmount,
+        overageStartMonth: calculation.overageStartMonth,
       });
     } catch (error) {
       throw this.handleError(error, "recalculateCommission");
@@ -603,7 +605,7 @@ class CommissionCalculationService {
           monthlyPremium,
           advanceMonths,
           commissionRate,
-          oldAmount: commission.advanceAmount,
+          oldAmount: commission.amount,
           newAmount: advanceAmount,
           fullRecalculate,
           isCapped: originalAdvance !== null,

@@ -104,8 +104,40 @@ export class SubscriptionRepository extends BaseRepository<
   }
 
   // ============================================
+  // Plan Transform Helper
+  // ============================================
+
+  /** Centralized plan transform — handles the features JSONB cast once. */
+  transformPlan(row: SubscriptionPlanRow): SubscriptionPlan {
+    return {
+      ...row,
+      features: row.features as unknown as SubscriptionFeatures,
+    };
+  }
+
+  // ============================================
   // Subscription Plans Methods
   // ============================================
+
+  /**
+   * Get all subscription plans (including inactive), ordered by sort_order.
+   */
+  async findAllPlans(): Promise<SubscriptionPlan[]> {
+    try {
+      const { data, error } = await this.client
+        .from("subscription_plans")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) {
+        throw this.handleError(error, "findAllPlans");
+      }
+
+      return (data || []).map((plan) => this.transformPlan(plan));
+    } catch (error) {
+      throw this.wrapError(error, "findAllPlans");
+    }
+  }
 
   /**
    * Get all active subscription plans
@@ -122,14 +154,31 @@ export class SubscriptionRepository extends BaseRepository<
         throw this.handleError(error, "findActivePlans");
       }
 
-      return (data || []).map(
-        (plan): SubscriptionPlan => ({
-          ...plan,
-          features: plan.features as unknown as SubscriptionFeatures,
-        }),
-      );
+      return (data || []).map((plan) => this.transformPlan(plan));
     } catch (error) {
       throw this.wrapError(error, "findActivePlans");
+    }
+  }
+
+  /**
+   * Get a specific plan by ID
+   */
+  async findPlanById(planId: string): Promise<SubscriptionPlan | null> {
+    try {
+      const { data, error } = await this.client
+        .from("subscription_plans")
+        .select("*")
+        .eq("id", planId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") return null;
+        throw this.handleError(error, "findPlanById");
+      }
+
+      return data ? this.transformPlan(data) : null;
+    } catch (error) {
+      throw this.wrapError(error, "findPlanById");
     }
   }
 
@@ -149,12 +198,7 @@ export class SubscriptionRepository extends BaseRepository<
         throw this.handleError(error, "findPlanByName");
       }
 
-      return data
-        ? {
-            ...data,
-            features: data.features as unknown as SubscriptionFeatures,
-          }
-        : null;
+      return data ? this.transformPlan(data) : null;
     } catch (error) {
       throw this.wrapError(error, "findPlanByName");
     }
@@ -316,10 +360,9 @@ export class SubscriptionRepository extends BaseRepository<
     body: Record<string, unknown>,
   ): Promise<{ data: Record<string, unknown> | null; error: string | null }> {
     try {
-      const { data, error } = await this.client.functions.invoke(
-        functionName,
-        { body },
-      );
+      const { data, error } = await this.client.functions.invoke(functionName, {
+        body,
+      });
 
       if (error) {
         return { data: null, error: error.message };
