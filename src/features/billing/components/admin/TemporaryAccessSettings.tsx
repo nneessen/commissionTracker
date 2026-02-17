@@ -1,4 +1,4 @@
-// src/features/admin/components/TemporaryAccessSettings.tsx
+// src/features/billing/components/admin/TemporaryAccessSettings.tsx
 // Admin panel for managing temporary access settings
 
 import { useState, useEffect } from "react";

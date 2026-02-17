@@ -59,6 +59,7 @@ import { TermsPage, PrivacyPage } from "./features/legal";
 import { WorkflowAdminPage } from "./features/workflows";
 import { LeaderboardPage } from "./features/leaderboard";
 import { TheStandardTeamPage } from "./features/the-standard-team";
+import { BillingPage } from "./features/billing/BillingPage";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -684,6 +685,40 @@ const privacyRoute = createRoute({
   component: PrivacyPage,
 });
 
+// Billing route - unified billing & subscription management, accessible to all authenticated users
+const billingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "billing",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    checkout?: string;
+    addon_checkout?: string;
+    pending_addon_id?: string;
+    pending_tier_id?: string;
+  } => ({
+    checkout:
+      typeof search.checkout === "string" ? search.checkout : undefined,
+    addon_checkout:
+      typeof search.addon_checkout === "string"
+        ? search.addon_checkout
+        : undefined,
+    pending_addon_id:
+      typeof search.pending_addon_id === "string"
+        ? search.pending_addon_id
+        : undefined,
+    pending_tier_id:
+      typeof search.pending_tier_id === "string"
+        ? search.pending_tier_id
+        : undefined,
+  }),
+  component: () => (
+    <RouteGuard allowPending>
+      <BillingPage />
+    </RouteGuard>
+  ),
+});
+
 // The Standard Team route - restricted to The Standard agency only
 // Supports tab search param: ?tab=writing-numbers or ?tab=state-licenses
 const theStandardTeamRoute = createRoute({
@@ -758,6 +793,7 @@ const routeTree = rootRoute.addChildren([
   slackNameLeaderboardRoute,
   termsRoute,
   privacyRoute,
+  billingRoute,
   theStandardTeamRoute,
   publicJoinAltRoute, // Catch-all for /join-* pattern - must be last
 ]);

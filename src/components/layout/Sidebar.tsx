@@ -26,6 +26,7 @@ import {
   Calculator,
   Trophy,
   MessageSquare,
+  Wallet,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -160,6 +161,7 @@ const navigationItems: NavigationItem[] = [
     permission: "nav.community",
     allowedEmails: ["nickneessen@thestandardhq.com"],
   },
+  { icon: Wallet, label: "Billing", href: "/billing", public: true },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
 

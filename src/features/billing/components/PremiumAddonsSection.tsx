@@ -1,4 +1,4 @@
-// src/features/settings/billing/components/PremiumAddonsSection.tsx
+// src/features/billing/components/PremiumAddonsSection.tsx
 // Section for purchasing premium add-ons like UW Wizard with tier selection
 
 import { useState } from "react";

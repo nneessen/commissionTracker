@@ -1,4 +1,4 @@
-// src/features/settings/billing/components/UsageOverview.tsx
+// src/features/billing/components/UsageOverview.tsx
 // Displays email and SMS usage meters
 
 import { Mail, MessageSquare, AlertTriangle, Activity } from "lucide-react";

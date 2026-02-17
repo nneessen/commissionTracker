@@ -1,4 +1,4 @@
-// src/features/admin/components/FeatureAssignmentMatrix.tsx
+// src/features/billing/components/admin/FeatureAssignmentMatrix.tsx
 // Matrix for assigning features and analytics sections to subscription plans
 
 import { useState, useMemo, useCallback } from "react";

@@ -230,6 +230,7 @@ class SubscriptionService {
     plan: SubscriptionPlan,
     billingInterval: "monthly" | "annual" = "monthly",
     discountCode?: string,
+    pendingAddon?: { addonId: string; tierId: string },
   ): Promise<string | null> {
     const priceId =
       billingInterval === "annual"
@@ -243,13 +244,19 @@ class SubscriptionService {
       return null;
     }
 
+    // Build success URL with optional pending addon params
+    let successUrl = `${window.location.origin}/billing?checkout=success`;
+    if (pendingAddon) {
+      successUrl += `&pending_addon_id=${pendingAddon.addonId}&pending_tier_id=${pendingAddon.tierId}`;
+    }
+
     try {
       const { data, error } = await this.repository.invokeEdgeFunction(
         "create-checkout-session",
         {
           priceId,
-          successUrl: `${window.location.origin}/settings?tab=billing&checkout=success`,
-          cancelUrl: `${window.location.origin}/settings?tab=billing`,
+          successUrl,
+          cancelUrl: `${window.location.origin}/billing`,
           discountCode: discountCode || undefined,
         },
       );
@@ -280,7 +287,7 @@ class SubscriptionService {
     try {
       const { data: result, error } =
         await this.repository.invokeEdgeFunction("create-portal-session", {
-          returnUrl: `${window.location.origin}/settings?tab=billing`,
+          returnUrl: `${window.location.origin}/billing`,
         });
 
       if (error) {
@@ -316,8 +323,8 @@ class SubscriptionService {
           priceId,
           addonId,
           tierId: tierId || undefined,
-          successUrl: `${window.location.origin}/settings?tab=billing&addon_checkout=success`,
-          cancelUrl: `${window.location.origin}/settings?tab=billing`,
+          successUrl: `${window.location.origin}/billing?addon_checkout=success`,
+          cancelUrl: `${window.location.origin}/billing`,
         },
       );
 

@@ -1,4 +1,4 @@
-// src/features/admin/components/PlanEditorDialog.tsx
+// src/features/billing/components/admin/PlanEditorDialog.tsx
 // Dialog for editing subscription plan details
 
 import { useState, useEffect } from "react";

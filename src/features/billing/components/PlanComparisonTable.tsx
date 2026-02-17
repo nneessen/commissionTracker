@@ -1,4 +1,4 @@
-// src/features/settings/billing/components/PlanComparisonTable.tsx
+// src/features/billing/components/PlanComparisonTable.tsx
 // Displays a comparison table of all subscription plans
 
 import React, { useMemo, useState } from "react";
@@ -58,6 +58,7 @@ export function PlanComparisonTable() {
   const { subscription } = useSubscription();
 
   const currentPlanName = subscription?.plan?.name || "free";
+  const [isOpen, setIsOpen] = useState(false);
 
   // Build feature groups dynamically from registry
   const featureGroups = useMemo<FeatureGroup[]>(() => {
@@ -82,8 +83,6 @@ export function PlanComparisonTable() {
       </div>
     );
   }
-
-  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>

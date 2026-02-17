@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-17 09:28:53
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/SubscriptionPlansTab.tsx`
+- `src/features/billing/BillingPage.tsx`
+- `src/features/billing/components/AddonUpsellDialog.tsx`
+- `src/features/billing/components/CurrentPlanCard.tsx`
+- `src/features/billing/components/PlanComparisonTable.tsx`
+- `src/features/billing/components/PremiumAddonsSection.tsx`
+- `src/features/billing/components/PricingCards.tsx`
+- `src/features/billing/components/UsageOverview.tsx`
+- `src/features/billing/components/admin/AddonTierEditor.tsx`
+- `src/features/billing/components/admin/AddonsManagementPanel.tsx`
+- `src/features/billing/components/admin/AdminBillingPanel.tsx`
+- `src/features/billing/components/admin/CreatePlanDialog.tsx`
+- `src/features/billing/components/admin/FeatureAssignmentMatrix.tsx`
+- `src/features/billing/components/admin/PlanEditorDialog.tsx`
+- `src/features/billing/components/admin/PlansOverview.tsx`
+- `src/features/billing/components/admin/TemporaryAccessSettings.tsx`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/index.ts`
+- `src/router.tsx`
+- `src/services/subscription/subscriptionService.ts`
+
+### Statistics
+```
+ 23 files changed, 912 insertions(+), 527 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-16 18:58:00
 
 ### Changed Files

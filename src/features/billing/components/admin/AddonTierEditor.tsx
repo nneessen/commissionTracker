@@ -1,4 +1,4 @@
-// src/features/admin/components/AddonTierEditor.tsx
+// src/features/billing/components/admin/AddonTierEditor.tsx
 // Editor for configuring usage-based tiers for add-ons like UW Wizard
 
 import { Plus, Trash2, GripVertical, Zap } from "lucide-react";

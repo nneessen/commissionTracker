@@ -1,7 +1,7 @@
-// src/features/admin/components/AddonsManagementPanel.tsx
+// src/features/billing/components/admin/AddonsManagementPanel.tsx
 // Panel for managing subscription add-ons (e.g., UW Wizard)
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Package, Settings, Users, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -228,9 +228,9 @@ function AddonEditorDialog({
 
   const updateAddon = useUpdateAddon();
 
-  // Re-initialize when addon prop changes or dialog opens
-  useState(() => {
-    if (addon) {
+  // Re-initialize form state when addon prop changes or dialog opens
+  useEffect(() => {
+    if (addon && open) {
       setDisplayName(addon.display_name);
       setDescription(addon.description || "");
       setPriceMonthly(addon.price_monthly);
@@ -238,30 +238,11 @@ function AddonEditorDialog({
       setStripePriceMonthly(addon.stripe_price_id_monthly || "");
       setStripePriceAnnual(addon.stripe_price_id_annual || "");
       setIsActive(addon.is_active ?? true);
-      // Parse tier_config from addon (it's stored as JSONB)
       const rawTierConfig = (addon as { tier_config?: TierConfig | null })
         .tier_config;
       setTierConfig(rawTierConfig || null);
     }
-  });
-
-  // Re-initialize when addon prop changes
-  if (
-    addon &&
-    displayName !== addon.display_name &&
-    description !== (addon.description || "")
-  ) {
-    setDisplayName(addon.display_name);
-    setDescription(addon.description || "");
-    setPriceMonthly(addon.price_monthly);
-    setPriceAnnual(addon.price_annual);
-    setStripePriceMonthly(addon.stripe_price_id_monthly || "");
-    setStripePriceAnnual(addon.stripe_price_id_annual || "");
-    setIsActive(addon.is_active ?? true);
-    const rawTierConfig = (addon as { tier_config?: TierConfig | null })
-      .tier_config;
-    setTierConfig(rawTierConfig || null);
-  }
+  }, [addon, open]);
 
   if (!addon) return null;
 

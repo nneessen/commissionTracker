@@ -1,4 +1,4 @@
-// src/features/settings/billing/components/PricingCards.tsx
+// src/features/billing/components/PricingCards.tsx
 // Hero pricing columns driven by DB feature matrix
 
 import { useState } from "react";
@@ -71,7 +71,16 @@ function getIncrementalFeatures(
   return { inherited, features };
 }
 
-export function PricingCards() {
+interface PricingCardsProps {
+  /** When provided, intercepts plan selection (for upsell dialog flow) */
+  onPlanSelect?: (
+    plan: SubscriptionPlan,
+    billingInterval: "monthly" | "annual",
+    discountCode?: string,
+  ) => void;
+}
+
+export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
   const { user, supabaseUser } = useAuth();
   const userEmail = supabaseUser?.email || user?.email || "";
   const { subscription, isGrandfathered } = useSubscription();
@@ -98,6 +107,12 @@ export function PricingCards() {
           setLoadingPlanId(null);
         }
       }
+      return;
+    }
+
+    // If onPlanSelect callback provided, use it (for upsell dialog)
+    if (onPlanSelect) {
+      onPlanSelect(plan, billingInterval, discountCode || undefined);
       return;
     }
 

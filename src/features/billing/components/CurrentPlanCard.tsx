@@ -1,4 +1,4 @@
-// src/features/settings/billing/components/CurrentPlanCard.tsx
+// src/features/billing/components/CurrentPlanCard.tsx
 // Compact plan status bar showing current plan, status, and manage button
 
 import { useState } from "react";

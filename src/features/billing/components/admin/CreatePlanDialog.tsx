@@ -1,4 +1,4 @@
-// src/features/admin/components/CreatePlanDialog.tsx
+// src/features/billing/components/admin/CreatePlanDialog.tsx
 // Dialog for creating a new subscription plan
 
 import { useState } from "react";

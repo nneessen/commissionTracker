@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   XCircle,
   UserPlus,
-  CreditCard,
   TestTube,
   Store,
 } from "lucide-react";
@@ -37,7 +36,6 @@ import { UsersAccessTab } from "./UsersAccessTab";
 import { RecruitingPipelineTab } from "./RecruitingPipelineTab";
 import { RolesPermissionsTab } from "./RolesPermissionsTab";
 import { SystemSettingsTab } from "./SystemSettingsTab";
-import { SubscriptionPlansTab } from "./SubscriptionPlansTab";
 import { TierTestingPanel } from "./TierTestingPanel";
 import { LeadIntelligenceDashboard } from "./lead-vendors";
 
@@ -48,7 +46,6 @@ export default function AdminControlCenter() {
     | "recruits"
     | "roles"
     | "system"
-    | "subscriptions"
     | "lead-vendors"
     | "testing"
   >("users");
@@ -271,19 +268,6 @@ export default function AdminControlCenter() {
         </button>
         {isSuperAdmin && (
           <button
-            onClick={() => setActiveView("subscriptions")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
-              activeView === "subscriptions"
-                ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
-            }`}
-          >
-            <CreditCard className="h-3.5 w-3.5" />
-            Subscription Plans
-          </button>
-        )}
-        {isSuperAdmin && (
-          <button
             onClick={() => setActiveView("lead-vendors")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
               activeView === "lead-vendors"
@@ -344,10 +328,6 @@ export default function AdminControlCenter() {
         )}
 
         {activeView === "system" && <SystemSettingsTab />}
-
-        {activeView === "subscriptions" && isSuperAdmin && (
-          <SubscriptionPlansTab />
-        )}
 
         {activeView === "lead-vendors" && isSuperAdmin && <LeadIntelligenceDashboard />}
 
