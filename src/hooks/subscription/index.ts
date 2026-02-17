@@ -37,5 +37,7 @@ export {
   type SubscriptionSettings,
 } from "./useSubscriptionSettings";
 
+export { useUserActiveAddons, userAddonKeys } from "./useUserActiveAddons";
+
 // Re-export billing utilities for UI components
 export { subscriptionService } from "@/services/subscription";

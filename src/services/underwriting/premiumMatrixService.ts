@@ -608,9 +608,9 @@ export async function getTermYearsForProduct(
 }
 
 /**
- * Get ALL premium matrix entries for an IMO (batch fetch for Quick Quote)
- * Uses RPC function with parallel pagination to bypass PostgREST 1000 row limit.
- * Enables instant recalculation without additional DB queries.
+ * Get ALL premium matrix entries for an IMO (batch fetch for Quick Quote).
+ * Uses native SQL pagination (p_limit/p_offset) so each RPC call only
+ * generates its own page of rows instead of the full 47K-row result set.
  */
 export async function getAllPremiumMatricesForIMO(
   imoId: string,
@@ -630,11 +630,16 @@ export async function getAllPremiumMatricesForIMO(
 
   const totalRows = count || 0;
 
-  // Step 2: Single fetch for small datasets (optimization)
+  if (totalRows === 0) {
+    return [];
+  }
+
+  // Step 2: Single fetch for small datasets
   if (totalRows <= PAGE_SIZE) {
-    const { data, error } = await supabase
-      .rpc("get_premium_matrices_for_imo", { p_imo_id: imoId })
-      .range(0, PAGE_SIZE - 1);
+    const { data, error } = await supabase.rpc(
+      "get_premium_matrices_for_imo",
+      { p_imo_id: imoId, p_limit: PAGE_SIZE, p_offset: 0 },
+    );
 
     if (error) {
       console.error("Error fetching premium matrices via RPC:", error);
@@ -644,17 +649,18 @@ export async function getAllPremiumMatricesForIMO(
     return transformRPCResults(data || []);
   }
 
-  // Step 3: Parallel pagination for large datasets
+  // Step 3: Parallel pagination with native SQL LIMIT/OFFSET
   const totalPages = Math.ceil(totalRows / PAGE_SIZE);
   const pagePromises = Array.from({ length: totalPages }, (_, pageIndex) =>
-    supabase
-      .rpc("get_premium_matrices_for_imo", { p_imo_id: imoId })
-      .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1),
+    supabase.rpc("get_premium_matrices_for_imo", {
+      p_imo_id: imoId,
+      p_limit: PAGE_SIZE,
+      p_offset: pageIndex * PAGE_SIZE,
+    }),
   );
 
   const results = await Promise.all(pagePromises);
 
-  // Check for errors in any page
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
       console.error(`Error fetching page ${i}:`, results[i].error);
@@ -664,7 +670,6 @@ export async function getAllPremiumMatricesForIMO(
     }
   }
 
-  // Combine all pages
   const allData = results.flatMap((result) => result.data || []);
 
   return transformRPCResults(allData);

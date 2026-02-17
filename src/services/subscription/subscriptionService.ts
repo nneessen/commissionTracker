@@ -9,6 +9,16 @@ import {
   SubscriptionPayment,
   SubscriptionEvent,
 } from "./SubscriptionRepository";
+import { supabase } from "@/services/base";
+import type { AddonTierConfig, SubscriptionAddon } from "./adminSubscriptionService";
+import type { Database } from "@/types/database.types";
+
+type UserSubscriptionAddonRow =
+  Database["public"]["Tables"]["user_subscription_addons"]["Row"];
+
+export interface UserActiveAddon extends UserSubscriptionAddonRow {
+  addon: SubscriptionAddon | null;
+}
 
 export type {
   SubscriptionPlan,
@@ -338,6 +348,59 @@ class SubscriptionService {
       console.error("Error creating addon checkout session:", error);
       return null;
     }
+  }
+
+  /**
+   * Get user's active addon subscriptions with addon details
+   * Returns addons with status 'active' or 'manual_grant'
+   */
+  async getUserActiveAddons(userId: string): Promise<UserActiveAddon[]> {
+    try {
+      const { data, error } = await supabase
+        .from("user_subscription_addons")
+        .select(`*, addon:subscription_addons(*)`)
+        .eq("user_id", userId)
+        .in("status", ["active", "manual_grant"]);
+
+      if (error) {
+        console.error("Failed to fetch user active addons:", error);
+        return [];
+      }
+
+      return (data || []).map((item) => ({
+        ...item,
+        addon: Array.isArray(item.addon) ? item.addon[0] : item.addon,
+      }));
+    } catch (error) {
+      console.error("Error fetching user active addons:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Calculate the monthly price of an addon subscription,
+   * resolving tiered pricing when applicable
+   */
+  getAddonMonthlyPrice(userAddon: UserActiveAddon): number {
+    if (!userAddon.addon) return 0;
+
+    // If addon has tier_config and user has a tier_id, resolve tier pricing
+    if (userAddon.tier_id) {
+      const tierConfig = userAddon.addon.tier_config as AddonTierConfig | null;
+      if (tierConfig?.tiers) {
+        const tier = tierConfig.tiers.find((t) => t.id === userAddon.tier_id);
+        if (tier) {
+          return userAddon.billing_interval === "annual"
+            ? Math.round(tier.price_annual / 12)
+            : tier.price_monthly;
+        }
+      }
+    }
+
+    // Fallback to addon-level pricing
+    return userAddon.billing_interval === "annual"
+      ? Math.round(userAddon.addon.price_annual / 12)
+      : userAddon.addon.price_monthly;
   }
 
   /**

@@ -6,6 +6,7 @@ export {
   type SubscriptionPlan,
   type SubscriptionFeatures,
   type UserSubscription,
+  type UserActiveAddon,
   type UsageTracking,
   type UsageStatus,
   type SubscriptionPayment,

@@ -12,7 +12,11 @@ import {
   Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSubscription, subscriptionService } from "@/hooks/subscription";
+import {
+  useSubscription,
+  useUserActiveAddons,
+  subscriptionService,
+} from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +30,7 @@ export function CurrentPlanCard() {
     grandfatherDaysRemaining,
     tierName,
   } = useSubscription();
+  const { totalAddonMonthlyCost } = useUserActiveAddons();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   const hasActivePayment =
@@ -53,8 +58,9 @@ export function CurrentPlanCard() {
     );
   }
 
-  const price = subscription?.plan?.price_monthly || 0;
+  const basePlanPrice = subscription?.plan?.price_monthly || 0;
   const billingInterval = subscription?.billing_interval || "monthly";
+  const totalPrice = basePlanPrice + totalAddonMonthlyCost;
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -70,9 +76,9 @@ export function CurrentPlanCard() {
           </div>
 
           <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-            {price === 0
+            {totalPrice === 0
               ? "Free"
-              : `${subscriptionService.formatPrice(price)}/${billingInterval === "annual" ? "yr" : "mo"}`}
+              : `${subscriptionService.formatPrice(totalPrice)}/${billingInterval === "annual" ? "yr" : "mo"}`}
           </span>
 
           {/* Status badge */}

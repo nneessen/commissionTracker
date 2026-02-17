@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-17 12:14:24
+
+### Changed Files
+- `docs/query-performance-audit-2026-02-17.md`
+- `src/features/billing/BillingPage.tsx`
+- `src/features/billing/components/CurrentPlanCard.tsx`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useUserActiveAddons.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionService.ts`
+- `src/services/underwriting/premiumMatrixService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260217103217_fix_min_uuid_in_first_seller_naming.sql`
+- `supabase/migrations/20260217103400_optimize_get_premium_matrices_for_imo.sql`
+- `supabase/migrations/20260217104622_drop_old_get_premium_matrices_overload.sql`
+- `supabase/migrations/20260217110351_set_search_path_on_all_functions.sql`
+- `supabase/migrations/20260217112042_move_extensions_to_extensions_schema.sql`
+- `supabase/migrations/20260217113408_tighten_permissive_insert_rls_policies.sql`
+- `supabase/migrations/20260217113701_add_service_role_policies_to_internal_tables.sql`
+
+### Statistics
+```
+ 16 files changed, 920 insertions(+), 21 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-17 09:28:53
 
 ### Changed Files

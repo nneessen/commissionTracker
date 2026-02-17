@@ -15947,7 +15947,7 @@ export type Database = {
         }[]
       }
       get_premium_matrices_for_imo: {
-        Args: { p_imo_id: string }
+        Args: { p_imo_id: string; p_limit?: number; p_offset?: number }
         Returns: {
           age: number
           carrier_id: string
@@ -16937,8 +16937,6 @@ export type Database = {
           part_c_count: number
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       submit_recruit_registration: {
         Args: { p_auth_user_id?: string; p_data: Json; p_token: string }
         Returns: Json
