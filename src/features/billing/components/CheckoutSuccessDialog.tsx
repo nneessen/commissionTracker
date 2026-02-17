@@ -1,0 +1,347 @@
+// src/features/billing/components/CheckoutSuccessDialog.tsx
+// Checkout success confirmation dialog with plan details and activation polling
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
+  ArrowRight,
+  Crown,
+  Zap,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  subscriptionKeys,
+  useSubscriptionPlans,
+} from "@/hooks/subscription";
+import { FEATURE_REGISTRY } from "@/constants/features";
+import {
+  subscriptionService,
+  type SubscriptionPlan,
+  type UserSubscription,
+} from "@/services/subscription";
+
+interface CheckoutSuccessDialogProps {
+  planNameHint: string | null;
+  billingIntervalHint: string | null;
+  onClose: () => void;
+}
+
+type ActivationStatus = "polling" | "active" | "timeout";
+
+const POLL_INTERVAL_MS = 2000;
+const POLL_TIMEOUT_MS = 15000;
+
+export function CheckoutSuccessDialog({
+  planNameHint,
+  billingIntervalHint,
+  onClose,
+}: CheckoutSuccessDialogProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id;
+  const { plans } = useSubscriptionPlans();
+  const [activationStatus, setActivationStatus] =
+    useState<ActivationStatus>("polling");
+
+  // Use a dedicated polling query with short refetchInterval
+  const { data: subscription } = useQuery({
+    queryKey: [...subscriptionKeys.user(userId || ""), "checkout-poll"],
+    queryFn: async (): Promise<UserSubscription | null> => {
+      if (!userId) return null;
+      return subscriptionService.getUserSubscription(userId);
+    },
+    enabled: !!userId && activationStatus === "polling",
+    refetchInterval: activationStatus === "polling" ? POLL_INTERVAL_MS : false,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  // Look up plan from hint
+  const hintedPlan: SubscriptionPlan | null =
+    plans.find(
+      (p) => p.name.toLowerCase() === planNameHint?.toLowerCase(),
+    ) ?? null;
+
+  // Check if subscription matches purchased plan
+  const subscriptionMatchesPlan =
+    !!subscription &&
+    subscription.plan?.name?.toLowerCase() === planNameHint?.toLowerCase();
+
+  // Determine confirmed plan from subscription (once active)
+  const confirmedPlan: SubscriptionPlan | null =
+    subscriptionMatchesPlan ? (subscription?.plan ?? null) : null;
+
+  // Use confirmed plan when available, fall back to hinted plan
+  const displayPlan = confirmedPlan ?? hintedPlan;
+  const displayName = displayPlan?.display_name ?? planNameHint ?? "Your Plan";
+  const billingInterval =
+    billingIntervalHint === "annual" ? "annual" : "monthly";
+
+  // Calculate price for display
+  const displayPrice = displayPlan
+    ? subscriptionService.getEffectiveMonthlyPrice(displayPlan, billingInterval)
+    : null;
+
+  // Get enabled features for this plan
+  const enabledFeatures: string[] = displayPlan
+    ? Object.entries(displayPlan.features)
+        .filter(([, enabled]) => enabled)
+        .map(([key]) => key)
+        .filter((key) => FEATURE_REGISTRY[key])
+    : [];
+
+  // Transition to active when subscription matches
+  useEffect(() => {
+    if (subscriptionMatchesPlan && activationStatus === "polling") {
+      setActivationStatus("active");
+    }
+  }, [subscriptionMatchesPlan, activationStatus]);
+
+  // Timeout after POLL_TIMEOUT_MS
+  useEffect(() => {
+    if (activationStatus !== "polling") return;
+
+    const timer = setTimeout(() => {
+      setActivationStatus("timeout");
+    }, POLL_TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, [activationStatus]);
+
+  const handleGoToDashboard = () => {
+    onClose();
+    navigate({ to: "/" });
+  };
+
+  const handleStayOnBilling = () => {
+    onClose();
+  };
+
+  const handleManualRefresh = () => {
+    setActivationStatus("polling");
+  };
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent size="lg" className="max-h-[85vh] overflow-y-auto p-0">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3">
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "flex-shrink-0 rounded-full p-2",
+                activationStatus === "active"
+                  ? "bg-emerald-100 dark:bg-emerald-900/40"
+                  : "bg-amber-100 dark:bg-amber-900/40",
+              )}
+            >
+              {activationStatus === "active" ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              ) : activationStatus === "polling" ? (
+                <Loader2 className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-spin" />
+              ) : (
+                <RefreshCw className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                Welcome to {displayName}!
+              </DialogTitle>
+              <DialogDescription className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                {activationStatus === "active"
+                  ? "Your subscription is active and ready to go."
+                  : activationStatus === "polling"
+                    ? "Setting up your subscription..."
+                    : "Taking longer than expected. Your subscription should activate shortly."}
+              </DialogDescription>
+            </div>
+            {/* Status badge */}
+            <span
+              className={cn(
+                "flex-shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                activationStatus === "active"
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+              )}
+            >
+              {activationStatus === "active" ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Active
+                </>
+              ) : activationStatus === "polling" ? (
+                <>
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Pending
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Plan Details Card */}
+        <div className="mx-5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Crown className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                {displayName}
+              </span>
+            </div>
+            {displayPrice !== null && (
+              <div className="text-right">
+                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  ${(displayPrice / 100).toFixed(2)}
+                </span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  /mo
+                </span>
+                {billingInterval === "annual" && (
+                  <span className="ml-1.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+                    billed annually
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          {activationStatus === "active" && subscription?.current_period_end && (
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1.5">
+              Next renewal:{" "}
+              {new Date(subscription.current_period_end).toLocaleDateString(
+                "en-US",
+                { month: "long", day: "numeric", year: "numeric" },
+              )}
+            </p>
+          )}
+        </div>
+
+        {/* What's Included */}
+        {enabledFeatures.length > 0 && (
+          <div className="mx-5 mt-3">
+            <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide mb-2">
+              What's Included
+            </h3>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              {enabledFeatures.map((featureKey) => {
+                const feature = FEATURE_REGISTRY[featureKey];
+                return (
+                  <div
+                    key={featureKey}
+                    className="flex items-center gap-1.5 py-0.5"
+                  >
+                    <Zap className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0" />
+                    <span className="text-[11px] text-zinc-700 dark:text-zinc-300 truncate">
+                      {feature.displayName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* What's Next */}
+        <div className="mx-5 mt-3">
+          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide mb-2">
+            What's Next
+          </h3>
+          <div className="space-y-2">
+            <NextStep
+              number={1}
+              title="Explore your dashboard"
+              description="Your upgraded dashboard is ready with all your new features."
+            />
+            <NextStep
+              number={2}
+              title="Set up your targets"
+              description="Configure income targets and track progress toward your goals."
+            />
+            <NextStep
+              number={3}
+              title="Invite your team"
+              description="If you have a Team plan, connect with your downlines for full visibility."
+            />
+          </div>
+        </div>
+
+        {/* Timeout fallback */}
+        {activationStatus === "timeout" && (
+          <div className="mx-5 mt-3 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 px-3 py-2">
+            <RefreshCw className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <p className="text-[10px] text-amber-700 dark:text-amber-400">
+              Your payment was processed successfully. If your plan doesn't
+              update shortly, try refreshing the page.
+            </p>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={handleManualRefresh}
+              className="flex-shrink-0"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-5 pb-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-3">
+          <Button variant="ghost" size="sm" onClick={handleStayOnBilling}>
+            Stay on Billing
+          </Button>
+          <Button
+            variant="success"
+            size="sm"
+            onClick={handleGoToDashboard}
+            className="gap-1.5"
+          >
+            Go to Dashboard
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function NextStep({
+  number,
+  title,
+  description,
+}: {
+  number: number;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="flex-shrink-0 flex items-center justify-center h-5 w-5 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] font-bold">
+        {number}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+          {title}
+        </p>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}

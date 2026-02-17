@@ -696,6 +696,8 @@ const billingRoute = createRoute({
     addon_checkout?: string;
     pending_addon_id?: string;
     pending_tier_id?: string;
+    plan_name?: string;
+    billing_interval?: string;
   } => ({
     checkout:
       typeof search.checkout === "string" ? search.checkout : undefined,
@@ -710,6 +712,12 @@ const billingRoute = createRoute({
     pending_tier_id:
       typeof search.pending_tier_id === "string"
         ? search.pending_tier_id
+        : undefined,
+    plan_name:
+      typeof search.plan_name === "string" ? search.plan_name : undefined,
+    billing_interval:
+      typeof search.billing_interval === "string"
+        ? search.billing_interval
         : undefined,
   }),
   component: () => (

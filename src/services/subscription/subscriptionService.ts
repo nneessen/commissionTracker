@@ -254,8 +254,8 @@ class SubscriptionService {
       return null;
     }
 
-    // Build success URL with optional pending addon params
-    let successUrl = `${window.location.origin}/billing?checkout=success`;
+    // Build success URL with plan context and optional pending addon params
+    let successUrl = `${window.location.origin}/billing?checkout=success&plan_name=${encodeURIComponent(plan.name)}&billing_interval=${billingInterval}`;
     if (pendingAddon) {
       successUrl += `&pending_addon_id=${pendingAddon.addonId}&pending_tier_id=${pendingAddon.tierId}`;
     }

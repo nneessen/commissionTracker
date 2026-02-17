@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-17 13:34:48
+
+### Changed Files
+- `src/features/billing/BillingPage.tsx`
+- `src/features/billing/components/CheckoutSuccessDialog.tsx`
+- `src/router.tsx`
+- `src/services/subscription/subscriptionService.ts`
+- `supabase/migrations/20260217123227_optimize_rls_auth_function_calls.sql`
+- `supabase/migrations/20260217124800_remove_duplicate_rls_policies.sql`
+- `supabase/migrations/20260217132144_remove_functionally_duplicate_rls_policies.sql`
+- `supabase/migrations/20260217132825_fix_rls_policies_to_authenticated.sql`
+
+### Statistics
+```
+ 8 files changed, 3477 insertions(+), 9 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-17 12:14:24
 
 ### Changed Files

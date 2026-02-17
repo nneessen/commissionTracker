@@ -9,12 +9,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { subscriptionKeys } from "@/hooks/subscription";
 import { CurrentPlanCard } from "./components/CurrentPlanCard";
 import { PricingCards } from "./components/PricingCards";
 import { UsageOverview } from "./components/UsageOverview";
 import { PlanComparisonTable } from "./components/PlanComparisonTable";
 import { PremiumAddonsSection } from "./components/PremiumAddonsSection";
 import { AddonUpsellDialog } from "./components/AddonUpsellDialog";
+import { CheckoutSuccessDialog } from "./components/CheckoutSuccessDialog";
 import { AdminBillingPanel } from "./components/admin/AdminBillingPanel";
 import type { SubscriptionPlan } from "@/services/subscription";
 
@@ -32,34 +35,50 @@ export function BillingPage() {
     string | undefined
   >();
 
+  // Checkout success dialog state
+  const [checkoutSuccess, setCheckoutSuccess] = useState<{
+    planName: string | null;
+    billingInterval: string | null;
+  } | null>(null);
+
   // Check search params for post-checkout states
   const searchParams = useSearch({ strict: false }) as Record<string, string>;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    let hasToast = false;
+    let shouldClearParams = false;
 
     if (searchParams?.checkout === "success") {
-      hasToast = true;
+      shouldClearParams = true;
+
+      // Invalidate subscription cache so fresh data is fetched
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+
       if (searchParams?.pending_addon_id) {
+        // Pending addon flow: show toast (existing behavior)
         toast.success(
           "Plan activated! Complete your setup by adding a premium add-on below.",
           { duration: 8000 },
         );
       } else {
-        toast.success("Subscription activated successfully!");
+        // Normal checkout: open success dialog instead of toast
+        setCheckoutSuccess({
+          planName: searchParams?.plan_name || null,
+          billingInterval: searchParams?.billing_interval || null,
+        });
       }
     }
     if (searchParams?.addon_checkout === "success") {
-      hasToast = true;
+      shouldClearParams = true;
       toast.success("Add-on activated successfully!");
     }
 
-    // Clear search params after showing toast to prevent re-firing on remount
-    if (hasToast) {
+    // Clear search params to prevent re-firing on remount
+    if (shouldClearParams) {
       navigate({ to: "/billing", search: {}, replace: true });
     }
-  }, [searchParams?.checkout, searchParams?.addon_checkout, searchParams?.pending_addon_id, navigate]);
+  }, [searchParams?.checkout, searchParams?.addon_checkout, searchParams?.pending_addon_id, navigate, queryClient]);
 
   const handlePlanSelect = (
     plan: SubscriptionPlan,
@@ -172,6 +191,15 @@ export function BillingPage() {
         discountCode={upsellDiscountCode}
         onClose={() => setUpsellPlan(null)}
       />
+
+      {/* Checkout Success Dialog */}
+      {checkoutSuccess && (
+        <CheckoutSuccessDialog
+          planNameHint={checkoutSuccess.planName}
+          billingIntervalHint={checkoutSuccess.billingInterval}
+          onClose={() => setCheckoutSuccess(null)}
+        />
+      )}
     </div>
   );
 }
