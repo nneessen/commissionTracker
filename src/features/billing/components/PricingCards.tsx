@@ -12,6 +12,7 @@ import {
   subscriptionService,
 } from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImo } from "@/contexts/ImoContext";
 import { FEATURE_REGISTRY } from "@/constants/features";
 import type { SubscriptionPlan, SubscriptionFeatures } from "@/services/subscription";
 
@@ -83,6 +84,7 @@ interface PricingCardsProps {
 export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
   const { user, supabaseUser } = useAuth();
   const userEmail = supabaseUser?.email || user?.email || "";
+  const { isSuperAdmin } = useImo();
   const { subscription, isGrandfathered } = useSubscription();
   const { plans } = useSubscriptionPlans();
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">(
@@ -180,7 +182,7 @@ export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
         {/* Plan Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {visiblePlans.map((plan) => {
-            const isCurrent = plan.id === currentPlanId;
+            const isCurrent = !isSuperAdmin && plan.id === currentPlanId;
             const isPaid = subscriptionService.isPaidPlan(plan);
             const isPopular = plan.name === "pro";
             const isLoading = loadingPlanId === plan.id;

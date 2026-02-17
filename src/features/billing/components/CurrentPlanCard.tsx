@@ -18,10 +18,12 @@ import {
   subscriptionService,
 } from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImo } from "@/contexts/ImoContext";
 import { cn } from "@/lib/utils";
 
 export function CurrentPlanCard() {
   const { user } = useAuth();
+  const { isSuperAdmin } = useImo();
   const {
     subscription,
     isLoading,
@@ -61,6 +63,7 @@ export function CurrentPlanCard() {
   const basePlanPrice = subscription?.plan?.price_monthly || 0;
   const billingInterval = subscription?.billing_interval || "monthly";
   const totalPrice = basePlanPrice + totalAddonMonthlyCost;
+  const displayTierName = isSuperAdmin ? "Super Admin" : tierName;
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -71,14 +74,16 @@ export function CurrentPlanCard() {
           <div className="flex items-center gap-1.5">
             <Crown className="h-3.5 w-3.5 text-zinc-400" />
             <span className="text-[12px] font-bold text-zinc-900 dark:text-zinc-100">
-              {tierName}
+              {displayTierName}
             </span>
           </div>
 
           <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-            {totalPrice === 0
-              ? "Free"
-              : `${subscriptionService.formatPrice(totalPrice)}/${billingInterval === "annual" ? "yr" : "mo"}`}
+            {isSuperAdmin
+              ? "Full Access"
+              : totalPrice === 0
+                ? "Free"
+                : `${subscriptionService.formatPrice(totalPrice)}/${billingInterval === "annual" ? "yr" : "mo"}`}
           </span>
 
           {/* Status badge */}
@@ -142,7 +147,7 @@ export function CurrentPlanCard() {
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800/50">
           <Gift className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
           <p className="text-[10px] text-amber-700 dark:text-amber-400">
-            Grandfathered {tierName} access —{" "}
+            Grandfathered {displayTierName} access —{" "}
             <span className="font-semibold">
               {grandfatherDaysRemaining} days remaining
             </span>
