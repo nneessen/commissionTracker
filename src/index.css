@@ -357,6 +357,19 @@
   font-size: 14px !important;
 }
 
+/* ==================== SIDEBAR SCROLLBAR ==================== */
+.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.sidebar-nav:hover {
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
+.sidebar-nav:hover::-webkit-scrollbar-thumb { background: var(--border); }
+
 /* ==================== LAYOUT UTILITIES ==================== */
 @layer components {
   .page-header {

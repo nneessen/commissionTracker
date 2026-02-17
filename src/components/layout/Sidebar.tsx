@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
 import React, { useState, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import {
   Home,
   TrendingUp,
@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  ChevronDown,
   X,
   Shield,
   ClipboardList,
@@ -31,6 +32,13 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { usePermissionCheck, useUserRoles } from "@/hooks/permissions";
 import { useAuthorizationStatus } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,6 +60,8 @@ import {
   useUnderwritingFeatureFlag,
 } from "@/features/underwriting";
 
+// ─── Types ───────────────────────────────────────────────────────
+
 interface NavigationItem {
   icon: React.ElementType;
   label: string;
@@ -59,10 +69,35 @@ interface NavigationItem {
   permission?: PermissionCode;
   public?: boolean;
   subscriptionFeature?: FeatureKey;
-  subscriptionFeatures?: FeatureKey[]; // Alternative: any of these features grants access
-  superAdminOnly?: boolean; // Hide from all except super-admin
-  allowedEmails?: string[]; // Whitelist of emails that can see this item
-  allowedAgencyId?: string; // Restrict to users in a specific agency
+  subscriptionFeatures?: FeatureKey[];
+  superAdminOnly?: boolean;
+  allowedEmails?: string[];
+  allowedAgencyId?: string;
+}
+
+interface NavigationActionItem {
+  icon: React.ElementType;
+  label: string;
+  type: "action";
+  onClick?: () => void;
+  colorClass?: string;
+  permission?: PermissionCode;
+  subscriptionFeature?: FeatureKey;
+  subscriptionFeatures?: FeatureKey[];
+  superAdminOnly?: boolean;
+  allowedEmails?: string[];
+  allowedAgencyId?: string;
+  public?: boolean;
+}
+
+type NavItem = NavigationItem | NavigationActionItem;
+
+interface NavigationGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+  defaultCollapsed?: boolean;
+  separatorAfter?: boolean;
 }
 
 interface SidebarProps {
@@ -73,195 +108,14 @@ interface SidebarProps {
   onLogout?: () => void;
 }
 
-const navigationItems: NavigationItem[] = [
-  {
-    icon: Home,
-    label: "Dashboard",
-    href: "/dashboard",
-    permission: "nav.dashboard",
-    subscriptionFeature: "dashboard",
-  },
-  {
-    icon: TrendingUp,
-    label: "Analytics",
-    href: "/analytics",
-    permission: "nav.dashboard",
-    subscriptionFeature: "analytics",
-  },
-  {
-    icon: Target,
-    label: "Targets",
-    href: "/targets",
-    permission: "nav.dashboard",
-    subscriptionFeature: "targets_basic",
-  },
-  {
-    icon: BarChart3,
-    label: "Reports",
-    href: "/reports",
-    permission: "nav.downline_reports",
-    subscriptionFeature: "reports_view",
-  },
-  {
-    icon: CreditCard,
-    label: "Expenses",
-    href: "/expenses",
-    permission: "expenses.read.own",
-    subscriptionFeature: "expenses",
-  },
-  {
-    icon: FileText,
-    label: "Policies",
-    href: "/policies",
-    permission: "nav.policies",
-  },
-  {
-    icon: Users,
-    label: "Team",
-    href: "/hierarchy",
-    permission: "nav.team_dashboard",
-    subscriptionFeature: "hierarchy",
-  },
-  {
-    icon: Users,
-    label: "Licenses/Writing #'s",
-    href: "/the-standard-team",
-    public: true,
-    allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-  },
-  {
-    icon: Trophy,
-    label: "Leaderboard",
-    href: "/leaderboard",
-    subscriptionFeature: "hierarchy",
-    allowedEmails: [
-      "nickneessen@thestandardhq.com",
-      "nick@nickneessen.com",
-      "kerryglass.ffl@gmail.com",
-      "teagkeys@gmail.com",
-    ],
-  },
-  {
-    icon: Store,
-    label: "Lead Vendors",
-    href: "/lead-vendors",
-    allowedEmails: [
-      "nickneessen@thestandardhq.com",
-      "hunterthornhillsm@gmail.com",
-      "andrewengel1999@gmail.com",
-      "minyojames@gmail.com",
-      "james.wadleigh.insurance@gmail.com",
-    ],
-    allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-  },
-  {
-    icon: UserPlus,
-    label: "Recruiting",
-    href: "/recruiting",
-    permission: "nav.recruiting_pipeline",
-    subscriptionFeatures: ["recruiting", "recruiting_basic"], // Either full or basic grants access
-  },
-  {
-    icon: Mail,
-    label: "Messages",
-    href: "/messages",
-    permission: "nav.messages",
-    subscriptionFeature: "email",
-  },
-  {
-    icon: MessageSquare,
-    label: "Community",
-    href: "/community",
-    permission: "nav.community",
-    allowedEmails: ["nickneessen@thestandardhq.com"],
-  },
+// ─── Static data ─────────────────────────────────────────────────
+
+const footerNavItems: NavigationItem[] = [
   { icon: Wallet, label: "Billing", href: "/billing", public: true },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
 
-// Staff-only navigation items (for trainers and contracting managers)
-// These roles have a separate dashboard and limited access
-const staffNavigationItems: NavigationItem[] = [
-  {
-    icon: Home,
-    label: "Dashboard",
-    href: "/trainer-dashboard",
-    public: true, // Staff dashboard - landing page for trainers
-  },
-  {
-    icon: Trophy,
-    label: "Leaderboard",
-    href: "/leaderboard",
-    allowedEmails: [
-      "nickneessen@thestandardhq.com",
-      "nick@nickneessen.com",
-      "kerryglass.ffl@gmail.com",
-      "teagkeys@gmail.com",
-    ],
-  },
-  {
-    icon: GraduationCap,
-    label: "Training Hub",
-    href: "/training-hub",
-    public: true, // Training Hub for templates and automation
-  },
-  {
-    icon: UserPlus,
-    label: "Recruiting",
-    href: "/recruiting",
-    public: true, // Staff can access all IMO recruits via RLS
-  },
-  {
-    icon: FileCheck,
-    label: "Contracting",
-    href: "/contracting",
-    public: true, // Staff manage carrier contracts
-  },
-  {
-    icon: Mail,
-    label: "Messages",
-    href: "/messages",
-    public: true, // Staff need unrestricted access to messaging
-  },
-  {
-    icon: MessageSquare,
-    label: "Community",
-    href: "/community",
-    permission: "nav.community",
-    allowedEmails: ["nickneessen@thestandardhq.com"],
-  },
-  { icon: Settings, label: "Settings", href: "/settings", public: true },
-];
-
-// Admin-only navigation items
-const adminNavigationItems: NavigationItem[] = [
-  {
-    icon: Shield,
-    label: "Admin",
-    href: "/admin",
-    permission: "nav.user_management",
-  },
-];
-
-// Super-admin-only navigation items (nickneessen@thestandardhq.com only)
-const superAdminNavigationItems: NavigationItem[] = [
-  {
-    icon: Workflow,
-    label: "Workflows",
-    href: "/system/workflows",
-    public: true,
-  },
-];
-
-// Recruit-only navigation items
-const recruitNavigationItems: NavigationItem[] = [
-  {
-    icon: ClipboardList,
-    label: "My Progress",
-    href: "/recruiting/my-pipeline",
-    public: true,
-  },
-];
+// ─── Component ───────────────────────────────────────────────────
 
 export default function Sidebar({
   isCollapsed,
@@ -283,71 +137,457 @@ export default function Sidebar({
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
   const { data: userRoles } = useUserRoles();
-
-  // IMO/Agency context for branding display
-  // LOW-4 fix: Also get loading/error states for graceful handling
   const { imo, agency, loading: imoLoading, error: imoError } = useImo();
-
-  // Underwriting wizard state
   const [isUnderwritingWizardOpen, setIsUnderwritingWizardOpen] =
     useState(false);
   const [isQuickQuoteOpen, setIsQuickQuoteOpen] = useState(false);
-  const { isEnabled: isUnderwritingEnabled, isLoading: isUnderwritingLoading } =
-    useUnderwritingFeatureFlag();
-
-  // Temporary access check (database-driven)
+  const {
+    isEnabled: isUnderwritingEnabled,
+    isLoading: isUnderwritingLoading,
+  } = useUnderwritingFeatureFlag();
   const { shouldGrantTemporaryAccess, isLoading: tempAccessLoading } =
     useTemporaryAccessCheck();
+  const location = useLocation();
+
+  // Section collapse state persisted to localStorage
+  const [collapsedSections, setCollapsedSections] = useState<
+    Record<string, boolean>
+  >(() => {
+    try {
+      const saved = localStorage.getItem("sidebar-sections");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleSection = (groupId: string) => {
+    setCollapsedSections((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      localStorage.setItem("sidebar-sections", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // ─── Auth / permission helpers ───────────────────────────────
 
   const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
   const isAdmin =
     supabaseUser?.email && ADMIN_EMAILS.includes(supabaseUser.email);
 
-  // Super-admin check (nickneessen@thestandardhq.com only)
   const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
   const isSuperAdmin =
     supabaseUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 
-  // Check if a subscription feature is available
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
-    if (!feature) return true; // No feature required
-    if (isAdmin) return true; // Admin bypass
-
-    // SECURITY: During loading, deny access to prevent exposure of premium features
-    // UI should show loading skeleton instead of hiding/showing features
+    if (!feature) return true;
+    if (isAdmin) return true;
     if (subLoading || downlineLoading || tempAccessLoading) return false;
-
-    // Check subscription plan features ONLY if subscription is active
     const features = subscription?.plan?.features;
     if (isSubscriptionActive && features?.[feature]) return true;
-
-    // Check if user is direct downline of owner and feature is granted
-    if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature)) {
+    if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature))
       return true;
-    }
-
-    // Check temporary free access period (configurable via admin panel)
-    // Uses database-driven config instead of hardcoded values
-    if (shouldGrantTemporaryAccess(feature, supabaseUser?.email)) {
-      return true;
-    }
-
+    if (shouldGrantTemporaryAccess(feature, supabaseUser?.email)) return true;
     return false;
   };
 
-  const hasRole = (role: RoleName) => {
-    return userRoles?.includes(role) || false;
-  };
-
+  const hasRole = (role: RoleName) => userRoles?.includes(role) || false;
   const isRecruit = hasRole("recruit" as RoleName);
-
-  // Super-admin always gets full access regardless of roles
   const isTrainerOnly =
     !isSuperAdmin &&
     (hasRole("trainer" as RoleName) ||
       hasRole("contracting_manager" as RoleName)) &&
     !hasRole("agent" as RoleName) &&
     !hasRole("admin" as RoleName);
+
+  const currentUserEmail = supabaseUser?.email?.toLowerCase();
+  const isEmailAllowed = (allowedEmails?: string[]) => {
+    if (!allowedEmails || allowedEmails.length === 0) return true;
+    if (!currentUserEmail) return false;
+    return allowedEmails.some(
+      (email) => email.toLowerCase() === currentUserEmail,
+    );
+  };
+  const isAgencyAllowed = (allowedAgencyId?: string) => {
+    if (!allowedAgencyId) return true;
+    if (isSuperAdmin) return true;
+    return agency?.id === allowedAgencyId;
+  };
+
+  // ─── Navigation group definitions ────────────────────────────
+
+  const regularGroups: NavigationGroup[] = [
+    {
+      id: "main",
+      label: "Main",
+      items: [
+        {
+          icon: Home,
+          label: "Dashboard",
+          href: "/dashboard",
+          permission: "nav.dashboard",
+          subscriptionFeature: "dashboard",
+        },
+        {
+          icon: TrendingUp,
+          label: "Analytics",
+          href: "/analytics",
+          permission: "nav.dashboard",
+          subscriptionFeature: "analytics",
+        },
+        {
+          icon: Target,
+          label: "Targets",
+          href: "/targets",
+          permission: "nav.dashboard",
+          subscriptionFeature: "targets_basic",
+        },
+        {
+          icon: BarChart3,
+          label: "Reports",
+          href: "/reports",
+          permission: "nav.downline_reports",
+          subscriptionFeature: "reports_view",
+        },
+      ],
+    },
+    {
+      id: "business",
+      label: "Business",
+      items: [
+        {
+          icon: FileText,
+          label: "Policies",
+          href: "/policies",
+          permission: "nav.policies",
+        },
+        {
+          icon: CreditCard,
+          label: "Expenses",
+          href: "/expenses",
+          permission: "expenses.read.own",
+          subscriptionFeature: "expenses",
+        },
+        {
+          icon: Users,
+          label: "Team",
+          href: "/hierarchy",
+          permission: "nav.team_dashboard",
+          subscriptionFeature: "hierarchy",
+        },
+        {
+          icon: Users,
+          label: "Licenses/Writing #'s",
+          href: "/the-standard-team",
+          public: true,
+          allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        },
+      ],
+    },
+    {
+      id: "growth",
+      label: "Growth",
+      items: [
+        {
+          icon: UserPlus,
+          label: "Recruiting",
+          href: "/recruiting",
+          permission: "nav.recruiting_pipeline",
+          subscriptionFeatures: ["recruiting", "recruiting_basic"],
+        },
+        {
+          icon: Trophy,
+          label: "Leaderboard",
+          href: "/leaderboard",
+          subscriptionFeature: "hierarchy",
+          allowedEmails: [
+            "nickneessen@thestandardhq.com",
+            "nick@nickneessen.com",
+            "kerryglass.ffl@gmail.com",
+            "teagkeys@gmail.com",
+          ],
+        },
+        {
+          icon: Store,
+          label: "Lead Vendors",
+          href: "/lead-vendors",
+          allowedEmails: [
+            "nickneessen@thestandardhq.com",
+            "hunterthornhillsm@gmail.com",
+            "andrewengel1999@gmail.com",
+            "minyojames@gmail.com",
+            "james.wadleigh.insurance@gmail.com",
+          ],
+          allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        },
+      ],
+    },
+    {
+      id: "connect",
+      label: "Connect",
+      separatorAfter: true,
+      items: [
+        {
+          icon: Mail,
+          label: "Messages",
+          href: "/messages",
+          permission: "nav.messages",
+          subscriptionFeature: "email",
+        },
+        {
+          icon: MessageSquare,
+          label: "Community",
+          href: "/community",
+          permission: "nav.community",
+          allowedEmails: ["nickneessen@thestandardhq.com"],
+        },
+      ],
+    },
+    ...(!isUnderwritingLoading && isUnderwritingEnabled
+      ? [
+          {
+            id: "tools",
+            label: "Tools",
+            separatorAfter: true,
+            items: [
+              {
+                icon: ShieldCheck,
+                label: "UW Wizard",
+                type: "action" as const,
+                onClick: () => setIsUnderwritingWizardOpen(true),
+                colorClass: "text-blue-600 dark:text-blue-400",
+              },
+              {
+                icon: Calculator,
+                label: "Quick Quote",
+                type: "action" as const,
+                onClick: () => setIsQuickQuoteOpen(true),
+                colorClass: "text-emerald-600 dark:text-emerald-400",
+              },
+            ] as NavItem[],
+          },
+        ]
+      : []),
+    {
+      id: "training",
+      label: "Training",
+      items: [
+        {
+          icon: GraduationCap,
+          label: "My Training",
+          href: "/my-training",
+          subscriptionFeature: "training",
+        },
+      ],
+    },
+    {
+      id: "admin",
+      label: "Admin",
+      items: [
+        {
+          icon: Shield,
+          label: "Admin",
+          href: "/admin",
+          permission: "nav.user_management",
+        },
+      ],
+    },
+    {
+      id: "system",
+      label: "System",
+      items: [
+        {
+          icon: Workflow,
+          label: "Workflows",
+          href: "/system/workflows",
+          public: true,
+          superAdminOnly: true,
+        },
+      ],
+    },
+  ];
+
+  const staffGroups: NavigationGroup[] = [
+    {
+      id: "staff-main",
+      label: "Main",
+      items: [
+        {
+          icon: Home,
+          label: "Dashboard",
+          href: "/trainer-dashboard",
+          public: true,
+        },
+        {
+          icon: Trophy,
+          label: "Leaderboard",
+          href: "/leaderboard",
+          allowedEmails: [
+            "nickneessen@thestandardhq.com",
+            "nick@nickneessen.com",
+            "kerryglass.ffl@gmail.com",
+            "teagkeys@gmail.com",
+          ],
+        },
+      ],
+    },
+    {
+      id: "staff-work",
+      label: "Work",
+      items: [
+        {
+          icon: GraduationCap,
+          label: "Training Hub",
+          href: "/training-hub",
+          public: true,
+        },
+        {
+          icon: UserPlus,
+          label: "Recruiting",
+          href: "/recruiting",
+          public: true,
+        },
+        {
+          icon: FileCheck,
+          label: "Contracting",
+          href: "/contracting",
+          public: true,
+        },
+      ],
+    },
+    {
+      id: "staff-connect",
+      label: "Connect",
+      items: [
+        {
+          icon: Mail,
+          label: "Messages",
+          href: "/messages",
+          public: true,
+        },
+        {
+          icon: MessageSquare,
+          label: "Community",
+          href: "/community",
+          permission: "nav.community",
+          allowedEmails: ["nickneessen@thestandardhq.com"],
+        },
+      ],
+    },
+  ];
+
+  const recruitGroups: NavigationGroup[] = [
+    {
+      id: "recruit",
+      label: "Navigation",
+      items: [
+        {
+          icon: ClipboardList,
+          label: "My Progress",
+          href: "/recruiting/my-pipeline",
+          public: true,
+        },
+      ],
+    },
+  ];
+
+  // ─── Item filtering ──────────────────────────────────────────
+
+  const filterRegularItem = (item: NavItem): boolean => {
+    // Super-admin only check applies regardless of pending status
+    if ("superAdminOnly" in item && item.superAdminOnly && !isSuperAdmin)
+      return false;
+
+    // Pending users see remaining items (rendered as locked)
+    if (isPending) return true;
+
+    // Action items
+    if ("type" in item && item.type === "action") {
+      const actionItem = item as NavigationActionItem;
+      if (actionItem.allowedEmails && !isEmailAllowed(actionItem.allowedEmails))
+        return false;
+      if (actionItem.permission) {
+        if (isLoading) return false;
+        if (!can(actionItem.permission)) return false;
+      }
+      return true;
+    }
+
+    // Link items
+    const navItem = item as NavigationItem;
+    if (navItem.allowedAgencyId && !isAgencyAllowed(navItem.allowedAgencyId))
+      return false;
+    if (navItem.public) return true;
+    if (navItem.allowedEmails) return isEmailAllowed(navItem.allowedEmails);
+    if (!navItem.permission) return false;
+    if (isLoading) return false;
+    if (!can(navItem.permission)) return false;
+    if (
+      navItem.subscriptionFeature &&
+      !hasFeature(navItem.subscriptionFeature)
+    )
+      return false;
+    if (
+      navItem.subscriptionFeatures &&
+      !navItem.subscriptionFeatures.some((f) => hasFeature(f))
+    )
+      return false;
+    return true;
+  };
+
+  const filterStaffItem = (item: NavItem): boolean => {
+    if ("type" in item && item.type === "action") return false;
+    const navItem = item as NavigationItem;
+    if (navItem.public) return true;
+    if (navItem.allowedEmails) return isEmailAllowed(navItem.allowedEmails);
+    if (!navItem.permission) return false;
+    if (isLoading) return false;
+    return can(navItem.permission);
+  };
+
+  // Build visible groups based on user type
+  const sourceGroups = isRecruit
+    ? recruitGroups
+    : isTrainerOnly
+      ? staffGroups
+      : regularGroups;
+
+  const filterFn = isRecruit
+    ? () => true
+    : isTrainerOnly
+      ? filterStaffItem
+      : filterRegularItem;
+
+  const visibleGroups = sourceGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(filterFn),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  // ─── Auto-expand active section on route change ──────────────
+
+  useEffect(() => {
+    for (const group of visibleGroups) {
+      const hasActiveRoute = group.items.some(
+        (item) =>
+          "href" in item &&
+          location.pathname.startsWith((item as NavigationItem).href),
+      );
+      if (hasActiveRoute && collapsedSections[group.id]) {
+        setCollapsedSections((prev) => {
+          const next = { ...prev };
+          delete next[group.id];
+          localStorage.setItem("sidebar-sections", JSON.stringify(next));
+          return next;
+        });
+        break;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // ─── Mobile handling ─────────────────────────────────────────
 
   useEffect(() => {
     const checkMobile = () => {
@@ -356,7 +596,6 @@ export default function Sidebar({
         setIsMobileOpen(false);
       }
     };
-
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -365,135 +604,157 @@ export default function Sidebar({
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
   const closeMobile = () => setIsMobileOpen(false);
 
-  // Handler for locked nav item clicks (for pending users)
   const handleLockedNavClick = () => {
     toast.error(
       "Your account is pending approval. Please wait for administrator approval to access this feature.",
     );
   };
 
-  // Helper to check if user email is in allowed list
-  const currentUserEmail = supabaseUser?.email?.toLowerCase();
-  const isEmailAllowed = (allowedEmails?: string[]) => {
-    if (!allowedEmails || allowedEmails.length === 0) return true; // No restriction
-    if (!currentUserEmail) return false;
-    return allowedEmails.some(
-      (email) => email.toLowerCase() === currentUserEmail,
+  // ─── Render helper ───────────────────────────────────────────
+
+  const renderNavItem = (item: NavItem, key: string) => {
+    const Icon = item.icon;
+    const isAction = "type" in item && item.type === "action";
+    const isLocked = isPending && !item.public && !isAction;
+
+    // ── Locked item (pending users) ──
+    if (isLocked) {
+      const lockedEl = (
+        <div
+          className={cn(
+            "relative flex items-center h-9 rounded-md cursor-not-allowed opacity-50 mb-0.5",
+            isCollapsed ? "w-9 justify-center mx-auto" : "w-full gap-2.5 px-3",
+          )}
+          onClick={handleLockedNavClick}
+        >
+          <Icon size={16} className="text-muted-foreground flex-shrink-0" />
+          {!isCollapsed && (
+            <span className="text-sm blur-[0.5px] text-muted-foreground truncate">
+              {item.label}
+            </span>
+          )}
+          <Lock
+            size={10}
+            className={cn(
+              "absolute text-muted-foreground/70",
+              isCollapsed
+                ? "bottom-0.5 right-0.5"
+                : "right-2 top-1/2 -translate-y-1/2",
+            )}
+          />
+        </div>
+      );
+
+      if (isCollapsed) {
+        return (
+          <Tooltip key={key}>
+            <TooltipTrigger asChild>
+              <div>{lockedEl}</div>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {item.label} (Locked)
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+      return (
+        <React.Fragment key={key}>{lockedEl}</React.Fragment>
+      );
+    }
+
+    // ── Action item (UW Wizard, Quick Quote) ──
+    if (isAction) {
+      const actionItem = item as NavigationActionItem;
+      const actionEl = (
+        <button
+          className={cn(
+            "relative flex items-center h-9 rounded-md text-sm transition-colors mb-0.5",
+            isCollapsed ? "w-9 justify-center mx-auto" : "w-full gap-2.5 px-3",
+            actionItem.colorClass || "text-muted-foreground",
+            "hover:bg-accent/40",
+          )}
+          onClick={() => {
+            actionItem.onClick?.();
+            if (isMobile) closeMobile();
+          }}
+        >
+          <Icon size={16} className="flex-shrink-0" />
+          {!isCollapsed && <span className="truncate">{item.label}</span>}
+        </button>
+      );
+
+      if (isCollapsed) {
+        return (
+          <Tooltip key={key}>
+            <TooltipTrigger asChild>
+              <div>{actionEl}</div>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {item.label}
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+      return (
+        <React.Fragment key={key}>{actionEl}</React.Fragment>
+      );
+    }
+
+    // ── Regular link item ──
+    const navItem = item as NavigationItem;
+    const linkEl = (
+      <Link
+        to={navItem.href}
+        onClick={() => {
+          if (isMobile) closeMobile();
+        }}
+      >
+        {({ isActive }) => (
+          <div
+            className={cn(
+              "relative flex items-center h-9 rounded-md text-sm transition-colors mb-0.5",
+              isCollapsed
+                ? "w-9 justify-center mx-auto"
+                : "w-full gap-2.5 px-3",
+              isActive
+                ? "bg-accent/60 text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
+            )}
+            data-active={isActive}
+          >
+            {isActive && (
+              <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-primary" />
+            )}
+            <Icon
+              size={16}
+              className={cn("flex-shrink-0", isActive && "text-primary")}
+            />
+            {!isCollapsed && (
+              <span className="truncate">{navItem.label}</span>
+            )}
+          </div>
+        )}
+      </Link>
+    );
+
+    if (isCollapsed) {
+      return (
+        <Tooltip key={key}>
+          <TooltipTrigger asChild>
+            <div>{linkEl}</div>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {navItem.label}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    return (
+      <React.Fragment key={key}>{linkEl}</React.Fragment>
     );
   };
 
-  // Helper to check if user is in allowed agency
-  const isAgencyAllowed = (allowedAgencyId?: string) => {
-    if (!allowedAgencyId) return true; // No restriction
-    if (isSuperAdmin) return true; // Super admin can access all
-    return agency?.id === allowedAgencyId;
-  };
-
-  // Navigation logic:
-  // - Recruits: Show ONLY recruit navigation
-  // - Staff (trainer/contracting_manager only): Show staff navigation (trainer dashboard, training hub, messages, settings)
-  // - Pending users: Show all items but rendered as locked
-  // - Regular users: Show navigation based on permissions AND subscription features (hide locked items)
-  const visibleNavItems = isRecruit
-    ? recruitNavigationItems
-    : isTrainerOnly
-      ? staffNavigationItems.filter((item) => {
-          // Public items always visible for staff
-          if (item.public) return true;
-          // Email whitelist check - show if user's email is in the list
-          if (item.allowedEmails) {
-            return isEmailAllowed(item.allowedEmails);
-          }
-          // Permission-based items
-          if (!item.permission) return false;
-          if (isLoading) return false;
-          return can(item.permission);
-        })
-      : isPending
-        ? navigationItems // Show all items for pending users (will be rendered as locked)
-        : navigationItems.filter((item) => {
-            // Agency restriction check - must pass first if specified
-            if (
-              item.allowedAgencyId &&
-              !isAgencyAllowed(item.allowedAgencyId)
-            ) {
-              return false;
-            }
-
-            // Public items visible (after agency check passes)
-            if (item.public) return true;
-
-            // Super-admin only check
-            if (item.superAdminOnly && !isSuperAdmin) return false;
-
-            // Email whitelist check - if email is allowed, show item (skip other checks)
-            if (item.allowedEmails) {
-              if (isEmailAllowed(item.allowedEmails)) {
-                return true; // Email is whitelisted, show the item
-              }
-              return false; // Has whitelist but email not in it, hide
-            }
-
-            // Permission check (role-based visibility)
-            if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
-            if (isLoading) return false;
-            if (!can(item.permission)) return false;
-
-            // Subscription feature check (HIDE if locked, not show with crown)
-            // Check single feature
-            if (
-              item.subscriptionFeature &&
-              !hasFeature(item.subscriptionFeature)
-            ) {
-              return false;
-            }
-            // Check array of features (any grants access)
-            if (
-              item.subscriptionFeatures &&
-              !item.subscriptionFeatures.some((f) => hasFeature(f))
-            ) {
-              return false;
-            }
-
-            return true;
-          });
-
-  // Staff-only roles don't see the training items section (it's already in their main nav)
-  // Regular agents with training subscription see it
-  const visibleTrainingItems: NavigationItem[] = (() => {
-    if (isTrainerOnly) return [];
-
-    const trainingNavigationItems: NavigationItem[] = [
-      {
-        icon: GraduationCap,
-        label: "My Training",
-        href: "/my-training",
-        subscriptionFeature: "training",
-      },
-    ];
-
-    return trainingNavigationItems.filter((item) => {
-      if (item.subscriptionFeature && !hasFeature(item.subscriptionFeature)) {
-        return false;
-      }
-      return true;
-    });
-  })();
-
-  const visibleAdminItems =
-    isRecruit || isTrainerOnly
-      ? []
-      : isPending
-        ? adminNavigationItems // Show all for pending (will be locked)
-        : adminNavigationItems.filter((item) => {
-            if (!item.permission) return false;
-            if (isLoading) return false;
-            return can(item.permission);
-          });
-
-  // Super-admin items - ONLY visible to nickneessen@thestandardhq.com
-  // Check email directly - no role dependencies, super-admin sees these regardless of any roles
-  const visibleSuperAdminItems = isSuperAdmin ? superAdminNavigationItems : [];
+  // ─── JSX ─────────────────────────────────────────────────────
 
   return (
     <>
@@ -512,384 +773,228 @@ export default function Sidebar({
       {/* Mobile Overlay */}
       {isMobile && (
         <div
-          className={`fixed inset-0 bg-background/90 backdrop-blur-sm z-[99] transition-all duration-300 ${
-            isMobileOpen ? "opacity-100 visible" : "opacity-0 invisible"
-          }`}
+          className={cn(
+            "fixed inset-0 bg-background/90 backdrop-blur-sm z-[99] transition-all duration-300",
+            isMobileOpen
+              ? "opacity-100 visible"
+              : "opacity-0 invisible",
+          )}
           onClick={closeMobile}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`
-          fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-[100]
-          transition-all duration-200
-          ${isCollapsed ? "w-[72px]" : "w-[220px]"}
-          ${isMobile ? (isMobileOpen ? "translate-x-0" : "-translate-x-full") : ""}
-          ${isMobile && !isCollapsed ? "w-[280px]" : ""}
-        `}
+        className={cn(
+          "fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-[100] transition-all duration-200",
+          isCollapsed ? "w-[72px]" : "w-[220px]",
+          isMobile &&
+            (isMobileOpen ? "translate-x-0" : "-translate-x-full"),
+          isMobile && !isCollapsed && "w-[280px]",
+        )}
       >
         {/* Header */}
-        <div className="p-3 border-b border-border bg-card/80 flex items-center justify-between gap-2">
-          {!isCollapsed && (
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="w-8 h-8 bg-secondary text-secondary-foreground rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 border border-border shadow-sm">
-                {userName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+        <div className="p-3 border-b border-border bg-card/80">
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-8 h-8 bg-secondary text-secondary-foreground rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 border border-border shadow-sm">
+                  {userName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-foreground truncate tracking-tight">
+                    {userName}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {userEmail}
+                  </div>
+                  {imoLoading ? (
+                    <div className="text-[10px] text-muted-foreground/50 truncate mt-0.5">
+                      Loading...
+                    </div>
+                  ) : imoError ? (
+                    <div className="text-[10px] text-red-400/70 truncate mt-0.5">
+                      Organization unavailable
+                    </div>
+                  ) : imo || agency ? (
+                    <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-1">
+                      {imo && (
+                        <span
+                          className="font-medium"
+                          style={{
+                            color: imo.primary_color || undefined,
+                          }}
+                        >
+                          {imo.code}
+                        </span>
+                      )}
+                      {imo && agency && (
+                        <span className="opacity-50">&bull;</span>
+                      )}
+                      {agency && <span>{agency.code}</span>}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-foreground truncate tracking-tight">
-                  {userName}
-                </div>
-                <div className="text-[11px] text-muted-foreground truncate">
-                  {userEmail}
-                </div>
-                {/* LOW-4 fix: Handle loading/error states for IMO display */}
-                {imoLoading ? (
-                  <div className="text-[10px] text-muted-foreground/50 truncate mt-0.5">
-                    Loading...
-                  </div>
-                ) : imoError ? (
-                  <div className="text-[10px] text-red-400/70 truncate mt-0.5">
-                    Organization unavailable
-                  </div>
-                ) : imo || agency ? (
-                  <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-1">
-                    {imo && (
-                      <span
-                        className="font-medium"
-                        style={{
-                          color: imo.primary_color || undefined,
-                        }}
-                      >
-                        {imo.code}
-                      </span>
-                    )}
-                    {imo && agency && <span className="opacity-50">•</span>}
-                    {agency && <span>{agency.code}</span>}
-                  </div>
-                ) : null}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {!isRecruit && (
+                  <NotificationDropdown isCollapsed={false} />
+                )}
+                {isMobile ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={closeMobile}
+                  >
+                    <X size={16} />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={onToggleCollapse}
+                  >
+                    <ChevronLeft size={16} />
+                  </Button>
+                )}
               </div>
             </div>
-          )}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {!isRecruit && <NotificationDropdown isCollapsed={isCollapsed} />}
-            {isMobile ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={closeMobile}
-              >
-                <X size={16} />
-              </Button>
-            ) : (
+          ) : (
+            <div className="flex justify-center">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
                 onClick={onToggleCollapse}
               >
-                {isCollapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
+                <Menu size={16} />
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 overflow-y-auto">
-          {/* Main Navigation Items */}
-          {visibleNavItems.map((item) => {
-            const Icon = item.icon;
-            // Check if this item should be locked (pending user + not a public item)
-            const isPendingLocked = isPending && !item.public;
+        <TooltipProvider delayDuration={0}>
+          <nav className="sidebar-nav flex-1 p-2 overflow-y-auto">
+            {/* Notification bell at top when collapsed */}
+            {isCollapsed && !isRecruit && (
+              <div className="flex justify-center mb-1">
+                <NotificationDropdown isCollapsed={true} />
+              </div>
+            )}
 
-            if (isPendingLocked) {
-              // Render locked nav item for pending users
+            {/* Navigation Groups */}
+            {visibleGroups.map((group, groupIdx) => {
+              const isSectionCollapsed = collapsedSections[group.id];
+
               return (
-                <div
-                  key={item.href}
-                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
-                  onClick={handleLockedNavClick}
-                >
-                  <Button
-                    variant="ghost"
-                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
-                    title={isCollapsed ? `${item.label} (Locked)` : ""}
-                  >
-                    <Icon
-                      size={16}
-                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
-                    />
-                    {!isCollapsed && (
-                      <span className="text-sm blur-[0.5px] text-muted-foreground">
-                        {item.label}
+                <div key={group.id}>
+                  {/* Section header (expanded only) */}
+                  {!isCollapsed && (
+                    <div
+                      className={cn(
+                        "mb-1 px-2 flex items-center justify-between cursor-pointer group",
+                        groupIdx > 0 ? "mt-3" : "mt-1",
+                      )}
+                      onClick={() => toggleSection(group.id)}
+                    >
+                      <span className="text-[10px] font-medium uppercase text-muted-foreground/60 tracking-wider select-none">
+                        {group.label}
                       </span>
+                      <ChevronDown
+                        size={12}
+                        className={cn(
+                          "text-muted-foreground/40 transition-transform duration-200 group-hover:text-muted-foreground/60",
+                          isSectionCollapsed && "-rotate-90",
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  {/* Items (hidden if section collapsed in expanded mode) */}
+                  {(!isSectionCollapsed || isCollapsed) &&
+                    group.items.map((item) =>
+                      renderNavItem(
+                        item,
+                        "href" in item ? item.href : item.label,
+                      ),
                     )}
-                  </Button>
-                  <Lock
-                    size={12}
-                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
-                  />
+
+                  {/* Thin separator between groups when collapsed */}
+                  {isCollapsed && group.separatorAfter && (
+                    <div className="my-1.5 mx-2 border-t border-border/50" />
+                  )}
                 </div>
               );
-            }
+            })}
+          </nav>
 
-            // Note: Subscription-locked items are now filtered out before rendering
-            // so the crown icon rendering block has been removed.
-            // Pending users still see all items with lock icons (handled above).
+          {/* Footer */}
+          <div className="p-2 border-t border-border bg-card/80">
+            {/* Footer nav items (Billing, Settings) */}
+            {footerNavItems.map((item) =>
+              renderNavItem(item, item.href),
+            )}
 
-            // Render normal nav item
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => {
-                  if (isMobile) closeMobile();
-                }}
-              >
-                {({ isActive }) => (
-                  <Button
-                    variant={isActive ? "outline" : "muted"}
-                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
-                    title={isCollapsed ? item.label : ""}
-                    data-active={isActive}
-                  >
-                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
-                    {!isCollapsed && (
-                      <span className="text-sm">{item.label}</span>
-                    )}
-                  </Button>
-                )}
-              </Link>
-            );
-          })}
+            {/* Separator */}
+            <div className="my-1.5 mx-1 border-t border-border/50" />
 
-          {/* Separator for training/admin/super-admin section */}
-          {(visibleTrainingItems.length > 0 ||
-            visibleAdminItems.length > 0 ||
-            visibleSuperAdminItems.length > 0) &&
-            !isCollapsed && <div className="my-4 border-t border-border" />}
-
-          {/* Training Hub Navigation Items */}
-          {visibleTrainingItems.map((item) => {
-            const Icon = item.icon;
-            const isLocked = isPending && !item.public;
-
-            if (isLocked) {
-              return (
-                <div
-                  key={item.href}
-                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
-                  onClick={handleLockedNavClick}
+            {/* Theme toggle + Logout */}
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-1">
+                <ThemeToggle />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="h-9 w-9 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                      onClick={onLogout}
+                    >
+                      <LogOut size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    Logout
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <button
+                  className="flex-1 flex items-center gap-2.5 h-9 px-3 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={onLogout}
                 >
-                  <Button
-                    variant="ghost"
-                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
-                    title={isCollapsed ? `${item.label} (Locked)` : ""}
-                  >
-                    <Icon
-                      size={16}
-                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
-                    />
-                    {!isCollapsed && (
-                      <span className="text-sm blur-[0.5px] text-muted-foreground">
-                        {item.label}
-                      </span>
-                    )}
-                  </Button>
-                  <Lock
-                    size={12}
-                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => {
-                  if (isMobile) closeMobile();
-                }}
-              >
-                {({ isActive }) => (
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
-                    title={isCollapsed ? item.label : ""}
-                    data-active={isActive}
-                  >
-                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
-                    {!isCollapsed && (
-                      <span className="text-sm">{item.label}</span>
-                    )}
-                  </Button>
-                )}
-              </Link>
-            );
-          })}
-
-          {/* Admin Navigation Items */}
-          {visibleAdminItems.map((item) => {
-            const Icon = item.icon;
-            const isLocked = isPending && !item.public;
-
-            if (isLocked) {
-              return (
-                <div
-                  key={item.href}
-                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
-                  onClick={handleLockedNavClick}
-                >
-                  <Button
-                    variant="ghost"
-                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
-                    title={isCollapsed ? `${item.label} (Locked)` : ""}
-                  >
-                    <Icon
-                      size={16}
-                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
-                    />
-                    {!isCollapsed && (
-                      <span className="text-sm blur-[0.5px] text-muted-foreground">
-                        {item.label}
-                      </span>
-                    )}
-                  </Button>
-                  <Lock
-                    size={12}
-                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => {
-                  if (isMobile) closeMobile();
-                }}
-              >
-                {({ isActive }) => (
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
-                    title={isCollapsed ? item.label : ""}
-                    data-active={isActive}
-                  >
-                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
-                    {!isCollapsed && (
-                      <span className="text-sm">{item.label}</span>
-                    )}
-                  </Button>
-                )}
-              </Link>
-            );
-          })}
-
-          {/* Super Admin Navigation Items */}
-          {visibleSuperAdminItems.length > 0 && !isCollapsed && (
-            <div className="mt-2 mb-1 px-2 text-[10px] font-medium uppercase text-muted-foreground/60">
-              System
-            </div>
-          )}
-          {visibleSuperAdminItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => {
-                  if (isMobile) closeMobile();
-                }}
-              >
-                {({ isActive }) => (
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
-                    title={isCollapsed ? item.label : ""}
-                    data-active={isActive}
-                  >
-                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
-                    {!isCollapsed && (
-                      <span className="text-sm">{item.label}</span>
-                    )}
-                  </Button>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-2 border-t border-border bg-card/80">
-          {/* Underwriting Tools */}
-          {!isUnderwritingLoading && isUnderwritingEnabled && (
-            <div className="space-y-1 mb-2">
-              <Button
-                variant="outline"
-                className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30`}
-                onClick={() => setIsUnderwritingWizardOpen(true)}
-                title={isCollapsed ? "Underwriting Wizard" : ""}
-              >
-                <ShieldCheck
-                  size={16}
-                  className={isCollapsed ? "" : "mr-2.5"}
-                />
-                {!isCollapsed && <span className="text-sm">UW Wizard</span>}
-              </Button>
-              <Button
-                variant="outline"
-                className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"} border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30`}
-                onClick={() => setIsQuickQuoteOpen(true)}
-                title={isCollapsed ? "Quick Quote" : ""}
-              >
-                <Calculator size={16} className={isCollapsed ? "" : "mr-2.5"} />
-                {!isCollapsed && <span className="text-sm">Quick Quote</span>}
-              </Button>
-            </div>
-          )}
-          <div className="flex items-center gap-2 mb-2">
-            <ThemeToggle />
-            {!isCollapsed && (
-              <span className="text-xs text-muted-foreground">Theme</span>
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
+              </div>
             )}
           </div>
-          <Button
-            variant="destructive"
-            className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
-            onClick={onLogout}
-            title={isCollapsed ? "Logout" : ""}
-          >
-            <LogOut size={16} className={isCollapsed ? "" : "mr-2.5"} />
-            {!isCollapsed && <span className="text-sm">Logout</span>}
-          </Button>
-        </div>
-
-        {/* Underwriting Wizard Dialog */}
-        {isUnderwritingEnabled && (
-          <UnderwritingWizard
-            open={isUnderwritingWizardOpen}
-            onOpenChange={setIsUnderwritingWizardOpen}
-          />
-        )}
-
-        {/* Quick Quote Dialog */}
-        {isUnderwritingEnabled && (
-          <QuickQuoteDialog
-            open={isQuickQuoteOpen}
-            onOpenChange={setIsQuickQuoteOpen}
-          />
-        )}
+        </TooltipProvider>
       </div>
 
-      {/* Main content margin helper - this pushes content when sidebar is visible */}
+      {/* Underwriting Wizard Dialog */}
+      {isUnderwritingEnabled && (
+        <UnderwritingWizard
+          open={isUnderwritingWizardOpen}
+          onOpenChange={setIsUnderwritingWizardOpen}
+        />
+      )}
+
+      {/* Quick Quote Dialog */}
+      {isUnderwritingEnabled && (
+        <QuickQuoteDialog
+          open={isQuickQuoteOpen}
+          onOpenChange={setIsQuickQuoteOpen}
+        />
+      )}
+
+      {/* Main content margin helper */}
       <style>{`
         .main-content {
           margin-left: ${isCollapsed ? "72px" : "220px"};

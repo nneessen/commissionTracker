@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-17 18:38:32
+
+### Changed Files
+- `scripts/stale-policies-report.sh`
+- `src/components/layout/Sidebar.tsx`
+- `src/index.css`
+
+### Statistics
+```
+ 3 files changed, 955 insertions(+), 688 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-17 17:52:53
 
 ### Changed Files
