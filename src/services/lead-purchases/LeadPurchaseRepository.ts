@@ -515,7 +515,7 @@ export class LeadPurchaseRepository extends BaseRepository<
   async getLeadRecentPolicies(limit?: number): Promise<LeadRecentPolicy[]> {
     const { data, error } = await this.client.rpc("get_lead_recent_policies", {
       p_imo_id: null,
-      p_limit: limit || 100,
+      p_limit: limit || null,
     });
 
     if (error) {

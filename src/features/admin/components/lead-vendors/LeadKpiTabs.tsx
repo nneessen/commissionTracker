@@ -37,7 +37,6 @@ interface LeadKpiTabsProps {
   recentPolicies: LeadRecentPolicy[];
   vendors: VendorAdminOverview[];
   packMetrics: PackHeatMetrics[];
-  allPacks: LeadPackRow[];
   vendorIntelligenceRows: VendorIntelligenceRow[];
 }
 
@@ -51,7 +50,6 @@ export function LeadKpiTabs({
   recentPolicies,
   vendors,
   packMetrics,
-  allPacks,
   vendorIntelligenceRows,
 }: LeadKpiTabsProps) {
   return (
@@ -92,7 +90,7 @@ export function LeadKpiTabs({
         <SpeedPanel
           packMetrics={packMetrics}
           recentPolicies={recentPolicies}
-          allPacks={allPacks}
+          allPacks={filteredPacks}
           vendors={vendors}
         />
       </TabsContent>

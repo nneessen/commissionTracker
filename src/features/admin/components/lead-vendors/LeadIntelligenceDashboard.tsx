@@ -199,28 +199,33 @@ export function LeadIntelligenceDashboard() {
         const freshPacks = vendorPacks.filter((p) => p.leadFreshness === "fresh").length;
         const agedPacks = vendorPacks.length - freshPacks;
 
+        // Compute all metrics from filtered vendorPacks so filters are respected
+        const totalSpent = vendorPacks.reduce((s, p) => s + p.totalCost, 0);
+        const totalLeads = vendorPacks.reduce((s, p) => s + p.leadCount, 0);
+        const totalPolicies = vendorPacks.reduce((s, p) => s + p.policiesSold, 0);
+        const totalCommission = vendorPacks.reduce((s, p) => s + p.commissionEarned, 0);
+        const totalPremium = vendorPacks.reduce((s, p) => s + p.totalPremium, 0);
+
         return {
           vendorId: v.vendorId,
           vendorName: v.vendorName,
           heat: vendorScores.get(v.vendorId),
-          totalPacks: v.totalPurchases,
-          uniqueUsers: uniqueAgents.size || v.uniqueUsers,
+          totalPacks: vendorPacks.length,
+          uniqueUsers: uniqueAgents.size,
           winRate: vendorPacks.length > 0
             ? (profitablePacks / vendorPacks.length) * 100
             : 0,
-          conversionRate: v.conversionRate,
-          avgRoi: v.avgRoi,
-          avgPremPerUser: v.uniqueUsers > 0
-            ? v.totalPremium / v.uniqueUsers
-            : 0,
-          freshCount: freshPacks || v.freshLeads,
-          agedCount: agedPacks || v.agedLeads,
-          totalSpent: v.totalSpent,
-          totalLeads: v.totalLeads,
-          totalPolicies: v.totalPolicies,
-          totalPremium: v.totalPremium,
-          totalCommission: v.totalCommission,
-          avgCostPerLead: v.avgCostPerLead,
+          conversionRate: totalLeads > 0 ? (totalPolicies / totalLeads) * 100 : 0,
+          avgRoi: totalSpent > 0 ? ((totalCommission - totalSpent) / totalSpent) * 100 : 0,
+          avgPremPerUser: uniqueAgents.size > 0 ? totalPremium / uniqueAgents.size : 0,
+          freshCount: freshPacks,
+          agedCount: agedPacks,
+          totalSpent,
+          totalLeads,
+          totalPolicies,
+          totalPremium,
+          totalCommission,
+          avgCostPerLead: totalLeads > 0 ? totalSpent / totalLeads : 0,
           lastPurchaseDate: v.lastPurchaseDate,
         };
       });
@@ -315,6 +320,22 @@ export function LeadIntelligenceDashboard() {
     };
   }, [vendorIntelligenceRows]);
 
+  // ── Filtered packMetrics & recentPolicies (respect active filters) ──────
+  const filteredPackIds = useMemo(
+    () => new Set(filteredPacks.map((p) => p.packId)),
+    [filteredPacks],
+  );
+
+  const filteredPackMetrics = useMemo(
+    () => packMetrics.filter((pm) => filteredPackIds.has(pm.packId)),
+    [packMetrics, filteredPackIds],
+  );
+
+  const filteredRecentPolicies = useMemo(
+    () => (recentPolicies ?? []).filter((p) => filteredPackIds.has(p.packId)),
+    [recentPolicies, filteredPackIds],
+  );
+
   // ── Filter handlers ─────────────────────────────────────────────────────
   const updateFilter = useCallback(
     <K extends keyof IntelligenceFilterState>(
@@ -373,10 +394,9 @@ export function LeadIntelligenceDashboard() {
         vendorRowCount={vendorIntelligenceRows.length}
         freshAgedAggregates={freshAgedAggregates}
         filteredPacks={filteredPacks}
-        recentPolicies={recentPolicies ?? []}
+        recentPolicies={filteredRecentPolicies}
         vendors={vendors ?? []}
-        packMetrics={packMetrics}
-        allPacks={allPacks ?? []}
+        packMetrics={filteredPackMetrics}
         vendorIntelligenceRows={vendorIntelligenceRows}
       />
 
@@ -440,7 +460,7 @@ export function LeadIntelligenceDashboard() {
         />
       ) : (
         <LeadPoliciesTable
-          policies={recentPolicies ?? []}
+          policies={filteredRecentPolicies}
           packs={allPacks ?? []}
           isLoading={isLoading}
         />
