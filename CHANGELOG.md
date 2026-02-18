@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-18 10:10:39
+
+### Changed Files
+- `package.json`
+- `src/features/recruiting/components/onboarding/WelcomeHero.tsx`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+
+### Statistics
+```
+ 3 files changed, 57 insertions(+), 19 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-17 18:38:32
 
 ### Changed Files

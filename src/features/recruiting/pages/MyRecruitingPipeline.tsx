@@ -69,6 +69,21 @@ export function MyRecruitingPipeline() {
   const isReady =
     !authLoading && !profileLoading && !!user?.id && !!profile?.id;
 
+  // Fetch recruit's agency name for dynamic headline
+  const { data: recruitAgency } = useQuery({
+    queryKey: ["recruit-agency", profile?.agency_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agencies")
+        .select("id, name")
+        .eq("id", profile!.agency_id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isReady && !!profile?.agency_id,
+  });
+
   // Fetch upline/trainer info
   const { data: upline } = useUplineProfile(profile?.upline_id ?? undefined, {
     enabled: isReady && !!profile?.upline_id,
@@ -93,7 +108,7 @@ export function MyRecruitingPipeline() {
         const roles = (user.roles as string[]) || [];
         if (roles.includes("trainer")) {
           contacts.push({
-            id: user.id,
+            id: `${user.id}-trainer`,
             role: "trainer",
             label: "Trainer",
             profile: user as UserProfile,
@@ -101,7 +116,7 @@ export function MyRecruitingPipeline() {
         }
         if (roles.includes("contracting_manager")) {
           contacts.push({
-            id: user.id,
+            id: `${user.id}-contracting_manager`,
             role: "contracting_manager",
             label: "Contracting",
             profile: user as UserProfile,
@@ -176,15 +191,15 @@ export function MyRecruitingPipeline() {
     setUploadingPhoto(true);
 
     try {
-      const fileName = `${user.id}_${Date.now()}.${file.name.split(".").pop()}`;
+      const fileName = `${user.id}/avatar_${Date.now()}.${file.name.split(".").pop()}`;
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("recruiting-assets")
         .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from("avatars")
+        .from("recruiting-assets")
         .getPublicUrl(fileName);
 
       const { error: updateError } = await supabase
@@ -290,6 +305,8 @@ export function MyRecruitingPipeline() {
         <WelcomeHero
           firstName={profile.first_name}
           lastName={profile.last_name}
+          agencyName={recruitAgency?.name}
+          profilePhotoUrl={profile.profile_photo_url}
           progressPercentage={progressPercentage}
           currentPhaseName={
             isCurrentPhaseHidden

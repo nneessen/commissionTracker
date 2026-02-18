@@ -2,6 +2,7 @@
 // Brutalist welcome hero - massive progress number, harsh grid, gold accents
 
 import { Upload, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PhaseProgressItem {
   id: string;
@@ -13,6 +14,8 @@ interface PhaseProgressItem {
 interface WelcomeHeroProps {
   firstName?: string | null;
   lastName?: string | null;
+  agencyName?: string | null;
+  profilePhotoUrl?: string | null;
   progressPercentage: number;
   currentPhaseName?: string | null;
   phaseProgress?: PhaseProgressItem[];
@@ -23,6 +26,8 @@ interface WelcomeHeroProps {
 export function WelcomeHero({
   firstName,
   lastName,
+  agencyName,
+  profilePhotoUrl,
   progressPercentage,
   currentPhaseName,
   phaseProgress,
@@ -72,23 +77,39 @@ export function WelcomeHero({
             </span>
 
             {/* Welcome */}
-            <h1
-              className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight text-white uppercase leading-[0.9]"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <span className="block text-white/60">
-                Welcome to The Standard,
-              </span>
-              <span style={{ color: "var(--recruiting-primary)" }}>
-                {firstName || "Recruit"}
-                {lastName ? ` ${lastName}` : ""}
-              </span>
-            </h1>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 shrink-0" style={{ borderColor: "var(--recruiting-primary)" }}>
+                <AvatarImage src={profilePhotoUrl || undefined} />
+                <AvatarFallback className="bg-white/10 text-white text-lg font-bold">
+                  {(firstName?.[0] || "")}{(lastName?.[0] || "")}
+                </AvatarFallback>
+              </Avatar>
+              <h1
+                className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight text-white uppercase leading-[0.9]"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                <span className="block text-white/60">
+                  Welcome to {agencyName || "The Standard"},
+                </span>
+                <span style={{ color: "var(--recruiting-primary)" }}>
+                  {firstName || "Recruit"}
+                  {lastName ? ` ${lastName}` : ""}
+                </span>
+              </h1>
+            </div>
 
             {/* Subtitle */}
             <p className="mt-3 text-white/40 text-xs md:text-sm max-w-md">
               Complete your onboarding steps below to get started with your
-              career at The Standard.
+              career at {agencyName || "The Standard"}.
+            </p>
+
+            {/* Pipeline-only notice */}
+            <p className="mt-2 text-white/25 text-[10px] md:text-xs max-w-lg leading-relaxed">
+              This is your onboarding pipeline — it tracks your progress through
+              training and bootcamp. You won&apos;t have full access to the
+              application until your upline graduates you as an active agent
+              with an NPN. Until then, this is your home base.
             </p>
 
             {/* Current phase */}

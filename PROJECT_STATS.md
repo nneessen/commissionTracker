@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-02-17 18:38:32
+Last Updated: 2026-02-18 10:10:39
 
 ## Metrics
 - Total Files: 30658
-- Total Lines of Code: 164392
-- Total Commits: 978
+- Total Lines of Code: 164459
+- Total Commits: 985
 
 ## Recent Activity
-a9f627dd docs: multiple changes in .,src/features/billing/components
-def54692 docs: multiple changes in .,src,src/components/layout
-6583c87a fix: add unique constraint on team_seat_packs.stripe_subscription_id
-3ddb88e6 feat: add UW Wizard and Agent Seats rows to PlanComparisonTable
-ccf5535d feat: add Stripe live mode, Team UW Wizard seat management, and security hardening
+fd96348e fix: remove redundant bg-zinc-50/950 wrapper from all page components
+db071aed feat: auto-unlink lead purchases on bad deals and redesign lead source dialog
+37832f74 feat: enhance feature assignment matrix with collapsible groups and toggle-all
+b70bca66 feat: add leaderboard as dedicated subscription feature
+a32bfc7f fix: improve sidebar active state visibility and hide lead vendor sales from analytics
