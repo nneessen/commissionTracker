@@ -81,6 +81,7 @@ export const FEATURE_DISPLAY_NAMES: Record<FeatureKey, string> = {
   team_analytics: "Team Analytics Dashboard",
   recruiting: "Recruiting Pipeline",
   overrides: "Override Tracking",
+  leaderboard: "Leaderboard",
   downline_reports: "Downline Reports",
   // Training features
   training: "Training Modules",

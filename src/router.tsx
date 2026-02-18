@@ -169,21 +169,12 @@ const analyticsRoute = createRoute({
   ),
 });
 
-// Leaderboard route - restricted to specific users only
+// Leaderboard route - gated by leaderboard subscription feature
 const leaderboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "leaderboard",
   component: () => (
-    <RouteGuard
-      noRecruits
-      subscriptionFeature="hierarchy"
-      allowedEmails={[
-        "nickneessen@thestandardhq.com",
-        "nick@nickneessen.com",
-        "kerryglass.ffl@gmail.com",
-        "teagkeys@gmail.com",
-      ]}
-    >
+    <RouteGuard noRecruits subscriptionFeature="leaderboard">
       <LeaderboardPage />
     </RouteGuard>
   ),
@@ -700,8 +691,7 @@ const billingRoute = createRoute({
     plan_name?: string;
     billing_interval?: string;
   } => ({
-    checkout:
-      typeof search.checkout === "string" ? search.checkout : undefined,
+    checkout: typeof search.checkout === "string" ? search.checkout : undefined,
     addon_checkout:
       typeof search.addon_checkout === "string"
         ? search.addon_checkout

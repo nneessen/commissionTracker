@@ -808,6 +808,7 @@ class AdminSubscriptionService {
         team_analytics: false,
         recruiting: false,
         overrides: false,
+        leaderboard: false,
         downline_reports: false,
         // Training features
         training: false,

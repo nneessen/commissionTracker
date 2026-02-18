@@ -43,6 +43,7 @@ export interface SubscriptionFeatures {
   team_analytics: boolean;
   recruiting: boolean;
   overrides: boolean;
+  leaderboard: boolean;
   downline_reports: boolean;
   // Training features
   training: boolean;

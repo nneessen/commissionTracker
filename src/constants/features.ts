@@ -133,6 +133,12 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     description: "Track override commissions from downline",
     category: "team",
   },
+  leaderboard: {
+    key: "leaderboard",
+    displayName: "Leaderboard",
+    description: "Agency and team performance leaderboard with rankings",
+    category: "team",
+  },
 
   // Messaging Features
   email: {

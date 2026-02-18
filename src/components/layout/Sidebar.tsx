@@ -297,13 +297,7 @@ export default function Sidebar({
           icon: Trophy,
           label: "Leaderboard",
           href: "/leaderboard",
-          subscriptionFeature: "hierarchy",
-          allowedEmails: [
-            "nickneessen@thestandardhq.com",
-            "nick@nickneessen.com",
-            "kerryglass.ffl@gmail.com",
-            "teagkeys@gmail.com",
-          ],
+          subscriptionFeature: "leaderboard",
         },
         {
           icon: Store,
@@ -420,12 +414,7 @@ export default function Sidebar({
           icon: Trophy,
           label: "Leaderboard",
           href: "/leaderboard",
-          allowedEmails: [
-            "nickneessen@thestandardhq.com",
-            "nick@nickneessen.com",
-            "kerryglass.ffl@gmail.com",
-            "teagkeys@gmail.com",
-          ],
+          subscriptionFeature: "leaderboard",
         },
       ],
     },
