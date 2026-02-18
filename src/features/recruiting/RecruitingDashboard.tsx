@@ -260,7 +260,7 @@ function RecruitingDashboardContent() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
       {/* Preview Warning Banner - shown to non-admin users */}
       {showPreviewBanner && <RecruitingPreviewBanner />}
 

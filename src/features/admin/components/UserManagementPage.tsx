@@ -189,7 +189,7 @@ export function UserManagementPage() {
 
   if (usersLoading || rolesLoading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-8 w-64" />
         <div className="flex-1">
@@ -201,7 +201,7 @@ export function UserManagementPage() {
 
   if (usersError) {
     return (
-      <div className="p-3 bg-zinc-50 dark:bg-zinc-950 min-h-screen">
+      <div className="p-3 min-h-screen">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3">
           <p className="text-[11px] text-red-600 dark:text-red-400">
             Failed to load users:{" "}
@@ -213,7 +213,7 @@ export function UserManagementPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
       {/* Compact Header with inline stats */}
       <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-5">

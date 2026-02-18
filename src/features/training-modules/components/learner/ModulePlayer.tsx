@@ -80,7 +80,7 @@ export default function ModulePlayer({ moduleId }: ModulePlayerProps) {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
         <Button

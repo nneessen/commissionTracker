@@ -389,7 +389,7 @@ export function TrainerDashboard() {
   const userName = user?.first_name || "Trainer";
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-2 sm:p-3 space-y-2 sm:space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-2 sm:p-3 space-y-2 sm:space-y-2.5">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-zinc-900 rounded-lg px-2 sm:px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2">

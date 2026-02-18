@@ -109,7 +109,7 @@ export function TargetsPage() {
 
   if (isLoading || averagesLoading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="text-zinc-500 dark:text-zinc-400 text-sm">
           Loading targets...
         </div>
@@ -119,7 +119,7 @@ export function TargetsPage() {
 
   if (error) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="text-red-600 dark:text-red-400 text-sm">
           Error: {error.message}
         </div>
@@ -142,7 +142,7 @@ export function TargetsPage() {
   if (isFirstTime || !calculatedTargets) {
     return (
       <>
-        <div className="h-[calc(100vh-4rem)] flex flex-col p-3 bg-zinc-50 dark:bg-zinc-950">
+        <div className="h-[calc(100vh-4rem)] flex flex-col p-3">
           {/* Header Card - matches app styling */}
           <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-4">
             <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export function TargetsPage() {
 
   return (
     <>
-      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
         {/* Compact Header */}
         <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2">

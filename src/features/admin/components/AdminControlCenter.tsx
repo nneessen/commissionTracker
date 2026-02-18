@@ -156,7 +156,7 @@ export default function AdminControlCenter() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
       {/* Compact Header with inline stats */}
       <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-5">

@@ -11,7 +11,7 @@ export function ExpensesPage() {
   const [activeTab, setActiveTab] = useState<TabValue>("expenses");
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-zinc-50 dark:bg-zinc-950">
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Tab Navigation - Fixed at top */}
       <div className="flex-shrink-0 px-3 pt-3">
         <Tabs

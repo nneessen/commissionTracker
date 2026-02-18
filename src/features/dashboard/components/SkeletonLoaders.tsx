@@ -123,7 +123,7 @@ GridSkeleton.displayName = "GridSkeleton";
 
 // Dashboard skeleton - full page loader
 export const DashboardSkeleton = memo(() => (
-  <div className="p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950 animate-pulse">
+  <div className="p-3 space-y-2.5 animate-pulse">
     {/* Header */}
     <div className="flex justify-between items-center p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
       <div>
