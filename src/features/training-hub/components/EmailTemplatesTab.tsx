@@ -494,18 +494,30 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
   const canManageGlobal =
     isSuperAdmin || isAnyRole(["admin", "trainer", "contracting_manager"]);
 
-  const filterTemplates = (templates: EmailTemplate[]) => {
-    if (!searchQuery) return templates;
+  // Non-super-admin staff should not see billing/subscription system templates
+  const ADMIN_ONLY_CATEGORIES = ["billing"];
+
+  const filterTemplates = (templates: EmailTemplate[], isGlobal = false) => {
+    let filtered = templates;
+
+    // Hide billing templates from non-super-admin users
+    if (isGlobal && !isSuperAdmin) {
+      filtered = filtered.filter(
+        (t) => !ADMIN_ONLY_CATEGORIES.includes(t.category || ""),
+      );
+    }
+
+    if (!searchQuery) return filtered;
     const query = searchQuery.toLowerCase();
-    return templates.filter(
+    return filtered.filter(
       (t) =>
         t.name.toLowerCase().includes(query) ||
         t.subject.toLowerCase().includes(query),
     );
   };
 
-  const globalTemplates = filterTemplates(data?.globalTemplates || []);
-  const personalTemplates = filterTemplates(data?.personalTemplates || []);
+  const globalTemplates = filterTemplates(data?.globalTemplates || [], true);
+  const personalTemplates = filterTemplates(data?.personalTemplates || [], false);
   const status = data?.status;
 
   const handleDelete = async () => {

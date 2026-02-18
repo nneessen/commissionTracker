@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, X, Paperclip, Trash2, FileText } from "lucide-react";
+import { Send, Loader2, X, Paperclip, Trash2, FileText, Library } from "lucide-react";
 import { TipTapEditor } from "./TipTapEditor";
 import { sanitizeForEmail } from "../services/sanitizationService";
 import { convertHtmlToText } from "../services/htmlToTextService";
-import type { SendEmailRequest } from "@/services/email";
+import type { SendEmailRequest, TrainingDocumentAttachment } from "@/services/email";
+import { DocumentBrowserSheet } from "@/features/training-hub/components/DocumentBrowserSheet";
+import type { TrainingDocument } from "@/features/training-hub/types/training-document.types";
 
 interface Attachment {
   id: string;
@@ -57,6 +59,8 @@ export function EmailComposer({
   const [toInput, setToInput] = useState("");
   const [ccInput, setCcInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [trainingDocAttachments, setTrainingDocAttachments] = useState<TrainingDocument[]>([]);
+  const [showDocBrowser, setShowDocBrowser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track previous values to prevent infinite loops
@@ -121,6 +125,15 @@ export function EmailComposer({
       }),
     );
 
+    const trainingDocuments: TrainingDocumentAttachment[] = trainingDocAttachments.map((doc) => ({
+      id: doc.id,
+      name: doc.name,
+      fileName: doc.fileName,
+      fileType: doc.fileType,
+      fileSize: doc.fileSize,
+      storagePath: doc.storagePath,
+    }));
+
     const emailRequest: SendEmailRequest = {
       to,
       cc: cc.length > 0 ? cc : undefined,
@@ -129,6 +142,7 @@ export function EmailComposer({
       text: bodyText,
       from,
       recruitId,
+      ...(trainingDocuments.length > 0 && { trainingDocuments }),
     };
 
     await onSend?.(emailRequest);
@@ -209,6 +223,7 @@ export function EmailComposer({
   };
 
   return (
+    <>
     <div className="flex flex-col h-full">
       {/* Header Section - To, CC, Subject */}
       <div className="shrink-0 space-y-3 pb-3 border-b">
@@ -317,8 +332,8 @@ export function EmailComposer({
 
       {/* Footer Section - Attachments + Actions */}
       <div className="shrink-0 pt-3 border-t space-y-3">
-        {/* Attachments */}
-        {attachments.length > 0 && (
+        {/* File attachments */}
+        {(attachments.length > 0 || trainingDocAttachments.length > 0) && (
           <div className="flex flex-wrap gap-2">
             {attachments.map((att) => (
               <div
@@ -339,9 +354,36 @@ export function EmailComposer({
                 </button>
               </div>
             ))}
-            <span className="text-xs text-muted-foreground self-center">
-              Total: {formatFileSize(totalAttachmentSize)} / 25 MB
-            </span>
+            {trainingDocAttachments.map((doc) => (
+              <div
+                key={doc.id}
+                className="inline-flex items-center gap-2 px-2 py-1 text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800"
+              >
+                <Library className="h-3 w-3" />
+                <span className="max-w-[150px] truncate">{doc.name}</span>
+                {doc.fileSize !== null && (
+                  <span className="text-blue-500">
+                    ({formatFileSize(doc.fileSize)})
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTrainingDocAttachments((prev) =>
+                      prev.filter((d) => d.id !== doc.id),
+                    )
+                  }
+                  className="hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {attachments.length > 0 && (
+              <span className="text-xs text-muted-foreground self-center">
+                Files: {formatFileSize(totalAttachmentSize)} / 25 MB
+              </span>
+            )}
           </div>
         )}
 
@@ -365,6 +407,16 @@ export function EmailComposer({
             >
               <Paperclip className="h-4 w-4 mr-2" />
               Attach
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDocBrowser(true)}
+              disabled={isSending}
+            >
+              <Library className="h-4 w-4 mr-2" />
+              From Library
             </Button>
           </div>
 
@@ -396,5 +448,19 @@ export function EmailComposer({
         </div>
       </div>
     </div>
+    <DocumentBrowserSheet
+      open={showDocBrowser}
+      onOpenChange={setShowDocBrowser}
+      selectedDocuments={trainingDocAttachments}
+      onSelectDocuments={(docs: TrainingDocument[]) => {
+        setTrainingDocAttachments((prev) => {
+          const existingIds = new Set(prev.map((d) => d.id));
+          const newDocs = docs.filter((d) => !existingIds.has(d.id));
+          return [...prev, ...newDocs];
+        });
+        setShowDocBrowser(false);
+      }}
+    />
+    </>
   );
 }

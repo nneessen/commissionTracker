@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-18 16:19:02
+
+### Changed Files
+- `src/features/email/components/EmailComposer.tsx`
+- `src/features/recruiting/components/ComposeEmailDialog.tsx`
+- `src/features/training-hub/components/DocumentsTab.tsx`
+- `src/features/training-hub/components/EmailTemplatesTab.tsx`
+- `src/features/training-modules/components/admin/AssignModuleDialog.tsx`
+- `src/services/email/index.ts`
+- `src/services/email/types.ts`
+
+### Statistics
+```
+ 7 files changed, 436 insertions(+), 82 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-18 15:55:01
 
 ### Changed Files

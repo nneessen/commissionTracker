@@ -64,11 +64,14 @@ import {
   Table2,
   Image,
   Presentation,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
 import {
   useTrainingDocuments,
   useDeleteTrainingDocument,
+  useUpdateTrainingDocument,
   useTrainingDocumentUrl,
 } from "../hooks/useTrainingDocuments";
 import {
@@ -117,12 +120,14 @@ function DocumentRow({
   onView,
   onDownload,
   onDelete,
+  onRename,
   canDelete,
 }: {
   document: TrainingDocument;
   onView: () => void;
   onDownload: () => void;
   onDelete: () => void;
+  onRename: () => void;
   canDelete: boolean;
 }) {
   return (
@@ -194,17 +199,19 @@ function DocumentRow({
               <Download className="h-3 w-3 mr-2" />
               Download
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onRename} className="text-xs">
+              <Pencil className="h-3 w-3 mr-2" />
+              Rename
+            </DropdownMenuItem>
             {canDelete && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className="text-xs text-red-600 dark:text-red-400"
-                >
-                  <Trash2 className="h-3 w-3 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="text-xs text-red-600 dark:text-red-400"
+              >
+                <Trash2 className="h-3 w-3 mr-2" />
+                Delete
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -257,6 +264,9 @@ export function DocumentsTab({ searchQuery }: DocumentsTabProps) {
     useState<TrainingDocument | null>(null);
   const [deletingDocument, setDeletingDocument] =
     useState<TrainingDocument | null>(null);
+  const [renamingDocument, setRenamingDocument] =
+    useState<TrainingDocument | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   // Build filters
   const filters = {
@@ -269,6 +279,26 @@ export function DocumentsTab({ searchQuery }: DocumentsTabProps) {
 
   const { data: documents, isLoading, error } = useTrainingDocuments(filters);
   const deleteDocument = useDeleteTrainingDocument();
+  const updateDocument = useUpdateTrainingDocument();
+
+  const handleRenameOpen = (doc: TrainingDocument) => {
+    setRenamingDocument(doc);
+    setRenameValue(doc.name);
+  };
+
+  const handleRenameSave = async () => {
+    if (!renamingDocument || !renameValue.trim()) return;
+    try {
+      await updateDocument.mutateAsync({
+        id: renamingDocument.id,
+        name: renameValue.trim(),
+      });
+      toast.success("Document renamed");
+      setRenamingDocument(null);
+    } catch {
+      toast.error("Failed to rename document");
+    }
+  };
 
   const handleView = (doc: TrainingDocument) => {
     setViewingDocument(doc);
@@ -309,9 +339,12 @@ export function DocumentsTab({ searchQuery }: DocumentsTabProps) {
     }
   };
 
-  // Check if user can delete (owner or super admin)
+  // Staff who manage the shared library can delete any document
   const canDelete = (doc: TrainingDocument) => {
-    return doc.uploadedBy === user?.id || user?.is_super_admin === true;
+    if (user?.is_super_admin) return true;
+    const roles = (user?.roles as string[] | undefined) ?? [];
+    if (roles.includes("trainer") || roles.includes("contracting_manager") || roles.includes("admin")) return true;
+    return doc.uploadedBy === user?.id;
   };
 
   if (error) {
@@ -398,6 +431,7 @@ export function DocumentsTab({ searchQuery }: DocumentsTabProps) {
                   onView={() => handleView(doc)}
                   onDownload={() => handleDownload(doc)}
                   onDelete={() => setDeletingDocument(doc)}
+                  onRename={() => handleRenameOpen(doc)}
                   canDelete={canDelete(doc)}
                 />
               ))}
@@ -427,6 +461,50 @@ export function DocumentsTab({ searchQuery }: DocumentsTabProps) {
         document={viewingDocument}
         onClose={() => setViewingDocument(null)}
       />
+
+      {/* Rename dialog */}
+      <AlertDialog
+        open={!!renamingDocument}
+        onOpenChange={(open) => !open && setRenamingDocument(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm">
+              Rename Document
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Enter a new name for "{renamingDocument?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleRenameSave()}
+              className="h-7 text-xs"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-7 text-xs">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRenameSave}
+              className="h-7 text-xs"
+              disabled={
+                updateDocument.isPending || !renameValue.trim()
+              }
+            >
+              {updateDocument.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                "Save"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation dialog */}
       <AlertDialog

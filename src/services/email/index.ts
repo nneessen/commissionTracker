@@ -13,6 +13,7 @@ export type {
   SendEmailResponse,
   CreateUserEmailData,
   UpdateUserEmailData,
+  TrainingDocumentAttachment,
 } from "./types";
 
 // Re-export template service from features

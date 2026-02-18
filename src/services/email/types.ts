@@ -26,6 +26,16 @@ export interface UserEmailEntity {
   attachments?: UserEmailAttachment[];
 }
 
+// Training document reference for email attachments (resolved server-side)
+export interface TrainingDocumentAttachment {
+  id: string;
+  name: string;
+  fileName: string;
+  fileType: string | null;
+  fileSize: number | null;
+  storagePath: string;
+}
+
 // Send email request (matches root emailService interface)
 export interface SendEmailRequest {
   to: string[];
@@ -38,6 +48,7 @@ export interface SendEmailRequest {
   recruitId?: string;
   senderId?: string;
   metadata?: Record<string, unknown>;
+  trainingDocuments?: TrainingDocumentAttachment[];
 }
 
 // Send email response

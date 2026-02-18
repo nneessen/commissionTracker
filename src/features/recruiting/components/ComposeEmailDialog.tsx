@@ -34,6 +34,17 @@ function replaceVariables(
   return result;
 }
 
+// Extract body innerHTML from a full HTML document so TipTap receives a fragment
+function extractBodyContent(html: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    return doc.body?.innerHTML?.trim() || html;
+  } catch {
+    return html;
+  }
+}
+
 export function ComposeEmailDialog({
   open,
   onOpenChange,
@@ -59,13 +70,23 @@ export function ComposeEmailDialog({
 
   const handleSend = async (email: SendEmailRequest) => {
     try {
-      // Send the email with proper format for Edge Function
+      // For block-based templates, send the properly formatted block HTML
+      // instead of TipTap's processed output (which loses block structure)
+      let finalHtml = email.html;
+      if (
+        selectedTemplate?.blocks &&
+        Array.isArray(selectedTemplate.blocks) &&
+        selectedTemplate.blocks.length > 0
+      ) {
+        finalHtml = blocksToHtml(selectedTemplate.blocks, variables);
+      }
+
       await sendEmail.mutateAsync({
         ...email,
-        recruitId, // Add recruit context
+        html: finalHtml,
+        recruitId,
       });
 
-      // Close dialog on success
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to send email:", error);
@@ -83,19 +104,23 @@ export function ComposeEmailDialog({
       return { subject: "", bodyHtml: "" };
     }
 
-    // If template has blocks, convert to HTML
+    // If template has blocks, extract the body fragment for TipTap display
+    // (TipTap cannot handle a full <!DOCTYPE html> document as content)
     let bodyHtml = "";
     if (
       selectedTemplate.blocks &&
       Array.isArray(selectedTemplate.blocks) &&
       selectedTemplate.blocks.length > 0
     ) {
-      bodyHtml = blocksToHtml(selectedTemplate.blocks, variables);
+      bodyHtml = extractBodyContent(
+        blocksToHtml(selectedTemplate.blocks, variables),
+      );
     } else if (selectedTemplate.body_html) {
-      bodyHtml = replaceVariables(selectedTemplate.body_html, variables);
+      bodyHtml = extractBodyContent(
+        replaceVariables(selectedTemplate.body_html, variables),
+      );
     }
 
-    // Replace variables in subject
     const subject = selectedTemplate.subject
       ? replaceVariables(selectedTemplate.subject, variables)
       : "";
