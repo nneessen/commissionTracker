@@ -86,6 +86,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
 import { US_STATES } from "@/constants/states";
+import { VALID_CONTRACT_LEVELS } from "@/lib/constants";
 import type { RecruitFilters } from "@/types/recruiting.types";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { Link } from "@tanstack/react-router";
@@ -845,21 +846,33 @@ function BasicEditRecruitDialog({
               <Label htmlFor="edit_contract_level" className="text-[10px]">
                 Starting Comp %
               </Label>
-              <Input
-                id="edit_contract_level"
-                type="number"
-                min={0}
-                max={100}
+              <Select
                 value={formData.contract_level}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   setFormData((prev) => ({
                     ...prev,
-                    contract_level: e.target.value,
+                    contract_level: value,
                   }))
                 }
-                className="h-8 text-[11px]"
-                placeholder="e.g. 50"
-              />
+              >
+                <SelectTrigger
+                  id="edit_contract_level"
+                  className="h-8 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                >
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VALID_CONTRACT_LEVELS.map((level) => (
+                    <SelectItem
+                      key={level}
+                      value={level.toString()}
+                      className="text-[11px]"
+                    >
+                      {level}%
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2">
@@ -1219,21 +1232,33 @@ function BasicAddRecruitDialog({
               <Label htmlFor="contract_level" className="text-[10px]">
                 Starting Comp %
               </Label>
-              <Input
-                id="contract_level"
-                type="number"
-                min={0}
-                max={100}
+              <Select
                 value={formData.contract_level}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   setFormData((prev) => ({
                     ...prev,
-                    contract_level: e.target.value,
+                    contract_level: value,
                   }))
                 }
-                className="h-8 text-[11px]"
-                placeholder="e.g. 50"
-              />
+              >
+                <SelectTrigger
+                  id="contract_level"
+                  className="h-8 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                >
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VALID_CONTRACT_LEVELS.map((level) => (
+                    <SelectItem
+                      key={level}
+                      value={level.toString()}
+                      className="text-[11px]"
+                    >
+                      {level}%
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
