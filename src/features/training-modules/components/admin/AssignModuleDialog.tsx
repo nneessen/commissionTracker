@@ -4,7 +4,6 @@ import { Check, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -217,7 +216,7 @@ export function AssignModuleDialog({
               </div>
 
               {/* Results list */}
-              <ScrollArea className="h-48 border border-zinc-200 dark:border-zinc-700 rounded-md">
+              <div className="h-52 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md" style={{ overflowY: "scroll" }}>
                 {isSearching && (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
@@ -268,7 +267,7 @@ export function AssignModuleDialog({
                     })}
                   </div>
                 )}
-              </ScrollArea>
+              </div>
             </div>
           )}
 
