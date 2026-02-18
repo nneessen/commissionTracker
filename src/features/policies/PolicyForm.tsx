@@ -278,9 +278,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex-1 flex flex-col overflow-hidden"
+      className="flex-1 flex flex-col overflow-hidden min-h-0"
     >
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-y-auto">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 p-3 md:p-4 overflow-y-auto min-h-0 overscroll-y-contain">
         {/* Left Column - Client Information */}
         <PolicyFormClientSection
           formData={formData}
@@ -311,7 +311,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border/50 bg-zinc-50/50 dark:bg-zinc-800/30">
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <Button
           type="button"
           onClick={onClose}

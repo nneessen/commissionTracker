@@ -60,7 +60,7 @@ export function PolicyDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="p-0 gap-0 overflow-hidden bg-background border-0 shadow-2xl ring-0 outline-none max-w-3xl"
+        className="p-0 gap-0 overflow-hidden rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 shadow-2xl shadow-black/20 dark:shadow-black/50 ring-0 outline-none max-w-3xl"
         hideCloseButton
         // Block ESC key and click-outside during submission
         onPointerDownOutside={(e) => {
@@ -79,10 +79,11 @@ export function PolicyDialog({
 
         <div className="flex flex-col max-h-[85vh]">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1 h-5 rounded-full bg-amber-500" />
               <FileText className="h-4 w-4 text-amber-500" />
-              <span className="text-sm font-semibold">
+              <span className="text-sm font-semibold tracking-wide">
                 {policyId ? "Edit Policy" : "New Policy"}
               </span>
             </div>
