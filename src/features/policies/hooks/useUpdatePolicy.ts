@@ -5,7 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { policyService } from "@/services/policies/policyService";
 import { commissionService } from "@/services/commissions/commissionService";
 import { policyKeys } from "../queries";
-import type { CreatePolicyData, Policy, PolicyLifecycleStatus } from "@/types/policy.types";
+import { leadPurchaseKeys } from "@/hooks/lead-purchases";
+import type { CreatePolicyData, Policy } from "@/types/policy.types";
 import type { Commission } from "@/types/commission.types";
 
 // Basic update params
@@ -47,7 +48,9 @@ export type UpdatePolicyParams =
 // Type guards
 function isCancelParams(params: UpdatePolicyParams): params is CancelParams {
   return (
-    "lifecycleStatus" in params && params.lifecycleStatus === "cancelled" && "reason" in params
+    "lifecycleStatus" in params &&
+    params.lifecycleStatus === "cancelled" &&
+    "reason" in params
   );
 }
 
@@ -225,6 +228,17 @@ export function useUpdatePolicy() {
         isReinstateParams(params)
       ) {
         queryClient.invalidateQueries({ queryKey: ["chargeback-summary"] });
+      }
+
+      // Invalidate lead purchase cache when policies are unlinked
+      if (
+        isCancelParams(params) ||
+        isLapseParams(params) ||
+        (isBasicUpdateParams(params) &&
+          (params.updates.status === "denied" ||
+            params.updates.status === "withdrawn"))
+      ) {
+        queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
       }
     },
   });

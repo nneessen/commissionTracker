@@ -244,6 +244,12 @@ class PolicyService {
       }
     }
 
+    // Auto-unlink from lead purchase when deal goes bad
+    if (updates.status === "denied" || updates.status === "withdrawn") {
+      updates.leadPurchaseId = null;
+      updates.leadSourceType = null;
+    }
+
     return this.repository.update(id, updates);
   }
 
@@ -579,6 +585,8 @@ class PolicyService {
         .from("policies")
         .update({
           lifecycle_status: "cancelled",
+          lead_purchase_id: null,
+          lead_source_type: null,
           notes: policy.notes
             ? `${policy.notes}\n\nCancelled: ${reason} (${cancelDate.toISOString().split("T")[0]})`
             : `Cancelled: ${reason} (${cancelDate.toISOString().split("T")[0]})`,
@@ -606,6 +614,14 @@ class PolicyService {
             policyId,
             error: commissionError,
           },
+          "PolicyService.cancelPolicy",
+        );
+      }
+
+      if (policy.leadPurchaseId) {
+        logger.info(
+          "Auto-unlinked cancelled policy from lead purchase",
+          { policyId, leadPurchaseId: policy.leadPurchaseId },
           "PolicyService.cancelPolicy",
         );
       }
@@ -707,6 +723,8 @@ class PolicyService {
         .from("policies")
         .update({
           lifecycle_status: "lapsed",
+          lead_purchase_id: null,
+          lead_source_type: null,
           notes: policy.notes ? `${policy.notes}\n\n${lapseNote}` : lapseNote,
           updated_at: new Date().toISOString(),
         })
@@ -732,6 +750,14 @@ class PolicyService {
             policyId,
             error: commissionError,
           },
+          "PolicyService.lapsePolicy",
+        );
+      }
+
+      if (policy.leadPurchaseId) {
+        logger.info(
+          "Auto-unlinked lapsed policy from lead purchase",
+          { policyId, leadPurchaseId: policy.leadPurchaseId },
           "PolicyService.lapsePolicy",
         );
       }

@@ -134,9 +134,12 @@ export function LeadSourceDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDismiss}>
-        <DialogContent className="max-w-sm p-0 gap-0">
-          <DialogHeader className="px-4 pt-3 pb-2 border-b border-border">
-            <DialogTitle className="text-sm font-semibold">
+        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-4 pt-3 pb-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+            <DialogTitle className="text-sm font-semibold flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/40">
+                <Package className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              </span>
               Track Lead Source
             </DialogTitle>
             <DialogDescription className="text-[11px] text-muted-foreground">
@@ -154,11 +157,12 @@ export function LeadSourceDialog({
               icon={Package}
               label="Lead Purchase"
               description="From a purchased lead pack"
+              colorClass="info"
             />
 
             {/* Expanded section for lead purchase selection */}
             {sourceOption === "lead_purchase" && (
-              <div className="ml-6 pl-2 border-l-2 border-border">
+              <div className="ml-6 pl-2 border-l-2 border-blue-300 dark:border-blue-700/60">
                 <LeadPurchaseSelector
                   selectedId={selectedPurchase?.id}
                   onSelect={setSelectedPurchase}
@@ -168,7 +172,7 @@ export function LeadSourceDialog({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="mt-1.5 h-7 text-xs w-full justify-start text-muted-foreground hover:text-foreground"
+                  className="mt-1.5 h-7 text-xs w-full justify-start text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                   onClick={() => setShowAddPurchaseDialog(true)}
                 >
                   <Plus className="h-3 w-3 mr-1.5" />
@@ -184,6 +188,7 @@ export function LeadSourceDialog({
               icon={Gift}
               label="Free Lead"
               description="Hand-me-down from upline/agent"
+              colorClass="success"
             />
 
             {/* Option: Other */}
@@ -193,10 +198,11 @@ export function LeadSourceDialog({
               icon={HelpCircle}
               label="Other Source"
               description="Referral, organic, etc."
+              colorClass="neutral"
             />
           </div>
 
-          <DialogFooter className="px-4 py-2.5 border-t border-border bg-muted/30 flex-row justify-between sm:justify-between">
+          <DialogFooter className="px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex-row justify-between sm:justify-between">
             <Button
               type="button"
               variant="ghost"
@@ -216,7 +222,7 @@ export function LeadSourceDialog({
                 !sourceOption ||
                 (sourceOption === "lead_purchase" && !selectedPurchase)
               }
-              className="h-7 text-xs"
+              className="h-7 text-xs px-4"
             >
               {isSubmitting ? (
                 <>
@@ -242,13 +248,56 @@ export function LeadSourceDialog({
   );
 }
 
+type ColorClass = "info" | "success" | "neutral";
+
 interface OptionButtonProps {
   selected: boolean;
   onClick: () => void;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   description: string;
+  colorClass: ColorClass;
 }
+
+const colorStyles: Record<
+  ColorClass,
+  {
+    selectedBg: string;
+    selectedBorder: string;
+    selectedRing: string;
+    iconBg: string;
+    iconColor: string;
+    radioSelected: string;
+  }
+> = {
+  info: {
+    selectedBg: "bg-blue-50 dark:bg-blue-950/30",
+    selectedBorder: "border-blue-200 dark:border-blue-800",
+    selectedRing: "ring-1 ring-blue-200/60 dark:ring-blue-800/40",
+    iconBg: "bg-blue-100 dark:bg-blue-900/40",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    radioSelected:
+      "border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500",
+  },
+  success: {
+    selectedBg: "bg-emerald-50 dark:bg-emerald-950/30",
+    selectedBorder: "border-emerald-200 dark:border-emerald-800",
+    selectedRing: "ring-1 ring-emerald-200/60 dark:ring-emerald-800/40",
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    radioSelected:
+      "border-emerald-600 bg-emerald-600 dark:border-emerald-500 dark:bg-emerald-500",
+  },
+  neutral: {
+    selectedBg: "bg-zinc-100 dark:bg-zinc-800/50",
+    selectedBorder: "border-zinc-300 dark:border-zinc-700",
+    selectedRing: "ring-1 ring-zinc-200/60 dark:ring-zinc-700/40",
+    iconBg: "bg-zinc-200 dark:bg-zinc-700/50",
+    iconColor: "text-zinc-600 dark:text-zinc-400",
+    radioSelected:
+      "border-zinc-600 bg-zinc-600 dark:border-zinc-400 dark:bg-zinc-400",
+  },
+};
 
 function OptionButton({
   selected,
@@ -256,14 +305,19 @@ function OptionButton({
   icon: Icon,
   label,
   description,
+  colorClass,
 }: OptionButtonProps) {
+  const colors = colorStyles[colorClass];
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-colors",
-        selected ? "bg-accent" : "hover:bg-accent/50 active:bg-accent/80",
+        "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left border transition-all duration-150",
+        selected
+          ? `${colors.selectedBg} ${colors.selectedBorder} ${colors.selectedRing}`
+          : "border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/40 active:bg-zinc-100 dark:active:bg-zinc-800/60",
       )}
     >
       {/* Selection indicator */}
@@ -271,20 +325,27 @@ function OptionButton({
         className={cn(
           "flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-colors",
           selected
-            ? "border-foreground bg-foreground text-background"
+            ? `${colors.radioSelected} text-white`
             : "border-muted-foreground/40",
         )}
       >
         {selected && <Check className="h-2.5 w-2.5" />}
       </div>
 
-      {/* Icon */}
-      <Icon
+      {/* Icon in tinted pill */}
+      <div
         className={cn(
-          "h-3.5 w-3.5 flex-shrink-0",
-          selected ? "text-foreground" : "text-muted-foreground",
+          "flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center",
+          selected ? colors.iconBg : "bg-zinc-100 dark:bg-zinc-800",
         )}
-      />
+      >
+        <Icon
+          className={cn(
+            "h-3.5 w-3.5",
+            selected ? colors.iconColor : "text-muted-foreground",
+          )}
+        />
+      </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">

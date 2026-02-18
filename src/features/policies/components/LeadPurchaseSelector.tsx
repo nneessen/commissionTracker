@@ -52,7 +52,7 @@ export function LeadPurchaseSelector({
           className,
         )}
       >
-        <Package className="h-5 w-5 text-muted-foreground/40 mb-1" />
+        <Package className="h-5 w-5 text-blue-300 dark:text-blue-700 mb-1" />
         <p className="text-[11px] text-muted-foreground">
           No lead purchases in the last 90 days
         </p>
@@ -107,16 +107,18 @@ function LeadPurchaseItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        "w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors",
-        isSelected ? "bg-accent" : "hover:bg-accent/50 active:bg-accent/80",
+        "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left border transition-all duration-150",
+        isSelected
+          ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+          : "border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/40 active:bg-zinc-100 dark:active:bg-zinc-800/60",
       )}
     >
       {/* Selection indicator */}
       <div
         className={cn(
-          "flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center",
+          "flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors",
           isSelected
-            ? "border-foreground bg-foreground text-background"
+            ? "border-blue-600 bg-blue-600 dark:border-blue-500 dark:bg-blue-500 text-white"
             : "border-muted-foreground/40",
         )}
       >
