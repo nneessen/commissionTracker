@@ -50,9 +50,6 @@ const CommissionPipeline = lazy(() =>
 const PredictiveAnalytics = lazy(() =>
   import("./components").then((m) => ({ default: m.PredictiveAnalytics })),
 );
-const LeadVendorSales = lazy(() =>
-  import("./components").then((m) => ({ default: m.LeadVendorSales })),
-);
 const AgentPerformance = lazy(() =>
   import("./components").then((m) => ({ default: m.AgentPerformance })),
 );
@@ -237,12 +234,6 @@ function AnalyticsDashboardContent() {
               <AnalyticsSectionGate section="agent_performance">
                 <Suspense fallback={null}>
                   <AgentPerformance />
-                </Suspense>
-              </AnalyticsSectionGate>
-
-              <AnalyticsSectionGate section="lead_vendor_sales">
-                <Suspense fallback={null}>
-                  <LeadVendorSales />
                 </Suspense>
               </AnalyticsSectionGate>
 

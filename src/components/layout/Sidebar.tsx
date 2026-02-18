@@ -141,10 +141,8 @@ export default function Sidebar({
   const [isUnderwritingWizardOpen, setIsUnderwritingWizardOpen] =
     useState(false);
   const [isQuickQuoteOpen, setIsQuickQuoteOpen] = useState(false);
-  const {
-    isEnabled: isUnderwritingEnabled,
-    isLoading: isUnderwritingLoading,
-  } = useUnderwritingFeatureFlag();
+  const { isEnabled: isUnderwritingEnabled, isLoading: isUnderwritingLoading } =
+    useUnderwritingFeatureFlag();
   const { shouldGrantTemporaryAccess, isLoading: tempAccessLoading } =
     useTemporaryAccessCheck();
   const location = useLocation();
@@ -522,10 +520,7 @@ export default function Sidebar({
     if (!navItem.permission) return false;
     if (isLoading) return false;
     if (!can(navItem.permission)) return false;
-    if (
-      navItem.subscriptionFeature &&
-      !hasFeature(navItem.subscriptionFeature)
-    )
+    if (navItem.subscriptionFeature && !hasFeature(navItem.subscriptionFeature))
       return false;
     if (
       navItem.subscriptionFeatures &&
@@ -657,9 +652,7 @@ export default function Sidebar({
           </Tooltip>
         );
       }
-      return (
-        <React.Fragment key={key}>{lockedEl}</React.Fragment>
-      );
+      return <React.Fragment key={key}>{lockedEl}</React.Fragment>;
     }
 
     // ── Action item (UW Wizard, Quick Quote) ──
@@ -695,9 +688,7 @@ export default function Sidebar({
           </Tooltip>
         );
       }
-      return (
-        <React.Fragment key={key}>{actionEl}</React.Fragment>
-      );
+      return <React.Fragment key={key}>{actionEl}</React.Fragment>;
     }
 
     // ── Regular link item ──
@@ -717,21 +708,19 @@ export default function Sidebar({
                 ? "w-9 justify-center mx-auto"
                 : "w-full gap-2.5 px-3",
               isActive
-                ? "bg-accent/60 text-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
+                ? "bg-secondary text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/70",
             )}
             data-active={isActive}
           >
             {isActive && (
-              <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-primary" />
+              <span className="absolute left-0 top-0.5 bottom-0.5 w-1 rounded-full bg-info" />
             )}
             <Icon
               size={16}
-              className={cn("flex-shrink-0", isActive && "text-primary")}
+              className={cn("flex-shrink-0", isActive && "text-info")}
             />
-            {!isCollapsed && (
-              <span className="truncate">{navItem.label}</span>
-            )}
+            {!isCollapsed && <span className="truncate">{navItem.label}</span>}
           </div>
         )}
       </Link>
@@ -749,9 +738,7 @@ export default function Sidebar({
         </Tooltip>
       );
     }
-    return (
-      <React.Fragment key={key}>{linkEl}</React.Fragment>
-    );
+    return <React.Fragment key={key}>{linkEl}</React.Fragment>;
   };
 
   // ─── JSX ─────────────────────────────────────────────────────
@@ -775,9 +762,7 @@ export default function Sidebar({
         <div
           className={cn(
             "fixed inset-0 bg-background/90 backdrop-blur-sm z-[99] transition-all duration-300",
-            isMobileOpen
-              ? "opacity-100 visible"
-              : "opacity-0 invisible",
+            isMobileOpen ? "opacity-100 visible" : "opacity-0 invisible",
           )}
           onClick={closeMobile}
         />
@@ -788,8 +773,7 @@ export default function Sidebar({
         className={cn(
           "fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-[100] transition-all duration-200",
           isCollapsed ? "w-[72px]" : "w-[220px]",
-          isMobile &&
-            (isMobileOpen ? "translate-x-0" : "-translate-x-full"),
+          isMobile && (isMobileOpen ? "translate-x-0" : "-translate-x-full"),
           isMobile && !isCollapsed && "w-[280px]",
         )}
       >
@@ -840,9 +824,7 @@ export default function Sidebar({
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                {!isRecruit && (
-                  <NotificationDropdown isCollapsed={false} />
-                )}
+                {!isRecruit && <NotificationDropdown isCollapsed={false} />}
                 {isMobile ? (
                   <Button
                     variant="ghost"
@@ -894,22 +876,26 @@ export default function Sidebar({
 
               return (
                 <div key={group.id}>
+                  {/* Separator between sections (expanded only) */}
+                  {!isCollapsed && groupIdx > 0 && (
+                    <div className="my-1.5 mx-3 border-t border-border" />
+                  )}
                   {/* Section header (expanded only) */}
                   {!isCollapsed && (
                     <div
                       className={cn(
                         "mb-1 px-2 flex items-center justify-between cursor-pointer group",
-                        groupIdx > 0 ? "mt-3" : "mt-1",
+                        groupIdx > 0 ? "mt-2" : "mt-1",
                       )}
                       onClick={() => toggleSection(group.id)}
                     >
-                      <span className="text-[10px] font-medium uppercase text-muted-foreground/60 tracking-wider select-none">
+                      <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider select-none">
                         {group.label}
                       </span>
                       <ChevronDown
                         size={12}
                         className={cn(
-                          "text-muted-foreground/40 transition-transform duration-200 group-hover:text-muted-foreground/60",
+                          "text-muted-foreground/60 transition-transform duration-200 group-hover:text-muted-foreground",
                           isSectionCollapsed && "-rotate-90",
                         )}
                       />
@@ -937,9 +923,7 @@ export default function Sidebar({
           {/* Footer */}
           <div className="p-2 border-t border-border bg-card/80">
             {/* Footer nav items (Billing, Settings) */}
-            {footerNavItems.map((item) =>
-              renderNavItem(item, item.href),
-            )}
+            {footerNavItems.map((item) => renderNavItem(item, item.href))}
 
             {/* Separator */}
             <div className="my-1.5 mx-1 border-t border-border/50" />

@@ -21,7 +21,6 @@ export type AnalyticsSectionKey =
   | "game_plan"
   | "commission_pipeline"
   | "predictive_analytics"
-  | "lead_vendor_sales"
   | "agent_performance"
   | "trend_comparison"
   | "conversion_funnel";
@@ -37,7 +36,6 @@ export const ANALYTICS_SECTION_NAMES: Record<AnalyticsSectionKey, string> = {
   game_plan: "Game Plan",
   commission_pipeline: "Commission Pipeline",
   predictive_analytics: "Predictive Analytics",
-  lead_vendor_sales: "Lead Vendor Sales",
   agent_performance: "Agent Performance",
   trend_comparison: "Trend Comparison",
   conversion_funnel: "Conversion Funnel",
@@ -54,7 +52,6 @@ export const ANALYTICS_SECTION_TIERS: Record<AnalyticsSectionKey, string> = {
   game_plan: "Pro",
   commission_pipeline: "Pro",
   predictive_analytics: "Pro",
-  lead_vendor_sales: "Pro",
   agent_performance: "Pro",
   trend_comparison: "Pro",
   conversion_funnel: "Pro",
@@ -189,7 +186,6 @@ export function useAccessibleAnalyticsSections(): {
       "game_plan",
       "commission_pipeline",
       "predictive_analytics",
-      "lead_vendor_sales",
       "agent_performance",
       "trend_comparison",
       "conversion_funnel",
