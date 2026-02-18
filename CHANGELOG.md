@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-18 14:31:33
+
+### Changed Files
+- `supabase/migrations/20260218142719_enable_notifications_realtime.sql`
+- `supabase/migrations/20260218142720_recruiting_notification_triggers.sql`
+
+### Statistics
+```
+ 2 files changed, 370 insertions(+)
+```
+
 ## [Checkpoint] - 2026-02-18 13:45:01
 
 ### Changed Files
