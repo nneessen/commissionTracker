@@ -1,6 +1,7 @@
 // src/features/training-modules/components/admin/AssignModuleDialog.tsx
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Check, Loader2, Search, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateTrainingAssignment } from "../../hooks/useTrainingAssignments";
+import { useCreateTrainingAssignment, useTrainingAssignments } from "../../hooks/useTrainingAssignments";
 import { useImo } from "@/contexts/ImoContext";
-import { useSearchUsers } from "@/hooks";
-import { getUserDisplayName } from "@/services";
+// eslint-disable-next-line no-restricted-imports
+import { supabase } from "@/services/base/supabase";
 import { ASSIGNMENT_TYPES, PRIORITY_LEVELS } from "../../types/training-module.types";
 import type {
   TrainingModule,
@@ -44,6 +45,7 @@ export function AssignModuleDialog({
 }: AssignModuleDialogProps) {
   const { agency } = useImo();
   const createAssignment = useCreateTrainingAssignment();
+  const { data: existingAssignments = [] } = useTrainingAssignments(module.id);
 
   const [assignmentType, setAssignmentType] = useState<AssignmentType>("individual");
   const [selectedUsers, setSelectedUsers] = useState<UserSearchResult[]>([]);
@@ -53,10 +55,44 @@ export function AssignModuleDialog({
   const [isMandatory, setIsMandatory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: searchResults = [], isLoading: isSearching } = useSearchUsers(
-    searchTerm,
-    { approvalStatus: "approved", limit: 30 },
+  // Load all approved agents with no limit — filter client-side
+  const { data: allAgents = [], isLoading: agentsLoading } = useQuery({
+    queryKey: ["assign-dialog-agents"],
+    queryFn: async (): Promise<UserSearchResult[]> => {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("id, first_name, last_name, email, roles, agent_status")
+        .eq("approval_status", "approved")
+        .order("first_name", { ascending: true })
+        .order("last_name", { ascending: true });
+      if (error) throw error;
+      return (data || []) as UserSearchResult[];
+    },
+    staleTime: 60000,
+  });
+
+  // Build set of already-assigned user IDs for this module
+  const alreadyAssignedIds = useMemo(
+    () =>
+      new Set(
+        existingAssignments
+          .filter((a) => a.assigned_to !== null)
+          .map((a) => a.assigned_to as string),
+      ),
+    [existingAssignments],
   );
+
+  // Filter: exclude already-assigned agents, then apply search term
+  const visibleAgents = useMemo(() => {
+    const unassigned = allAgents.filter((u) => !alreadyAssignedIds.has(u.id));
+    if (!searchTerm) return unassigned;
+    const term = searchTerm.toLowerCase();
+    return unassigned.filter(
+      (u) =>
+        `${u.first_name ?? ""} ${u.last_name ?? ""}`.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term),
+    );
+  }, [allAgents, alreadyAssignedIds, searchTerm]);
 
   const toggleUser = useCallback((user: UserSearchResult) => {
     setSelectedUsers((prev) => {
@@ -88,7 +124,6 @@ export function AssignModuleDialog({
           moduleVersion: module.version,
         });
       } else {
-        // Create assignments for each selected user in parallel
         const results = await Promise.allSettled(
           selectedUsers.map((user) =>
             createAssignment.mutateAsync({
@@ -135,6 +170,8 @@ export function AssignModuleDialog({
     !isSubmitting &&
     (assignmentType === "agency" || selectedUsers.length > 0);
 
+  const unassignedCount = allAgents.length - alreadyAssignedIds.size;
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) resetAndClose(); else onOpenChange(true); }}>
       <DialogContent className="sm:max-w-md">
@@ -180,18 +217,23 @@ export function AssignModuleDialog({
                     ({selectedUsers.length} selected)
                   </span>
                 )}
+                {unassignedCount > 0 && selectedUsers.length === 0 && (
+                  <span className="ml-1 text-zinc-400">
+                    — {unassignedCount} unassigned
+                  </span>
+                )}
               </label>
 
               {/* Selected user chips */}
               {selectedUsers.length > 0 && (
-                <div className="flex flex-wrap gap-1 p-1.5 border border-zinc-200 dark:border-zinc-700 rounded-md bg-zinc-50 dark:bg-zinc-800/50">
+                <div className="max-h-20 overflow-y-auto flex flex-wrap gap-1 p-1.5 border border-zinc-200 dark:border-zinc-700 rounded-md bg-zinc-50 dark:bg-zinc-800/50">
                   {selectedUsers.map((user) => (
                     <Badge
                       key={user.id}
                       variant="secondary"
                       className="text-[10px] h-5 pl-1.5 pr-1 gap-1"
                     >
-                      {getUserDisplayName(user)}
+                      {`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email}
                       <button
                         type="button"
                         onClick={() => toggleUser(user)}
@@ -210,39 +252,41 @@ export function AssignModuleDialog({
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search agents by name or email..."
+                  placeholder="Filter agents by name or email..."
                   className="h-7 text-xs pl-7"
                 />
               </div>
 
               {/* Results list */}
-              <div className="h-52 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md" style={{ overflowY: "scroll" }}>
-                {isSearching && (
+              <div className="h-52 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md">
+                {agentsLoading && (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
                   </div>
                 )}
-                {!isSearching && searchTerm.length < 2 && (
+                {!agentsLoading && unassignedCount === 0 && (
                   <div className="py-6 text-center text-[11px] text-zinc-500">
-                    Type at least 2 characters to search
+                    All agents have been assigned this module
                   </div>
                 )}
-                {!isSearching && searchTerm.length >= 2 && searchResults.length === 0 && (
+                {!agentsLoading && unassignedCount > 0 && visibleAgents.length === 0 && (
                   <div className="py-6 text-center text-[11px] text-zinc-500">
-                    No users found
+                    No agents match your search
                   </div>
                 )}
-                {!isSearching && searchResults.length > 0 && (
+                {!agentsLoading && visibleAgents.length > 0 && (
                   <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    {searchResults.map((user) => {
+                    {visibleAgents.map((user) => {
                       const selected = isSelected(user.id);
                       return (
                         <button
                           key={user.id}
                           type="button"
                           onClick={() => toggleUser(user)}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${
-                            selected ? "bg-blue-50 dark:bg-blue-950/30" : ""
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                            selected
+                              ? "bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                              : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
                           }`}
                         >
                           <div
@@ -256,7 +300,7 @@ export function AssignModuleDialog({
                           </div>
                           <div className="min-w-0">
                             <div className="text-[11px] font-medium truncate">
-                              {getUserDisplayName(user)}
+                              {`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email}
                             </div>
                             <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                               {user.email}
