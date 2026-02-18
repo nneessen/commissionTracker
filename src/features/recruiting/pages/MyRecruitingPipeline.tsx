@@ -106,22 +106,29 @@ export function MyRecruitingPipeline() {
 
       for (const user of data || []) {
         const roles = (user.roles as string[]) || [];
-        if (roles.includes("trainer")) {
-          contacts.push({
-            id: `${user.id}-trainer`,
-            role: "trainer",
-            label: "Trainer",
-            profile: user as UserProfile,
-          });
-        }
-        if (roles.includes("contracting_manager")) {
-          contacts.push({
-            id: `${user.id}-contracting_manager`,
-            role: "contracting_manager",
-            label: "Contracting",
-            profile: user as UserProfile,
-          });
-        }
+        const isTrainer = roles.includes("trainer");
+        const isContracting = roles.includes("contracting_manager");
+        if (!isTrainer && !isContracting) continue;
+
+        const roleKey =
+          isTrainer && isContracting
+            ? "trainer_contracting"
+            : isTrainer
+              ? "trainer"
+              : "contracting_manager";
+        const label =
+          isTrainer && isContracting
+            ? "Trainer / Contracting"
+            : isTrainer
+              ? "Trainer"
+              : "Contracting";
+
+        contacts.push({
+          id: `${user.id}-${roleKey}`,
+          role: roleKey,
+          label,
+          profile: user as UserProfile,
+        });
       }
 
       return contacts;
@@ -357,6 +364,7 @@ export function MyRecruitingPipeline() {
               }}
               recruitEmail={profile.email}
               recruitName={recruitName}
+              documents={documents || []}
             />
           </CurrentPhaseWizard>
         ) : (

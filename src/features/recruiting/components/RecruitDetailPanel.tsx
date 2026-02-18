@@ -89,7 +89,7 @@ import {
   findRecruitChannel,
   buildNewRecruitMessage,
   buildNpnReceivedMessage,
-} from "@/services/slack/recruitNotificationService";
+} from "@/hooks/slack";
 import { Hash } from "lucide-react";
 
 interface RecruitDetailPanelProps {
@@ -180,9 +180,8 @@ export function RecruitDetailPanel({
     selfMadeIntegration?.id,
   );
   const recruitChannel = findRecruitChannel(slackChannels);
-  const { data: notificationStatus } = useRecruitNotificationStatus(
-    recruitIdForQueries,
-  );
+  const { data: notificationStatus } =
+    useRecruitNotificationStatus(recruitIdForQueries);
   const sendSlackNotification = useSendRecruitSlackNotification();
 
   const handleAdvancePhase = async () => {
@@ -588,7 +587,10 @@ export function RecruitDetailPanel({
                                   recruitId: recruit.id,
                                   imoId: currentUserProfile.imo_id!,
                                 },
-                                { onSettled: () => setSendingNotificationType(null) },
+                                {
+                                  onSettled: () =>
+                                    setSendingNotificationType(null),
+                                },
                               );
                             }}
                             className={cn(
@@ -643,7 +645,10 @@ export function RecruitDetailPanel({
                                   recruitId: recruit.id,
                                   imoId: currentUserProfile.imo_id!,
                                 },
-                                { onSettled: () => setSendingNotificationType(null) },
+                                {
+                                  onSettled: () =>
+                                    setSendingNotificationType(null),
+                                },
                               );
                             }}
                             className={cn(
@@ -910,6 +915,7 @@ export function RecruitDetailPanel({
                 onPhaseComplete={() => {}}
                 recruitEmail={recruit.email || ""}
                 recruitName={displayName}
+                documents={documents || []}
               />
             ) : (
               <div className="py-8 text-center">

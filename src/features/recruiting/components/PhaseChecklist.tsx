@@ -6,6 +6,7 @@ import {
   RecruitChecklistProgress,
   PhaseChecklistItem,
   CHECKLIST_STATUS_COLORS,
+  UserDocument,
 } from "@/types/recruiting.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,8 @@ import {
   useRecruiterSchedulingIntegrations,
 } from "@/hooks/integrations";
 import { SchedulingBookingModal } from "./SchedulingBookingModal";
+import { UploadDocumentDialog } from "./UploadDocumentDialog";
+import { DocumentViewerDialog } from "./DocumentViewerDialog";
 
 interface PhaseChecklistProps {
   userId: string;
@@ -86,6 +89,8 @@ interface PhaseChecklistProps {
   // Recruit info for signature items
   recruitEmail?: string;
   recruitName?: string;
+  // Documents for upline view (to allow viewing uploaded files)
+  documents?: UserDocument[];
 }
 
 // Interactive item types that render special UI components
@@ -113,9 +118,14 @@ export function PhaseChecklist({
   onPhaseComplete: _onPhaseComplete,
   recruitEmail,
   recruitName,
+  documents,
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
   const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
+  const [uploadDialogItemId, setUploadDialogItemId] = useState<string | null>(
+    null,
+  );
+  const [viewerDoc, setViewerDoc] = useState<UserDocument | null>(null);
 
   // Scheduling modal state
   const [schedulingModalData, setSchedulingModalData] = useState<{
@@ -207,10 +217,6 @@ export function PhaseChecklist({
       return { isEnabled: false, disabledReason: "Not logged in" };
     }
 
-    if (item.item_type === "document_upload") {
-      return { isEnabled: false, disabledReason: "Use upload button" };
-    }
-
     const isViewingFuturePhase =
       currentPhaseId && viewedPhaseId && currentPhaseId !== viewedPhaseId;
 
@@ -235,12 +241,15 @@ export function PhaseChecklist({
       return { isEnabled: true };
     }
 
+    const isItemDoneForOrdering = (s: string) =>
+      s === "completed" || s === "approved" || s === "in_progress";
+
     const incompleteRequiredOrders = allItems
       .filter((i) => {
         if (!i.is_required) return false;
         const progress = progressMap.get(i.id);
         const status = progress?.status || "not_started";
-        return status !== "completed" && status !== "approved";
+        return !isItemDoneForOrdering(status);
       })
       .map((i) => i.item_order);
 
@@ -252,7 +261,7 @@ export function PhaseChecklist({
               .filter((i) => {
                 const progress = progressMap.get(i.id);
                 const status = progress?.status || "not_started";
-                return status !== "completed" && status !== "approved";
+                return !isItemDoneForOrdering(status);
               })
               .map((i) => i.item_order)
               .concat([Infinity]),
@@ -319,6 +328,25 @@ export function PhaseChecklist({
     }
   };
 
+  const handleMarkInProgress = async (itemId: string, documentId?: string) => {
+    if (!currentUserId) return;
+    try {
+      await updateItemStatus.mutateAsync({
+        userId,
+        itemId,
+        statusData: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- checklist status type
+          status: "in_progress" as any,
+          completed_by: currentUserId,
+          document_id: documentId,
+        },
+      });
+    } catch (error) {
+      console.error("[PhaseChecklist] Failed to mark item in_progress:", error);
+      // Non-blocking: upload/signature was still initiated
+    }
+  };
+
   const handleApprove = async (itemId: string) => {
     if (!currentUserId || !isUpline) return;
 
@@ -371,8 +399,23 @@ export function PhaseChecklist({
     if (item.item_type === "document_upload") {
       if (isUpline) {
         if (status === "completed" || status === "in_progress") {
+          const docId = progress?.document_id;
+          const linkedDoc = docId
+            ? documents?.find((d) => d.id === docId)
+            : undefined;
           return (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {linkedDoc && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => setViewerDoc(linkedDoc)}
+                >
+                  <FileText className="h-4 w-4 mr-1.5" />
+                  View
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -411,7 +454,12 @@ export function PhaseChecklist({
       } else {
         if (status === "not_started" || status === "needs_resubmission") {
           return (
-            <Button size="sm" variant="outline" className="h-8">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              onClick={() => setUploadDialogItemId(item.id)}
+            >
               <Upload className="h-4 w-4 mr-1.5" />
               Upload
             </Button>
@@ -661,7 +709,7 @@ export function PhaseChecklist({
             recruitId={userId}
             recruitEmail={recruitEmail || ""}
             recruitName={recruitName || ""}
-            onComplete={onComplete}
+            onComplete={() => handleMarkInProgress(item.id)}
           />
         );
       }
@@ -728,8 +776,19 @@ export function PhaseChecklist({
             }`}
           >
             <div className="flex items-start gap-3">
-              <div className="relative mt-0.5">
-                {loadingItemIds.has(item.id) ? (
+              <div className="relative mt-0.5 flex-shrink-0">
+                {item.item_type === "document_upload" ? (
+                  // Document upload: show status icon instead of checkbox
+                  status === "approved" ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  ) : status === "in_progress" ? (
+                    <Clock className="h-5 w-5 text-amber-500" />
+                  ) : status === "rejected" ? (
+                    <XCircle className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <Upload className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
+                  )
+                ) : loadingItemIds.has(item.id) ? (
                   <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
                 ) : (
                   <Checkbox
@@ -743,9 +802,9 @@ export function PhaseChecklist({
                     className="h-5 w-5"
                   />
                 )}
-                {!checkboxState.isEnabled &&
-                  !loadingItemIds.has(item.id) &&
-                  checkboxState.disabledReason !== "Use upload button" && (
+                {item.item_type !== "document_upload" &&
+                  !checkboxState.isEnabled &&
+                  !loadingItemIds.has(item.id) && (
                     <div className="absolute -top-1 -right-1">
                       <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
                     </div>
@@ -867,6 +926,28 @@ export function PhaseChecklist({
           </div>
         );
       })}
+
+      {/* Document Viewer Dialog (upline view) */}
+      {viewerDoc && (
+        <DocumentViewerDialog
+          open={!!viewerDoc}
+          onOpenChange={(open) => !open && setViewerDoc(null)}
+          document={viewerDoc}
+        />
+      )}
+
+      {/* Document Upload Dialog */}
+      {uploadDialogItemId && currentUserId && (
+        <UploadDocumentDialog
+          open={!!uploadDialogItemId}
+          onOpenChange={(open) => !open && setUploadDialogItemId(null)}
+          userId={userId}
+          uploadedBy={currentUserId}
+          onSuccess={(documentId) =>
+            handleMarkInProgress(uploadDialogItemId, documentId)
+          }
+        />
+      )}
 
       {/* Scheduling Booking Modal */}
       {schedulingModalData && (

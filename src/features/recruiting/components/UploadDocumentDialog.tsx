@@ -23,6 +23,7 @@ interface UploadDocumentDialogProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   uploadedBy: string;
+  onSuccess?: (documentId: string) => void;
 }
 
 export function UploadDocumentDialog({
@@ -30,6 +31,7 @@ export function UploadDocumentDialog({
   onOpenChange,
   userId,
   uploadedBy,
+  onSuccess,
 }: UploadDocumentDialogProps) {
   const [documentName, setDocumentName] = useState("");
   const [documentType, setDocumentType] = useState<InsuranceDocumentType | "">(
@@ -81,7 +83,7 @@ export function UploadDocumentDialog({
     try {
       setUploadProgress(10);
 
-      await uploadDocument.mutateAsync({
+      const uploaded = await uploadDocument.mutateAsync({
         recruitId: userId,
         file: selectedFile,
         documentType,
@@ -91,6 +93,7 @@ export function UploadDocumentDialog({
       });
 
       setUploadProgress(100);
+      onSuccess?.(uploaded.id);
 
       // Reset form and close
       setTimeout(() => {

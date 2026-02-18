@@ -59,3 +59,14 @@ export {
   useSendRecruitSlackNotification,
   useAutoPostRecruitNotification,
 } from "./useRecruitSlackNotification";
+
+export {
+  // Recruit notification utilities (pure helpers)
+  findSelfMadeIntegration,
+  findRecruitChannel,
+  buildNewRecruitMessage,
+  buildNpnReceivedMessage,
+  checkNotificationSent,
+  sendRecruitNotification,
+  autoPostRecruitNotification,
+} from "../../services/slack/recruitNotificationService";
