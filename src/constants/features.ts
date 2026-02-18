@@ -314,6 +314,39 @@ export const FEATURE_CATEGORIES: Record<
   },
 };
 
+/** Accent dot colors for category headers (Tailwind bg classes) */
+export const CATEGORY_ACCENT_COLORS: Record<FeatureCategory, string> = {
+  core: "bg-blue-500",
+  tracking: "bg-amber-500",
+  reports: "bg-emerald-500",
+  team: "bg-violet-500",
+  messaging: "bg-cyan-500",
+  analytics: "bg-rose-500",
+  branding: "bg-fuchsia-500",
+};
+
+/** Left border accent colors for feature rows within each category */
+export const CATEGORY_BORDER_COLORS: Record<FeatureCategory, string> = {
+  core: "border-l-blue-500/40",
+  tracking: "border-l-amber-500/40",
+  reports: "border-l-emerald-500/40",
+  team: "border-l-violet-500/40",
+  messaging: "border-l-cyan-500/40",
+  analytics: "border-l-rose-500/40",
+  branding: "border-l-fuchsia-500/40",
+};
+
+/** Lucide icon name string per category (resolved in component) */
+export const CATEGORY_ICONS: Record<FeatureCategory, string> = {
+  core: "LayoutDashboard",
+  tracking: "Target",
+  reports: "FileText",
+  team: "Users",
+  messaging: "MessageSquare",
+  analytics: "BarChart3",
+  branding: "Palette",
+};
+
 /**
  * Get features grouped by category
  */
