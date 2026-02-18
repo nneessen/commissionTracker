@@ -33,8 +33,6 @@ import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
 import { AddRecruitDialog } from "./components/AddRecruitDialog";
 import { SendInviteDialog } from "./components/SendInviteDialog";
 import { RecruitingErrorBoundary } from "./components/RecruitingErrorBoundary";
-import { RecruitingPreviewBanner } from "./components/RecruitingPreviewBanner";
-import { isSuperAdminEmail } from "@/lib/temporaryAccess";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -107,8 +105,7 @@ function RecruitingDashboardContent() {
   // Fetch pending invitations (invites sent but not yet registered)
   const { data: pendingInvitations = [] } = usePendingInvitations();
 
-  const showPreviewBanner = !isSuperAdminEmail(supabaseUser?.email);
-  const { data: pendingLeadsCount } = usePendingLeadsCount();
+const { data: pendingLeadsCount } = usePendingLeadsCount();
 
   const { data: activeTemplate } = useActiveTemplate();
   const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
@@ -262,7 +259,6 @@ function RecruitingDashboardContent() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
       {/* Preview Warning Banner - shown to non-admin users */}
-      {showPreviewBanner && <RecruitingPreviewBanner />}
 
       {/* Compact Header with inline stats */}
       <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
