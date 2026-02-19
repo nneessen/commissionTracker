@@ -12,9 +12,11 @@ import {
   Phone,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Loader2,
   X,
   ListChecks,
+  LogOut,
 } from "lucide-react";
 import { useTemplates, usePhases } from "../hooks/usePipeline";
 import {
@@ -22,6 +24,8 @@ import {
   useInitializeRecruitProgress,
   useAdvancePhase,
   useRevertPhase,
+  useChecklistProgress,
+  useUnenrollFromPipeline,
 } from "../hooks/useRecruitProgress";
 import { cn } from "@/lib/utils";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
@@ -34,33 +38,111 @@ interface RecruitBottomPanelProps {
   onClose: () => void;
 }
 
+const CHECKLIST_STATUS_COLORS: Record<string, string> = {
+  completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+  in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  not_started: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+};
+
+// The repository join attaches `checklist_item` at runtime even though the service
+// casts to RecruitChecklistProgress[]. We use this local type to reflect that.
+type ChecklistProgressWithItem = {
+  id: string;
+  status: string;
+  checklist_item?: { item_name: string; item_order: number };
+};
+
+/** Inline component to load and render checklist items for a phase. */
+function PhaseChecklist({ userId, phaseId }: { userId: string; phaseId: string }) {
+  const { data: rawItems = [], isLoading } = useChecklistProgress(userId, phaseId);
+  const items = rawItems as unknown as ChecklistProgressWithItem[];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-2">
+        <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 py-1">
+        No checklist items for this phase.
+      </p>
+    );
+  }
+
+  const sorted = [...items].sort(
+    (a, b) => (a.checklist_item?.item_order ?? 0) - (b.checklist_item?.item_order ?? 0),
+  );
+
+  return (
+    <div className="flex flex-col gap-1 mt-1">
+      {sorted.map((item) => {
+        const status = item.status || "not_started";
+        const label = status.replace(/_/g, " ");
+        const name = item.checklist_item?.item_name ?? "Checklist item";
+        return (
+          <div
+            key={item.id}
+            className="flex items-center justify-between px-2 py-1 rounded bg-zinc-50 dark:bg-zinc-800/60"
+          >
+            <span className="text-[10px] text-zinc-700 dark:text-zinc-300 flex-1 truncate">
+              {name}
+            </span>
+            <Badge
+              variant="secondary"
+              className={cn(
+                "text-[9px] h-4 ml-2 shrink-0",
+                CHECKLIST_STATUS_COLORS[status] ?? CHECKLIST_STATUS_COLORS.not_started,
+              )}
+            >
+              {label}
+            </Badge>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function RecruitBottomPanel({
   recruit,
   onClose,
 }: RecruitBottomPanelProps) {
   const queryClient = useQueryClient();
 
-  const [enrollingTemplateId, setEnrollingTemplateId] = useState<string | null>(
-    null,
-  );
+  const [enrollingTemplateId, setEnrollingTemplateId] = useState<string | null>(null);
   // Track the enrolled template locally so UI updates immediately after enrollment
-  const [enrolledTemplateId, setEnrolledTemplateId] = useState<string | null>(
-    null,
-  );
-
-  const effectiveTemplateId =
-    recruit.pipeline_template_id || enrolledTemplateId;
+  const [enrolledTemplateId, setEnrolledTemplateId] = useState<string | null>(null);
+  // Phase bar click expansion
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
+  // Unenroll confirmation dialog
+  const [confirmUnenroll, setConfirmUnenroll] = useState(false);
 
   const { data: templates = [] } = useTemplates();
-  const { data: phaseProgress = [] } = useRecruitPhaseProgress(recruit.id);
+  const { data: phaseProgress = [], isLoading: phaseProgressLoading } = useRecruitPhaseProgress(recruit.id);
+
+  // Derive template from profile, local enrollment state, or phase progress records.
+  // Handles data inconsistency where pipeline_template_id is null but progress records exist.
+  const progressTemplateId = phaseProgress[0]?.template_id ?? null;
+  const effectiveTemplateId =
+    recruit.pipeline_template_id || enrolledTemplateId || progressTemplateId;
+
   const { data: phases = [] } = usePhases(effectiveTemplateId ?? undefined);
 
   const initializeProgress = useInitializeRecruitProgress();
   const advancePhase = useAdvancePhase();
   const revertPhase = useRevertPhase();
+  const unenrollFromPipeline = useUnenrollFromPipeline();
 
   const activeTemplates = templates.filter((t) => t.is_active);
-  const hasPipeline = !!effectiveTemplateId && phaseProgress.length > 0;
+  // On initial load phaseProgress is [] before the query resolves — don't flash the
+  // enrollment options just because data hasn't arrived yet.
+  const hasPipeline = !!effectiveTemplateId && (phaseProgressLoading || phaseProgress.length > 0);
 
   // Find the current in-progress phase
   const currentProgress = phaseProgress.find((p) => p.status === "in_progress");
@@ -69,9 +151,7 @@ export function RecruitBottomPanel({
     : null;
 
   // Sorted phases for progress display
-  const sortedPhases = [...phases].sort(
-    (a, b) => a.phase_order - b.phase_order,
-  );
+  const sortedPhases = [...phases].sort((a, b) => a.phase_order - b.phase_order);
   const currentPhaseIndex = currentPhase
     ? sortedPhases.findIndex((p) => p.id === currentPhase.id)
     : -1;
@@ -97,10 +177,7 @@ export function RecruitBottomPanel({
   const handleEnroll = async (templateId: string) => {
     setEnrollingTemplateId(templateId);
     try {
-      await initializeProgress.mutateAsync({
-        userId: recruit.id,
-        templateId,
-      });
+      await initializeProgress.mutateAsync({ userId: recruit.id, templateId });
       toast.success("Recruit enrolled in pipeline");
       setEnrolledTemplateId(templateId);
       setEnrollingTemplateId(null);
@@ -125,12 +202,15 @@ export function RecruitBottomPanel({
     }
   };
 
+  // FIX: pass the PREVIOUS completed phase ID, not the current in_progress phase
   const handleRevert = async () => {
-    if (!currentProgress) return;
+    if (currentPhaseIndex <= 0) return;
+    const previousPhase = sortedPhases[currentPhaseIndex - 1];
+    if (!previousPhase) return;
     try {
       await revertPhase.mutateAsync({
         userId: recruit.id,
-        phaseId: currentProgress.phase_id,
+        phaseId: previousPhase.id,
       });
       toast.success("Phase reverted");
     } catch {
@@ -138,17 +218,33 @@ export function RecruitBottomPanel({
     }
   };
 
+  const handleUnenroll = async () => {
+    try {
+      await unenrollFromPipeline.mutateAsync({ userId: recruit.id });
+      toast.success("Recruit unenrolled from pipeline");
+      setEnrolledTemplateId(null);
+      setConfirmUnenroll(false);
+      setSelectedPhaseId(null);
+    } catch {
+      toast.error("Failed to unenroll from pipeline");
+      setConfirmUnenroll(false);
+    }
+  };
+
+  const handlePhaseBarClick = (phaseId: string) => {
+    setSelectedPhaseId((prev) => (prev === phaseId ? null : phaseId));
+  };
+
   const isAllCompleted =
     phaseProgress.length > 0 &&
     phaseProgress.every((p) => p.status === "completed");
 
   const displayName =
-    `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() ||
-    "Unknown";
+    `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() || "Unknown";
   const initials = `${(recruit.first_name?.[0] || "").toUpperCase()}${(recruit.last_name?.[0] || "").toUpperCase()}`;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="relative flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
         <div className="flex items-center gap-3">
@@ -181,8 +277,7 @@ export function RecruitBottomPanel({
         <div className="flex items-center gap-2">
           <Badge
             variant={
-              recruit.approval_status === "declined" &&
-              !recruit.pipeline_template_id
+              recruit.approval_status === "declined" && !recruit.pipeline_template_id
                 ? "destructive"
                 : "secondary"
             }
@@ -259,8 +354,7 @@ export function RecruitBottomPanel({
               </div>
             ) : (
               <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                No active pipeline templates available. Contact your admin to
-                set up a pipeline.
+                No active pipeline templates available. Contact your admin to set up a pipeline.
               </p>
             )}
           </div>
@@ -278,21 +372,32 @@ export function RecruitBottomPanel({
                     {pipelineTemplate?.name || "Unknown Pipeline"}
                   </p>
                 </div>
-                {pipelineStarted && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Started
-                    </p>
-                    <p className="text-[11px] text-zinc-700 dark:text-zinc-300 mt-0.5">
-                      {formatDistanceToNow(new Date(pipelineStarted), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {pipelineStarted && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Started
+                      </p>
+                      <p className="text-[11px] text-zinc-700 dark:text-zinc-300 mt-0.5">
+                        {formatDistanceToNow(new Date(pipelineStarted), { addSuffix: true })}
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] text-zinc-400 hover:text-red-600 dark:hover:text-red-400 gap-1"
+                    onClick={() => setConfirmUnenroll(true)}
+                    disabled={unenrollFromPipeline.isPending}
+                    title="Unenroll from pipeline"
+                  >
+                    <LogOut className="h-3 w-3" />
+                    Unenroll
+                  </Button>
+                </div>
               </div>
 
-              {/* Phase progress bar */}
+              {/* Phase progress bar — each segment is clickable */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
@@ -303,21 +408,21 @@ export function RecruitBottomPanel({
                         : "Waiting to start"}
                   </p>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                    {isAllCompleted ? totalPhases : currentPhaseIndex + 1}/
-                    {totalPhases}
+                    {isAllCompleted ? totalPhases : currentPhaseIndex + 1}/{totalPhases}
                   </span>
                 </div>
                 <div className="flex gap-1">
                   {sortedPhases.map((phase) => {
-                    const progress = phaseProgress.find(
-                      (p) => p.phase_id === phase.id,
-                    );
+                    const progress = phaseProgress.find((p) => p.phase_id === phase.id);
                     const status = progress?.status || "not_started";
+                    const isSelected = selectedPhaseId === phase.id;
                     return (
-                      <div
+                      <button
                         key={phase.id}
                         className={cn(
-                          "h-1.5 flex-1 rounded-full transition-colors",
+                          "h-3 flex-1 rounded-full transition-all focus:outline-none",
+                          "hover:opacity-80 hover:scale-y-125",
+                          isSelected && "ring-2 ring-offset-1 ring-zinc-400 dark:ring-zinc-500",
                           status === "completed"
                             ? "bg-emerald-500"
                             : status === "in_progress"
@@ -326,20 +431,32 @@ export function RecruitBottomPanel({
                                 ? "bg-red-400"
                                 : "bg-zinc-200 dark:bg-zinc-700",
                         )}
-                        title={`${phase.phase_name} — ${status}`}
+                        title={`${phase.phase_name} — ${status.replace(/_/g, " ")} (click to view)`}
+                        onClick={() => handlePhaseBarClick(phase.id)}
                       />
                     );
                   })}
                 </div>
+
+                {/* Expanded checklist for selected phase */}
+                {selectedPhaseId && (
+                  <div className="mt-2 px-1">
+                    <div className="flex items-center gap-1 mb-1">
+                      <ChevronDown className="h-3 w-3 text-zinc-400" />
+                      <p className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                        {sortedPhases.find((p) => p.id === selectedPhaseId)?.phase_name}
+                      </p>
+                    </div>
+                    <PhaseChecklist userId={recruit.id} phaseId={selectedPhaseId} />
+                  </div>
+                )}
               </div>
 
               {/* Current phase details */}
               {currentPhase && currentProgress && (
                 <div className="flex items-center gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800">
                   <div className="flex-1">
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Current Phase
-                    </p>
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Current Phase</p>
                     <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
                       {currentPhase.phase_name}
                     </p>
@@ -351,13 +468,10 @@ export function RecruitBottomPanel({
                   </div>
                   {currentProgress.started_at && (
                     <div className="text-right">
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                        Days in phase
-                      </p>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Days in phase</p>
                       <p className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
                         {Math.ceil(
-                          (Date.now() -
-                            new Date(currentProgress.started_at).getTime()) /
+                          (Date.now() - new Date(currentProgress.started_at).getTime()) /
                             (1000 * 60 * 60 * 24),
                         )}
                       </p>
@@ -413,6 +527,44 @@ export function RecruitBottomPanel({
           </div>
         )}
       </div>
+
+      {/* Unenroll confirmation — rendered inline inside the panel (avoids z-index portal issues) */}
+      {confirmUnenroll && (
+        <div className="absolute inset-0 rounded-t-xl bg-black/50 flex items-center justify-center px-4 z-10">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-xl p-4">
+            <p className="text-[12px] font-semibold text-zinc-900 dark:text-zinc-100">
+              Unenroll from Pipeline?
+            </p>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1.5">
+              This will remove all phase and checklist progress for{" "}
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{displayName}</span>.
+              They can then be enrolled in a different pipeline.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-7 text-[10px]"
+                onClick={() => setConfirmUnenroll(false)}
+                disabled={unenrollFromPipeline.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 h-7 text-[10px] bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleUnenroll}
+                disabled={unenrollFromPipeline.isPending}
+              >
+                {unenrollFromPipeline.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : null}
+                Unenroll
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
