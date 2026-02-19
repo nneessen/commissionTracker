@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-19 12:22:30
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/router.tsx`
+
+### Statistics
+```
+ 4 files changed, 30 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-19 08:47:26
 
 ### Changed Files

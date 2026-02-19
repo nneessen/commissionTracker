@@ -490,6 +490,13 @@ function RecruitingDashboardContent() {
   );
 }
 
+/**
+ * Intentional behavior: Users shown this view have no active subscription but have
+ * ≥1 existing recruit. They retain full recruiting ability (including Add Recruit) even
+ * after subscription expiry/downgrade. This ensures uplines don't lose access to managing
+ * their team due to billing changes. If this should be gated, wrap the Add Recruit button
+ * in a FeatureButtonGate component.
+ */
 function FreeUplineRecruitingView() {
   const { user } = useAuth();
 

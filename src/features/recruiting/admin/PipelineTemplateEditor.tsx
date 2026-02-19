@@ -171,6 +171,10 @@ export function PipelineTemplateEditor({
             <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
               Name
             </Label>
+            {/* WARNING: Any template name containing "DEFAULT" (case-insensitive) is
+                readable by ALL authenticated users in the same IMO due to the RLS policy in
+                migration 20260218205623_allow_upline_read_default_templates.sql. Avoid using
+                "DEFAULT" in custom template names to prevent unintended visibility. */}
             <Input
               value={name}
               onChange={(e) => handleFieldChange("name", e.target.value)}
