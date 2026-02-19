@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-19 14:30:09
+
+### Changed Files
+- `src/features/email/components/TipTapEditor.tsx`
+
+### Statistics
+```
+ 1 file changed, 35 insertions(+)
+```
+
 ## [Checkpoint] - 2026-02-19 12:46:49
 
 ### Changed Files
