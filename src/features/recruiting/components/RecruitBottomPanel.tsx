@@ -2,7 +2,7 @@
 // Lightweight bottom-drawer panel for basic-tier uplines to manage recruit pipeline progress.
 // Shows: recruit info, pipeline enrollment, current phase, advance/revert controls.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,11 @@ import {
   ListChecks,
   LogOut,
 } from "lucide-react";
-import { useTemplates, useTemplate } from "../hooks/usePipeline";
+import {
+  useTemplates,
+  usePhases,
+  useChecklistItems,
+} from "../hooks/usePipeline";
 import {
   useRecruitPhaseProgress,
   useInitializeRecruitProgress,
@@ -49,24 +53,19 @@ const CHECKLIST_STATUS_COLORS: Record<string, string> = {
     "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
 };
 
-type ChecklistItemDef = { id: string; item_name: string; item_order: number };
 type ChecklistProgressRecord = { checklist_item_id: string; status: string };
 
-/** Renders checklist items for a phase. Item definitions come from the template
- *  (already loaded by the parent); progress records supply the status badges. */
+/** Renders checklist items for a phase. Fetches item definitions directly
+ *  from phase_checklist_items (any-auth policy — always accessible). */
 function PhaseChecklist({
   userId,
   phaseId,
-  items,
 }: {
   userId: string;
   phaseId: string;
-  items: ChecklistItemDef[];
 }) {
-  const { data: rawProgress = [], isLoading } = useChecklistProgress(
-    userId,
-    phaseId,
-  );
+  const { data: items = [], isLoading } = useChecklistItems(phaseId);
+  const { data: rawProgress = [] } = useChecklistProgress(userId, phaseId);
   const progressMap = new Map(
     (rawProgress as unknown as ChecklistProgressRecord[]).map((p) => [
       p.checklist_item_id,
@@ -76,9 +75,9 @@ function PhaseChecklist({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-2">
-        <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
-      </div>
+      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 py-1">
+        Loading…
+      </p>
     );
   }
 
@@ -135,8 +134,9 @@ export function RecruitBottomPanel({
   const [enrolledTemplateId, setEnrolledTemplateId] = useState<string | null>(
     null,
   );
-  // Phase bar click expansion
+  // Phase bar click expansion — defaults to current in-progress phase so checklist is visible on open
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
+  const [autoSelectedPhase, setAutoSelectedPhase] = useState(false);
   // Unenroll confirmation dialog
   const [confirmUnenroll, setConfirmUnenroll] = useState(false);
 
@@ -152,17 +152,9 @@ export function RecruitBottomPanel({
   const effectiveTemplateId =
     enrolledTemplateId || progressTemplateId || recruit.pipeline_template_id;
 
-  // Use the full template (includes checklist_items per phase) so PhaseChecklist
-  // can show item names even before recruit_checklist_progress records are created.
-  const { data: template } = useTemplate(effectiveTemplateId ?? undefined);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
-  const phases = ((template as any)?.phases ?? []) as Array<{
-    id: string;
-    phase_name: string;
-    phase_description?: string | null;
-    phase_order: number;
-    checklist_items: ChecklistItemDef[];
-  }>;
+  // Fetch phases directly — avoids the nested template query and its RLS restrictions.
+  // pipeline_phases_upline_select policy allows uplines to read phases for their recruits.
+  const { data: phases = [] } = usePhases(effectiveTemplateId ?? undefined);
 
   const initializeProgress = useInitializeRecruitProgress();
   const advancePhase = useAdvancePhase();
@@ -192,6 +184,14 @@ export function RecruitBottomPanel({
 
   // Pipeline template name
   const pipelineTemplate = templates.find((t) => t.id === effectiveTemplateId);
+
+  // Auto-select the current in-progress phase so checklist items are visible immediately on open
+  useEffect(() => {
+    if (currentProgress?.phase_id && !autoSelectedPhase) {
+      setSelectedPhaseId(currentProgress.phase_id);
+      setAutoSelectedPhase(true);
+    }
+  }, [currentProgress?.phase_id, autoSelectedPhase]);
 
   // Days since pipeline started
   const pipelineStarted =
@@ -502,7 +502,6 @@ export function RecruitBottomPanel({
                         <PhaseChecklist
                           userId={recruit.id}
                           phaseId={selectedPhaseId}
-                          items={selPhase?.checklist_items ?? []}
                         />
                       </div>
                     );
