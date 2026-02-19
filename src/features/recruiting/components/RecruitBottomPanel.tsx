@@ -2,7 +2,7 @@
 // Lightweight bottom-drawer panel for basic-tier uplines to manage recruit pipeline progress.
 // Shows: recruit info, pipeline enrollment, current phase, advance/revert controls.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,8 @@ const CHECKLIST_STATUS_COLORS: Record<string, string> = {
 type ChecklistProgressRecord = { checklist_item_id: string; status: string };
 
 /** Renders checklist items for a phase. Fetches item definitions directly
- *  from phase_checklist_items (any-auth policy — always accessible). */
+ *  from phase_checklist_items (any-auth policy — always accessible).
+ *  Only active items are shown (is_active filter applied client-side). */
 function PhaseChecklist({
   userId,
   phaseId,
@@ -64,8 +65,16 @@ function PhaseChecklist({
   userId: string;
   phaseId: string;
 }) {
-  const { data: items = [], isLoading } = useChecklistItems(phaseId);
+  const {
+    data: allItems = [],
+    isLoading,
+    isError,
+  } = useChecklistItems(phaseId);
   const { data: rawProgress = [] } = useChecklistProgress(userId, phaseId);
+
+  // Only render active items in the upline view
+  const items = allItems.filter((i) => i.is_active !== false);
+
   const progressMap = new Map(
     (rawProgress as unknown as ChecklistProgressRecord[]).map((p) => [
       p.checklist_item_id,
@@ -77,6 +86,14 @@ function PhaseChecklist({
     return (
       <p className="text-[10px] text-zinc-400 dark:text-zinc-500 py-1">
         Loading…
+      </p>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-[10px] text-red-400 dark:text-red-500 py-1">
+        Failed to load checklist items.
       </p>
     );
   }
@@ -134,9 +151,11 @@ export function RecruitBottomPanel({
   const [enrolledTemplateId, setEnrolledTemplateId] = useState<string | null>(
     null,
   );
-  // Phase bar click expansion — defaults to current in-progress phase so checklist is visible on open
+  // Phase bar click expansion — auto-tracks current in-progress phase.
+  // A ref (not state) tracks the previously-seen phase ID so the effect
+  // fires correctly on first load AND after advance/revert/re-enroll.
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
-  const [autoSelectedPhase, setAutoSelectedPhase] = useState(false);
+  const prevAutoPhaseIdRef = useRef<string | null>(null);
   // Unenroll confirmation dialog
   const [confirmUnenroll, setConfirmUnenroll] = useState(false);
 
@@ -162,10 +181,16 @@ export function RecruitBottomPanel({
   const unenrollFromPipeline = useUnenrollFromPipeline();
 
   const activeTemplates = templates.filter((t) => t.is_active);
-  // On initial load phaseProgress is [] before the query resolves — don't flash the
-  // enrollment options just because data hasn't arrived yet.
+  // hasPipeline is true when:
+  //  - We just enrolled this session (enrolledTemplateId set locally), OR
+  //  - DB phase progress records exist (progressTemplateId), OR
+  //  - recruit.pipeline_template_id is set AND the progress query is still loading
+  //    (prevents flashing enrollment UI while data arrives, but won't false-positive
+  //    once loading completes with no progress records for an unenrolled recruit).
   const hasPipeline =
-    !!effectiveTemplateId && (phaseProgressLoading || phaseProgress.length > 0);
+    !!enrolledTemplateId ||
+    !!progressTemplateId ||
+    (!!recruit.pipeline_template_id && phaseProgressLoading);
 
   // Find the current in-progress phase
   const currentProgress = phaseProgress.find((p) => p.status === "in_progress");
@@ -185,13 +210,17 @@ export function RecruitBottomPanel({
   // Pipeline template name
   const pipelineTemplate = templates.find((t) => t.id === effectiveTemplateId);
 
-  // Auto-select the current in-progress phase so checklist items are visible immediately on open
+  // Auto-select the current in-progress phase so checklist items are visible immediately on
+  // open, AND update when the phase changes (advance/revert). Uses a ref to track the
+  // previously-seen phase ID — fires on first load (ref=null→new) and on every phase
+  // change (old phase id → new phase id), without triggering on unrelated re-renders.
   useEffect(() => {
-    if (currentProgress?.phase_id && !autoSelectedPhase) {
-      setSelectedPhaseId(currentProgress.phase_id);
-      setAutoSelectedPhase(true);
+    const incomingPhaseId = currentProgress?.phase_id ?? null;
+    if (incomingPhaseId !== prevAutoPhaseIdRef.current) {
+      prevAutoPhaseIdRef.current = incomingPhaseId;
+      setSelectedPhaseId(incomingPhaseId);
     }
-  }, [currentProgress?.phase_id, autoSelectedPhase]);
+  }, [currentProgress?.phase_id]);
 
   // Days since pipeline started
   const pipelineStarted =
@@ -258,9 +287,11 @@ export function RecruitBottomPanel({
       setEnrolledTemplateId(null);
       setConfirmUnenroll(false);
       setSelectedPhaseId(null);
+      // Reset ref so the next enrollment's in-progress phase auto-selects correctly
+      prevAutoPhaseIdRef.current = null;
     } catch {
       toast.error("Failed to unenroll from pipeline");
-      setConfirmUnenroll(false);
+      // Keep dialog open so user can retry — do NOT call setConfirmUnenroll(false)
     }
   };
 
