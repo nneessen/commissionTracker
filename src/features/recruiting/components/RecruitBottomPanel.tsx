@@ -283,6 +283,10 @@ export function RecruitBottomPanel({
   const handleUnenroll = async () => {
     try {
       await unenrollFromPipeline.mutateAsync({ userId: recruit.id });
+      // Immediately zero-out the phase progress cache so hasPipeline resolves
+      // to false right away — prevents the stale TQ cache (staleTime: 5min) from
+      // briefly re-showing the old enrolled panel while the background refetch runs.
+      queryClient.setQueryData(["recruit-phase-progress", recruit.id], []);
       toast.success("Recruit unenrolled from pipeline");
       setEnrolledTemplateId(null);
       setConfirmUnenroll(false);
