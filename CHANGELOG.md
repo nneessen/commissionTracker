@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-19 12:38:07
+
+### Changed Files
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/recruiting/components/RecruitBottomPanel.tsx`
+
+### Statistics
+```
+ 2 files changed, 43 insertions(+), 9 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-19 12:22:30
 
 ### Changed Files

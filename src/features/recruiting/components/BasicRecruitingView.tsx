@@ -88,6 +88,7 @@ import { STAFF_ONLY_ROLES } from "@/constants/roles";
 import { US_STATES } from "@/constants/states";
 import { VALID_CONTRACT_LEVELS } from "@/lib/constants";
 import type { RecruitFilters } from "@/types/recruiting.types";
+import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { Link, useSearch } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -431,7 +432,28 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                     )}
                   </TableCell>
                   <TableCell className="py-2">
-                    {getStatusBadge(recruit.approval_status)}
+                    {(() => {
+                      const terminalStatuses = ["completed", "dropped", "withdrawn"];
+                      const isTerminal = terminalStatuses.includes(recruit.onboarding_status || "");
+                      if (isTerminal) {
+                        return (
+                          <Badge
+                            variant="secondary"
+                            className={cn("text-[9px] h-4", TERMINAL_STATUS_COLORS[recruit.onboarding_status!])}
+                          >
+                            {recruit.onboarding_status!.replace(/_/g, " ")}
+                          </Badge>
+                        );
+                      }
+                      if (recruit.pipeline_template_id) {
+                        return (
+                          <Badge variant="secondary" className="text-[9px] h-4 bg-blue-100 text-blue-800">
+                            {recruit.current_onboarding_phase || "In Pipeline"}
+                          </Badge>
+                        );
+                      }
+                      return getStatusBadge(recruit.approval_status);
+                    })()}
                   </TableCell>
                   <TableCell className="py-2">
                     <span className="text-[10px] text-zinc-500 dark:text-zinc-400">

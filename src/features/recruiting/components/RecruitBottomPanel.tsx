@@ -24,6 +24,7 @@ import {
   useRevertPhase,
 } from "../hooks/useRecruitProgress";
 import { cn } from "@/lib/utils";
+import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import type { UserProfile } from "@/types/hierarchy.types";
@@ -180,16 +181,27 @@ export function RecruitBottomPanel({
         <div className="flex items-center gap-2">
           <Badge
             variant={
-              recruit.approval_status === "active" ||
-              recruit.approval_status === "approved"
-                ? "default"
-                : recruit.approval_status === "declined"
-                  ? "destructive"
-                  : "secondary"
+              recruit.approval_status === "declined" &&
+              !recruit.pipeline_template_id
+                ? "destructive"
+                : "secondary"
             }
-            className="text-[9px] h-4"
+            className={cn(
+              "text-[9px] h-4",
+              recruit.pipeline_template_id
+                ? ["completed", "dropped", "withdrawn"].includes(recruit.onboarding_status || "")
+                  ? TERMINAL_STATUS_COLORS[recruit.onboarding_status!]
+                  : "bg-blue-100 text-blue-800"
+                : recruit.approval_status === "active" || recruit.approval_status === "approved"
+                  ? "bg-green-100 text-green-800"
+                  : "",
+            )}
           >
-            {recruit.approval_status || "Pending"}
+            {recruit.pipeline_template_id
+              ? ["completed", "dropped", "withdrawn"].includes(recruit.onboarding_status || "")
+                ? recruit.onboarding_status!.replace(/_/g, " ")
+                : (recruit.current_onboarding_phase || "In Pipeline")
+              : (recruit.approval_status || "Pending")}
           </Badge>
           <Button
             variant="ghost"
