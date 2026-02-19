@@ -30,7 +30,19 @@ import {
   Save,
   X,
   Users,
+  Globe,
+  Loader2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -43,7 +55,7 @@ import {
   formatFileSize,
   type TrainingDocument,
 } from "@/features/training-hub";
-import type { Contact } from "../../services/contactService";
+import { getAllUsersContacts, type Contact } from "../../services/contactService";
 
 
 interface ComposeDialogProps {
@@ -98,6 +110,30 @@ export function ComposeDialog({
   const [activeRecipientField, setActiveRecipientField] = useState<
     "to" | "cc" | "bcc"
   >("to");
+  const [showAddAllConfirm, setShowAddAllConfirm] = useState(false);
+  const [isAddingAll, setIsAddingAll] = useState(false);
+
+  const isSuperAdmin = userProfile?.is_super_admin === true;
+
+  const handleAddAllUsers = async () => {
+    setShowAddAllConfirm(false);
+    setIsAddingAll(true);
+    try {
+      const allUsers = await getAllUsersContacts();
+      setTo((prev) => {
+        const existing = new Set(prev.map((e) => e.toLowerCase()));
+        const newEmails = allUsers
+          .map((u) => u.email.toLowerCase())
+          .filter((e) => !existing.has(e));
+        return [...prev, ...newEmails];
+      });
+      toast.success(`Added ${allUsers.length} users as recipients`);
+    } catch {
+      toast.error("Failed to load users");
+    } finally {
+      setIsAddingAll(false);
+    }
+  };
 
   // Attachment state
   const [attachments, setAttachments] = useState<TrainingDocument[]>([]);
@@ -237,8 +273,27 @@ export function ComposeDialog({
           {/* Compose Form */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-white dark:bg-zinc-900">
-              {/* Contacts Button - Prominent placement */}
-              <div className="flex justify-end">
+              {/* Contacts Buttons */}
+              <div className="flex justify-end gap-2">
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => setShowAddAllConfirm(true)}
+                    disabled={isAddingAll}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium border transition-colors",
+                      isAddingAll
+                        ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed border-zinc-200 dark:border-zinc-700"
+                        : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-300 dark:border-amber-700",
+                    )}
+                  >
+                    {isAddingAll ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Globe className="h-3.5 w-3.5" />
+                    )}
+                    <span>{isAddingAll ? "Adding..." : "Add All Users"}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setShowContactBrowser(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-colors"
@@ -497,6 +552,28 @@ export function ComposeDialog({
         selectedDocuments={attachments}
         maxAttachments={10}
       />
+
+      {/* Add All Users confirmation */}
+      <AlertDialog open={showAddAllConfirm} onOpenChange={setShowAddAllConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add All Users?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will add every approved user in the system as a recipient.
+              Use this for system-wide announcements only.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleAddAllUsers}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              Add All Users
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
