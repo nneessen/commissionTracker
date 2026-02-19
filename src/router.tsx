@@ -438,11 +438,7 @@ const recruitingRoute = createRoute({
     recruitId: search.recruitId ? String(search.recruitId) : undefined,
   }),
   component: () => (
-    <RouteGuard
-      permission="nav.recruiting_pipeline"
-      noRecruits
-      subscriptionFeatures={["recruiting", "recruiting_basic"]}
-    >
+    <RouteGuard permission="nav.recruiting_pipeline" noRecruits>
       <RecruitingDashboard />
     </RouteGuard>
   ),

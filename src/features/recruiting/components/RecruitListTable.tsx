@@ -22,11 +22,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
-import {
-  useActiveTemplate,
-  usePhases,
-} from "@/features/recruiting";
+import { useActiveTemplate, usePhases } from "@/features/recruiting";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { buildStatusOptions } from "@/lib/pipeline";
 
@@ -251,7 +249,7 @@ export function RecruitListTable({
         <Table>
           <TableHeader className="sticky top-0 bg-white dark:bg-zinc-900 z-10">
             <TableRow className="h-8 border-b border-zinc-200 dark:border-zinc-800">
-              <TableHead className="w-8 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400"></TableHead>
+              <TableHead className="w-10 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400"></TableHead>
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                 Name
               </TableHead>
@@ -307,7 +305,7 @@ export function RecruitListTable({
                 return (
                   <TableRow
                     key={recruit.id}
-                    className={`h-9 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 ${
+                    className={`h-11 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 ${
                       selectedRecruitId === recruit.id
                         ? "bg-zinc-100 dark:bg-zinc-800"
                         : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
@@ -315,9 +313,20 @@ export function RecruitListTable({
                     onClick={() => onSelectRecruit(recruit)}
                   >
                     <TableCell className="text-center py-1.5">
-                      <div
-                        className={`w-2 h-2 rounded-full ${getStatusColor(recruit)} mx-auto`}
-                      />
+                      <div className="relative inline-flex">
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage
+                            src={recruit.profile_photo_url || undefined}
+                          />
+                          <AvatarFallback className="text-[9px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                            {(recruit.first_name?.[0] || "").toUpperCase()}
+                            {(recruit.last_name?.[0] || "").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span
+                          className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white dark:border-zinc-900 ${getStatusColor(recruit)}`}
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 py-1.5">
                       {recruit.first_name && recruit.last_name

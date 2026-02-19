@@ -291,7 +291,6 @@ export default function Sidebar({
           label: "Recruiting",
           href: "/recruiting",
           permission: "nav.recruiting_pipeline",
-          subscriptionFeatures: ["recruiting", "recruiting_basic"],
         },
         {
           icon: Trophy,
@@ -485,6 +484,17 @@ export default function Sidebar({
     if ("superAdminOnly" in item && item.superAdminOnly && !isSuperAdmin)
       return false;
 
+    // Agency/email restrictions apply regardless of pending status
+    // (team-restricted items should be hidden from users outside the team)
+    const itemAsNav = item as NavigationItem;
+    if (
+      itemAsNav.allowedAgencyId &&
+      !isAgencyAllowed(itemAsNav.allowedAgencyId)
+    )
+      return false;
+    if (itemAsNav.allowedEmails && !isEmailAllowed(itemAsNav.allowedEmails))
+      return false;
+
     // Pending users see remaining items (rendered as locked)
     if (isPending) return true;
 
@@ -502,10 +512,7 @@ export default function Sidebar({
 
     // Link items
     const navItem = item as NavigationItem;
-    if (navItem.allowedAgencyId && !isAgencyAllowed(navItem.allowedAgencyId))
-      return false;
     if (navItem.public) return true;
-    if (navItem.allowedEmails) return isEmailAllowed(navItem.allowedEmails);
     if (!navItem.permission) return false;
     if (isLoading) return false;
     if (!can(navItem.permission)) return false;

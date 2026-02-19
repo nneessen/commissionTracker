@@ -1,7 +1,7 @@
 // src/features/recruiting/components/BasicRecruitingView.tsx
 // Simplified recruiting view for free tier users with recruiting_basic feature
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,7 @@ import {
   SendHorizontal,
 } from "lucide-react";
 import { GraduateToAgentDialog } from "@/features/admin";
+import { RecruitBottomPanel } from "./RecruitBottomPanel";
 import {
   useRecruits,
   useCreateRecruit,
@@ -73,8 +74,6 @@ import {
   useDeleteRecruit,
 } from "../hooks";
 import { useResendInvite } from "../hooks/useAuthUser";
-import { useInitializeRecruitProgress } from "../hooks/useRecruitProgress";
-import { useActiveTemplate } from "../hooks/usePipeline";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecruitNotificationStatus } from "@/hooks/slack";
 // eslint-disable-next-line no-restricted-imports -- pre-existing: RecruitSlackActions + BasicAddRecruitDialog use raw service fns
@@ -82,6 +81,7 @@ import {
   autoPostRecruitNotification,
   checkNotificationSent,
 } from "@/services/slack";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -89,7 +89,7 @@ import { US_STATES } from "@/constants/states";
 import { VALID_CONTRACT_LEVELS } from "@/lib/constants";
 import type { RecruitFilters } from "@/types/recruiting.types";
 import type { UserProfile } from "@/types/hierarchy.types";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 
 interface BasicRecruitingViewProps {
@@ -111,7 +111,14 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
   const [resendingRecruitId, setResendingRecruitId] = useState<string | null>(
     null,
   );
+  const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(
+    null,
+  );
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const resendInvite = useResendInvite();
+
+  // Read recruitId from URL search params (for deep linking)
+  const { recruitId } = useSearch({ from: "/recruiting" });
 
   // Detect staff role
   const isStaffRole =
@@ -135,7 +142,26 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
     enabled: !!user?.id,
   });
 
-  const recruits = (recruitsData?.data || []) as UserProfile[];
+  const recruits = useMemo(
+    () => (recruitsData?.data || []) as UserProfile[],
+    [recruitsData?.data],
+  );
+
+  // Auto-select recruit from URL param (deep link)
+  useEffect(() => {
+    if (recruitId && recruits.length > 0 && !selectedRecruit) {
+      const recruit = recruits.find((r) => r.id === recruitId);
+      if (recruit) {
+        setSelectedRecruit(recruit);
+        setDetailSheetOpen(true);
+      }
+    }
+  }, [recruitId, recruits, selectedRecruit]);
+
+  const handleSelectRecruit = (recruit: UserProfile) => {
+    setSelectedRecruit(recruit);
+    setDetailSheetOpen(true);
+  };
 
   // Slack is available if user has an imo_id (autoPostRecruitNotification resolves integration + channel internally)
   const slackAvailable = !!user?.imo_id;
@@ -347,12 +373,27 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
             </TableHeader>
             <TableBody>
               {recruits.map((recruit) => (
-                <TableRow key={recruit.id} className="cursor-default">
+                <TableRow
+                  key={recruit.id}
+                  className={cn(
+                    "cursor-pointer transition-colors",
+                    selectedRecruit?.id === recruit.id
+                      ? "bg-zinc-100 dark:bg-zinc-800"
+                      : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                  )}
+                  onClick={() => handleSelectRecruit(recruit)}
+                >
                   <TableCell className="py-2">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
-                        {(recruit.first_name?.[0] || "?").toUpperCase()}
-                      </div>
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage
+                          src={recruit.profile_photo_url || undefined}
+                        />
+                        <AvatarFallback className="text-[9px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                          {(recruit.first_name?.[0] || "").toUpperCase()}
+                          {(recruit.last_name?.[0] || "").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
                         {recruit.first_name} {recruit.last_name}
                       </span>
@@ -401,7 +442,10 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                         : "Unknown"}
                     </span>
                   </TableCell>
-                  <TableCell className="py-2">
+                  <TableCell
+                    className="py-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex items-center gap-1">
                       {slackAvailable && (
                         <RecruitSlackActions
@@ -470,6 +514,22 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
           </Table>
         )}
       </div>
+
+      {/* Recruit Bottom Panel (slide-up drawer) */}
+      {detailSheetOpen && selectedRecruit && (
+        <div className="fixed inset-0 z-[200]">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setDetailSheetOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 rounded-t-xl shadow-2xl h-[60vh] animate-in slide-in-from-bottom duration-300">
+            <RecruitBottomPanel
+              recruit={selectedRecruit}
+              onClose={() => setDetailSheetOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Graduate to Agent Dialog */}
       {graduatingRecruit && (
@@ -989,10 +1049,7 @@ function BasicAddRecruitDialog({
   onOpenChange,
 }: BasicAddRecruitDialogProps) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const createRecruit = useCreateRecruit();
-  const initializeProgressMutation = useInitializeRecruitProgress();
-  const { data: defaultTemplate } = useActiveTemplate();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -1031,7 +1088,7 @@ function BasicAddRecruitDialog({
         ? parseInt(formData.contract_level, 10)
         : undefined;
 
-      const recruit = await createRecruit.mutateAsync({
+      await createRecruit.mutateAsync({
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -1045,18 +1102,6 @@ function BasicAddRecruitDialog({
         imo_id: user?.imo_id ?? undefined,
         agency_id: user?.agency_id ?? undefined,
       });
-
-      // Auto-enroll in the default pipeline if available
-      if (recruit?.id && defaultTemplate?.id) {
-        try {
-          await initializeProgressMutation.mutateAsync({
-            userId: recruit.id,
-            templateId: defaultTemplate.id,
-          });
-        } catch (err) {
-          console.error("[BasicRecruitingView] Pipeline init failed:", err);
-        }
-      }
 
       // Success toast is handled by the mutation's onSuccess callback
       setFormData({

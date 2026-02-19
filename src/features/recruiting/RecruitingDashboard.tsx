@@ -1,7 +1,7 @@
 // src/features/recruiting/RecruitingDashboard.tsx
 // Redesigned with zinc palette and compact design patterns
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -65,7 +65,7 @@ type RecruitWithRelations = UserProfile & {
 };
 
 function RecruitingDashboardContent() {
-  const { user, supabaseUser } = useAuth();
+  const { user } = useAuth();
 
   // Detect staff role (trainer or contracting_manager)
   const isStaffRole =
@@ -105,7 +105,7 @@ function RecruitingDashboardContent() {
   // Fetch pending invitations (invites sent but not yet registered)
   const { data: pendingInvitations = [] } = usePendingInvitations();
 
-const { data: pendingLeadsCount } = usePendingLeadsCount();
+  const { data: pendingLeadsCount } = usePendingLeadsCount();
 
   const { data: activeTemplate } = useActiveTemplate();
   const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
@@ -185,7 +185,10 @@ const { data: pendingLeadsCount } = usePendingLeadsCount();
     })) as unknown as RecruitWithRelations[];
 
   // Combine registered recruits with pending invitations
-  const recruits = [...invitedRecruits, ...registeredRecruits];
+  const recruits = useMemo(
+    () => [...invitedRecruits, ...registeredRecruits],
+    [invitedRecruits, registeredRecruits],
+  );
 
   // Auto-select recruit from URL param (deep link from trainer dashboard)
   useEffect(() => {
@@ -487,6 +490,187 @@ const { data: pendingLeadsCount } = usePendingLeadsCount();
   );
 }
 
+function FreeUplineRecruitingView() {
+  const { user } = useAuth();
+
+  const recruitFilters: RecruitFilters | undefined = user?.id
+    ? { my_recruits_user_id: user.id, exclude_prospects: false }
+    : undefined;
+
+  const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
+    recruitFilters,
+    1,
+    50,
+    { enabled: !!user?.id },
+  );
+
+  const { data: activeTemplate } = useActiveTemplate();
+  const { data: pipelinePhases = [] } = usePhases(activeTemplate?.id);
+
+  const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(
+    null,
+  );
+  const [addRecruitDialogOpen, setAddRecruitDialogOpen] = useState(false);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+
+  // Read recruitId from URL search params (for deep linking)
+  const { recruitId } = useSearch({ from: "/recruiting" });
+
+  // Filter out the current user from the recruits list
+  const recruits = ((recruitsData?.data || []) as UserProfile[]).filter(
+    (recruit) => recruit.id !== user?.id,
+  );
+
+  // Auto-select recruit from URL param
+  useEffect(() => {
+    if (recruitId && recruits.length > 0 && !selectedRecruit) {
+      const recruit = recruits.find((r) => r.id === recruitId);
+      if (recruit) {
+        setSelectedRecruit(recruit);
+        setDetailSheetOpen(true);
+      }
+    }
+  }, [recruitId, recruits, selectedRecruit]);
+
+  // Calculate stats
+  const activePhaseStatuses = pipelinePhases.map((phase) =>
+    normalizePhaseNameToStatus(phase.phase_name),
+  );
+  const stats = {
+    total: recruits.length,
+    active: recruits.filter((r) =>
+      r.onboarding_status && activePhaseStatuses.length > 0
+        ? activePhaseStatuses.includes(r.onboarding_status)
+        : r.onboarding_status !== "completed" &&
+          r.onboarding_status !== "dropped",
+    ).length,
+    completed: recruits.filter((r) => r.onboarding_status === "completed")
+      .length,
+    dropped: recruits.filter((r) => r.onboarding_status === "dropped").length,
+  };
+
+  const handleSelectRecruit = (recruit: UserProfile) => {
+    setSelectedRecruit(recruit);
+    setDetailSheetOpen(true);
+  };
+
+  const handleRecruitDeleted = () => {
+    setSelectedRecruit(null);
+    setDetailSheetOpen(false);
+  };
+
+  return (
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
+      {/* Compact Header with inline stats */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Recruiting Pipeline
+            </h1>
+          </div>
+
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {stats.total}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">total</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {stats.active}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">active</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {stats.completed}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">complete</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-red-600 dark:text-red-400">
+                {stats.dropped}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">dropped</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1.5">
+          <Link
+            to="/billing"
+            className="text-[10px] text-violet-600 dark:text-violet-400 hover:underline mr-2"
+          >
+            Upgrade for full pipeline
+            <ArrowRight className="inline h-3 w-3 ml-0.5" />
+          </Link>
+          <Button
+            size="sm"
+            onClick={() => setAddRecruitDialogOpen(true)}
+            className="h-6 text-[10px] px-2"
+          >
+            <UserPlus className="h-3 w-3 mr-1" />
+            Add Recruit
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content - Table */}
+      <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <RecruitListTable
+          recruits={recruits}
+          isLoading={recruitsLoading}
+          selectedRecruitId={selectedRecruit?.id}
+          onSelectRecruit={handleSelectRecruit}
+        />
+      </div>
+
+      {/* Detail Panel as Sheet (slide-out) */}
+      <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
+        <SheetContent
+          side="right"
+          className="w-[500px] sm:max-w-[500px] p-0 overflow-hidden"
+        >
+          <SheetTitle className="sr-only">Recruit Details</SheetTitle>
+          <SheetDescription className="sr-only">
+            View and manage recruit information, pipeline progress, and
+            documents
+          </SheetDescription>
+          {selectedRecruit && (
+            <RecruitDetailPanel
+              recruit={selectedRecruit}
+              currentUserId={user?.id}
+              isUpline={true}
+              onRecruitDeleted={handleRecruitDeleted}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Add Recruit Dialog */}
+      <AddRecruitDialog
+        open={addRecruitDialogOpen}
+        onOpenChange={setAddRecruitDialogOpen}
+        onSuccess={(newRecruitId) => {
+          const newRecruit = recruits.find((r) => r.id === newRecruitId);
+          if (newRecruit) {
+            setSelectedRecruit(newRecruit);
+            setDetailSheetOpen(true);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
 export function RecruitingDashboard() {
   // Get user info to check roles
   const { user } = useAuth();
@@ -503,6 +687,24 @@ export function RecruitingDashboard() {
     useFeatureAccess("recruiting_custom_pipeline");
   const { hasAccess: hasBasicRecruiting, isLoading: loadingBasicRecruiting } =
     useFeatureAccess("recruiting_basic");
+
+  // Check if free-tier user has their own recruits (upline access)
+  const { data: ownRecruitsData, isLoading: loadingOwnRecruits } = useRecruits(
+    user?.id
+      ? { my_recruits_user_id: user.id, exclude_prospects: false }
+      : undefined,
+    1,
+    1,
+    {
+      enabled:
+        !!user?.id &&
+        !isStaffRole &&
+        !loadingCustomPipeline &&
+        !loadingBasicRecruiting &&
+        !hasCustomPipeline &&
+        !hasBasicRecruiting,
+    },
+  );
 
   // Staff roles bypass all feature checks - show full dashboard immediately
   if (isStaffRole) {
@@ -540,7 +742,28 @@ export function RecruitingDashboard() {
     );
   }
 
-  // No recruiting access - show upgrade prompt
+  // Free-tier: check if user has own recruits
+  if (loadingOwnRecruits) {
+    return (
+      <div className="flex items-center justify-center h-64 text-[11px] text-zinc-500">
+        Loading...
+      </div>
+    );
+  }
+
+  // Filter out the user themselves from the recruit count
+  const ownRecruits = (ownRecruitsData?.data || []).filter(
+    (r) => r.id !== user?.id,
+  );
+  if (ownRecruits.length > 0) {
+    return (
+      <RecruitingErrorBoundary>
+        <FreeUplineRecruitingView />
+      </RecruitingErrorBoundary>
+    );
+  }
+
+  // No recruiting access and no recruits - show upgrade prompt
   return (
     <FeatureGate feature="recruiting_basic" promptVariant="card">
       <div />

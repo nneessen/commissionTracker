@@ -40,7 +40,11 @@ export const recruitingService = {
 
   async createRecruit(recruit: CreateRecruitInput) {
     // Extract skip_pipeline and other non-database fields
-    const { skip_pipeline, ...dbFields } = recruit;
+    const {
+      skip_pipeline,
+      pipeline_template_id: explicitTemplateId,
+      ...dbFields
+    } = recruit;
 
     // Determine role based on agent status and skip_pipeline flag
     let roles: string[] = ["recruit"]; // Default
@@ -50,6 +54,10 @@ export const recruitingService = {
       // Admin or non-agent roles - no pipeline
       roles = recruit.roles || ["view_only"];
       pipelineTemplateId = null;
+    } else if (explicitTemplateId) {
+      // Caller explicitly chose a pipeline template — use it directly
+      roles = ["recruit"];
+      pipelineTemplateId = explicitTemplateId;
     } else if (recruit.agent_status === "licensed") {
       // Licensed agent - gets recruit role during pipeline, same as unlicensed
       // The 'agent' role is added when onboarding completes
@@ -210,7 +218,10 @@ export const recruitingService = {
       .maybeSingle();
 
     if (error) throw error;
-    if (!data) throw new Error("Update failed — you may not have permission to edit this recruit.");
+    if (!data)
+      throw new Error(
+        "Update failed — you may not have permission to edit this recruit.",
+      );
 
     const updatedRecruit = data as UserProfile;
 

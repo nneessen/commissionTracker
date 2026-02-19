@@ -573,23 +573,12 @@ export function AddRecruitDialog({
                 </form.Field>
 
                 {/* Info alert about pipeline assignment */}
-                {(form.state.values.is_licensed_agent ||
-                  form.state.values.skip_pipeline) && (
+                {form.state.values.skip_pipeline && (
                   <Alert className="py-2">
                     <InfoIcon className="h-3 w-3" />
                     <AlertDescription className="text-[10px]">
-                      {form.state.values.is_licensed_agent ? (
-                        <>
-                          Licensed agents will be assigned a fast-track 3-phase
-                          onboarding process instead of the standard 7-phase
-                          pipeline.
-                        </>
-                      ) : (
-                        <>
-                          This user will not be added to any onboarding pipeline
-                          and won't appear in recruiting dashboards.
-                        </>
-                      )}
+                      This user will not be added to any onboarding pipeline and
+                      won't appear in recruiting dashboards.
                     </AlertDescription>
                   </Alert>
                 )}
