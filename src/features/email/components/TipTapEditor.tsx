@@ -9,6 +9,20 @@ import {TipTapMenuBar} from './TipTapMenuBar'
 import {useEffect, useRef} from 'react'
 import {sanitizeHtml} from '../services/sanitizationService'
 
+/**
+ * Converts pasted plain text into HTML with proper paragraph structure.
+ * Double newlines become paragraph breaks; single newlines become <br/>.
+ */
+function plainTextToHtml(text: string): string {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return text
+    .split(/\n{2,}/)
+    .filter(p => p.trim())
+    .map(p => `<p>${escape(p).replace(/\n/g, '<br/>')}</p>`)
+    .join('')
+}
+
 interface TipTapEditorProps {
   content?: string
   onChange?: (html: string) => void
@@ -35,6 +49,8 @@ export function TipTapEditor({
   // Track the last HTML emitted by the editor to avoid resetting cursor
   // when our own output flows back as the content prop
   const lastEmittedHtmlRef = useRef<string>(content)
+  // Ref used by the paste handler to call editor commands after initialization
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
 
   const editor = useEditor({
     extensions: [
@@ -73,6 +89,20 @@ export function TipTapEditor({
         'aria-label': 'Email message editor',
         'aria-multiline': 'true',
       },
+      // Preserve paragraph structure when pasting plain text.
+      // If the clipboard contains HTML (e.g. copied from a browser), we let
+      // TipTap's default handler parse it. Otherwise we convert newline-separated
+      // paragraphs into <p> nodes so the email reads correctly.
+      handlePaste: (_view, event) => {
+        if (!event.clipboardData) return false
+        const html = event.clipboardData.getData('text/html')
+        if (html?.trim()) return false // rich content — use default handler
+        const plain = event.clipboardData.getData('text/plain')
+        if (!plain) return false
+        event.preventDefault()
+        editorRef.current?.commands.insertContent(plainTextToHtml(plain))
+        return true
+      },
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
@@ -82,6 +112,11 @@ export function TipTapEditor({
       onChange?.(sanitized)
     },
   })
+
+  // Keep editorRef in sync so the paste handler can call commands
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
 
   // Update editor content when prop changes from an external source
   // (draft loading, template insertion, switching blocks).

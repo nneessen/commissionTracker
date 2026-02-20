@@ -518,7 +518,7 @@ const leadsQueueRoute = createRoute({
     <RouteGuard
       permission="nav.recruiting_pipeline"
       noRecruits
-      subscriptionFeature="recruiting"
+      subscriptionFeatures={["recruiting", "recruiting_basic", "recruiting_custom_pipeline"]}
     >
       <LeadsQueueDashboard />
     </RouteGuard>

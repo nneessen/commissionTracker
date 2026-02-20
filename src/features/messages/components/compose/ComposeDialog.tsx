@@ -30,6 +30,9 @@ import {
   Save,
   X,
   Users,
+  Globe,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -43,7 +46,7 @@ import {
   formatFileSize,
   type TrainingDocument,
 } from "@/features/training-hub";
-import type { Contact } from "../../services/contactService";
+import { getAllUsersContacts, type Contact } from "../../services/contactService";
 
 
 interface ComposeDialogProps {
@@ -98,6 +101,31 @@ export function ComposeDialog({
   const [activeRecipientField, setActiveRecipientField] = useState<
     "to" | "cc" | "bcc"
   >("to");
+  // "Add All Users" uses a two-step inline confirm to avoid nested modals
+  const [addAllPending, setAddAllPending] = useState(false);
+  const [isAddingAll, setIsAddingAll] = useState(false);
+
+  const isSuperAdmin = userProfile?.is_super_admin === true;
+
+  const handleAddAllUsers = async () => {
+    setAddAllPending(false);
+    setIsAddingAll(true);
+    try {
+      const allUsers = await getAllUsersContacts();
+      setTo((prev) => {
+        const existing = new Set(prev.map((e) => e.toLowerCase()));
+        const newEmails = allUsers
+          .map((u) => u.email.toLowerCase())
+          .filter((e) => !existing.has(e));
+        return [...prev, ...newEmails];
+      });
+      toast.success(`Added ${allUsers.length} users as recipients`);
+    } catch {
+      toast.error("Failed to load users");
+    } finally {
+      setIsAddingAll(false);
+    }
+  };
 
   // Attachment state
   const [attachments, setAttachments] = useState<TrainingDocument[]>([]);
@@ -237,8 +265,49 @@ export function ComposeDialog({
           {/* Compose Form */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-white dark:bg-zinc-900">
-              {/* Contacts Button - Prominent placement */}
-              <div className="flex justify-end">
+              {/* Contacts Buttons */}
+              <div className="flex justify-end gap-2">
+                {isSuperAdmin && (
+                  addAllPending ? (
+                    // Step 2 — inline confirm, no nested modal
+                    <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-md px-2 py-1">
+                      <span className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                        Add all users?
+                      </span>
+                      <button
+                        onClick={handleAddAllUsers}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                      >
+                        <Check className="h-3 w-3" />
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setAddAllPending(false)}
+                        className="flex items-center px-1.5 py-0.5 rounded text-[10px] bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-600 dark:text-zinc-400 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAddAllPending(true)}
+                      disabled={isAddingAll}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium border transition-colors",
+                        isAddingAll
+                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed border-zinc-200 dark:border-zinc-700"
+                          : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-300 dark:border-amber-700",
+                      )}
+                    >
+                      {isAddingAll ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Globe className="h-3.5 w-3.5" />
+                      )}
+                      <span>{isAddingAll ? "Adding..." : "Add All Users"}</span>
+                    </button>
+                  )
+                )}
                 <button
                   onClick={() => setShowContactBrowser(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-colors"
@@ -497,6 +566,7 @@ export function ComposeDialog({
         selectedDocuments={attachments}
         maxAttachments={10}
       />
+
     </>
   );
 }

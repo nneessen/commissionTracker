@@ -45,7 +45,12 @@ export const trainingAssignmentService = {
       })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("This module is already assigned to the selected user.");
+      }
+      throw error;
+    }
     return data as TrainingAssignment;
   },
 

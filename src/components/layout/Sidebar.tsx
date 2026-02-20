@@ -302,14 +302,8 @@ export default function Sidebar({
           icon: Store,
           label: "Lead Vendors",
           href: "/lead-vendors",
-          allowedEmails: [
-            "nickneessen@thestandardhq.com",
-            "hunterthornhillsm@gmail.com",
-            "andrewengel1999@gmail.com",
-            "minyojames@gmail.com",
-            "james.wadleigh.insurance@gmail.com",
-          ],
-          allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          public: true,
+          superAdminOnly: true,
         },
       ],
     },
@@ -513,9 +507,12 @@ export default function Sidebar({
     // Link items
     const navItem = item as NavigationItem;
     if (navItem.public) return true;
-    if (!navItem.permission) return false;
+    // Items need at least one access gate; if none, hide by default
+    if (!navItem.permission && !navItem.subscriptionFeature && !navItem.subscriptionFeatures) return false;
     if (isLoading) return false;
-    if (!can(navItem.permission)) return false;
+    // Permission gate (if present)
+    if (navItem.permission && !can(navItem.permission)) return false;
+    // Subscription feature gate (if present)
     if (navItem.subscriptionFeature && !hasFeature(navItem.subscriptionFeature))
       return false;
     if (
@@ -531,9 +528,20 @@ export default function Sidebar({
     const navItem = item as NavigationItem;
     if (navItem.public) return true;
     if (navItem.allowedEmails) return isEmailAllowed(navItem.allowedEmails);
-    if (!navItem.permission) return false;
+    // Items need at least one access gate; if none, hide by default
+    if (!navItem.permission && !navItem.subscriptionFeature && !navItem.subscriptionFeatures) return false;
     if (isLoading) return false;
-    return can(navItem.permission);
+    // Permission gate (if present)
+    if (navItem.permission && !can(navItem.permission)) return false;
+    // Subscription feature gate (if present)
+    if (navItem.subscriptionFeature && !hasFeature(navItem.subscriptionFeature))
+      return false;
+    if (
+      navItem.subscriptionFeatures &&
+      !navItem.subscriptionFeatures.some((f) => hasFeature(f))
+    )
+      return false;
+    return true;
   };
 
   // Build visible groups based on user type

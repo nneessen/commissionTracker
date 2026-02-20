@@ -6,6 +6,111 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-19 18:10:42
+
+### Changed Files
+- `src/features/recruiting/components/RecruitBottomPanel.tsx`
+
+### Statistics
+```
+ 1 file changed, 4 insertions(+)
+```
+
+## [Checkpoint] - 2026-02-19 16:25:26
+
+### Changed Files
+- `src/features/recruiting/components/RecruitBottomPanel.tsx`
+
+### Statistics
+```
+ 1 file changed, 207 insertions(+), 55 deletions(-)
+```
+
+## [Checkpoint] - 2026-02-19 14:50:53
+
+### Changed Files
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+
+### Statistics
+```
+ 1 file changed, 43 insertions(+), 50 deletions(-)
+```
+
+## [Checkpoint] - 2026-02-19 14:42:41
+
+### Changed Files
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+
+### Statistics
+```
+ 1 file changed, 80 insertions(+), 3 deletions(-)
+```
+
+## [Checkpoint] - 2026-02-19 14:30:09
+
+### Changed Files
+- `src/features/email/components/TipTapEditor.tsx`
+
+### Statistics
+```
+ 1 file changed, 35 insertions(+)
+```
+
+## [Checkpoint] - 2026-02-19 12:46:49
+
+### Changed Files
+- `src/features/training-modules/services/trainingAssignmentService.ts`
+- `supabase/migrations/20260219123915_fix_training_assignment_uniqueness.sql`
+
+### Statistics
+```
+ 2 files changed, 21 insertions(+), 1 deletion(-)
+```
+
+## [Checkpoint] - 2026-02-19 12:38:07
+
+### Changed Files
+- `src/features/recruiting/components/BasicRecruitingView.tsx`
+- `src/features/recruiting/components/RecruitBottomPanel.tsx`
+
+### Statistics
+```
+ 2 files changed, 43 insertions(+), 9 deletions(-)
+```
+
+## [Checkpoint] - 2026-02-19 12:22:30
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/router.tsx`
+
+### Statistics
+```
+ 4 files changed, 30 insertions(+), 5 deletions(-)
+```
+
+## [Checkpoint] - 2026-02-19 08:47:26
+
+### Changed Files
+- `src/components/layout/Sidebar.tsx`
+
+### Statistics
+```
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+```
+
+## [Checkpoint] - 2026-02-19 07:49:49
+
+### Changed Files
+- `supabase/migrations/20260219074345_fix_agent_writing_numbers_and_state_licenses_rls.sql`
+
+### Statistics
+```
+ 1 file changed, 107 insertions(+)
+```
+
 ## [Checkpoint] - 2026-02-18 17:17:54
 
 ### Changed Files

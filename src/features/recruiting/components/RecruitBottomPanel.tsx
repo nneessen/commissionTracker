@@ -2,7 +2,7 @@
 // Lightweight bottom-drawer panel for basic-tier uplines to manage recruit pipeline progress.
 // Shows: recruit info, pipeline enrollment, current phase, advance/revert controls.
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,18 +12,27 @@ import {
   Phone,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Loader2,
   X,
   ListChecks,
+  LogOut,
 } from "lucide-react";
-import { useTemplates, usePhases } from "../hooks/usePipeline";
+import {
+  useTemplates,
+  usePhases,
+  useChecklistItems,
+} from "../hooks/usePipeline";
 import {
   useRecruitPhaseProgress,
   useInitializeRecruitProgress,
   useAdvancePhase,
   useRevertPhase,
+  useChecklistProgress,
+  useUnenrollFromPipeline,
 } from "../hooks/useRecruitProgress";
 import { cn } from "@/lib/utils";
+import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import type { UserProfile } from "@/types/hierarchy.types";
@@ -31,6 +40,102 @@ import type { UserProfile } from "@/types/hierarchy.types";
 interface RecruitBottomPanelProps {
   recruit: UserProfile;
   onClose: () => void;
+}
+
+const CHECKLIST_STATUS_COLORS: Record<string, string> = {
+  completed:
+    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+  in_progress:
+    "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  not_started: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  pending:
+    "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+};
+
+type ChecklistProgressRecord = { checklist_item_id: string; status: string };
+
+/** Renders checklist items for a phase. Fetches item definitions directly
+ *  from phase_checklist_items (any-auth policy — always accessible).
+ *  Only active items are shown (is_active filter applied client-side). */
+function PhaseChecklist({
+  userId,
+  phaseId,
+}: {
+  userId: string;
+  phaseId: string;
+}) {
+  const {
+    data: allItems = [],
+    isLoading,
+    isError,
+  } = useChecklistItems(phaseId);
+  const { data: rawProgress = [] } = useChecklistProgress(userId, phaseId);
+
+  // Only render active items in the upline view
+  const items = allItems.filter((i) => i.is_active !== false);
+
+  const progressMap = new Map(
+    (rawProgress as unknown as ChecklistProgressRecord[]).map((p) => [
+      p.checklist_item_id,
+      p.status,
+    ]),
+  );
+
+  if (isLoading) {
+    return (
+      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 py-1">
+        Loading…
+      </p>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-[10px] text-red-400 dark:text-red-500 py-1">
+        Failed to load checklist items.
+      </p>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 py-1">
+        No checklist items for this phase.
+      </p>
+    );
+  }
+
+  const sorted = [...items].sort((a, b) => a.item_order - b.item_order);
+
+  return (
+    <div className="flex flex-col gap-1 mt-1">
+      {sorted.map((item) => {
+        const status = progressMap.get(item.id) ?? "not_started";
+        const label = status.replace(/_/g, " ");
+        return (
+          <div
+            key={item.id}
+            className="flex items-center justify-between px-2 py-1 rounded bg-zinc-50 dark:bg-zinc-800/60"
+          >
+            <span className="text-[10px] text-zinc-700 dark:text-zinc-300 flex-1 truncate">
+              {item.item_name}
+            </span>
+            <Badge
+              variant="secondary"
+              className={cn(
+                "text-[9px] h-4 ml-2 shrink-0",
+                CHECKLIST_STATUS_COLORS[status] ??
+                  CHECKLIST_STATUS_COLORS.not_started,
+              )}
+            >
+              {label}
+            </Badge>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function RecruitBottomPanel({
@@ -46,20 +151,46 @@ export function RecruitBottomPanel({
   const [enrolledTemplateId, setEnrolledTemplateId] = useState<string | null>(
     null,
   );
-
-  const effectiveTemplateId =
-    recruit.pipeline_template_id || enrolledTemplateId;
+  // Phase bar click expansion — auto-tracks current in-progress phase.
+  // A ref (not state) tracks the previously-seen phase ID so the effect
+  // fires correctly on first load AND after advance/revert/re-enroll.
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
+  const prevAutoPhaseIdRef = useRef<string | null>(null);
+  // Unenroll confirmation dialog
+  const [confirmUnenroll, setConfirmUnenroll] = useState(false);
 
   const { data: templates = [] } = useTemplates();
-  const { data: phaseProgress = [] } = useRecruitPhaseProgress(recruit.id);
+  const { data: phaseProgress = [], isLoading: phaseProgressLoading } =
+    useRecruitPhaseProgress(recruit.id);
+
+  // Derive template from profile, local enrollment state, or phase progress records.
+  // Priority: local enrollment state > live DB progress records > stale recruit prop.
+  // recruit.pipeline_template_id is last because the prop can be stale while the
+  // recruits query re-fetches after an enroll/unenroll action.
+  const progressTemplateId = phaseProgress[0]?.template_id ?? null;
+  const effectiveTemplateId =
+    enrolledTemplateId || progressTemplateId || recruit.pipeline_template_id;
+
+  // Fetch phases directly — avoids the nested template query and its RLS restrictions.
+  // pipeline_phases_upline_select policy allows uplines to read phases for their recruits.
   const { data: phases = [] } = usePhases(effectiveTemplateId ?? undefined);
 
   const initializeProgress = useInitializeRecruitProgress();
   const advancePhase = useAdvancePhase();
   const revertPhase = useRevertPhase();
+  const unenrollFromPipeline = useUnenrollFromPipeline();
 
   const activeTemplates = templates.filter((t) => t.is_active);
-  const hasPipeline = !!effectiveTemplateId && phaseProgress.length > 0;
+  // hasPipeline is true when:
+  //  - We just enrolled this session (enrolledTemplateId set locally), OR
+  //  - DB phase progress records exist (progressTemplateId), OR
+  //  - recruit.pipeline_template_id is set AND the progress query is still loading
+  //    (prevents flashing enrollment UI while data arrives, but won't false-positive
+  //    once loading completes with no progress records for an unenrolled recruit).
+  const hasPipeline =
+    !!enrolledTemplateId ||
+    !!progressTemplateId ||
+    (!!recruit.pipeline_template_id && phaseProgressLoading);
 
   // Find the current in-progress phase
   const currentProgress = phaseProgress.find((p) => p.status === "in_progress");
@@ -79,6 +210,18 @@ export function RecruitBottomPanel({
   // Pipeline template name
   const pipelineTemplate = templates.find((t) => t.id === effectiveTemplateId);
 
+  // Auto-select the current in-progress phase so checklist items are visible immediately on
+  // open, AND update when the phase changes (advance/revert). Uses a ref to track the
+  // previously-seen phase ID — fires on first load (ref=null→new) and on every phase
+  // change (old phase id → new phase id), without triggering on unrelated re-renders.
+  useEffect(() => {
+    const incomingPhaseId = currentProgress?.phase_id ?? null;
+    if (incomingPhaseId !== prevAutoPhaseIdRef.current) {
+      prevAutoPhaseIdRef.current = incomingPhaseId;
+      setSelectedPhaseId(incomingPhaseId);
+    }
+  }, [currentProgress?.phase_id]);
+
   // Days since pipeline started
   const pipelineStarted =
     phaseProgress.length > 0
@@ -96,10 +239,7 @@ export function RecruitBottomPanel({
   const handleEnroll = async (templateId: string) => {
     setEnrollingTemplateId(templateId);
     try {
-      await initializeProgress.mutateAsync({
-        userId: recruit.id,
-        templateId,
-      });
+      await initializeProgress.mutateAsync({ userId: recruit.id, templateId });
       toast.success("Recruit enrolled in pipeline");
       setEnrolledTemplateId(templateId);
       setEnrollingTemplateId(null);
@@ -124,17 +264,43 @@ export function RecruitBottomPanel({
     }
   };
 
+  // FIX: pass the PREVIOUS completed phase ID, not the current in_progress phase
   const handleRevert = async () => {
-    if (!currentProgress) return;
+    if (currentPhaseIndex <= 0) return;
+    const previousPhase = sortedPhases[currentPhaseIndex - 1];
+    if (!previousPhase) return;
     try {
       await revertPhase.mutateAsync({
         userId: recruit.id,
-        phaseId: currentProgress.phase_id,
+        phaseId: previousPhase.id,
       });
       toast.success("Phase reverted");
     } catch {
       toast.error("Failed to revert phase");
     }
+  };
+
+  const handleUnenroll = async () => {
+    try {
+      await unenrollFromPipeline.mutateAsync({ userId: recruit.id });
+      // Immediately zero-out the phase progress cache so hasPipeline resolves
+      // to false right away — prevents the stale TQ cache (staleTime: 5min) from
+      // briefly re-showing the old enrolled panel while the background refetch runs.
+      queryClient.setQueryData(["recruit-phase-progress", recruit.id], []);
+      toast.success("Recruit unenrolled from pipeline");
+      setEnrolledTemplateId(null);
+      setConfirmUnenroll(false);
+      setSelectedPhaseId(null);
+      // Reset ref so the next enrollment's in-progress phase auto-selects correctly
+      prevAutoPhaseIdRef.current = null;
+    } catch {
+      toast.error("Failed to unenroll from pipeline");
+      // Keep dialog open so user can retry — do NOT call setConfirmUnenroll(false)
+    }
+  };
+
+  const handlePhaseBarClick = (phaseId: string) => {
+    setSelectedPhaseId((prev) => (prev === phaseId ? null : phaseId));
   };
 
   const isAllCompleted =
@@ -147,7 +313,7 @@ export function RecruitBottomPanel({
   const initials = `${(recruit.first_name?.[0] || "").toUpperCase()}${(recruit.last_name?.[0] || "").toUpperCase()}`;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="relative flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
         <div className="flex items-center gap-3">
@@ -180,16 +346,32 @@ export function RecruitBottomPanel({
         <div className="flex items-center gap-2">
           <Badge
             variant={
-              recruit.approval_status === "active" ||
-              recruit.approval_status === "approved"
-                ? "default"
-                : recruit.approval_status === "declined"
-                  ? "destructive"
-                  : "secondary"
+              recruit.approval_status === "declined" &&
+              !recruit.pipeline_template_id
+                ? "destructive"
+                : "secondary"
             }
-            className="text-[9px] h-4"
+            className={cn(
+              "text-[9px] h-4",
+              recruit.pipeline_template_id
+                ? ["completed", "dropped", "withdrawn"].includes(
+                    recruit.onboarding_status || "",
+                  )
+                  ? TERMINAL_STATUS_COLORS[recruit.onboarding_status!]
+                  : "bg-blue-100 text-blue-800"
+                : recruit.approval_status === "active" ||
+                    recruit.approval_status === "approved"
+                  ? "bg-green-100 text-green-800"
+                  : "",
+            )}
           >
-            {recruit.approval_status || "Pending"}
+            {recruit.pipeline_template_id
+              ? ["completed", "dropped", "withdrawn"].includes(
+                  recruit.onboarding_status || "",
+                )
+                ? recruit.onboarding_status!.replace(/_/g, " ")
+                : recruit.current_onboarding_phase || "In Pipeline"
+              : recruit.approval_status || "Pending"}
           </Badge>
           <Button
             variant="ghost"
@@ -266,21 +448,34 @@ export function RecruitBottomPanel({
                     {pipelineTemplate?.name || "Unknown Pipeline"}
                   </p>
                 </div>
-                {pipelineStarted && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                      Started
-                    </p>
-                    <p className="text-[11px] text-zinc-700 dark:text-zinc-300 mt-0.5">
-                      {formatDistanceToNow(new Date(pipelineStarted), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {pipelineStarted && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Started
+                      </p>
+                      <p className="text-[11px] text-zinc-700 dark:text-zinc-300 mt-0.5">
+                        {formatDistanceToNow(new Date(pipelineStarted), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] text-zinc-400 hover:text-red-600 dark:hover:text-red-400 gap-1"
+                    onClick={() => setConfirmUnenroll(true)}
+                    disabled={unenrollFromPipeline.isPending}
+                    title="Unenroll from pipeline"
+                  >
+                    <LogOut className="h-3 w-3" />
+                    Unenroll
+                  </Button>
+                </div>
               </div>
 
-              {/* Phase progress bar */}
+              {/* Phase progress bar — each segment is clickable */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
@@ -301,11 +496,15 @@ export function RecruitBottomPanel({
                       (p) => p.phase_id === phase.id,
                     );
                     const status = progress?.status || "not_started";
+                    const isSelected = selectedPhaseId === phase.id;
                     return (
-                      <div
+                      <button
                         key={phase.id}
                         className={cn(
-                          "h-1.5 flex-1 rounded-full transition-colors",
+                          "h-3 flex-1 rounded-full transition-all focus:outline-none",
+                          "hover:opacity-80 hover:scale-y-125",
+                          isSelected &&
+                            "ring-2 ring-offset-1 ring-zinc-400 dark:ring-zinc-500",
                           status === "completed"
                             ? "bg-emerald-500"
                             : status === "in_progress"
@@ -314,11 +513,34 @@ export function RecruitBottomPanel({
                                 ? "bg-red-400"
                                 : "bg-zinc-200 dark:bg-zinc-700",
                         )}
-                        title={`${phase.phase_name} — ${status}`}
+                        title={`${phase.phase_name} — ${status.replace(/_/g, " ")} (click to view)`}
+                        onClick={() => handlePhaseBarClick(phase.id)}
                       />
                     );
                   })}
                 </div>
+
+                {/* Expanded checklist for selected phase */}
+                {selectedPhaseId &&
+                  (() => {
+                    const selPhase = sortedPhases.find(
+                      (p) => p.id === selectedPhaseId,
+                    );
+                    return (
+                      <div className="mt-2 px-1">
+                        <div className="flex items-center gap-1 mb-1">
+                          <ChevronDown className="h-3 w-3 text-zinc-400" />
+                          <p className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                            {selPhase?.phase_name}
+                          </p>
+                        </div>
+                        <PhaseChecklist
+                          userId={recruit.id}
+                          phaseId={selectedPhaseId}
+                        />
+                      </div>
+                    );
+                  })()}
               </div>
 
               {/* Current phase details */}
@@ -401,6 +623,46 @@ export function RecruitBottomPanel({
           </div>
         )}
       </div>
+
+      {/* Unenroll confirmation — rendered inline inside the panel (avoids z-index portal issues) */}
+      {confirmUnenroll && (
+        <div className="absolute inset-0 rounded-t-xl bg-black/50 flex items-center justify-center px-4 z-10">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-xl p-4">
+            <p className="text-[12px] font-semibold text-zinc-900 dark:text-zinc-100">
+              Unenroll from Pipeline?
+            </p>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1.5">
+              This will remove all phase and checklist progress for{" "}
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {displayName}
+              </span>
+              . They can then be enrolled in a different pipeline.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-7 text-[10px]"
+                onClick={() => setConfirmUnenroll(false)}
+                disabled={unenrollFromPipeline.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 h-7 text-[10px] bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleUnenroll}
+                disabled={unenrollFromPipeline.isPending}
+              >
+                {unenrollFromPipeline.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : null}
+                Unenroll
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
