@@ -1,5 +1,6 @@
 // src/components/subscription/SubscriptionAnnouncementDialog.tsx
 
+import { useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,6 @@ import {
   Crown,
   Zap,
   TrendingUp,
-  Instagram,
   UserPlus,
   Building2,
   LayoutDashboard,
@@ -33,8 +33,48 @@ import {
   FileDown,
   MessageCircle,
   Network,
+  GraduationCap,
+  Palette,
+  Send,
+  Clock,
+  Star,
+  type LucideIcon,
 } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useSubscriptionPlans } from "@/hooks/subscription";
+import { FEATURE_REGISTRY } from "@/constants/features";
+
+const FEATURE_ICON_MAP: Record<string, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  policies: FileText,
+  comp_guide: Calculator,
+  settings: Settings,
+  connect_upline: UserPlus,
+  expenses: DollarSign,
+  targets_basic: Target,
+  targets_full: Target,
+  analytics: PieChart,
+  reports_view: FileText,
+  reports_export: FileDown,
+  downline_reports: FileText,
+  hierarchy: Network,
+  team_analytics: BarChart3,
+  recruiting: Users,
+  recruiting_basic: Users,
+  recruiting_custom_pipeline: Users,
+  overrides: TrendingUp,
+  leaderboard: Star,
+  training: GraduationCap,
+  email: Mail,
+  sms: MessageCircle,
+  slack: Send,
+  instagram_messaging: MessageSquare,
+  instagram_scheduled_messages: Clock,
+  instagram_templates: MessageSquare,
+  custom_branding: Palette,
+};
+
+const TIER_ORDER = ["free", "pro", "team"];
 
 interface SubscriptionAnnouncementDialogProps {
   open: boolean;
@@ -45,6 +85,45 @@ export function SubscriptionAnnouncementDialog({
   open,
   onDismiss,
 }: SubscriptionAnnouncementDialogProps) {
+  const { plans, isLoading } = useSubscriptionPlans();
+
+  const displayPlans = useMemo(() => {
+    if (!plans.length) return [];
+    return plans
+      .filter((p) => p.is_active && p.name !== "starter")
+      .sort((a, b) => TIER_ORDER.indexOf(a.name) - TIER_ORDER.indexOf(b.name));
+  }, [plans]);
+
+  const getFeatures = (plan: (typeof displayPlans)[number]) => {
+    const featureKeys =
+      plan.announcement_features?.length > 0
+        ? plan.announcement_features
+        : Object.entries(plan.features)
+            .filter(([, v]) => v === true)
+            .map(([k]) => k)
+            .slice(0, 6);
+
+    return featureKeys.map((key) => ({
+      icon: FEATURE_ICON_MAP[key] || Star,
+      label: FEATURE_REGISTRY[key]?.displayName || key,
+    }));
+  };
+
+  const getPriceDisplay = (plan: (typeof displayPlans)[number]) => {
+    if (plan.name === "free") return { price: "$0", note: "forever" };
+    if (plan.price_monthly > 0)
+      return {
+        price: `$${(plan.price_monthly / 100).toFixed(0)}/mo`,
+        note: "monthly/annual",
+      };
+    return { price: "Coming Soon", note: "monthly/annual" };
+  };
+
+  const getPreviousTierName = (index: number) => {
+    if (index === 0) return null;
+    return displayPlans[index - 1]?.display_name || null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onDismiss()}>
       <DialogContent
@@ -55,7 +134,7 @@ export function SubscriptionAnnouncementDialog({
         <VisuallyHidden>
           <DialogTitle>Subscription Tiers Announcement</DialogTitle>
           <DialogDescription>
-            Information about upcoming subscription tiers launching February 1,
+            Information about upcoming subscription tiers launching March 1,
             2026
           </DialogDescription>
         </VisuallyHidden>
@@ -155,7 +234,7 @@ export function SubscriptionAnnouncementDialog({
                   </h1>
                   <p className="text-white/80 dark:text-black/70 text-sm max-w-sm leading-relaxed">
                     Enjoy complete access to all features* this month. Starting
-                    February 28, 2026, subscription tiers will be enabled with
+                    March 1, 2026, subscription tiers will be enabled with
                     flexible plans for every stage of your business.
                   </p>
                   <p className="text-white/50 dark:text-black/40 text-[10px] mt-2">
@@ -236,72 +315,40 @@ export function SubscriptionAnnouncementDialog({
 
               {/* Tier Comparison Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                {/* Free Tier */}
-                <TierCard
-                  name="Free"
-                  description="Essential tools to get started"
-                  price="$0"
-                  priceNote="forever"
-                  features={[
-                    { icon: LayoutDashboard, label: "Dashboard" },
-                    { icon: FileText, label: "Policy Management" },
-                    { icon: Calculator, label: "Compensation Guide" },
-                    { icon: Settings, label: "Settings" },
-                    { icon: UserPlus, label: "Connect Upline" },
-                  ]}
-                />
+                {isLoading || displayPlans.length === 0
+                  ? STATIC_FALLBACK_TIERS.map((tier) => (
+                      <TierCard key={tier.name} {...tier} />
+                    ))
+                  : displayPlans.map((plan, index) => {
+                      const { price, note } = getPriceDisplay(plan);
+                      const previousTier = getPreviousTierName(index);
+                      const features = getFeatures(plan);
 
-                {/* Pro Tier */}
-                <TierCard
-                  name="Pro"
-                  description="Advanced tools for producers"
-                  price="Coming Soon"
-                  priceNote="monthly/annual"
-                  highlighted
-                  features={[
-                    {
-                      icon: Check,
-                      label: "Everything in Free",
-                      isIncluded: true,
-                    },
-                    { icon: DollarSign, label: "Expense Tracking" },
-                    { icon: Target, label: "Full Targets & Goals" },
-                    { icon: PieChart, label: "Advanced Analytics" },
-                    { icon: FileDown, label: "Reports Export" },
-                    { icon: Mail, label: "Email Messaging" },
-                  ]}
-                />
+                      const tierFeatures: TierFeature[] = [];
+                      if (previousTier) {
+                        tierFeatures.push({
+                          icon: Check,
+                          label: `Everything in ${previousTier}`,
+                          isIncluded: true,
+                        });
+                      }
+                      tierFeatures.push(...features);
 
-                {/* Team Tier */}
-                <TierCard
-                  name="Team"
-                  description="Complete suite for builders"
-                  price="Coming Soon"
-                  priceNote="monthly/annual"
-                  badge="Most Popular"
-                  features={[
-                    {
-                      icon: Check,
-                      label: "Everything in Pro",
-                      isIncluded: true,
-                    },
-                    { icon: MessageCircle, label: "SMS Messaging" },
-                    { icon: Network, label: "Team Hierarchy" },
-                    {
-                      icon: BarChart3,
-                      label: "Team Analytics Dashboard",
-                      isNew: true,
-                    },
-                    {
-                      icon: Users,
-                      label: "Recruiting Pipeline",
-                      isHighlighted: true,
-                    },
-                    { icon: TrendingUp, label: "Override Tracking" },
-                    { icon: Instagram, label: "Instagram Messaging" },
-                    { icon: Workflow, label: "Workflows & Automations" },
-                  ]}
-                />
+                      return (
+                        <TierCard
+                          key={plan.id}
+                          name={plan.display_name}
+                          description={plan.description || ""}
+                          price={price}
+                          priceNote={note}
+                          features={tierFeatures}
+                          highlighted={plan.name === "pro"}
+                          badge={
+                            plan.name === "team" ? "Most Popular" : undefined
+                          }
+                        />
+                      );
+                    })}
               </div>
 
               {/* Recruiting Value Proposition */}
@@ -506,3 +553,50 @@ function RecruitingFeature({ icon: Icon, label }: RecruitingFeatureProps) {
     </div>
   );
 }
+
+// Static fallback used while plans are loading (prevents layout shift)
+const STATIC_FALLBACK_TIERS: TierCardProps[] = [
+  {
+    name: "Free",
+    description: "Essential tools to get started",
+    price: "$0",
+    priceNote: "forever",
+    features: [
+      { icon: LayoutDashboard, label: "Dashboard" },
+      { icon: FileText, label: "Policy Management" },
+      { icon: Calculator, label: "Compensation Guide" },
+      { icon: Settings, label: "Settings" },
+      { icon: UserPlus, label: "Connect Upline" },
+    ],
+  },
+  {
+    name: "Pro",
+    description: "Advanced tools for producers",
+    price: "Coming Soon",
+    priceNote: "monthly/annual",
+    highlighted: true,
+    features: [
+      { icon: Check, label: "Everything in Free", isIncluded: true },
+      { icon: DollarSign, label: "Expense Tracking" },
+      { icon: Target, label: "Full Targets & Goals" },
+      { icon: PieChart, label: "Advanced Analytics" },
+      { icon: FileDown, label: "Reports Export" },
+      { icon: Mail, label: "Email Messaging" },
+    ],
+  },
+  {
+    name: "Team",
+    description: "Complete suite for builders",
+    price: "Coming Soon",
+    priceNote: "monthly/annual",
+    badge: "Most Popular",
+    features: [
+      { icon: Check, label: "Everything in Pro", isIncluded: true },
+      { icon: MessageCircle, label: "SMS Messaging" },
+      { icon: Network, label: "Team Hierarchy" },
+      { icon: BarChart3, label: "Team Analytics Dashboard" },
+      { icon: Users, label: "Recruiting Pipeline" },
+      { icon: TrendingUp, label: "Override Tracking" },
+    ],
+  },
+];

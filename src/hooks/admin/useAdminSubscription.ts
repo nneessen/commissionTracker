@@ -209,6 +209,41 @@ export function useUpdatePlanAnalytics() {
   );
 }
 
+export function useUpdatePlanAnnouncementFeatures() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation<
+    void,
+    Error,
+    { planId: string; announcementFeatures: string[] }
+  >({
+    mutationFn: async (params) => {
+      if (!user?.id) throw new Error("User not authenticated");
+      return adminSubscriptionService.updatePlanAnnouncementFeatures({
+        ...params,
+        changedBy: user.id,
+      });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: adminSubscriptionKeys.plans(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: adminSubscriptionKeys.plan(variables.planId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: adminSubscriptionKeys.planHistory(variables.planId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      toast.success("Announcement features updated");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update announcement features: ${error.message}`);
+    },
+  });
+}
+
 /**
  * Update plan pricing
  */

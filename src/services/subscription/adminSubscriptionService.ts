@@ -50,6 +50,12 @@ export interface UpdatePlanAnalyticsParams {
   changedBy: string;
 }
 
+export interface UpdatePlanAnnouncementFeaturesParams {
+  planId: string;
+  announcementFeatures: string[];
+  changedBy: string;
+}
+
 export interface UpdatePlanPricingParams {
   planId: string;
   priceMonthly: number;
@@ -210,6 +216,46 @@ class AdminSubscriptionService {
     } catch (error) {
       logger.error(
         "AdminSubscriptionService.updatePlanAnalytics",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  async updatePlanAnnouncementFeatures(
+    params: UpdatePlanAnnouncementFeaturesParams,
+  ): Promise<void> {
+    const { planId, announcementFeatures, changedBy } = params;
+
+    try {
+      const currentPlan = await this.getPlanById(planId);
+      if (!currentPlan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
+
+      const { error: updateError } = await supabase
+        .from("subscription_plans")
+        .update({ announcement_features: announcementFeatures })
+        .eq("id", planId);
+
+      if (updateError) {
+        logger.error(
+          "AdminSubscriptionService.updatePlanAnnouncementFeatures",
+          updateError,
+        );
+        throw updateError;
+      }
+
+      await this.createPlanChangeAudit({
+        planId,
+        changedBy,
+        changeType: "announcement_features",
+        oldValue: currentPlan.announcement_features,
+        newValue: announcementFeatures,
+      });
+    } catch (error) {
+      logger.error(
+        "AdminSubscriptionService.updatePlanAnnouncementFeatures",
         error instanceof Error ? error : new Error(String(error)),
       );
       throw error;

@@ -9,6 +9,7 @@ import {
   Check,
   Package,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@/lib/utils";
@@ -16,12 +17,13 @@ import { PlansOverview } from "./PlansOverview";
 import { FeatureAssignmentMatrix } from "./FeatureAssignmentMatrix";
 import { AddonsManagementPanel } from "./AddonsManagementPanel";
 import { TemporaryAccessSettings } from "./TemporaryAccessSettings";
+import { AnnouncementFeaturesEditor } from "./AnnouncementFeaturesEditor";
 import {
   useAdminSubscriptionPlans,
   useAdminSubscriptionAddons,
 } from "@/hooks/admin";
 
-type AdminTab = "plans" | "features" | "addons" | "access";
+type AdminTab = "plans" | "features" | "addons" | "access" | "announcement";
 
 export function AdminBillingPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +39,7 @@ export function AdminBillingPanel() {
     { id: "features", label: "Features", icon: Check },
     { id: "addons", label: "Add-ons", icon: Package },
     { id: "access", label: "Temp Access", icon: Clock },
+    { id: "announcement", label: "Announcement", icon: Sparkles },
   ];
 
   return (
@@ -87,9 +90,7 @@ export function AdminBillingPanel() {
 
             {/* Tab Content */}
             <div className="p-3">
-              {activeTab === "plans" && (
-                <PlansOverview plans={plans || []} />
-              )}
+              {activeTab === "plans" && <PlansOverview plans={plans || []} />}
 
               {activeTab === "features" && activePlans.length > 0 && (
                 <FeatureAssignmentMatrix plans={activePlans} />
@@ -100,6 +101,10 @@ export function AdminBillingPanel() {
               )}
 
               {activeTab === "access" && <TemporaryAccessSettings />}
+
+              {activeTab === "announcement" && activePlans.length > 0 && (
+                <AnnouncementFeaturesEditor plans={activePlans} />
+              )}
             </div>
           </div>
         </Collapsible.Content>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const STORAGE_KEY = "subscription-announcement-last-seen";
-const CUTOFF_DATE = new Date("2026-02-01T00:00:00Z");
+const CUTOFF_DATE = new Date("2026-03-01T00:00:00Z");
 
 interface SubscriptionAnnouncementState {
   shouldShow: boolean;
@@ -12,7 +12,7 @@ interface SubscriptionAnnouncementState {
 
 /**
  * Hook to manage the subscription tier announcement dialog display.
- * Shows once per day until Feb 1, 2026, tracked in localStorage.
+ * Shows once per day until March 1, 2026, tracked in localStorage.
  */
 export function useSubscriptionAnnouncement(): SubscriptionAnnouncementState {
   // Default to false to prevent flash
