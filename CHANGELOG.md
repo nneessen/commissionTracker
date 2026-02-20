@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-20 09:16:21
+
+### Changed Files
+- `IMPLEMENTATION_SUMMARY.md`
+- `docs/SECURITY_FIXES_2026-02-20.md`
+- `src/features/contracting/components/ContractingDashboard.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/admin/PipelineQuickView.tsx`
+- `src/features/recruiting/components/RecruitBottomPanel.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/contracting/AddCarrierDialog.tsx`
+- `src/features/recruiting/components/contracting/ContractingRequestCard.tsx`
+- `src/services/recruiting/carrierContractRequestService.ts`
+- `src/services/settings/carriers/CarrierService.ts`
+- `src/types/carrier.types.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260220081833_add_carrier_contracting_metadata.sql`
+- `supabase/migrations/20260220081834_create_carrier_contract_requests.sql`
+- `supabase/migrations/20260220081835_get_available_carriers_function.sql`
+- `supabase/migrations/20260220081836_staff_default_pipeline_access.sql`
+- `supabase/migrations/20260220155500_fix_get_available_carriers_function.sql`
+- `supabase/migrations/20260220160000_fix_rpc_type_mismatch.sql`
+- `supabase/migrations/20260220170000_fix_critical_security_issues.sql`
+- `supabase/migrations/20260220170100_fix_recruit_update_policy.sql`
+
+### Statistics
+```
+ 21 files changed, 17428 insertions(+), 15108 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-19 18:10:42
 
 ### Changed Files

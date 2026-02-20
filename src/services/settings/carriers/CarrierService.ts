@@ -129,6 +129,7 @@ export class CarrierService extends BaseService<
       commission_structure: null, // Always null on creation
       imo_id: data.imo_id || null,
       advance_cap: data.advance_cap ?? null,
+      contracting_metadata: null, // Always null on creation
     };
 
     return super.create(repositoryData);
@@ -196,6 +197,7 @@ export class CarrierService extends BaseService<
       commission_structure: null,
       imo_id: data.imo_id || null,
       advance_cap: data.advance_cap ?? null,
+      contracting_metadata: null,
     }));
 
     return super.createMany(repositoryItems);

@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2026-02-19 18:10:42
+Last Updated: 2026-02-20 09:16:21
 
 ## Metrics
-- Total Files: 30659
-- Total Lines of Code: 165782
-- Total Commits: 1009
+- Total Files: 30654
+- Total Lines of Code: 164303
+- Total Commits: 1014
 
 ## Recent Activity
-9589a7d7 fix(recruiting): harden pipeline RLS + fix all review findings
-d9607892 fix(recruiting): auto-show current phase checklist in bottom panel
-a0ff2163 fix(recruiting): checklist items in phase bar + correct pipeline on re-enroll
-459d5fa2 docs: CHANGELOG.md,PROJECT_STATS.md,RecruitBottomPanel.tsx
-1f017be5 docs: CHANGELOG.md,PROJECT_STATS.md,ComposeDialog.tsx
+65acf0a5 feat(billing): fix announcement dialog cutoff + make data-driven with admin control
+78985421 refactor(recruiting): remove 10 dead components and clean up dashboard
+6102c8e0 Merge branch 'main' of https://github.com/nneessen/commissionTracker
+f92cddfe sidebar_nav_arch.md in serena memories
+b0706ac6 docs: CHANGELOG.md,PROJECT_STATS.md,RecruitBottomPanel.tsx

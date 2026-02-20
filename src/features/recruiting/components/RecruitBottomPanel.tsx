@@ -17,6 +17,7 @@ import {
   X,
   ListChecks,
   LogOut,
+  FileText,
 } from "lucide-react";
 import {
   useTemplates,
@@ -31,6 +32,7 @@ import {
   useChecklistProgress,
   useUnenrollFromPipeline,
 } from "../hooks/useRecruitProgress";
+import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { cn } from "@/lib/utils";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { toast } from "sonner";
@@ -174,6 +176,9 @@ export function RecruitBottomPanel({
   // Fetch phases directly — avoids the nested template query and its RLS restrictions.
   // pipeline_phases_upline_select policy allows uplines to read phases for their recruits.
   const { data: phases = [] } = usePhases(effectiveTemplateId ?? undefined);
+
+  // Fetch documents for display
+  const { data: documents = [] } = useRecruitDocuments(recruit.id);
 
   const initializeProgress = useInitializeRecruitProgress();
   const advancePhase = useAdvancePhase();
@@ -541,6 +546,46 @@ export function RecruitBottomPanel({
                       </div>
                     );
                   })()}
+
+                {/* Documents Section */}
+                <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2 mt-2">
+                  <h4 className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 mb-1 px-1">
+                    Documents
+                  </h4>
+                  {documents && documents.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {documents.slice(0, 3).map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center gap-2 text-[10px] px-1 py-0.5 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                        >
+                          <FileText className="h-3 w-3 text-zinc-400 flex-shrink-0" />
+                          <span className="flex-1 truncate text-zinc-700 dark:text-zinc-300">
+                            {doc.document_name}
+                          </span>
+                          <Badge
+                            className={`px-1 py-0 text-[9px] h-4 ${
+                              String(doc.status) === 'active'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {String(doc.status)}
+                          </Badge>
+                        </div>
+                      ))}
+                      {documents.length > 3 && (
+                        <div className="text-[10px] text-blue-600 cursor-pointer hover:underline px-1">
+                          +{documents.length - 3} more documents
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-zinc-400 dark:text-zinc-500 px-1">
+                      No documents uploaded yet.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Current phase details */}

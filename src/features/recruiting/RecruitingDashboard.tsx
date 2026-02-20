@@ -9,6 +9,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   UserPlus,
   Mail,
@@ -65,6 +67,7 @@ type RecruitWithRelations = UserProfile & {
 
 function RecruitingDashboardContent() {
   const { user } = useAuth();
+  const [hideProspects, setHideProspects] = useState(true);
 
   const isStaffRole =
     user?.roles?.some((role) =>
@@ -77,10 +80,10 @@ function RecruitingDashboardContent() {
     if (!user?.id) return undefined;
 
     if (isStaffRole && user.imo_id) {
-      return { imo_id: user.imo_id, exclude_prospects: true };
+      return { imo_id: user.imo_id, exclude_prospects: hideProspects };
     }
 
-    return { my_recruits_user_id: user.id, exclude_prospects: false };
+    return { my_recruits_user_id: user.id, exclude_prospects: hideProspects };
   })();
 
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits(
@@ -350,6 +353,21 @@ function RecruitingDashboardContent() {
               <Settings2 className="h-3.5 w-3.5" />
             </Link>
           </Button>
+
+          <div className="flex items-center gap-1.5 ml-3 border-l border-zinc-200 dark:border-zinc-700 pl-3">
+            <Checkbox
+              id="hide-prospects"
+              checked={hideProspects}
+              onCheckedChange={(checked) => setHideProspects(!!checked)}
+              className="h-3.5 w-3.5"
+            />
+            <Label
+              htmlFor="hide-prospects"
+              className="text-[10px] text-zinc-600 dark:text-zinc-400 cursor-pointer"
+            >
+              Hide Prospects
+            </Label>
+          </div>
         </div>
       </div>
 

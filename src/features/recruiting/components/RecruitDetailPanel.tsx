@@ -35,6 +35,7 @@ import {
   EyeOff,
   Undo2,
   X,
+  Briefcase,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -52,6 +53,8 @@ import { useRouter } from "@tanstack/react-router";
 import { PhaseChecklist } from "./PhaseChecklist";
 import { DocumentManager } from "./DocumentManager";
 import { EmailManager } from "./EmailManager";
+import { ContractingRequestCard } from "./contracting/ContractingRequestCard";
+import { AddCarrierDialog } from "./contracting/AddCarrierDialog";
 import {
   useRecruitPhaseProgress,
   useCurrentPhase,
@@ -68,6 +71,8 @@ import { useCurrentUserProfile } from "@/hooks/admin";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { useRecruitEmails } from "../hooks/useRecruitEmails";
 import { useRecruitActivityLog } from "../hooks/useRecruitActivity";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
 import {
   TERMINAL_STATUS_COLORS,
   INVITATION_STATUS_LABELS,
@@ -114,6 +119,7 @@ export function RecruitDetailPanel({
   const [sendingNotificationType, setSendingNotificationType] = useState<
     "new_recruit" | "npn_received" | null
   >(null);
+  const [showAddCarrierDialog, setShowAddCarrierDialog] = useState(false);
   const _router = useRouter();
 
   // Invitation detection - for pending invitations that haven't registered yet
@@ -165,6 +171,54 @@ export function RecruitDetailPanel({
   const { data: documents } = useRecruitDocuments(recruitIdForQueries);
   const { data: emails } = useRecruitEmails(recruitIdForQueries);
   const { data: activityLog } = useRecruitActivityLog(recruitIdForQueries);
+
+  const queryClient = useQueryClient();
+  const { data: contractRequests } = useQuery({
+    queryKey: ['carrier-contract-requests', recruitIdForQueries],
+    queryFn: () => carrierContractRequestService.getRecruitContractRequests(recruitIdForQueries!),
+    enabled: !!recruitIdForQueries,
+  });
+
+  const updateContractRequest = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+      carrierContractRequestService.updateContractRequest(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
+      toast.success('Contract request updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update contract request');
+      console.error(error);
+    },
+  });
+
+  const addCarrierContract = useMutation({
+    mutationFn: (carrierId: string) =>
+      carrierContractRequestService.createContractRequest({
+        recruit_id: recruit.id,
+        carrier_id: carrierId,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
+      toast.success('Carrier contract added');
+    },
+    onError: (error) => {
+      toast.error('Failed to add carrier contract');
+      console.error(error);
+    },
+  });
+
+  const deleteContractRequest = useMutation({
+    mutationFn: (id: string) => carrierContractRequestService.deleteContractRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
+      toast.success('Contract request deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete contract request');
+      console.error(error);
+    },
+  });
 
   const advancePhase = useAdvancePhase();
   const blockPhase = useBlockPhase();
@@ -305,6 +359,18 @@ export function RecruitDetailPanel({
       toast.error("Failed to unenroll recruit");
       console.error("[RecruitDetailPanel] Unenroll failed:", error);
     }
+  };
+
+  const handleUpdateContractRequest = async (id: string, updates: any) => {
+    await updateContractRequest.mutateAsync({ id, updates });
+  };
+
+  const handleAddCarrier = async (carrierId: string) => {
+    await addCarrierContract.mutateAsync(carrierId);
+  };
+
+  const handleDeleteContractRequest = async (id: string) => {
+    await deleteContractRequest.mutateAsync(id);
   };
 
   if (progressLoading || currentPhaseLoading || templateLoading) {
@@ -861,13 +927,23 @@ export function RecruitDetailPanel({
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col min-h-0"
       >
-        <TabsList className="mx-3 mt-2 grid grid-cols-4 h-8 bg-zinc-200/50 dark:bg-zinc-800/50 p-0.5 rounded-md">
+        <TabsList className="mx-3 mt-2 grid grid-cols-5 h-8 bg-zinc-200/50 dark:bg-zinc-800/50 p-0.5 rounded-md">
           <TabsTrigger
             value="checklist"
             className="text-[11px] h-7 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
           >
             <ListChecks className="h-3.5 w-3.5 mr-1" />
             Tasks
+          </TabsTrigger>
+          <TabsTrigger
+            value="contracting"
+            className="text-[11px] h-7 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
+          >
+            <Briefcase className="h-3.5 w-3.5 mr-1" />
+            Contracts
+            {contractRequests && contractRequests.length > 0 && (
+              <Badge className="ml-1 h-4 px-1 text-[10px] bg-blue-500">{contractRequests.length}</Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger
             value="documents"
@@ -927,6 +1003,55 @@ export function RecruitDetailPanel({
                 </p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="contracting" className="mt-0">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Carrier Contracts</h3>
+                {(currentUserProfile?.is_admin ||
+                  currentUserProfile?.roles?.some((role) =>
+                    STAFF_ONLY_ROLES.includes(
+                      role as (typeof STAFF_ONLY_ROLES)[number],
+                    ),
+                  )) && (
+                  <Button size="sm" onClick={() => setShowAddCarrierDialog(true)}>
+                    Add Carrier
+                  </Button>
+                )}
+              </div>
+
+              {contractRequests?.map((request: any) => (
+                <ContractingRequestCard
+                  key={request.id}
+                  request={request}
+                  onUpdate={handleUpdateContractRequest}
+                  onDelete={handleDeleteContractRequest}
+                  isStaff={
+                    currentUserProfile?.is_admin ||
+                    currentUserProfile?.roles?.some((role) =>
+                      STAFF_ONLY_ROLES.includes(
+                        role as (typeof STAFF_ONLY_ROLES)[number],
+                      ),
+                    ) ||
+                    false
+                  }
+                />
+              ))}
+
+              {(!contractRequests || contractRequests.length === 0) && (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  No carrier contracts requested yet.
+                </div>
+              )}
+            </div>
+
+            <AddCarrierDialog
+              recruitId={recruit.id}
+              open={showAddCarrierDialog}
+              onClose={() => setShowAddCarrierDialog(false)}
+              onAdd={handleAddCarrier}
+            />
           </TabsContent>
 
           <TabsContent value="documents" className="mt-0">

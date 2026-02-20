@@ -86,6 +86,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "Legal & General America",
@@ -95,6 +96,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "American Home Life",
@@ -104,6 +106,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "SBLI",
@@ -113,6 +116,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "Baltimore Life",
@@ -122,6 +126,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "John Hancock",
@@ -131,6 +136,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "American-Amicable Group",
@@ -140,6 +146,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "Corebridge Financial",
@@ -149,6 +156,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "Transamerica",
@@ -158,6 +166,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "ELCO Mutual",
@@ -167,6 +176,7 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
   {
     name: "Kansas City Life",
@@ -176,5 +186,6 @@ export const DEFAULT_CARRIERS: Array<
     contact_info: null,
     imo_id: null,
     advance_cap: null,
+    contracting_metadata: null,
   },
 ];
