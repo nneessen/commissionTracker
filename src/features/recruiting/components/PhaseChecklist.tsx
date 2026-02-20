@@ -404,39 +404,36 @@ export function PhaseChecklist({
             ? documents?.find((d) => d.id === docId)
             : undefined;
           return (
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-1">
+              {/* View document icon */}
               {linkedDoc && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8"
+                <button
                   onClick={() => setViewerDoc(linkedDoc)}
+                  className="inline-flex items-center justify-center h-7 w-7 rounded hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-600 dark:text-blue-400 transition-colors"
+                  title="View Document"
                 >
-                  <FileText className="h-4 w-4 mr-1.5" />
-                  View
-                </Button>
+                  <FileText className="h-4 w-4" />
+                </button>
               )}
-              <Button
-                size="sm"
-                variant="outline"
+              {/* Approve icon */}
+              <button
                 onClick={() => handleApprove(item.id)}
-                className="h-8"
+                className="inline-flex items-center justify-center h-7 w-7 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-600 dark:text-emerald-400 transition-colors"
+                title="Approve"
               >
-                <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                Approve
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
+                <CheckCircle2 className="h-4 w-4" />
+              </button>
+              {/* Reject icon */}
+              <button
                 onClick={() => {
                   const reason = prompt("Reason for rejection:");
                   if (reason) handleReject(item.id, reason);
                 }}
-                className="h-8"
+                className="inline-flex items-center justify-center h-7 w-7 rounded hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400 transition-colors"
+                title="Reject"
               >
-                <XCircle className="h-4 w-4 mr-1.5" />
-                Reject
-              </Button>
+                <XCircle className="h-4 w-4" />
+              </button>
             </div>
           );
         }
@@ -481,15 +478,13 @@ export function PhaseChecklist({
     if (item.item_type === "manual_approval") {
       if (isUpline && status === "not_started") {
         return (
-          <Button
-            size="sm"
-            variant="outline"
+          <button
             onClick={() => handleApprove(item.id)}
-            className="h-8"
+            className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium transition-colors text-sm"
           >
-            <CheckCircle2 className="h-4 w-4 mr-1.5" />
+            <CheckCircle2 className="h-4 w-4" />
             Approve
-          </Button>
+          </button>
         );
       }
     }
@@ -749,7 +744,7 @@ export function PhaseChecklist({
       {isRecruitViewer && hasHiddenBlockingItems && (
         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2">
           <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
-          <p className="text-xs text-amber-700 dark:text-amber-400">
+          <p className="text-sm text-amber-700 dark:text-amber-400">
             Some required items are pending admin action. Continue with
             available tasks.
           </p>
@@ -765,31 +760,30 @@ export function PhaseChecklist({
         return (
           <div
             key={item.id}
-            className={`p-4 rounded-lg border transition-all ${
+            className={`py-1 px-2 border-l-2 transition-colors ${
               isCompleted
-                ? "bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800"
+                ? "border-l-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/10"
                 : isRejected
-                  ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
+                  ? "border-l-red-500 bg-red-50/30 dark:bg-red-950/10"
                   : checkboxState.isEnabled
-                    ? "bg-white border-zinc-200 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 dark:hover:border-zinc-600"
-                    : "bg-zinc-50/50 border-zinc-200 opacity-75 dark:bg-zinc-900/50 dark:border-zinc-800"
+                    ? "border-l-blue-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    : "border-l-zinc-300 bg-zinc-50/50 opacity-60 dark:bg-zinc-900/30"
             }`}
           >
-            <div className="flex items-start gap-3">
-              <div className="relative mt-0.5 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-shrink-0">
                 {item.item_type === "document_upload" ? (
-                  // Document upload: show status icon instead of checkbox
                   status === "approved" ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                   ) : status === "in_progress" ? (
-                    <Clock className="h-5 w-5 text-amber-500" />
+                    <Clock className="h-4 w-4 text-amber-500" />
                   ) : status === "rejected" ? (
-                    <XCircle className="h-5 w-5 text-red-500" />
+                    <XCircle className="h-4 w-4 text-red-500" />
                   ) : (
-                    <Upload className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
+                    <Upload className="h-4 w-4 text-zinc-400" />
                   )
                 ) : loadingItemIds.has(item.id) ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
                 ) : (
                   <Checkbox
                     checked={isCompleted}
@@ -799,130 +793,95 @@ export function PhaseChecklist({
                         handleToggleComplete(item.id, status);
                       }
                     }}
-                    className="h-5 w-5"
+                    className="h-4 w-4"
                   />
                 )}
                 {item.item_type !== "document_upload" &&
                   !checkboxState.isEnabled &&
                   !loadingItemIds.has(item.id) && (
-                    <div className="absolute -top-1 -right-1">
-                      <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+                    <div className="absolute -top-0.5 -right-0.5">
+                      <Lock className="h-2.5 w-2.5 text-zinc-400" />
                     </div>
                   )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4
-                      className={`text-sm font-medium ${isCompleted ? "line-through text-zinc-500 dark:text-zinc-400" : "text-zinc-900 dark:text-zinc-100"}`}
-                    >
-                      {item.item_name}
-                    </h4>
-                    {item.is_required && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
-                      >
-                        Required
-                      </Badge>
-                    )}
-                    {/* Show hidden badge for admins/uplines viewing hidden items */}
-                    {!isRecruitViewer && isHiddenFromRecruit(item) && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
-                      >
-                        <EyeOff className="h-3 w-3 mr-1" />
-                        Hidden
-                      </Badge>
-                    )}
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs ${CHECKLIST_STATUS_COLORS[status]}`}
-                    >
-                      {status.replace(/_/g, " ")}
-                    </Badge>
-                  </div>
-
-                  <div className="flex-shrink-0">
-                    {getActionButton(item, progress)}
-                  </div>
-                </div>
-
-                {item.item_description && (
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1.5">
-                    {item.item_description}
-                  </p>
+              <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                <span className={`text-sm font-medium ${isCompleted ? "line-through text-zinc-500" : "text-zinc-900 dark:text-zinc-100"}`}>
+                  {item.item_name}
+                </span>
+                {item.is_required && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 border-zinc-300 text-zinc-600 flex-shrink-0">
+                    Req
+                  </Badge>
                 )}
-
-                {/* Show scheduling instructions if this is a scheduling_booking item with instructions */}
-                {item.item_type === "scheduling_booking" &&
-                  (item.metadata as SchedulingChecklistMetadata | null)
-                    ?.instructions && (
-                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-blue-700 dark:text-blue-400">
-                        {
-                          (item.metadata as SchedulingChecklistMetadata)
-                            .instructions
-                        }
-                      </p>
-                    </div>
-                  )}
-
-                {/* Interactive component for video, boolean question, acknowledgment, etc. */}
-                {INTERACTIVE_ITEM_TYPES.has(item.item_type) && (
-                  <div className="mt-3">
-                    {renderInteractiveComponent(
-                      item,
-                      progress,
-                      !checkboxState.isEnabled,
-                    )}
-                  </div>
+                {!isRecruitViewer && isHiddenFromRecruit(item) && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 border-amber-300 text-amber-600 flex-shrink-0">
+                    <EyeOff className="h-2.5 w-2.5 mr-0.5" />
+                    Hidden
+                  </Badge>
                 )}
+                <Badge variant="secondary" className={`text-[10px] px-1.5 py-0.5 flex-shrink-0 ${CHECKLIST_STATUS_COLORS[status]}`}>
+                  {status.replace(/_/g, " ")}
+                </Badge>
+              </div>
 
-                {!checkboxState.isEnabled &&
-                  checkboxState.disabledReason &&
-                  checkboxState.disabledReason !== "Use upload button" && (
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      <span>{checkboxState.disabledReason}</span>
-                    </div>
-                  )}
-
-                {progress?.rejection_reason && (
-                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-                    <span className="text-sm font-medium text-red-800 dark:text-red-300">
-                      Rejected:{" "}
-                    </span>
-                    <span className="text-sm text-red-700 dark:text-red-400">
-                      {progress.rejection_reason}
-                    </span>
-                  </div>
-                )}
-
-                {progress?.notes && !progress.rejection_reason && (
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 italic">
-                    {progress.notes}
-                  </p>
-                )}
-
-                {progress?.document_id && (
-                  <div className="mt-2 flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                    <FileText className="h-4 w-4" />
-                    <span>Document uploaded</span>
-                  </div>
-                )}
-
-                {progress?.completed_at && (
-                  <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    Completed{" "}
-                    {new Date(progress.completed_at).toLocaleDateString()}
-                    {progress.completed_by && ` by ${progress.completed_by}`}
-                  </div>
-                )}
+              <div className="flex-shrink-0">
+                {getActionButton(item, progress)}
               </div>
             </div>
+
+            {/* All additional content outside main row */}
+            {item.item_description && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 ml-6">
+                {item.item_description}
+              </p>
+            )}
+
+            {/* Scheduling instructions */}
+            {item.item_type === "scheduling_booking" &&
+              (item.metadata as SchedulingChecklistMetadata | null)?.instructions && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 ml-6 mt-1">
+                  {(item.metadata as SchedulingChecklistMetadata).instructions}
+                </p>
+              )}
+
+            {/* Interactive component - compact */}
+            {INTERACTIVE_ITEM_TYPES.has(item.item_type) && (
+              <div className="mt-1 ml-6">
+                {renderInteractiveComponent(item, progress, !checkboxState.isEnabled)}
+              </div>
+            )}
+
+            {/* Disabled reason - inline */}
+            {!checkboxState.isEnabled &&
+              checkboxState.disabledReason &&
+              checkboxState.disabledReason !== "Use upload button" && (
+                <p className="text-[10px] text-zinc-500 ml-6 mt-0.5">
+                  <AlertCircle className="h-2.5 w-2.5 inline mr-0.5" />
+                  {checkboxState.disabledReason}
+                </p>
+              )}
+
+            {/* Rejection reason - compact */}
+            {progress?.rejection_reason && (
+              <p className="text-[10px] text-red-600 ml-6 mt-0.5">
+                <strong>Rejected:</strong> {progress.rejection_reason}
+              </p>
+            )}
+
+            {/* Notes - compact */}
+            {progress?.notes && !progress.rejection_reason && (
+              <p className="text-[10px] text-zinc-500 italic ml-6 mt-0.5">
+                {progress.notes}
+              </p>
+            )}
+
+            {/* Completed timestamp - inline with icon */}
+            {progress?.completed_at && (
+              <span className="text-[10px] text-zinc-400 ml-6 block">
+                {new Date(progress.completed_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
+              </span>
+            )}
           </div>
         );
       })}

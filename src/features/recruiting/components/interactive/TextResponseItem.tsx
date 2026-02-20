@@ -71,66 +71,71 @@ export function TextResponseItem({
   // If already submitted
   if (existingResponse?.text) {
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 mb-2">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Response submitted</span>
-        </div>
-        <p className="text-xs text-emerald-600 dark:text-emerald-400/80 italic line-clamp-3">
+      <div className="space-y-1">
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Response submitted
+        </span>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 italic line-clamp-2 pl-5">
           "{existingResponse.text}"
         </p>
       </div>
     );
   }
 
+  const canSubmit = characterCount >= minLength;
+
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
+    <div className="space-y-1">
       {/* Prompt */}
-      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+      <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
         {metadata.prompt}
       </p>
 
       {/* Text Area */}
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={metadata.placeholder || "Enter your response..."}
-          className={`min-h-[${metadata.response_type === "long" ? "150" : "80"}px] text-sm`}
+          className={`min-h-[${metadata.response_type === "long" ? "100" : "60"}px] text-xs`}
           disabled={isSubmitting}
           maxLength={maxLength}
         />
-        <div className="flex justify-between text-xs text-zinc-500">
+        <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400">
           <span>
             {minLength > 0 && characterCount < minLength && (
               <span className="text-amber-600">
-                {minLength - characterCount} more characters required
+                {minLength - characterCount} more required
               </span>
+            )}
+            {metadata.required_keywords && metadata.required_keywords.length > 0 && (
+              <span>Include: {metadata.required_keywords.join(", ")}</span>
             )}
           </span>
           <span>
             {characterCount}
-            {maxLength ? ` / ${maxLength}` : ""} characters
+            {maxLength ? ` / ${maxLength}` : ""}
           </span>
         </div>
       </div>
 
-      {/* Required keywords hint */}
-      {metadata.required_keywords && metadata.required_keywords.length > 0 && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Must include: {metadata.required_keywords.join(", ")}
-        </p>
+      {/* Submit Button - appears inline when ready */}
+      {canSubmit && (
+        <Button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          size="sm"
+          className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
+          Submit
+        </Button>
       )}
-
-      {/* Submit Button */}
-      <Button
-        onClick={handleSubmit}
-        disabled={isSubmitting || characterCount < minLength}
-        className="w-full"
-      >
-        {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Submit Response
-      </Button>
     </div>
   );
 }

@@ -12,12 +12,14 @@ interface CarrierContractRequestWithRelations extends CarrierContractRequest {
     id: string;
     name: string;
     contracting_metadata: any;
+    commission_structure?: any;
   } | null;
   recruit: {
     id: string;
     first_name: string | null;
     last_name: string | null;
     email: string;
+    contract_level?: number | null;
   } | null;
   contract_document: {
     id: string;
@@ -334,5 +336,201 @@ export const carrierContractRequestService = {
     }
 
     return data || [];
+  },
+
+  /**
+   * Bulk update statuses for multiple contract requests
+   * @param ids - Array of request IDs
+   * @param status - New status to apply
+   * @returns Updated contract requests
+   * @throws Error if bulk update fails
+   */
+  async bulkUpdateStatus(
+    ids: string[],
+    status: CarrierContractRequestUpdate['status']
+  ): Promise<CarrierContractRequest[]> {
+    const currentUserId = await getCurrentUserId();
+    const currentDate = getCurrentLocalDate();
+
+    // Build date updates based on status transition
+    const dateUpdates: Record<string, string | null> = {};
+    if (status === 'in_progress') dateUpdates.in_progress_date = currentDate;
+    if (status === 'writing_received') dateUpdates.writing_received_date = currentDate;
+    if (status === 'completed') dateUpdates.completed_date = currentDate;
+
+    const { data, error } = await supabase
+      .from('carrier_contract_requests')
+      .update({
+        status,
+        ...dateUpdates,
+        updated_by: currentUserId,
+      })
+      .in('id', ids)
+      .select();
+
+    if (error) {
+      console.error('Bulk update failed:', error);
+      throw new Error(`Bulk update failed: ${error.message}`);
+    }
+
+    return data || [];
+  },
+
+  /**
+   * Bulk delete contract requests
+   * @param ids - Array of request IDs to delete
+   * @throws Error if bulk delete fails
+   */
+  async bulkDelete(ids: string[]): Promise<void> {
+    const { error } = await supabase
+      .from('carrier_contract_requests')
+      .delete()
+      .in('id', ids);
+
+    if (error) {
+      console.error('Bulk delete failed:', error);
+      throw new Error(`Bulk delete failed: ${error.message}`);
+    }
+  },
+
+  /**
+   * Get contract requests with advanced filtering (server-side)
+   * @param filters - Filter criteria
+   * @returns Paginated requests with total count
+   * @throws Error if query fails
+   */
+  async getContractRequestsWithFilters(filters: {
+    status?: string[];
+    startDate?: string;
+    endDate?: string;
+    searchQuery?: string;
+    carrierId?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    requests: CarrierContractRequestWithRelations[];
+    totalCount: number;
+    hasMore: boolean;
+  }> {
+    const page = filters.page || 1;
+    const pageSize = filters.pageSize || 50;
+    const offset = (page - 1) * pageSize;
+
+    let query = supabase
+      .from('carrier_contract_requests')
+      .select(`
+        *,
+        carrier:carriers(id, name, contracting_metadata, commission_structure),
+        recruit:user_profiles!recruit_id(id, first_name, last_name, email, contract_level)
+      `, { count: 'exact' });
+
+    // Apply filters
+    if (filters.status?.length) {
+      query = query.in('status', filters.status);
+    }
+    if (filters.startDate) {
+      query = query.gte('requested_date', filters.startDate);
+    }
+    if (filters.endDate) {
+      query = query.lte('requested_date', filters.endDate);
+    }
+    if (filters.carrierId) {
+      query = query.eq('carrier_id', filters.carrierId);
+    }
+
+    // Text search (across recruit name, email, writing number)
+    // Note: This is a simplified approach. For production, consider full-text search
+    // or search across joined tables using RPC
+    if (filters.searchQuery) {
+      const searchTerm = `%${filters.searchQuery}%`;
+      query = query.or(
+        `writing_number.ilike.${searchTerm}`
+      );
+    }
+
+    // Pagination
+    query = query
+      .order('requested_date', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Filter query failed:', error);
+      throw new Error(`Filter query failed: ${error.message}`);
+    }
+
+    // Client-side filtering for recruit name/email (due to Supabase join limitations)
+    let filteredData = (data || []) as CarrierContractRequestWithRelations[];
+
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      filteredData = filteredData.filter((req) =>
+        req.recruit?.first_name?.toLowerCase().includes(query) ||
+        req.recruit?.last_name?.toLowerCase().includes(query) ||
+        req.recruit?.email?.toLowerCase().includes(query) ||
+        req.carrier?.name?.toLowerCase().includes(query) ||
+        req.writing_number?.toLowerCase().includes(query)
+      );
+    }
+
+    return {
+      requests: filteredData,
+      totalCount: count || 0,
+      hasMore: (count || 0) > offset + pageSize,
+    };
+  },
+
+  /**
+   * Export contract requests to CSV
+   * @param filters - Same filters as getContractRequestsWithFilters
+   * @returns CSV string
+   * @throws Error if export fails
+   */
+  async exportToCSV(filters: Parameters<typeof this.getContractRequestsWithFilters>[0]): Promise<string> {
+    // Get all matching records (no pagination limit for export)
+    const { requests } = await this.getContractRequestsWithFilters({
+      ...filters,
+      page: 1,
+      pageSize: 10000, // Max export size
+    });
+
+    // Build CSV headers
+    const headers = [
+      'Recruit Name',
+      'Recruit Email',
+      'Carrier',
+      'Status',
+      'Request Order',
+      'Writing Number',
+      'Requested Date',
+      'In Progress Date',
+      'Writing Received Date',
+      'Completed Date',
+    ];
+
+    // Build CSV rows
+    const rows = requests.map((r) => [
+      `${r.recruit?.first_name || ''} ${r.recruit?.last_name || ''}`.trim(),
+      r.recruit?.email || '',
+      r.carrier?.name || '',
+      r.status || '',
+      String(r.request_order || ''),
+      r.writing_number || '',
+      r.requested_date || '',
+      r.in_progress_date || '',
+      r.writing_received_date || '',
+      r.completed_date || '',
+    ]);
+
+    // Format as CSV (escape quotes)
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+      ),
+    ].join('\n');
+
+    return csvContent;
   },
 };

@@ -51,11 +51,19 @@ export function useInitializeRecruitProgress() {
       templateId: string;
     }) => checklistService.initializeRecruitProgress(userId, templateId),
     onSuccess: (_, variables) => {
+      // Invalidate progress-specific queries
       queryClient.invalidateQueries({
         queryKey: ["recruit-phase-progress", variables.userId],
       });
       queryClient.invalidateQueries({
         queryKey: ["recruit-current-phase", variables.userId],
+      });
+      // Invalidate recruits list to show enrollment status change
+      queryClient.invalidateQueries({
+        queryKey: ["recruits"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["recruits", variables.userId],
       });
     },
   });

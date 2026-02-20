@@ -2,13 +2,20 @@
 // Contracting manager dashboard - shows all recruits with carrier contract requests
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileCheck, Search, CheckCircle2, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { ContractingFilters, type ContractingFilterState } from "./ContractingFilters";
+import { InlineEditableCell } from "./InlineEditableCell";
+import { BulkActionToolbar } from "./BulkActionToolbar";
+import { BulkStatusChangeDialog } from "./BulkStatusChangeDialog";
+import { ContractRequestDetailDialog } from "./ContractRequestDetailDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -44,69 +51,195 @@ interface ContractRequest {
 }
 
 export function ContractingDashboard() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<ContractingFilterState>({
+    status: [],
+    startDate: null,
+    endDate: null,
+    carrierId: null,
+  });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatusDialogOpen, setBulkStatusDialogOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
-  // Get all contract requests across all recruits (RLS automatically filters by IMO)
-  const { data: allRequests, isLoading } = useQuery({
-    queryKey: ['all-carrier-contract-requests'],
+  // Get available carriers for filter dropdown
+  const { data: availableCarriers } = useQuery({
+    queryKey: ['all-carriers-for-contracting'],
     queryFn: async () => {
       const { supabase } = await import('@/services/base/supabase');
       const { data, error } = await supabase
-        .from('carrier_contract_requests')
-        .select(`
-          *,
-          carrier:carriers(id, name),
-          recruit:user_profiles!recruit_id(id, first_name, last_name, email)
-        `)
-        .order('requested_date', { ascending: false });
+        .from('carriers')
+        .select('id, name')
+        .order('name');
 
       if (error) throw error;
-      return (data || []) as ContractRequest[];
+      return (data || []) as Array<{ id: string; name: string }>;
     },
   });
 
-  // Filter by search query
-  const filteredRequests = useMemo(() => {
-    if (!allRequests) return [];
-    if (!searchQuery) return allRequests;
+  // Get contract requests with filters (uses new service method)
+  const { data: contractsData, isLoading } = useQuery({
+    queryKey: ['contract-requests-filtered', filters, searchQuery, page],
+    queryFn: () => carrierContractRequestService.getContractRequestsWithFilters({
+      status: filters.status,
+      startDate: filters.startDate || undefined,
+      endDate: filters.endDate || undefined,
+      carrierId: filters.carrierId || undefined,
+      searchQuery,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+  });
 
-    const query = searchQuery.toLowerCase();
-    return allRequests.filter((req) =>
-      req.recruit?.first_name?.toLowerCase().includes(query) ||
-      req.recruit?.last_name?.toLowerCase().includes(query) ||
-      req.recruit?.email?.toLowerCase().includes(query) ||
-      req.carrier?.name?.toLowerCase().includes(query) ||
-      req.writing_number?.toLowerCase().includes(query)
-    );
-  }, [allRequests, searchQuery]);
+  const allRequests = contractsData?.requests || [];
+  const totalCount = contractsData?.totalCount || 0;
 
-  // Paginate results
-  const paginatedRequests = useMemo(() => {
-    const startIndex = (page - 1) * PAGE_SIZE;
-    const endIndex = startIndex + PAGE_SIZE;
-    return filteredRequests.slice(startIndex, endIndex);
-  }, [filteredRequests, page]);
+  // Mutation for inline updates with optimistic updates
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+      carrierContractRequestService.updateContractRequest(id, updates),
+    onMutate: async ({ id, updates }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['contract-requests-filtered'] });
 
-  const totalPages = Math.ceil(filteredRequests.length / PAGE_SIZE);
+      // Snapshot previous value
+      const previousData = queryClient.getQueryData(['contract-requests-filtered', filters, searchQuery, page]);
+
+      // Optimistically update
+      queryClient.setQueryData(['contract-requests-filtered', filters, searchQuery, page], (old: any) => {
+        if (!old?.requests) return old;
+        return {
+          ...old,
+          requests: old.requests.map((r: any) =>
+            r.id === id ? { ...r, ...updates } : r
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['contract-requests-filtered', filters, searchQuery, page], context.previousData);
+      }
+      toast.error('Update failed');
+    },
+    onSuccess: () => {
+      toast.success('Updated');
+      queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+    },
+  });
+
+  // Bulk update mutation
+  const bulkUpdateMutation = useMutation({
+    mutationFn: (status: string) =>
+      carrierContractRequestService.bulkUpdateStatus(Array.from(selectedIds), status),
+    onSuccess: () => {
+      toast.success(`Updated ${selectedIds.size} contracts`);
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+    },
+    onError: () => {
+      toast.error('Bulk update failed');
+    },
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: () =>
+      carrierContractRequestService.bulkDelete(Array.from(selectedIds)),
+    onSuccess: () => {
+      toast.success(`Deleted ${selectedIds.size} contracts`);
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+    },
+    onError: () => {
+      toast.error('Bulk delete failed');
+    },
+  });
+
+  // Selection handlers
+  const toggleSelection = (id: string) => {
+    const newSelection = new Set(selectedIds);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedIds(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginatedRequests.length && paginatedRequests.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedRequests.map((r) => r.id)));
+    }
+  };
+
+  // Row click handler for detail modal
+  const handleRowClick = (request: any) => {
+    setSelectedRequest(request);
+    setDetailModalOpen(true);
+  };
+
+  // Bulk action handlers
+  const handleBulkExport = async () => {
+    try {
+      const csv = await carrierContractRequestService.exportToCSV({
+        status: filters.status,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        carrierId: filters.carrierId || undefined,
+        searchQuery,
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contracts-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success('Exported contracts to CSV');
+    } catch (error) {
+      toast.error('Export failed');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedIds.size} contract requests? This cannot be undone.`)) {
+      return;
+    }
+    await bulkDeleteMutation.mutateAsync();
+  };
+
+  // Pagination is handled server-side now
+  const paginatedRequests = allRequests;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   // Reset to page 1 when search query changes
   useMemo(() => {
     setPage(1);
   }, [searchQuery]);
 
-  // Calculate stats
+  // Calculate stats from current page (for now - could be enhanced with separate query)
   const stats = useMemo(() => {
     if (!allRequests) return { total: 0, requested: 0, in_progress: 0, writing_received: 0, completed: 0 };
 
     return {
-      total: allRequests.length,
+      total: totalCount,
       requested: allRequests.filter((r) => r.status === 'requested').length,
       in_progress: allRequests.filter((r) => r.status === 'in_progress').length,
       writing_received: allRequests.filter((r) => r.status === 'writing_received').length,
       completed: allRequests.filter((r) => r.status === 'completed').length,
     };
-  }, [allRequests]);
+  }, [allRequests, totalCount]);
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2">
@@ -154,6 +287,13 @@ export function ContractingDashboard() {
         </div>
       </div>
 
+      {/* Filters */}
+      <ContractingFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        carriers={availableCarriers || []}
+      />
+
       {/* Table */}
       <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
         <div className="overflow-auto h-full">
@@ -167,6 +307,12 @@ export function ContractingDashboard() {
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-muted/50">
                 <TableRow className="h-8">
+                  <TableHead className="h-8 w-[40px]">
+                    <Checkbox
+                      checked={selectedIds.size === paginatedRequests.length && paginatedRequests.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[180px]">Recruit</TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[140px]">Carrier</TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[60px] text-center">Order</TableHead>
@@ -178,7 +324,30 @@ export function ContractingDashboard() {
               </TableHeader>
               <TableBody>
                 {paginatedRequests.map((request) => (
-                  <TableRow key={request.id} className="h-9 hover:bg-muted/50">
+                  <TableRow
+                    key={request.id}
+                    className="h-9 hover:bg-muted/50 cursor-pointer"
+                    onClick={(e) => {
+                      // Don't open modal if clicking on checkbox or editable cells
+                      const target = e.target as HTMLElement;
+                      if (
+                        target.closest('button') ||
+                        target.closest('[role="checkbox"]') ||
+                        target.closest('input') ||
+                        target.closest('select') ||
+                        target.closest('textarea')
+                      ) {
+                        return;
+                      }
+                      handleRowClick(request);
+                    }}
+                  >
+                    <TableCell className="py-1.5">
+                      <Checkbox
+                        checked={selectedIds.has(request.id)}
+                        onCheckedChange={() => toggleSelection(request.id)}
+                      />
+                    </TableCell>
                     <TableCell className="py-1.5">
                       <div>
                         <div className="font-medium text-[11px] truncate">
@@ -198,14 +367,43 @@ export function ContractingDashboard() {
                       </div>
                     </TableCell>
                     <TableCell className="py-1.5">
-                      <Badge className={`text-[9px] px-1.5 py-0 ${STATUS_COLORS[request.status] || 'bg-gray-100 text-gray-700'}`}>
-                        {request.status.replace(/_/g, ' ')}
-                      </Badge>
+                      <InlineEditableCell
+                        value={request.status}
+                        mode="select"
+                        options={[
+                          { value: 'requested', label: 'Requested' },
+                          { value: 'in_progress', label: 'In Progress' },
+                          { value: 'writing_received', label: 'Writing Received' },
+                          { value: 'completed', label: 'Completed' },
+                          { value: 'rejected', label: 'Rejected' },
+                          { value: 'cancelled', label: 'Cancelled' },
+                        ]}
+                        onSave={async (newStatus) => {
+                          await updateMutation.mutateAsync({
+                            id: request.id,
+                            updates: { status: newStatus },
+                          });
+                        }}
+                        className="inline-block"
+                      />
                     </TableCell>
                     <TableCell className="py-1.5">
-                      <span className="text-[11px] font-mono text-muted-foreground">
-                        {request.writing_number || '-'}
-                      </span>
+                      <InlineEditableCell
+                        value={request.writing_number}
+                        mode="text"
+                        placeholder="Enter writing #"
+                        onSave={async (newWritingNumber) => {
+                          await updateMutation.mutateAsync({
+                            id: request.id,
+                            updates: {
+                              writing_number: newWritingNumber,
+                              // Auto-set status to writing_received if writing number is entered
+                              ...(newWritingNumber && request.status === 'requested' ? { status: 'writing_received' } : {}),
+                            },
+                          });
+                        }}
+                        className="font-mono"
+                      />
                     </TableCell>
                     <TableCell className="py-1.5 text-[10px] text-muted-foreground">
                       {request.requested_date ? format(new Date(request.requested_date), 'MMM d, yyyy') : '-'}
@@ -217,7 +415,7 @@ export function ContractingDashboard() {
                 ))}
                 {paginatedRequests.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-xs text-muted-foreground py-8">
                       {searchQuery ? 'No contracts match your search' : 'No carrier contracts yet'}
                     </TableCell>
                   </TableRow>
@@ -232,7 +430,7 @@ export function ContractingDashboard() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-1.5 border border-zinc-200 dark:border-zinc-800">
           <div className="text-[10px] text-muted-foreground">
-            Showing {((page - 1) * PAGE_SIZE) + 1}-{Math.min(page * PAGE_SIZE, filteredRequests.length)} of {filteredRequests.length} contracts
+            Showing {((page - 1) * PAGE_SIZE) + 1}-{Math.min(page * PAGE_SIZE, totalCount)} of {totalCount} contracts
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -260,6 +458,34 @@ export function ContractingDashboard() {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Bulk Action Toolbar */}
+      <BulkActionToolbar
+        selectedCount={selectedIds.size}
+        onStatusChange={() => setBulkStatusDialogOpen(true)}
+        onExport={handleBulkExport}
+        onDelete={handleBulkDelete}
+        onClear={() => setSelectedIds(new Set())}
+      />
+
+      {/* Bulk Status Change Dialog */}
+      <BulkStatusChangeDialog
+        open={bulkStatusDialogOpen}
+        onOpenChange={setBulkStatusDialogOpen}
+        selectedCount={selectedIds.size}
+        onConfirm={async (newStatus) => {
+          await bulkUpdateMutation.mutateAsync(newStatus);
+        }}
+      />
+
+      {/* Contract Request Detail Modal */}
+      {selectedRequest && (
+        <ContractRequestDetailDialog
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          request={selectedRequest}
+        />
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronLeft,
   RotateCcw,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { QuizMetadata, QuizResponse } from "@/types/recruiting.types";
@@ -43,22 +44,28 @@ export function QuizItem({
 
   // Shuffle questions if configured
   const questions = useMemo(() => {
+    if (!metadata?.questions || !Array.isArray(metadata.questions)) {
+      return [];
+    }
     if (metadata.randomize_questions) {
       return [...metadata.questions].sort(() => Math.random() - 0.5);
     }
     return metadata.questions;
-  }, [metadata.questions, metadata.randomize_questions]);
+  }, [metadata?.questions, metadata?.randomize_questions]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
 
   // Shuffle options if configured
   const displayOptions = useMemo(() => {
-    if (metadata.randomize_options) {
+    if (!currentQuestion?.options || !Array.isArray(currentQuestion.options)) {
+      return [];
+    }
+    if (metadata?.randomize_options) {
       return [...currentQuestion.options].sort(() => Math.random() - 0.5);
     }
     return currentQuestion.options;
-  }, [currentQuestion.options, metadata.randomize_options]);
+  }, [currentQuestion?.options, metadata?.randomize_options]);
 
   const handleToggleOption = useCallback(
     (questionId: string, optionId: string, allowMultiple: boolean) => {
@@ -159,15 +166,21 @@ export function QuizItem({
   // If already passed
   if (existingResponse?.passed) {
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>
-            Quiz passed with {existingResponse.best_score_percent}% (
-            {existingResponse.total_attempts} attempt
-            {existingResponse.total_attempts !== 1 ? "s" : ""})
-          </span>
-        </div>
+      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        Quiz passed {existingResponse.best_score_percent}% (
+        {existingResponse.total_attempts} attempt
+        {existingResponse.total_attempts !== 1 ? "s" : ""})
+      </span>
+    );
+  }
+
+  // Error state - no questions
+  if (questions.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span>Quiz configuration error: No questions available</span>
       </div>
     );
   }
@@ -175,41 +188,46 @@ export function QuizItem({
   // Show results screen
   if (showResults && lastAttemptResult) {
     return (
-      <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
-        <div className="text-center py-4">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
           {lastAttemptResult.passed ? (
-            <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           ) : (
-            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-3" />
+            <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
           )}
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            {lastAttemptResult.passed ? "Quiz Passed!" : "Quiz Not Passed"}
-          </h3>
-          <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-2">
-            {lastAttemptResult.score}%
-          </p>
-          <p className="text-sm text-zinc-500 mt-1">
-            Required: {metadata.passing_score_percent}%
-          </p>
+          <div>
+            <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+              {lastAttemptResult.passed ? "Quiz Passed!" : "Quiz Not Passed"}
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Score: {lastAttemptResult.score}% (required:{" "}
+              {metadata.passing_score_percent}%)
+            </p>
+          </div>
         </div>
 
         {lastAttemptResult.canRetry && (
-          <div className="text-center">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-zinc-600 dark:text-zinc-400">
               {lastAttemptResult.attemptsRemaining !== null
                 ? `${lastAttemptResult.attemptsRemaining} attempt(s) remaining`
-                : "Unlimited retries available"}
+                : "Unlimited retries"}
             </p>
-            <Button onClick={handleRetry} variant="outline">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Try Again
+            <Button
+              onClick={handleRetry}
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs px-3 gap-1.5"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Retry
             </Button>
           </div>
         )}
 
         {!lastAttemptResult.passed && !lastAttemptResult.canRetry && (
-          <p className="text-center text-sm text-red-600 dark:text-red-400">
-            No more attempts available. Please contact your recruiter.
+          <p className="text-[10px] text-red-600 dark:text-red-400">
+            No more attempts. Contact your recruiter.
           </p>
         )}
       </div>
@@ -221,25 +239,25 @@ export function QuizItem({
     currentQuestion.options.filter((o) => o.is_correct).length > 1;
 
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
+    <div className="space-y-2">
       {/* Quiz header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
           {metadata.title}
         </h3>
-        <Badge variant="outline" className="text-xs">
-          {metadata.passing_score_percent}% to pass
+        <Badge variant="outline" className="h-4 text-[10px] px-1.5">
+          {metadata.passing_score_percent}% pass
         </Badge>
       </div>
 
       {/* Progress */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs text-zinc-500">
+      <div className="space-y-0.5">
+        <div className="flex justify-between text-[10px] text-zinc-500 dark:text-zinc-400">
           <span>
-            Question {currentQuestionIndex + 1} of {totalQuestions}
+            Q{currentQuestionIndex + 1}/{totalQuestions}
           </span>
           <span>
-            {Object.keys(answers).length} of {totalQuestions} answered
+            {Object.keys(answers).length}/{totalQuestions} answered
           </span>
         </div>
         <Progress
@@ -249,23 +267,25 @@ export function QuizItem({
       </div>
 
       {/* Question */}
-      <div className="py-2">
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
           {currentQuestion.question_text}
         </p>
         {hasMultipleCorrect && (
-          <p className="text-xs text-zinc-500 mb-2">Select all that apply</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Select all that apply
+          </p>
         )}
 
         {/* Options */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {displayOptions.map((option) => {
             const isSelected = currentAnswers.includes(option.id);
 
             return (
               <div
                 key={option.id}
-                className={`flex items-start gap-3 p-2 rounded border cursor-pointer transition-colors ${
+                className={`flex items-start gap-2 p-1.5 rounded border cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-primary/10 border-primary"
                     : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
@@ -282,18 +302,18 @@ export function QuizItem({
                   <Checkbox checked={isSelected} className="mt-0.5" />
                 ) : (
                   <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                    className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
                       isSelected
                         ? "border-primary bg-primary"
                         : "border-zinc-300 dark:border-zinc-600"
                     }`}
                   >
                     {isSelected && (
-                      <div className="w-2 h-2 rounded-full bg-white" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
                     )}
                   </div>
                 )}
-                <span className="text-sm text-zinc-900 dark:text-zinc-100">
+                <span className="text-xs text-zinc-900 dark:text-zinc-100">
                   {option.label}
                 </span>
               </div>
@@ -303,41 +323,54 @@ export function QuizItem({
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={handlePrev}
           disabled={currentQuestionIndex === 0}
+          className="h-7 text-xs px-3 gap-1.5"
         >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Previous
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Prev
         </Button>
 
-        {currentQuestionIndex === totalQuestions - 1 ? (
-          <Button
-            onClick={handleSubmitQuiz}
-            disabled={
-              isSubmitting || Object.keys(answers).length < totalQuestions
-            }
-          >
-            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Submit Quiz
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" onClick={handleNext}>
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {metadata.time_limit_minutes && (
+            <span className="text-[10px] text-amber-600 dark:text-amber-400">
+              {metadata.time_limit_minutes}min limit
+            </span>
+          )}
 
-      {/* Time limit note */}
-      {metadata.time_limit_minutes && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
-          Time limit: {metadata.time_limit_minutes} minutes
-        </p>
-      )}
+          {currentQuestionIndex === totalQuestions - 1 ? (
+            <Button
+              onClick={handleSubmitQuiz}
+              disabled={
+                isSubmitting || Object.keys(answers).length < totalQuestions
+              }
+              size="sm"
+              className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              )}
+              Submit
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNext}
+              className="h-7 text-xs px-3 gap-1.5"
+            >
+              Next
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

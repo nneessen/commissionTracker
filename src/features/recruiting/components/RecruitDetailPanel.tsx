@@ -490,7 +490,7 @@ export function RecruitDetailPanel({
               role as (typeof STAFF_ONLY_ROLES)[number],
             ),
           )) && (
-          <div className="flex items-center gap-1 mt-2">
+          <div className="flex items-center gap-1 mt-2 overflow-x-auto pb-2 -mb-2 scrollbar-thin">
             {isInvitation ? (
               /* Invitation-specific actions */
               <>
@@ -507,7 +507,7 @@ export function RecruitDetailPanel({
                   variant="outline"
                   onClick={handleResendInvite}
                   disabled={resendingInvite}
-                  className="h-6 text-[10px] px-2"
+                  className="h-6 text-[10px] px-2 flex-shrink-0"
                 >
                   {resendingInvite ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -535,7 +535,7 @@ export function RecruitDetailPanel({
                     }
                   }}
                   disabled={cancelInvitation.isPending || !invitationId}
-                  className="h-6 text-[10px] px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-6 text-[10px] px-2 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                 >
                   {cancelInvitation.isPending ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -552,7 +552,7 @@ export function RecruitDetailPanel({
                   variant="outline"
                   onClick={handleAdvancePhase}
                   disabled={!currentPhase || currentPhase?.status === "blocked"}
-                  className="h-6 text-[10px] px-2"
+                  className="h-6 text-[10px] px-2 flex-shrink-0"
                 >
                   <ArrowRight className="h-3 w-3 mr-0.5" />
                   Advance
@@ -563,7 +563,7 @@ export function RecruitDetailPanel({
                     variant="outline"
                     onClick={handleRevertPhase}
                     disabled={revertPhase.isPending}
-                    className="h-6 text-[10px] px-2"
+                    className="h-6 text-[10px] px-2 flex-shrink-0"
                   >
                     {revertPhase.isPending ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -578,7 +578,7 @@ export function RecruitDetailPanel({
                     size="sm"
                     variant="default"
                     onClick={handleUnblockPhase}
-                    className="h-6 text-[10px] px-2"
+                    className="h-6 text-[10px] px-2 flex-shrink-0"
                   >
                     <CheckCircle2 className="h-3 w-3 mr-0.5" />
                     Unblock
@@ -589,7 +589,7 @@ export function RecruitDetailPanel({
                     variant="outline"
                     onClick={handleBlockPhase}
                     disabled={!currentPhase}
-                    className="h-6 text-[10px] px-2"
+                    className="h-6 text-[10px] px-2 flex-shrink-0"
                   >
                     <Ban className="h-3 w-3 mr-0.5" />
                     Block
@@ -600,7 +600,7 @@ export function RecruitDetailPanel({
                   variant="ghost"
                   onClick={() => setUnenrollDialogOpen(true)}
                   disabled={unenrollPipeline.isPending}
-                  className="h-6 text-[10px] px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                  className="h-6 text-[10px] px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
                   title="Remove from pipeline to re-enroll in a different one"
                 >
                   <RotateCcw className="h-3 w-3 mr-0.5" />
@@ -613,7 +613,7 @@ export function RecruitDetailPanel({
                 variant="outline"
                 onClick={handleInitializeProgress}
                 disabled={initializeProgress.isPending}
-                className="h-6 text-[10px] px-2"
+                className="h-6 text-[10px] px-2 flex-shrink-0"
               >
                 {initializeProgress.isPending ? (
                   <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
@@ -660,7 +660,7 @@ export function RecruitDetailPanel({
                               );
                             }}
                             className={cn(
-                              "h-6 text-[10px] px-2",
+                              "h-6 text-[10px] px-2 flex-shrink-0",
                               notificationStatus?.newRecruitSent &&
                                 "text-emerald-600 border-emerald-300",
                             )}
@@ -718,7 +718,7 @@ export function RecruitDetailPanel({
                               );
                             }}
                             className={cn(
-                              "h-6 text-[10px] px-2",
+                              "h-6 text-[10px] px-2 flex-shrink-0",
                               notificationStatus?.npnReceivedSent &&
                                 "text-emerald-600 border-emerald-300",
                             )}
@@ -755,7 +755,7 @@ export function RecruitDetailPanel({
                   variant="outline"
                   onClick={handleResendInvite}
                   disabled={resendingInvite}
-                  className="h-6 text-[10px] px-2"
+                  className="h-6 text-[10px] px-2 flex-shrink-0"
                 >
                   {resendingInvite ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -770,7 +770,7 @@ export function RecruitDetailPanel({
                     size="sm"
                     variant="ghost"
                     onClick={() => setDeleteDialogOpen(true)}
-                    className="h-6 text-[10px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="h-6 text-[10px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -827,16 +827,10 @@ export function RecruitDetailPanel({
                         {status === "completed" ? (
                           <Check className="h-3.5 w-3.5 text-white" />
                         ) : status === "in_progress" ? (
-                          <span className="text-[10px] font-bold text-white">
-                            {index + 1}
-                          </span>
+                          <Clock className="h-3 w-3 text-white" />
                         ) : status === "blocked" ? (
                           <Ban className="h-3 w-3 text-white" />
-                        ) : (
-                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
-                            {index + 1}
-                          </span>
-                        )}
+                        ) : null}
                         {isCurrent && status !== "completed" && (
                           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500" />
                         )}
@@ -1006,16 +1000,16 @@ export function RecruitDetailPanel({
           </TabsContent>
 
           <TabsContent value="contracting" className="mt-0">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Carrier Contracts</h3>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Carrier Contracts</h3>
                 {(currentUserProfile?.is_admin ||
                   currentUserProfile?.roles?.some((role) =>
                     STAFF_ONLY_ROLES.includes(
                       role as (typeof STAFF_ONLY_ROLES)[number],
                     ),
                   )) && (
-                  <Button size="sm" onClick={() => setShowAddCarrierDialog(true)}>
+                  <Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setShowAddCarrierDialog(true)}>
                     Add Carrier
                   </Button>
                 )}

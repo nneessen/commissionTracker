@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import type {
   ExternalLinkMetadata,
@@ -23,16 +23,17 @@ export function ExternalLinkItem({
   existingResponse,
   onComplete,
 }: ExternalLinkItemProps) {
-  const [hasClicked, setHasClicked] = useState(
-    existingResponse?.clicked ?? false,
-  );
+  const [hasClicked, setHasClicked] = useState(existingResponse?.clicked ?? false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOpenLink = useCallback(async () => {
-    // Open the external link
+    if (!metadata?.url) {
+      toast.error("Link URL is missing");
+      return;
+    }
+
     window.open(metadata.url, "_blank");
 
-    // Record the click
     if (!hasClicked) {
       try {
         await checklistResponseService.recordExternalLinkClick(progressId);
@@ -42,11 +43,9 @@ export function ExternalLinkItem({
       }
     }
 
-    // If auto-complete on return, complete it
-    if (metadata.completion_method === "return_url") {
+    if (metadata?.completion_method === "return_url") {
       try {
-        const result =
-          await checklistResponseService.completeExternalLink(progressId);
+        const result = await checklistResponseService.completeExternalLink(progressId);
         if (result.success) {
           toast.success("Task completed!");
           onComplete?.();
@@ -55,13 +54,7 @@ export function ExternalLinkItem({
         console.error("Failed to auto-complete:", error);
       }
     }
-  }, [
-    progressId,
-    metadata.url,
-    metadata.completion_method,
-    hasClicked,
-    onComplete,
-  ]);
+  }, [progressId, metadata?.url, metadata?.completion_method, hasClicked, onComplete]);
 
   const handleMarkComplete = useCallback(async () => {
     if (!hasClicked) {
@@ -71,14 +64,11 @@ export function ExternalLinkItem({
 
     setIsSubmitting(true);
     try {
-      const result =
-        await checklistResponseService.completeExternalLink(progressId);
-
+      const result = await checklistResponseService.completeExternalLink(progressId);
       if (!result.success) {
         toast.error(result.error || "Failed to complete");
         return;
       }
-
       toast.success("Completed!");
       onComplete?.();
     } catch (error) {
@@ -89,71 +79,77 @@ export function ExternalLinkItem({
     }
   }, [progressId, hasClicked, onComplete]);
 
-  // If already completed
+  // Completed state - minimal inline indicator
   if (existingResponse?.returned) {
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Completed</span>
-        </div>
+      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500">
+        <Check className="h-3.5 w-3.5" />
+        Link completed
+      </span>
+    );
+  }
+
+  // Error state - missing URL
+  if (!metadata?.url) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span>Link configuration error: Missing URL</span>
       </div>
     );
   }
 
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
-      {/* Description */}
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Primary action - open link */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleOpenLink}
+        className="h-7 text-xs px-3 gap-1.5 font-normal"
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+        {metadata.link_text}
+      </Button>
+
+      {/* Status indicator */}
+      {hasClicked && (
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500">
+          <Check className="h-3.5 w-3.5" />
+          Visited
+        </span>
+      )}
+
+      {/* Manual completion */}
+      {metadata.completion_method === "manual" && hasClicked && (
+        <Button
+          onClick={handleMarkComplete}
+          disabled={isSubmitting}
+          size="sm"
+          variant="default"
+          className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
+          Complete
+        </Button>
+      )}
+
+      {/* Description - subtle, secondary */}
       {metadata.description && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="w-full text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
           {metadata.description}
         </p>
       )}
 
-      {/* Link button */}
-      <div className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            {metadata.link_text}
-          </p>
-          <p className="text-xs text-zinc-500 truncate">{metadata.url}</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleOpenLink}
-          className="shrink-0"
-        >
-          <ExternalLink className="h-4 w-4 mr-1" />
-          {hasClicked ? "Open Again" : "Open Link"}
-        </Button>
-      </div>
-
-      {/* Click status */}
-      {hasClicked && (
-        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Link visited</span>
-        </div>
-      )}
-
-      {/* Instructions */}
-      {metadata.verification_instructions && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      {/* Verification instructions - if needed */}
+      {metadata.verification_instructions && hasClicked && (
+        <p className="w-full text-xs text-zinc-600 dark:text-zinc-300 mt-0.5 italic">
           {metadata.verification_instructions}
         </p>
-      )}
-
-      {/* Complete Button (if manual completion) */}
-      {metadata.completion_method === "manual" && (
-        <Button
-          onClick={handleMarkComplete}
-          disabled={isSubmitting || !hasClicked}
-          className="w-full"
-        >
-          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          I've Completed This Task
-        </Button>
       )}
     </div>
   );

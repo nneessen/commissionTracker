@@ -38,6 +38,8 @@ export interface EmailComposerProps {
   onSend?: (email: SendEmailRequest) => void | Promise<void>;
   onCancel?: () => void;
   isSending?: boolean;
+  uplineEmail?: string;
+  uplineName?: string;
 }
 
 export function EmailComposer({
@@ -50,6 +52,8 @@ export function EmailComposer({
   onSend,
   onCancel,
   isSending = false,
+  uplineEmail,
+  uplineName,
 }: EmailComposerProps) {
   const [to, setTo] = useState<string[]>(initialTo);
   const [cc, setCc] = useState<string[]>(initialCc);
@@ -108,7 +112,7 @@ export function EmailComposer({
     const bodyText = convertHtmlToText(sanitizedHtml);
 
     // Convert attachments to base64 for Edge Function
-    const _attachmentData = await Promise.all(
+    const fileAttachments = await Promise.all(
       attachments.map(async (att) => {
         const buffer = await att.file.arrayBuffer();
         const base64 = btoa(
@@ -142,8 +146,17 @@ export function EmailComposer({
       text: bodyText,
       from,
       recruitId,
-      ...(trainingDocuments.length > 0 && { trainingDocuments }),
+      ...(fileAttachments.length > 0 ? { attachments: fileAttachments } : {}),
+      ...(trainingDocuments.length > 0 ? { trainingDocuments } : {}),
     };
+
+    console.log('[EmailComposer] Sending email with:', {
+      to,
+      subject,
+      attachmentCount: fileAttachments.length,
+      trainingDocCount: trainingDocuments.length,
+      attachments: fileAttachments.map(a => ({ filename: a.filename, size: a.content.length }))
+    });
 
     await onSend?.(emailRequest);
   };
@@ -254,20 +267,39 @@ export function EmailComposer({
               onKeyDown={(e) => handleKeyDown(e, "to")}
               onBlur={() => addRecipient("to")}
               disabled={isSending}
-              className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1"
+              className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
             />
           </div>
-          {!showCc && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowCc(true)}
-              className="text-xs h-6"
-            >
-              Cc
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {!showCc && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCc(true)}
+                className="text-xs h-6"
+              >
+                Cc
+              </Button>
+            )}
+            {uplineEmail && !cc.includes(uplineEmail) && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!cc.includes(uplineEmail)) {
+                    setCc([...cc, uplineEmail]);
+                    setShowCc(true);
+                  }
+                }}
+                className="text-xs h-6"
+                title={uplineName ? `CC ${uplineName}` : "CC Upline"}
+              >
+                CC Upline
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* CC Field */}
@@ -298,7 +330,7 @@ export function EmailComposer({
                 onKeyDown={(e) => handleKeyDown(e, "cc")}
                 onBlur={() => addRecipient("cc")}
                 disabled={isSending}
-                className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1"
+                className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
               />
             </div>
           </div>
@@ -312,7 +344,7 @@ export function EmailComposer({
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Enter subject..."
             disabled={isSending}
-            className="flex-1 h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1"
+            className="flex-1 h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
           />
         </div>
       </div>

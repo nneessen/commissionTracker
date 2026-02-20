@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import {
   Loader2,
   CheckCircle2,
@@ -214,12 +213,10 @@ export function SignatureRequiredItem({
   // Loading state
   if (submissionLoading && !existingResponse) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center gap-2 text-sm text-zinc-500">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading signature status...</span>
-        </div>
-      </Card>
+      <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        Loading...
+      </div>
     );
   }
 
@@ -233,83 +230,72 @@ export function SignatureRequiredItem({
   // If completed, show success state
   if (currentStatus === "completed") {
     return (
-      <Card className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            <div>
-              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                All Signatures Complete
-              </p>
-              <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">
-                {signersTotal} of {signersTotal} signers completed
-              </p>
-            </div>
-          </div>
-          {existingResponse?.completed_at && (
-            <span className="text-xs text-emerald-600/60 dark:text-emerald-400/60">
-              Completed{" "}
-              {new Date(existingResponse.completed_at).toLocaleDateString()}
-            </span>
-          )}
-        </div>
-      </Card>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          All signatures complete ({signersTotal}/{signersTotal})
+        </span>
+        {existingResponse?.completed_at && (
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            {new Date(existingResponse.completed_at).toLocaleDateString()}
+          </span>
+        )}
+      </div>
     );
   }
 
   // If no submission yet, show initiate button
   if (!currentStatus) {
     return (
-      <Card className="p-4 space-y-4">
-        <div className="flex items-start gap-3">
-          <PenTool className="h-5 w-5 text-zinc-400 mt-0.5" />
-          <div className="flex-1 space-y-2">
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <div className="space-y-1">
+        <div className="flex items-start gap-2">
+          <PenTool className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
               E-Signature Required
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              This document requires signatures from the following parties:
-            </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {metadata.required_signer_roles.map((role) => (
                 <Badge
                   key={role}
                   variant="outline"
-                  className="text-[10px] py-0.5"
+                  className="h-4 text-[10px] px-1.5 gap-1"
                 >
-                  <Users className="h-2.5 w-2.5 mr-1" />
+                  <Users className="h-2.5 w-2.5" />
                   {SIGNER_ROLE_LABELS[role]}
                 </Badge>
               ))}
             </div>
             {metadata.custom_message && (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 italic">
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 italic">
                 "{metadata.custom_message}"
               </p>
             )}
           </div>
         </div>
 
-        <Button
-          onClick={handleInitiateSignature}
-          disabled={isInitiating || createSubmission.isPending}
-          className="w-full"
-        >
-          {(isInitiating || createSubmission.isPending) && (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          )}
-          <Send className="h-4 w-4 mr-2" />
-          {metadata.auto_send
-            ? "Send Signature Request"
-            : "Initiate Signature Request"}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            onClick={handleInitiateSignature}
+            disabled={isInitiating || createSubmission.isPending}
+            size="sm"
+            className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+          >
+            {(isInitiating || createSubmission.isPending) ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            {metadata.auto_send ? "Send Request" : "Initiate"}
+          </Button>
 
-        {metadata.expires_in_days && (
-          <p className="text-[10px] text-center text-zinc-400 dark:text-zinc-500">
-            Request will expire in {metadata.expires_in_days} days after sending
-          </p>
-        )}
-      </Card>
+          {metadata.expires_in_days && (
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+              Expires in {metadata.expires_in_days} days
+            </span>
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -318,72 +304,61 @@ export function SignatureRequiredItem({
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className="p-4 space-y-4">
+    <div className="space-y-1">
       {/* Status Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <StatusIcon className="h-5 w-5 text-zinc-500" />
-          <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <StatusIcon className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+          <Badge className={`${statusConfig.color} h-4 text-[10px] px-1.5`}>
+            {statusConfig.label}
+          </Badge>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <div className="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
           <Users className="h-3 w-3" />
-          <span>
-            {signersCompleted} / {signersTotal} signed
-          </span>
+          {signersCompleted}/{signersTotal}
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="space-y-1.5">
-        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+      <div className="space-y-0.5">
+        <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
           <div
             className="h-full bg-primary transition-all duration-300"
             style={{ width: `${(signersCompleted / signersTotal) * 100}%` }}
           />
         </div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-          Waiting for remaining signatures...
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+          Waiting for signatures...
         </p>
       </div>
 
       {/* Signer Status */}
-      <div className="space-y-2">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Required Signers
-        </p>
-        <div className="space-y-1">
-          {metadata.required_signer_roles.map((role, index) => {
-            const hasSigned = index < signersCompleted;
-            return (
-              <div
-                key={role}
-                className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded text-xs"
-              >
-                <span className="text-zinc-600 dark:text-zinc-400">
-                  {SIGNER_ROLE_LABELS[role]}
+      <div className="space-y-0.5">
+        {metadata.required_signer_roles.map((role, index) => {
+          const hasSigned = index < signersCompleted;
+          return (
+            <div
+              key={role}
+              className="flex items-center justify-between p-1 bg-zinc-50 dark:bg-zinc-800/50 rounded text-[10px]"
+            >
+              <span className="text-zinc-600 dark:text-zinc-400">
+                {SIGNER_ROLE_LABELS[role]}
+              </span>
+              {hasSigned ? (
+                <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-2.5 w-2.5" />
+                  Signed
                 </span>
-                {hasSigned ? (
-                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">
-                    <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
-                    Signed
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px]">
-                    <Clock className="h-2.5 w-2.5 mr-1" />
-                    Pending
-                  </Badge>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              ) : (
+                <span className="inline-flex items-center gap-0.5 text-zinc-500 dark:text-zinc-400">
+                  <Clock className="h-2.5 w-2.5" />
+                  Pending
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
-
-      {/* Info note */}
-      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
-        Signers will receive email notifications to complete their signatures.
-        This item will be marked complete when all parties have signed.
-      </p>
-    </Card>
+    </div>
   );
 }

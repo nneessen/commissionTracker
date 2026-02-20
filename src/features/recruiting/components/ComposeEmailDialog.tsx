@@ -12,6 +12,7 @@ import { EmailComposer, TemplatePicker, blocksToHtml } from "@/features/email";
 import { useSendEmail } from "../hooks/useRecruitEmails";
 import type { SendEmailRequest } from "@/services/email";
 import type { EmailTemplate } from "@/types/email.types";
+import { toast } from "sonner";
 
 interface ComposeEmailDialogProps {
   open: boolean;
@@ -20,6 +21,8 @@ interface ComposeEmailDialogProps {
   recruitEmail: string;
   recruitName: string;
   senderId: string;
+  uplineEmail?: string;
+  uplineName?: string;
 }
 
 // Replace variables in text with actual values
@@ -52,6 +55,8 @@ export function ComposeEmailDialog({
   recruitEmail,
   recruitName,
   senderId: _senderId,
+  uplineEmail,
+  uplineName,
 }: ComposeEmailDialogProps) {
   const [selectedTemplate, setSelectedTemplate] =
     useState<EmailTemplate | null>(null);
@@ -87,10 +92,15 @@ export function ComposeEmailDialog({
         recruitId,
       });
 
+      toast.success("Email sent successfully!");
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to send email:", error);
-      alert("Failed to send email");
+      const errorMessage = error instanceof Error ? error.message : "Failed to send email";
+      toast.error("Failed to send email", {
+        description: errorMessage,
+        duration: 5000,
+      });
     }
   };
 
@@ -130,7 +140,7 @@ export function ComposeEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-4xl h-[85vh] flex flex-col p-0 gap-0">
+      <DialogContent className="w-[95vw] max-w-4xl h-[85vh] flex flex-col p-0 gap-0 z-50">
         {/* Header with template picker */}
         <div className="shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogHeader>
@@ -166,6 +176,8 @@ export function ComposeEmailDialog({
             onSend={handleSend}
             onCancel={() => onOpenChange(false)}
             isSending={sendEmail.isPending}
+            uplineEmail={uplineEmail}
+            uplineName={uplineName}
           />
         </div>
       </DialogContent>

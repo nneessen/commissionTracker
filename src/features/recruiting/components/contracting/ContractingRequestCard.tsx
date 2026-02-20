@@ -1,6 +1,5 @@
 // src/features/recruiting/components/contracting/ContractingRequestCard.tsx
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,57 +77,26 @@ export function ContractingRequestCard({ request, onUpdate, onDelete, isStaff }:
 
   return (
     <>
-      <Card className="p-2 border-l-4 border-l-blue-500 hover:shadow-sm transition-shadow">
-        <div className="flex items-start gap-2">
-          {/* Order Badge */}
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-medium">
-              {request.request_order}
-            </div>
+      {/* Single row - everything inline */}
+      <div className="py-1.5 px-2 border-l-2 border-l-blue-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+        <div className="flex items-center gap-2 text-xs">
+          {/* Carrier Name */}
+          <div className="w-32 flex-shrink-0">
+            <span className="font-medium text-xs truncate block">
+              {request.carrier?.name || 'Unknown Carrier'}
+            </span>
           </div>
 
-          {/* Carrier Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium truncate">
-                {request.carrier?.name || 'Unknown Carrier'}
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              Requested: {new Date(request.requested_date).toLocaleDateString()}
-            </div>
-          </div>
-
-          {/* Status Badge */}
-          <Badge className={`text-xs px-2 py-0.5 ${statusColors[request.status] || 'bg-gray-100 text-gray-700'}`}>
-            {request.status.replace(/_/g, ' ')}
-          </Badge>
-
-          {/* Delete Button */}
-          {isStaff && onDelete && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-
-        {/* Writing Number Input */}
-        {isStaff && (
-          <div className="mt-2 pt-2 border-t">
-            <div className="flex items-center gap-2">
+          {/* Writing Number Input - SAME ROW */}
+          {isStaff && (
+            <div className="flex items-center gap-1 flex-1 min-w-0">
               <Input
                 value={writingNumber}
                 onChange={(e) => setWritingNumber(e.target.value)}
                 placeholder="Writing #"
-                className="h-7 text-xs flex-1"
+                className="h-6 text-xs px-2 w-full bg-white dark:bg-zinc-900"
                 onFocus={() => setIsEditing(true)}
                 onBlur={() => {
-                  // Auto-save on blur if changed
                   if (writingNumber !== (request.writing_number || '')) {
                     handleSaveWritingNumber();
                   } else {
@@ -148,37 +116,53 @@ export function ContractingRequestCard({ request, onUpdate, onDelete, isStaff }:
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2"
+                  className="h-6 px-1.5"
                   onClick={handleSaveWritingNumber}
                 >
-                  <Check className="h-3 w-3" />
+                  <Check className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
-            {request.writing_received_date && (
-              <div className="text-xs text-green-600 mt-1">
-                Received: {new Date(request.writing_received_date).toLocaleDateString()}
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {/* Carrier Instructions (Expandable) - Sanitized */}
+          {/* Status Badge */}
+          <Badge className={`text-[10px] px-2 py-0.5 h-5 whitespace-nowrap ${statusColors[request.status] || 'bg-gray-100 text-gray-700'}`}>
+            {request.status.replace(/_/g, ' ')}
+          </Badge>
+
+          {/* Received Date */}
+          {request.writing_received_date && (
+            <span className="text-[10px] text-green-600 whitespace-nowrap">
+              ✓ {new Date(request.writing_received_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
+            </span>
+          )}
+
+          {/* Delete Button */}
+          {isStaff && onDelete && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+
+        {/* Carrier Instructions - collapsed by default */}
         {request.carrier_instructions && (
-          <details className="mt-2 pt-2 border-t">
-            <summary className="text-xs text-blue-600 cursor-pointer hover:underline flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              Carrier Instructions
+          <details className="mt-1">
+            <summary className="text-[10px] text-blue-600 cursor-pointer hover:underline flex items-center gap-0.5">
+              <AlertCircle className="h-2.5 w-2.5" />
+              Instructions
             </summary>
-            <div className="mt-1 text-xs text-muted-foreground prose prose-xs max-w-none">
-              {/* Use textContent rendering to prevent any XSS risk */}
-              <pre className="whitespace-pre-wrap font-sans text-inherit bg-transparent border-none p-0 m-0">
-                {request.carrier_instructions}
-              </pre>
-            </div>
+            <pre className="mt-0.5 text-[10px] text-muted-foreground whitespace-pre-wrap font-sans">
+              {request.carrier_instructions}
+            </pre>
           </details>
         )}
-      </Card>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

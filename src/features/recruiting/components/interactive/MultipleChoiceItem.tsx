@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import type {
   MultipleChoiceMetadata,
@@ -117,33 +117,45 @@ export function MultipleChoiceItem({
 
   // If already submitted
   if (existingResponse?.selected_option_ids?.length) {
-    const selectedLabels = metadata.options
+    const selectedLabels = (metadata?.options || [])
       .filter((o) => existingResponse.selected_option_ids.includes(o.id))
       .map((o) => o.label);
 
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 mb-1">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Selection submitted</span>
-        </div>
-        <p className="text-xs text-emerald-600 dark:text-emerald-400/80">
-          Selected: {selectedLabels.join(", ")}
+      <div className="space-y-1">
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Selection submitted
+        </span>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 pl-5">
+          {selectedLabels.join(", ")}
         </p>
       </div>
     );
   }
 
+  // Error state - no options
+  if (!metadata?.options || !Array.isArray(metadata.options) || metadata.options.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span>Question configuration error: No options available</span>
+      </div>
+    );
+  }
+
+  const canSubmit = selectedIds.length >= minSelections;
+
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
+    <div className="space-y-1">
       {/* Question */}
-      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-        {metadata.question_text}
+      <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+        {metadata?.question_text}
       </p>
 
       {/* Selection hint */}
       {isMultiSelect && (
-        <p className="text-xs text-zinc-500">
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
           {minSelections > 1
             ? `Select at least ${minSelections}`
             : "Select all that apply"}
@@ -152,7 +164,7 @@ export function MultipleChoiceItem({
       )}
 
       {/* Options */}
-      <div className="space-y-2">
+      <div className="space-y-1">
         {metadata.options.map((option) => {
           const isSelected = selectedIds.includes(option.id);
           const isDisqualifying = option.is_disqualifying;
@@ -160,7 +172,7 @@ export function MultipleChoiceItem({
           return (
             <div
               key={option.id}
-              className={`flex items-start gap-3 p-2 rounded border cursor-pointer transition-colors ${
+              className={`flex items-start gap-2 p-1.5 rounded border cursor-pointer transition-colors ${
                 isSelected
                   ? "bg-primary/10 border-primary"
                   : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
@@ -175,20 +187,20 @@ export function MultipleChoiceItem({
                 />
               ) : (
                 <div
-                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                  className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
                     isSelected
                       ? "border-primary bg-primary"
                       : "border-zinc-300 dark:border-zinc-600"
                   }`}
                 >
                   {isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-white" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
                   )}
                 </div>
               )}
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-zinc-900 dark:text-zinc-100">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-zinc-900 dark:text-zinc-100">
                     {option.label}
                   </span>
                   {isDisqualifying && isSelected && (
@@ -196,7 +208,7 @@ export function MultipleChoiceItem({
                   )}
                 </div>
                 {option.description && (
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                     {option.description}
                   </p>
                 )}
@@ -206,22 +218,31 @@ export function MultipleChoiceItem({
         })}
       </div>
 
-      {/* Shuffle note if applicable */}
-      {metadata.randomize_order && (
-        <p className="text-xs text-zinc-400 italic">
-          Options are displayed in random order
-        </p>
-      )}
+      {/* Shuffle note and submit button inline */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {metadata.randomize_order && (
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 italic">
+            Random order
+          </p>
+        )}
 
-      {/* Submit Button */}
-      <Button
-        onClick={handleSubmit}
-        disabled={isSubmitting || selectedIds.length < minSelections}
-        className="w-full"
-      >
-        {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Submit Selection
-      </Button>
+        {/* Submit Button */}
+        {canSubmit && (
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            size="sm"
+            className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            )}
+            Submit
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

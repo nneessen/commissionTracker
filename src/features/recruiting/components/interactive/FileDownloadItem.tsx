@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, CheckCircle2, Download, FileText } from "lucide-react";
+import { Loader2, Download, Check, File, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import type {
   FileDownloadMetadata,
@@ -24,29 +24,27 @@ export function FileDownloadItem({
   existingResponse,
   onComplete,
 }: FileDownloadItemProps) {
-  const [hasDownloaded, setHasDownloaded] = useState(
-    existingResponse?.downloaded ?? false,
-  );
-  const [acknowledged, setAcknowledged] = useState(
-    existingResponse?.acknowledged ?? false,
-  );
+  const [hasDownloaded, setHasDownloaded] = useState(existingResponse?.downloaded ?? false);
+  const [acknowledged, setAcknowledged] = useState(existingResponse?.acknowledged ?? false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDownload = useCallback(async () => {
-    // Open the file URL
+    if (!metadata?.file_url) {
+      toast.error("File URL is missing");
+      return;
+    }
     window.open(metadata.file_url, "_blank");
 
-    // Record the download
     if (!hasDownloaded) {
       try {
         await checklistResponseService.recordFileDownload(progressId);
         setHasDownloaded(true);
-        toast.success("Download started!");
+        toast.success("Download started");
       } catch (error) {
         console.error("Failed to record download:", error);
       }
     }
-  }, [progressId, metadata.file_url, hasDownloaded]);
+  }, [progressId, metadata?.file_url, hasDownloaded]);
 
   const handleAcknowledge = useCallback(async () => {
     if (!hasDownloaded) {
@@ -54,21 +52,18 @@ export function FileDownloadItem({
       return;
     }
 
-    if (!acknowledged) {
+    if (metadata?.acknowledgment_text && !acknowledged) {
       toast.error("Please confirm you have reviewed the file");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const result =
-        await checklistResponseService.acknowledgeFileDownload(progressId);
-
+      const result = await checklistResponseService.acknowledgeFileDownload(progressId);
       if (!result.success) {
         toast.error(result.error || "Failed to complete");
         return;
       }
-
       toast.success("Completed!");
       onComplete?.();
     } catch (error) {
@@ -77,21 +72,28 @@ export function FileDownloadItem({
     } finally {
       setIsSubmitting(false);
     }
-  }, [progressId, hasDownloaded, acknowledged, onComplete]);
+  }, [progressId, hasDownloaded, acknowledged, metadata?.acknowledgment_text, onComplete]);
 
-  // If already completed
+  // Completed state
   if (existingResponse?.acknowledged) {
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Downloaded and reviewed</span>
-        </div>
+      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500">
+        <Check className="h-3.5 w-3.5" />
+        Downloaded & reviewed
+      </span>
+    );
+  }
+
+  // Error state - missing file URL
+  if (!metadata?.file_url || !metadata?.file_name) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span>File configuration error: Missing file URL or name</span>
       </div>
     );
   }
 
-  // Format file size
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return "";
     if (bytes < 1024) return `${bytes} B`;
@@ -99,92 +101,80 @@ export function FileDownloadItem({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const fileInfo = [
+    metadata.file_type?.toUpperCase(),
+    metadata.file_size_bytes && formatFileSize(metadata.file_size_bytes)
+  ].filter(Boolean).join(" • ");
+
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
-      {/* File info */}
-      <div className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700">
-        <div className="p-2 bg-zinc-100 dark:bg-zinc-700 rounded">
-          <FileText className="h-5 w-5 text-zinc-500" />
-        </div>
+    <div className="flex items-start gap-2 flex-wrap">
+      {/* File info with download button */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <File className="h-4 w-4 text-zinc-400 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+          <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">
             {metadata.file_name}
-          </p>
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            {metadata.file_type && (
-              <span>{metadata.file_type.toUpperCase()}</span>
-            )}
-            {metadata.file_size_bytes && (
-              <>
-                <span>•</span>
-                <span>{formatFileSize(metadata.file_size_bytes)}</span>
-              </>
-            )}
           </div>
+          {fileInfo && (
+            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              {fileInfo}
+            </div>
+          )}
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleDownload}
-          className="shrink-0"
+          className="h-7 text-xs px-3 gap-1.5 font-normal flex-shrink-0"
         >
-          <Download className="h-4 w-4 mr-1" />
-          {hasDownloaded ? "Download Again" : "Download"}
+          <Download className="h-3.5 w-3.5" />
+          Download
         </Button>
       </div>
 
-      {/* Download status */}
-      {hasDownloaded && (
-        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>File downloaded</span>
-        </div>
+      {/* Status indicator */}
+      {hasDownloaded && !metadata.acknowledgment_text && (
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500">
+          <Check className="h-3.5 w-3.5" />
+          Downloaded
+        </span>
       )}
 
-      {/* Acknowledgment checkbox */}
-      {metadata.acknowledgment_text && (
-        <div className="flex items-start gap-3">
+      {/* Acknowledgment requirement */}
+      {metadata.acknowledgment_text && hasDownloaded && (
+        <div className="w-full flex items-start gap-2 mt-1">
           <Checkbox
             id={`file-ack-${progressId}`}
             checked={acknowledged}
             onCheckedChange={(checked) => setAcknowledged(checked === true)}
-            disabled={isSubmitting || !hasDownloaded}
+            disabled={isSubmitting}
+            className="h-4 w-4 mt-0.5"
           />
           <label
             htmlFor={`file-ack-${progressId}`}
-            className={`text-sm cursor-pointer leading-tight ${
-              hasDownloaded
-                ? "text-zinc-700 dark:text-zinc-300"
-                : "text-zinc-400 dark:text-zinc-500"
-            }`}
+            className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer flex-1"
           >
-            {metadata.acknowledgment_text ||
-              "I have downloaded and reviewed this file"}
+            {metadata.acknowledgment_text}
           </label>
         </div>
       )}
 
-      {/* Complete Button */}
-      {metadata.acknowledgment_text ? (
+      {/* Complete button */}
+      {hasDownloaded && (!metadata.acknowledgment_text || acknowledged) && (
         <Button
           onClick={handleAcknowledge}
-          disabled={isSubmitting || !hasDownloaded || !acknowledged}
-          className="w-full"
+          disabled={isSubmitting}
+          size="sm"
+          variant="default"
+          className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700 ml-auto"
         >
-          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Mark as Complete
+          {isSubmitting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
+          Complete
         </Button>
-      ) : (
-        hasDownloaded && (
-          <Button
-            onClick={handleAcknowledge}
-            disabled={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Mark as Complete
-          </Button>
-        )
       )}
     </div>
   );

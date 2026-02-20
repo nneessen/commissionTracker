@@ -13,6 +13,7 @@ export type {
   SendEmailResponse,
   CreateUserEmailData,
   UpdateUserEmailData,
+  FileAttachment,
   TrainingDocumentAttachment,
 } from "./types";
 

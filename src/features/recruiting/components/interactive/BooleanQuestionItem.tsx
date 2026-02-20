@@ -3,8 +3,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import type {
   BooleanQuestionMetadata,
@@ -29,9 +28,7 @@ export function BooleanQuestionItem({
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(
     existingResponse?.answer ?? null,
   );
-  const [explanation, setExplanation] = useState(
-    existingResponse?.explanation ?? "",
-  );
+  const [explanation, setExplanation] = useState(existingResponse?.explanation ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const defaults = BOOLEAN_QUESTION_DEFAULT_LABELS[metadata.question_style];
@@ -51,13 +48,12 @@ export function BooleanQuestionItem({
 
     setIsSubmitting(true);
     try {
-      const result =
-        await checklistResponseService.submitBooleanQuestionResponse(
-          progressId,
-          selectedAnswer,
-          explanation || undefined,
-          metadata,
-        );
+      const result = await checklistResponseService.submitBooleanQuestionResponse(
+        progressId,
+        selectedAnswer,
+        explanation || undefined,
+        metadata,
+      );
 
       if (!result.success) {
         toast.error(result.error || "Failed to submit response");
@@ -78,50 +74,43 @@ export function BooleanQuestionItem({
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    progressId,
-    selectedAnswer,
-    explanation,
-    metadata,
-    positiveLabel,
-    onComplete,
-  ]);
+  }, [progressId, selectedAnswer, explanation, metadata, positiveLabel, onComplete]);
 
-  // If already answered and completed
+  // Answered state - clean inline
   if (existingResponse && selectedAnswer !== null) {
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>
-            Answered:{" "}
+      <div className="flex items-start gap-2">
+        <Check className="h-3.5 w-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-xs text-emerald-600 dark:text-emerald-500">
             <strong>{selectedAnswer ? positiveLabel : negativeLabel}</strong>
           </span>
+          {existingResponse.explanation && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 italic">
+              "{existingResponse.explanation}"
+            </p>
+          )}
         </div>
-        {existingResponse.explanation && (
-          <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400/80 italic">
-            "{existingResponse.explanation}"
-          </p>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
-      {/* Question */}
-      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="space-y-2">
+      {/* Question text */}
+      <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
         {metadata.question_text}
       </p>
 
-      {/* Answer Buttons */}
-      <div className="flex gap-3">
+      {/* Answer buttons - compact inline */}
+      <div className="flex gap-2">
         <Button
           type="button"
           variant={selectedAnswer === true ? "default" : "outline"}
-          className={`flex-1 h-10 ${
+          size="sm"
+          className={`flex-1 h-7 text-xs ${
             selectedAnswer === true
-              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+              ? "bg-emerald-600 hover:bg-emerald-700"
               : ""
           }`}
           onClick={() => setSelectedAnswer(true)}
@@ -132,9 +121,10 @@ export function BooleanQuestionItem({
         <Button
           type="button"
           variant={selectedAnswer === false ? "default" : "outline"}
-          className={`flex-1 h-10 ${
+          size="sm"
+          className={`flex-1 h-7 text-xs ${
             selectedAnswer === false
-              ? "bg-zinc-600 hover:bg-zinc-700 text-white"
+              ? "bg-zinc-600 hover:bg-zinc-700"
               : ""
           }`}
           onClick={() => setSelectedAnswer(false)}
@@ -144,39 +134,46 @@ export function BooleanQuestionItem({
         </Button>
       </div>
 
-      {/* Explanation (if required or optional) */}
+      {/* Explanation field - if required */}
       {metadata.explanation_required && (
-        <div className="space-y-1.5">
-          <Label className="text-xs text-zinc-600 dark:text-zinc-400">
-            {metadata.explanation_prompt || "Please explain your answer"}{" "}
-            <span className="text-red-500">*</span>
-          </Label>
+        <div className="space-y-1">
+          <label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+            {metadata.explanation_prompt || "Please explain your answer"} <span className="text-red-500">*</span>
+          </label>
           <Textarea
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
             placeholder="Enter your explanation..."
-            className="min-h-[80px] text-sm"
+            className="min-h-[60px] text-xs"
             disabled={isSubmitting}
           />
         </div>
       )}
 
-      {/* Requirement note */}
+      {/* Requirement note - subtle */}
       {metadata.require_positive && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-[10px] text-amber-600 dark:text-amber-400">
           Note: You must select "{positiveLabel}" to complete this item.
         </p>
       )}
 
-      {/* Submit Button */}
-      <Button
-        onClick={handleSubmit}
-        disabled={isSubmitting || selectedAnswer === null}
-        className="w-full"
-      >
-        {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Submit Answer
-      </Button>
+      {/* Submit button - emerald for completion */}
+      {selectedAnswer !== null && (
+        <Button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          size="sm"
+          variant="default"
+          className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
+          Submit Answer
+        </Button>
+      )}
     </div>
   );
 }

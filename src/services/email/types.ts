@@ -36,6 +36,13 @@ export interface TrainingDocumentAttachment {
   storagePath: string;
 }
 
+// File attachment (base64 encoded)
+export interface FileAttachment {
+  filename: string;
+  content: string; // base64 encoded
+  mimeType: string;
+}
+
 // Send email request (matches root emailService interface)
 export interface SendEmailRequest {
   to: string[];
@@ -48,7 +55,8 @@ export interface SendEmailRequest {
   recruitId?: string;
   senderId?: string;
   metadata?: Record<string, unknown>;
-  trainingDocuments?: TrainingDocumentAttachment[];
+  attachments?: FileAttachment[]; // Regular file attachments (base64)
+  trainingDocuments?: TrainingDocumentAttachment[]; // Training library documents
 }
 
 // Send email response

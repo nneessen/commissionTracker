@@ -78,16 +78,28 @@ class UserEmailService {
 
   /**
    * Send an email via the unified send-email Edge Function
-   * Uses Resend as the email provider
+   * Uses Mailgun as the email provider
    */
   async sendEmail(request: SendEmailRequest): Promise<SendEmailResponse> {
     const { data, error } = await supabase.functions.invoke("send-email", {
       body: request,
     });
 
+    // Check for Supabase invocation errors
     if (error) {
-      console.error("Email service error:", error);
-      throw new Error(error.message || "Failed to send email");
+      console.error("Email service invocation error:", error);
+      throw new Error(error.message || "Failed to invoke email service");
+    }
+
+    // Check for application-level errors in response
+    if (data && !data.success) {
+      console.error("Email service application error:", data.error);
+      throw new Error(data.error || "Failed to send email");
+    }
+
+    // Ensure we have a valid response
+    if (!data) {
+      throw new Error("Email service returned no data");
     }
 
     return data as SendEmailResponse;

@@ -59,8 +59,22 @@ export function VideoEmbedItem({
 }: VideoEmbedItemProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const embedUrl = getEmbedUrl(metadata.platform, metadata.video_id);
-  const platformName = getPlatformName(metadata.platform);
+  const embedUrl = metadata?.platform && metadata?.video_id
+    ? getEmbedUrl(metadata.platform, metadata.video_id)
+    : "";
+  const platformName = metadata?.platform
+    ? getPlatformName(metadata.platform)
+    : "Video";
+
+  // Handle null/missing platform or video_id
+  if (!metadata?.platform || !metadata?.video_id) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span>Video configuration error: Missing platform or video ID</span>
+      </div>
+    );
+  }
 
   const handleMarkWatched = useCallback(async () => {
     setIsSubmitting(true);
@@ -88,10 +102,10 @@ export function VideoEmbedItem({
   // If already watched
   if (existingResponse?.watched) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {/* Video embed - still show it so they can rewatch */}
         {embedUrl && (
-          <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-zinc-900">
+          <div className="relative aspect-video w-full rounded overflow-hidden bg-zinc-900">
             <iframe
               src={embedUrl}
               title={metadata.title || `${platformName} Video`}
@@ -102,16 +116,15 @@ export function VideoEmbedItem({
           </div>
         )}
         {/* Completed state */}
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-            <CheckCircle2 className="h-4 w-4" />
-            <span>Video watched</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Video watched
+          </span>
           {existingResponse.watched_at && (
-            <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400/80">
-              Completed on{" "}
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
               {new Date(existingResponse.watched_at).toLocaleDateString()}
-            </p>
+            </span>
           )}
         </div>
       </div>
@@ -120,17 +133,17 @@ export function VideoEmbedItem({
 
   // Not yet watched
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
+    <div className="space-y-2">
       {/* Video title */}
       {metadata.title && (
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
           {metadata.title}
         </p>
       )}
 
       {/* Video embed */}
       {embedUrl ? (
-        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-zinc-900">
+        <div className="relative aspect-video w-full rounded overflow-hidden bg-zinc-900">
           <iframe
             src={embedUrl}
             title={metadata.title || `${platformName} Video`}
@@ -140,34 +153,37 @@ export function VideoEmbedItem({
           />
         </div>
       ) : (
-        <div className="aspect-video w-full rounded-lg bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+        <div className="aspect-video w-full rounded bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
           <div className="text-center text-zinc-500 dark:text-zinc-400">
-            <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-            <p className="text-sm">Video not available</p>
+            <AlertCircle className="h-5 w-5 mx-auto mb-1" />
+            <p className="text-xs">Video unavailable</p>
           </div>
         </div>
       )}
 
-      {/* Requirement note */}
-      {metadata.require_full_watch && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Please watch the entire video before marking as complete.
-        </p>
-      )}
-
-      {/* Mark as Watched Button */}
-      <Button
-        onClick={handleMarkWatched}
-        disabled={isSubmitting || isDisabled || !embedUrl}
-        className="w-full"
-      >
-        {isSubmitting ? (
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        ) : (
-          <Play className="h-4 w-4 mr-2" />
+      {/* Requirement note and button inline */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {metadata.require_full_watch && (
+          <p className="text-[10px] text-amber-600 dark:text-amber-400">
+            Watch entire video
+          </p>
         )}
-        {isDisabled ? "Complete previous items first" : "Mark as Watched"}
-      </Button>
+
+        {/* Mark as Watched Button */}
+        <Button
+          onClick={handleMarkWatched}
+          disabled={isSubmitting || isDisabled || !embedUrl}
+          size="sm"
+          className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Play className="h-3.5 w-3.5" />
+          )}
+          {isDisabled ? "Complete previous" : "Mark Watched"}
+        </Button>
+      </div>
     </div>
   );
 }

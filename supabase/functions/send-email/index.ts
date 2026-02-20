@@ -10,6 +10,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// File attachment (base64 encoded)
+interface FileAttachment {
+  filename: string;
+  content: string; // base64 encoded
+  mimeType: string;
+}
+
 // Training document attachment info
 interface TrainingDocumentAttachment {
   id: string;
@@ -36,8 +43,9 @@ interface SendEmailRequest {
   messageId?: string; // Our generated Message-ID
   inReplyTo?: string; // Message-ID of email we're replying to
   references?: string[]; // Chain of Message-IDs in thread
-  // Training document attachments
-  trainingDocuments?: TrainingDocumentAttachment[];
+  // Attachments
+  attachments?: FileAttachment[]; // Regular file attachments (base64)
+  trainingDocuments?: TrainingDocumentAttachment[]; // Training library documents
 }
 
 interface MailgunResponse {
@@ -99,6 +107,7 @@ serve(async (req) => {
       messageId,
       inReplyTo,
       references,
+      attachments,
       trainingDocuments,
     } = body;
 
@@ -182,6 +191,40 @@ serve(async (req) => {
     form.append("o:tracking", "yes");
     form.append("o:tracking-clicks", "yes");
     form.append("o:tracking-opens", "yes");
+
+    // Handle regular file attachments (base64 encoded)
+    if (attachments && attachments.length > 0) {
+      console.log(
+        "[send-email] Processing file attachments:",
+        attachments.length,
+      );
+
+      for (const attachment of attachments) {
+        try {
+          // Decode base64 to binary
+          const binaryString = atob(attachment.content);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+
+          // Create a File object
+          const file = new File([bytes], attachment.filename, {
+            type: attachment.mimeType || "application/octet-stream",
+          });
+
+          form.append("attachment", file, attachment.filename);
+          console.log("[send-email] Attached file:", attachment.filename);
+        } catch (attachError) {
+          console.error(
+            "[send-email] Error processing attachment:",
+            attachment.filename,
+            attachError,
+          );
+          // Continue with other attachments
+        }
+      }
+    }
 
     // Handle training document attachments
     if (trainingDocuments && trainingDocuments.length > 0) {

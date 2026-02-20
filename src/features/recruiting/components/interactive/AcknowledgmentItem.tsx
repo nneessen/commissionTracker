@@ -97,24 +97,24 @@ export function AcknowledgmentItem({
   // If already acknowledged and completed
   if (existingResponse?.acknowledged) {
     return (
-      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-        <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Acknowledged</span>
-        </div>
-      </div>
+      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        Acknowledged
+      </span>
     );
   }
 
+  const canComplete = acknowledged && (!metadata.require_scroll || scrollCompleted);
+
   return (
-    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-4">
+    <div className="space-y-2">
       {/* Content to acknowledge */}
       {metadata.content && (
         <ScrollArea
           ref={scrollRef}
-          className="max-h-[200px] rounded border border-zinc-200 dark:border-zinc-700 p-3"
+          className="max-h-[120px] rounded border border-zinc-200 dark:border-zinc-700 p-2"
         >
-          <div className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
+          <div className="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
             {metadata.content}
           </div>
         </ScrollArea>
@@ -122,42 +122,48 @@ export function AcknowledgmentItem({
 
       {/* Scroll requirement notice */}
       {metadata.require_scroll && !scrollCompleted && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Please scroll through the entire content above before acknowledging.
+        <p className="text-[10px] text-amber-600 dark:text-amber-400">
+          Scroll through entire content before acknowledging
         </p>
       )}
 
-      {/* Acknowledgment checkbox */}
-      <div className="flex items-start gap-3">
-        <Checkbox
-          id={`ack-${progressId}`}
-          checked={acknowledged}
-          onCheckedChange={(checked) => setAcknowledged(checked === true)}
-          disabled={
-            isSubmitting || (metadata.require_scroll && !scrollCompleted)
-          }
-        />
-        <label
-          htmlFor={`ack-${progressId}`}
-          className="text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer leading-tight"
-        >
-          {metadata.acknowledgment_text}
-        </label>
-      </div>
+      {/* Acknowledgment checkbox with inline completion button */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id={`ack-${progressId}`}
+            checked={acknowledged}
+            onCheckedChange={(checked) => setAcknowledged(checked === true)}
+            disabled={
+              isSubmitting || (metadata.require_scroll && !scrollCompleted)
+            }
+            className="mt-0.5"
+          />
+          <label
+            htmlFor={`ack-${progressId}`}
+            className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer leading-tight"
+          >
+            {metadata.acknowledgment_text}
+          </label>
+        </div>
 
-      {/* Submit Button */}
-      <Button
-        onClick={handleSubmit}
-        disabled={
-          isSubmitting ||
-          !acknowledged ||
-          (metadata.require_scroll && !scrollCompleted)
-        }
-        className="w-full"
-      >
-        {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-        Confirm Acknowledgment
-      </Button>
+        {/* Complete button appears when ready */}
+        {canComplete && (
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            size="sm"
+            className="h-7 text-xs px-3 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            )}
+            Complete
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
