@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-20 14:53:20
+
+### Changed Files
+- `src/features/email/services/emailTemplateService.ts`
+- `supabase/migrations/20260220141913_seed_recruit_welcome_email_template.sql`
+- `supabase/migrations/20260220142000_fix_email_template_delete_policy.sql`
+
+### Statistics
+```
+ 3 files changed, 182 insertions(+), 2 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-20 13:58:15
 
 ### Changed Files

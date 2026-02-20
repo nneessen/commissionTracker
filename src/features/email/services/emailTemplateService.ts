@@ -119,12 +119,16 @@ export async function updateEmailTemplate(
 }
 
 export async function deleteEmailTemplate(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("email_templates")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error("Template not found or you don't have permission to delete it");
+  }
 }
 
 export async function duplicateEmailTemplate(
