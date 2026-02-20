@@ -133,18 +133,14 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     tierName,
   } = useSubscription();
 
-  // Get user email for test account check
   const { user } = useAuth();
   const userEmail = user?.email;
 
-  // Get all plans for dynamic required plan lookup
   const { plans } = useSubscriptionPlans();
 
-  // Check if user is a direct downline of the owner
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
 
-  // Check if user has a staff role that bypasses subscription
   const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
   const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
 

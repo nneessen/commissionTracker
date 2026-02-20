@@ -1,5 +1,4 @@
 // src/features/recruiting/RecruitingDashboard.tsx
-// Redesigned with zinc palette and compact design patterns
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -67,31 +66,20 @@ type RecruitWithRelations = UserProfile & {
 function RecruitingDashboardContent() {
   const { user } = useAuth();
 
-  // Detect staff role (trainer or contracting_manager)
   const isStaffRole =
     user?.roles?.some((role) =>
       STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
     ) ?? false;
 
-  const _isAdmin = user?.is_admin ?? false;
-
-  // Check if user has access to custom branding features
   const { hasAccess: hasCustomBranding } = useFeatureAccess("custom_branding");
 
-  // Build filters based on user role:
-  // - Staff roles (trainer/contracting_manager): See all IMO recruits
-  // - Everyone else (including is_admin): See recruits where they are recruiter OR upline
-  // Note: Super admins have a separate recruiting page in the admin section
   const recruitFilters: RecruitFilters | undefined = (() => {
     if (!user?.id) return undefined;
 
     if (isStaffRole && user.imo_id) {
-      // Staff roles (trainer, contracting_manager) see all recruits in their IMO
       return { imo_id: user.imo_id, exclude_prospects: true };
     }
 
-    // Everyone else sees recruits where they are the recruiter OR the assigned upline
-    // Note: Don't exclude prospects for personal view - recruiters need to see their newly created recruits
     return { my_recruits_user_id: user.id, exclude_prospects: false };
   })();
 
@@ -102,7 +90,6 @@ function RecruitingDashboardContent() {
     { enabled: !!user?.id },
   );
 
-  // Fetch pending invitations (invites sent but not yet registered)
   const { data: pendingInvitations = [] } = usePendingInvitations();
 
   const { data: pendingLeadsCount } = usePendingLeadsCount();
@@ -118,10 +105,8 @@ function RecruitingDashboardContent() {
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Read recruitId from URL search params (for deep linking from trainer dashboard)
   const { recruitId } = useSearch({ from: "/recruiting" });
 
-  // Fetch current user's recruiter_slug
   const { data: recruiterSlug } = useQuery({
     queryKey: ["recruiter-slug", user?.id],
     queryFn: async () => {
@@ -148,17 +133,13 @@ function RecruitingDashboardContent() {
     }
   };
 
-  // Filter out the current user (upline) from the recruits list
   const registeredRecruits = (
     (recruitsData?.data || []) as RecruitWithRelations[]
   ).filter((recruit) => recruit.id !== user?.id);
 
-  // Transform pending invitations (without recruit_id) into virtual recruit entries
-  // These are invites sent but the recruit hasn't completed registration yet
   const invitedRecruits = pendingInvitations
     .filter((inv) => !inv.recruit_id) // Only invitations without a user yet
     .map((inv) => ({
-      // Use invitation ID prefixed to avoid collision with real user IDs
       id: `invitation-${inv.id}`,
       email: inv.email,
       first_name: inv.first_name || null,
@@ -169,15 +150,12 @@ function RecruitingDashboardContent() {
       onboarding_status: "invited",
       created_at: inv.created_at,
       updated_at: inv.updated_at,
-      // Mark this as an invitation for special handling
       is_invitation: true,
       invitation_id: inv.id,
       invitation_status: inv.status,
       invitation_sent_at: inv.sent_at,
-      // Recruiter is the inviter
       recruiter_id: inv.inviter_id,
       upline_id: inv.upline_id || inv.inviter_id,
-      // Required UserProfile fields with defaults
       roles: ["recruit"],
       is_admin: false,
       imo_id: user?.imo_id || null,
@@ -248,10 +226,6 @@ function RecruitingDashboardContent() {
 
   const handleBulkEmail = () => {
     toast.success("Bulk email feature coming soon!");
-  };
-
-  const _handleCloseSheet = () => {
-    setDetailSheetOpen(false);
   };
 
   const handleRecruitDeleted = () => {
@@ -679,11 +653,7 @@ function FreeUplineRecruitingView() {
 }
 
 export function RecruitingDashboard() {
-  // Get user info to check roles
   const { user } = useAuth();
-
-  // Check if user is a staff role (trainer or contracting_manager)
-  // Staff roles bypass subscription gating and always see the enhanced recruiting dashboard
   const isStaffRole =
     user?.roles?.some((role) =>
       STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
