@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-20 12:29:43
+
+### Changed Files
+- `src/features/contracting/components/ContractRequestDetailDialog.tsx`
+- `src/features/contracting/components/ContractingDashboard.tsx`
+- `src/features/recruiting/admin/CarrierContractingConfig.tsx`
+- `src/features/recruiting/admin/ChecklistItemFormDialog.tsx`
+- `src/features/recruiting/admin/MetadataConfigSelector.tsx`
+- `src/features/recruiting/admin/SortableChecklistItem.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/interactive/CarrierContractingItem.tsx`
+- `src/features/recruiting/components/interactive/index.ts`
+- `src/services/recruiting/checklistResponseService.ts`
+- `src/types/checklist-metadata.types.ts`
+- `src/types/recruiting.types.ts`
+
+### Statistics
+```
+ 13 files changed, 656 insertions(+), 2 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-20 09:16:21
 
 ### Changed Files

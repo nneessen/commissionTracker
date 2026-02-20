@@ -16,6 +16,7 @@ import type {
   VideoEmbedResponse,
   VideoEmbedMetadata,
   SignatureResponse,
+  CarrierContractingResponse,
 } from "@/types/recruiting.types";
 import type { SubmissionStatus } from "@/types/signature.types";
 
@@ -32,7 +33,8 @@ export type ChecklistResponse =
   | ExternalLinkResponse
   | QuizResponse
   | VideoEmbedResponse
-  | SignatureResponse;
+  | SignatureResponse
+  | CarrierContractingResponse;
 
 export interface SubmitResponseResult {
   success: boolean;
@@ -716,6 +718,41 @@ export async function updateSignatureResponse(
 }
 
 // =============================================================================
+// Carrier Contracting Response Handler
+// =============================================================================
+
+/**
+ * Submit a carrier contracting completion response
+ */
+export async function submitCarrierContractingResponse(
+  progressId: string,
+  carriersCompleted: number,
+  carriersTotal: number,
+): Promise<SubmitResponseResult> {
+  const response: CarrierContractingResponse = {
+    carriers_completed: carriersCompleted,
+    carriers_total: carriersTotal,
+    completed_at: new Date().toISOString(),
+    completed: true,
+  };
+
+  const { error } = await supabase
+    .from("recruit_checklist_progress")
+    .update({
+      response_data: response,
+      status: "completed",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", progressId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, autoComplete: true };
+}
+
+// =============================================================================
 // Export Service Object
 // =============================================================================
 
@@ -732,6 +769,7 @@ export const checklistResponseService = {
   submitVideoWatchResponse,
   initializeSignatureResponse,
   updateSignatureResponse,
+  submitCarrierContractingResponse,
   getChecklistResponse,
   getPhaseResponses,
   validateTextResponse,

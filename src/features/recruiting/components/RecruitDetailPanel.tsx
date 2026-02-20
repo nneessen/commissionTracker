@@ -184,6 +184,7 @@ export function RecruitDetailPanel({
       carrierContractRequestService.updateContractRequest(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts', recruitIdForQueries] });
       toast.success('Contract request updated');
     },
     onError: (error) => {
@@ -200,6 +201,7 @@ export function RecruitDetailPanel({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts', recruitIdForQueries] });
       toast.success('Carrier contract added');
     },
     onError: (error) => {
@@ -212,6 +214,7 @@ export function RecruitDetailPanel({
     mutationFn: (id: string) => carrierContractRequestService.deleteContractRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts', recruitIdForQueries] });
       toast.success('Contract request deleted');
     },
     onError: (error) => {

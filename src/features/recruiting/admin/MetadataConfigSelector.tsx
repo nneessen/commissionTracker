@@ -11,6 +11,7 @@ import type {
   FileDownloadMetadata,
   ExternalLinkMetadata,
   QuizMetadata,
+  CarrierContractingMetadata,
 } from "@/types/recruiting.types";
 import type { SignatureRequiredMetadata } from "@/types/signature.types";
 import { SchedulingItemConfig } from "./SchedulingItemConfig";
@@ -23,6 +24,7 @@ import { FileDownloadConfig } from "./FileDownloadConfig";
 import { ExternalLinkConfig } from "./ExternalLinkConfig";
 import { QuizConfig } from "./QuizConfig";
 import { SignatureRequiredConfig } from "./SignatureRequiredConfig";
+import { CarrierContractingConfig } from "./CarrierContractingConfig";
 
 interface MetadataConfigSelectorProps {
   itemType: ChecklistItemType;
@@ -52,6 +54,9 @@ interface MetadataConfigSelectorProps {
   signatureRequiredMetadata:
     | (SignatureRequiredMetadata & { _type: "signature_required" })
     | null;
+  carrierContractingMetadata:
+    | (CarrierContractingMetadata & { _type: "carrier_contracting" })
+    | null;
   onSchedulingChange: (
     metadata: SchedulingChecklistMetadata & { _type: "scheduling_booking" },
   ) => void;
@@ -80,6 +85,9 @@ interface MetadataConfigSelectorProps {
   onSignatureRequiredChange: (
     metadata: SignatureRequiredMetadata & { _type: "signature_required" },
   ) => void;
+  onCarrierContractingChange: (
+    metadata: CarrierContractingMetadata & { _type: "carrier_contracting" },
+  ) => void;
 }
 
 /**
@@ -98,6 +106,7 @@ export function MetadataConfigSelector({
   externalLinkMetadata,
   quizMetadata,
   signatureRequiredMetadata,
+  carrierContractingMetadata,
   onSchedulingChange,
   onVideoChange,
   onBooleanQuestionChange,
@@ -108,6 +117,7 @@ export function MetadataConfigSelector({
   onExternalLinkChange,
   onQuizChange,
   onSignatureRequiredChange,
+  onCarrierContractingChange,
 }: MetadataConfigSelectorProps) {
   switch (itemType) {
     case "scheduling_booking":
@@ -170,6 +180,13 @@ export function MetadataConfigSelector({
         <SignatureRequiredConfig
           metadata={signatureRequiredMetadata}
           onChange={onSignatureRequiredChange}
+        />
+      );
+    case "carrier_contracting":
+      return (
+        <CarrierContractingConfig
+          metadata={carrierContractingMetadata}
+          onChange={onCarrierContractingChange}
         />
       );
     default:

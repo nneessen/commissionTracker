@@ -39,6 +39,7 @@ export function ContractRequestDetailDialog({
     onSuccess: () => {
       toast.success('Contract request updated');
       queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts'] });
       onOpenChange(false);
     },
     onError: () => {

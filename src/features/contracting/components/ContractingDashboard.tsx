@@ -131,6 +131,7 @@ export function ContractingDashboard() {
     onSuccess: () => {
       toast.success('Updated');
       queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts'] });
     },
   });
 
@@ -142,6 +143,7 @@ export function ContractingDashboard() {
       toast.success(`Updated ${selectedIds.size} contracts`);
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts'] });
     },
     onError: () => {
       toast.error('Bulk update failed');
@@ -156,6 +158,7 @@ export function ContractingDashboard() {
       toast.success(`Deleted ${selectedIds.size} contracts`);
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
+      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts'] });
     },
     onError: () => {
       toast.error('Bulk delete failed');

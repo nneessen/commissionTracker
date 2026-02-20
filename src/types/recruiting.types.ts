@@ -249,7 +249,8 @@ export type ChecklistItemType =
   | "multiple_choice"
   | "file_download"
   | "external_link"
-  | "quiz";
+  | "quiz"
+  | "carrier_contracting";
 export type CompletedBy = "recruit" | "upline" | "system";
 export type RequiredApproverRole = "upline" | "admin" | "system";
 
@@ -509,6 +510,7 @@ export const CHECKLIST_ITEM_TYPE_DISPLAY_NAMES: Record<
   file_download: "File Download",
   external_link: "External Link",
   quiz: "Quiz",
+  carrier_contracting: "Carrier Contracting",
 };
 
 // Status icons
@@ -956,6 +958,21 @@ export const QUIZ_QUESTION_TYPE_LABELS: Record<QuizQuestionType, string> = {
 };
 
 // =============================================================================
+// Carrier Contracting Types
+// =============================================================================
+
+/**
+ * Carrier Contracting Metadata
+ * For dynamically displaying carrier contract requests from the contracting tab
+ */
+export interface CarrierContractingMetadata {
+  allow_recruit_edit_writing_number: boolean;
+  completion_criteria: "all" | "count";
+  required_count?: number;
+  general_instructions?: string;
+}
+
+// =============================================================================
 // Response Data Types - Stored in recruit_checklist_progress.response_data
 // =============================================================================
 
@@ -1037,6 +1054,13 @@ export interface SignatureResponse {
   signers_total: number;
 }
 
+export interface CarrierContractingResponse {
+  carriers_completed: number;
+  carriers_total: number;
+  completed_at: string;
+  completed: boolean;
+}
+
 // =============================================================================
 // Completion Details - Stored in recruit_checklist_progress.completion_details
 // =============================================================================
@@ -1073,6 +1097,7 @@ export const CHECKLIST_ITEM_TYPE_LABELS: Record<ChecklistItemType, string> = {
   file_download: "File Download",
   external_link: "External Link",
   quiz: "Quiz",
+  carrier_contracting: "Carrier Contracting",
 };
 
 export const CHECKLIST_ITEM_TYPE_DESCRIPTIONS: Record<
@@ -1094,6 +1119,7 @@ export const CHECKLIST_ITEM_TYPE_DESCRIPTIONS: Record<
   file_download: "Download and review a file",
   external_link: "Complete an action at an external site",
   quiz: "Complete a knowledge quiz",
+  carrier_contracting: "Track carrier contracting and writing numbers",
 };
 
 /**
@@ -1110,6 +1136,7 @@ export const CHECKLIST_TYPES_REQUIRING_METADATA: ChecklistItemType[] = [
   "external_link",
   "quiz",
   "signature_required",
+  "carrier_contracting",
 ];
 
 /**
@@ -1125,6 +1152,7 @@ export const INTERACTIVE_CHECKLIST_TYPES: ChecklistItemType[] = [
   "external_link",
   "quiz",
   "signature_required",
+  "carrier_contracting",
 ];
 
 // =============================================================================

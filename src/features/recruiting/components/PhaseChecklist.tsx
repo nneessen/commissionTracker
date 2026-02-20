@@ -46,6 +46,7 @@ import type {
   FileDownloadMetadata,
   ExternalLinkMetadata,
   QuizMetadata,
+  CarrierContractingMetadata,
   VideoEmbedResponse,
   BooleanQuestionResponse,
   AcknowledgmentResponse,
@@ -55,6 +56,7 @@ import type {
   ExternalLinkResponse,
   QuizResponse,
   SignatureResponse,
+  CarrierContractingResponse,
 } from "@/types/recruiting.types";
 import type { SignatureRequiredMetadata } from "@/types/signature.types";
 import {
@@ -67,6 +69,7 @@ import {
   QuizItem,
   VideoEmbedItem,
   SignatureRequiredItem,
+  CarrierContractingItem,
 } from "./interactive";
 import {
   useActiveSchedulingIntegrations,
@@ -104,6 +107,7 @@ const INTERACTIVE_ITEM_TYPES = new Set([
   "external_link",
   "quiz",
   "signature_required",
+  "carrier_contracting",
 ]);
 
 export function PhaseChecklist({
@@ -705,6 +709,30 @@ export function PhaseChecklist({
             recruitEmail={recruitEmail || ""}
             recruitName={recruitName || ""}
             onComplete={() => handleMarkInProgress(item.id)}
+          />
+        );
+      }
+      case "carrier_contracting": {
+        const contractingMetadata =
+          item.metadata as CarrierContractingMetadata | null;
+        if (!contractingMetadata) {
+          return (
+            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <span>Carrier contracting item not configured</span>
+            </div>
+          );
+        }
+        return (
+          <CarrierContractingItem
+            progressId={progress.id}
+            metadata={contractingMetadata}
+            existingResponse={
+              responseData as CarrierContractingResponse | null
+            }
+            recruitId={userId}
+            isUpline={isUpline}
+            onComplete={onComplete}
           />
         );
       }

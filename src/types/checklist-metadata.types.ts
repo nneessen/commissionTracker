@@ -10,6 +10,7 @@ import type {
   FileDownloadMetadata,
   ExternalLinkMetadata,
   QuizMetadata,
+  CarrierContractingMetadata,
 } from "./recruiting.types";
 import type { SignatureRequiredMetadata } from "./signature.types";
 
@@ -32,6 +33,7 @@ export type ChecklistMetadata =
   | (ExternalLinkMetadata & { _type: "external_link" })
   | (QuizMetadata & { _type: "quiz" })
   | (SignatureRequiredMetadata & { _type: "signature_required" })
+  | (CarrierContractingMetadata & { _type: "carrier_contracting" })
   | null;
 
 /**
@@ -170,6 +172,19 @@ export function isSignatureRequiredMetadata(
   );
 }
 
+/**
+ * Type guard for carrier contracting metadata
+ */
+export function isCarrierContractingMetadata(
+  metadata: ChecklistMetadata,
+): metadata is CarrierContractingMetadata & { _type: "carrier_contracting" } {
+  return (
+    metadata !== null &&
+    "_type" in metadata &&
+    metadata._type === "carrier_contracting"
+  );
+}
+
 // =============================================================================
 // Factory Functions
 // =============================================================================
@@ -264,6 +279,15 @@ export function createSignatureRequiredMetadata(
   return { ...data, _type: "signature_required" };
 }
 
+/**
+ * Factory function to create type-safe carrier contracting metadata
+ */
+export function createCarrierContractingMetadata(
+  data: CarrierContractingMetadata,
+): CarrierContractingMetadata & { _type: "carrier_contracting" } {
+  return { ...data, _type: "carrier_contracting" };
+}
+
 // =============================================================================
 // Utility Functions
 // =============================================================================
@@ -308,6 +332,7 @@ export const METADATA_TYPE_GUARDS: Record<
   external_link: isExternalLinkMetadata,
   quiz: isQuizMetadata,
   signature_required: isSignatureRequiredMetadata,
+  carrier_contracting: isCarrierContractingMetadata,
 };
 
 /**

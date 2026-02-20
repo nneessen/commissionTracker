@@ -28,6 +28,7 @@ import {
   Download,
   ExternalLink,
   ClipboardCheck,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -52,6 +53,7 @@ const ITEM_TYPE_ICONS: Record<ChecklistItemType, LucideIcon> = {
   file_download: Download,
   external_link: ExternalLink,
   quiz: ClipboardCheck,
+  carrier_contracting: Building2,
 };
 
 const VALID_ITEM_TYPES = new Set<string>(Object.keys(ITEM_TYPE_ICONS));
