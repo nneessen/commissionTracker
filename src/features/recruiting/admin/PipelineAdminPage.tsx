@@ -102,12 +102,14 @@ export function PipelineAdminPage() {
             onClose={() => setSelectedTemplateId(null)}
             isAdmin={isAdmin ?? false}
             currentUserId={user?.id}
+            isStaffRole={isStaffRole}
           />
         ) : (
           <PipelineTemplatesList
             onSelectTemplate={(id) => setSelectedTemplateId(id)}
             isAdmin={isAdmin ?? false}
             currentUserId={user?.id}
+            isStaffRole={isStaffRole}
           />
         )}
       </div>

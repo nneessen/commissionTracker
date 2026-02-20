@@ -318,7 +318,6 @@ export function ContractingDashboard() {
                   </TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[180px]">Recruit</TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[140px]">Carrier</TableHead>
-                  <TableHead className="h-8 text-[10px] font-semibold w-[60px] text-center">Order</TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[90px]">Status</TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[110px]">Writing #</TableHead>
                   <TableHead className="h-8 text-[10px] font-semibold w-[90px]">Requested</TableHead>
@@ -363,11 +362,6 @@ export function ContractingDashboard() {
                     </TableCell>
                     <TableCell className="py-1.5 text-[11px]">
                       {request.carrier?.name || 'Unknown'}
-                    </TableCell>
-                    <TableCell className="py-1.5 text-center">
-                      <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-medium">
-                        {request.request_order}
-                      </div>
                     </TableCell>
                     <TableCell className="py-1.5">
                       <InlineEditableCell

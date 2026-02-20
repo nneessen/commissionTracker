@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-20 13:58:15
+
+### Changed Files
+- `.serena/project.yml`
+- `src/features/contracting/components/BulkActionToolbar.tsx`
+- `src/features/contracting/components/ContractingDashboard.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/components/RecruitListTable.tsx`
+- `src/features/recruiting/hooks/useRecruitsChecklistSummary.ts`
+- `src/features/recruiting/index.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260220135021_add_recruits_checklist_summary_rpc.sql`
+- `supabase/migrations/20260220135022_allow_staff_delete_recruits.sql`
+
+### Statistics
+```
+ 12 files changed, 457 insertions(+), 75 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-20 12:29:43
 
 ### Changed Files

@@ -19,6 +19,8 @@ interface PipelineTemplateEditorProps {
   isAdmin: boolean;
   /** Current user's ID (for ownership checks) */
   currentUserId?: string;
+  /** Whether the current user has a staff role (trainer/contracting_manager) */
+  isStaffRole: boolean;
 }
 
 export function PipelineTemplateEditor({
@@ -26,13 +28,17 @@ export function PipelineTemplateEditor({
   onClose,
   isAdmin,
   currentUserId,
+  isStaffRole,
 }: PipelineTemplateEditorProps) {
   const { data: template, isLoading } = useTemplate(templateId);
   const updateTemplate = useUpdateTemplate();
 
-  // Check if user can modify this template (admin or owner)
+  // Check if user can modify this template (admin, owner, or staff on DEFAULT templates)
+  const isDefaultTemplate = template?.name?.toUpperCase().includes("DEFAULT");
   const canModify =
-    isAdmin || (currentUserId && template?.created_by === currentUserId);
+    isAdmin ||
+    (currentUserId && template?.created_by === currentUserId) ||
+    (isStaffRole && isDefaultTemplate);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -113,8 +119,8 @@ export function PipelineTemplateEditor({
         <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800">
           <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
           <span className="text-[11px] text-amber-700 dark:text-amber-300">
-            You can only view this template. Only the creator or an admin can
-            make changes.
+            You can only view this template. Only the creator, an admin, or
+            staff with access to DEFAULT templates can make changes.
           </span>
         </div>
       )}

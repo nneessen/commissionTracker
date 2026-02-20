@@ -21,12 +21,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
-import { useActiveTemplate, usePhases } from "@/features/recruiting";
-import { ChevronLeft, ChevronRight, Users } from "lucide-react";
+import {
+  useActiveTemplate,
+  usePhases,
+  useRecruitsChecklistSummary,
+} from "@/features/recruiting";
+import { ArrowRight, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
-import { buildStatusOptions } from "@/lib/pipeline";
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
@@ -66,7 +75,6 @@ export function RecruitListTable({
   onSelectRecruit,
 }: RecruitListTableProps) {
   // Filter states
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
   const [recruiterFilter, setRecruiterFilter] = useState<string>("all");
 
@@ -77,9 +85,6 @@ export function RecruitListTable({
   // Fetch phases from active pipeline template (dynamic, not hardcoded)
   const { data: activeTemplate } = useActiveTemplate();
   const { data: phases = [] } = usePhases(activeTemplate?.id);
-
-  // Build dynamic status options from pipeline phases
-  const statusOptions = useMemo(() => buildStatusOptions(phases), [phases]);
 
   // Extract unique recruiters for filter dropdown
   const recruiters = useMemo(() => {
@@ -104,8 +109,6 @@ export function RecruitListTable({
   const filteredRecruits = useMemo(() => {
     return recruits.filter((r) => {
       const recruit = r as RecruitWithRelations;
-      if (statusFilter !== "all" && recruit.onboarding_status !== statusFilter)
-        return false;
       if (
         phaseFilter !== "all" &&
         recruit.current_onboarding_phase !== phaseFilter
@@ -118,7 +121,7 @@ export function RecruitListTable({
         return false;
       return true;
     });
-  }, [recruits, statusFilter, phaseFilter, recruiterFilter]);
+  }, [recruits, phaseFilter, recruiterFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredRecruits.length / pageSize);
@@ -127,10 +130,18 @@ export function RecruitListTable({
     return filteredRecruits.slice(start, start + pageSize);
   }, [filteredRecruits, currentPage, pageSize]);
 
+  // Fetch checklist progress for visible recruits
+  const paginatedRecruitIds = useMemo(
+    () => paginatedRecruits.map((r) => r.id),
+    [paginatedRecruits],
+  );
+  const { data: checklistSummary } =
+    useRecruitsChecklistSummary(paginatedRecruitIds);
+
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, phaseFilter, recruiterFilter, pageSize]);
+  }, [phaseFilter, recruiterFilter, pageSize]);
 
   if (isLoading) {
     return (
@@ -165,22 +176,6 @@ export function RecruitListTable({
     <div className="h-full flex flex-col">
       {/* Compact Filter Row */}
       <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-[11px]">
-              All Status
-            </SelectItem>
-            {statusOptions.map(({ value, label }) => (
-              <SelectItem key={value} value={value} className="text-[11px]">
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <Select value={phaseFilter} onValueChange={setPhaseFilter}>
           <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
             <SelectValue placeholder="Phase" />
@@ -256,11 +251,8 @@ export function RecruitListTable({
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                 Email
               </TableHead>
-              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                Status
-              </TableHead>
-              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
-                Phase
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 w-[160px]">
+                Progress
               </TableHead>
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                 Recruiter
@@ -276,7 +268,7 @@ export function RecruitListTable({
           <TableBody>
             {paginatedRecruits.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <div className="flex flex-col items-center">
                     <Users className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -337,21 +329,65 @@ export function RecruitListTable({
                       {recruit.email || "—"}
                     </TableCell>
                     <TableCell className="py-1.5">
-                      <Badge
-                        variant="secondary"
-                        className={`text-[9px] px-1.5 py-0 h-4 ${
-                          recruit.onboarding_status
-                            ? TERMINAL_STATUS_COLORS[
-                                recruit.onboarding_status
-                              ] || "bg-blue-100 text-blue-800"
-                            : ""
-                        }`}
-                      >
-                        {recruit.onboarding_status?.replace(/_/g, " ") || "New"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[11px] text-zinc-600 dark:text-zinc-400 py-1.5">
-                      {recruit.current_onboarding_phase || "—"}
+                      {recruit.onboarding_status === "completed" ||
+                      recruit.onboarding_status === "dropped" ||
+                      recruit.onboarding_status === "withdrawn" ? (
+                        <Badge
+                          variant="secondary"
+                          className={`text-[9px] px-1.5 py-0 h-4 ${
+                            TERMINAL_STATUS_COLORS[
+                              recruit.onboarding_status
+                            ] || ""
+                          }`}
+                        >
+                          {recruit.onboarding_status.replace(/_/g, " ")}
+                        </Badge>
+                      ) : (() => {
+                        const summary = checklistSummary?.get(recruit.id);
+                        const phaseName =
+                          recruit.current_onboarding_phase || "Not started";
+                        const pct =
+                          summary && summary.totalItems > 0
+                            ? Math.round(
+                                (summary.completedItems / summary.totalItems) *
+                                  100,
+                              )
+                            : 0;
+                        return (
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate block">
+                                {phaseName}
+                              </span>
+                              {summary && summary.totalItems > 0 && (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <div className="flex-1 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-blue-500 rounded-full transition-all"
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[9px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                                    {summary.completedItems}/{summary.totalItems}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            {summary?.isLastItem && (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <ArrowRight className="h-3 w-3 text-amber-500 shrink-0" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-[10px]">
+                                    About to advance to next phase
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5">
                       {recruitWithRelations.recruiter?.first_name

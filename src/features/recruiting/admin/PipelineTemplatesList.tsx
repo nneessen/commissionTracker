@@ -38,12 +38,15 @@ interface PipelineTemplatesListProps {
   isAdmin: boolean;
   /** Current user's ID (for ownership checks) */
   currentUserId?: string;
+  /** Whether the current user has a staff role (trainer/contracting_manager) */
+  isStaffRole: boolean;
 }
 
 export function PipelineTemplatesList({
   onSelectTemplate,
   isAdmin,
   currentUserId,
+  isStaffRole,
 }: PipelineTemplatesListProps) {
   const { data: templates, isLoading } = useTemplates();
   const createTemplate = useCreateTemplate();
@@ -63,11 +66,16 @@ export function PipelineTemplatesList({
     is_active: true,
   });
 
-  // Helper: Check if user can modify a template (admin or owner)
-  const canModifyTemplate = (templateCreatedBy: string | undefined | null) => {
+  // Helper: Check if user can modify a template (admin, owner, or staff on DEFAULT templates)
+  const canModifyTemplate = (
+    templateCreatedBy: string | undefined | null,
+    templateName?: string,
+  ) => {
     if (isAdmin) return true;
-    if (!currentUserId || !templateCreatedBy) return false;
-    return templateCreatedBy === currentUserId;
+    if (currentUserId && templateCreatedBy === currentUserId) return true;
+    if (isStaffRole && templateName?.toUpperCase().includes("DEFAULT"))
+      return true;
+    return false;
   };
 
   const handleCreate = async () => {
@@ -239,15 +247,17 @@ export function PipelineTemplatesList({
                       size="sm"
                       className="h-6 w-6 p-0"
                       onClick={() => onSelectTemplate(template.id)}
-                      disabled={!canModifyTemplate(template.created_by)}
+                      disabled={
+                        !canModifyTemplate(template.created_by, template.name)
+                      }
                       title={
-                        !canModifyTemplate(template.created_by)
+                        !canModifyTemplate(template.created_by, template.name)
                           ? "You can only edit your own templates"
                           : undefined
                       }
                     >
                       <Edit2
-                        className={`h-3 w-3 ${canModifyTemplate(template.created_by) ? "text-zinc-600 dark:text-zinc-400" : "text-zinc-300 dark:text-zinc-600"}`}
+                        className={`h-3 w-3 ${canModifyTemplate(template.created_by, template.name) ? "text-zinc-600 dark:text-zinc-400" : "text-zinc-300 dark:text-zinc-600"}`}
                       />
                     </Button>
                     <Button
@@ -268,16 +278,16 @@ export function PipelineTemplatesList({
                       onClick={() => setDeleteConfirmId(template.id)}
                       disabled={
                         template.is_default ||
-                        !canModifyTemplate(template.created_by)
+                        !canModifyTemplate(template.created_by, template.name)
                       }
                       title={
-                        !canModifyTemplate(template.created_by)
+                        !canModifyTemplate(template.created_by, template.name)
                           ? "You can only delete your own templates"
                           : undefined
                       }
                     >
                       <Trash2
-                        className={`h-3 w-3 ${canModifyTemplate(template.created_by) ? "" : "opacity-30"}`}
+                        className={`h-3 w-3 ${canModifyTemplate(template.created_by, template.name) ? "" : "opacity-30"}`}
                       />
                     </Button>
                   </div>

@@ -13,6 +13,8 @@ export {
   useSubmitRegistrationWithPassword,
   useCancelInvitation,
 } from "./hooks/useRecruitInvitations";
+export { useRecruitsChecklistSummary } from "./hooks/useRecruitsChecklistSummary";
+export type { ChecklistSummary } from "./hooks/useRecruitsChecklistSummary";
 export { AutomationDialog } from "./admin/AutomationDialog";
 
 // Components

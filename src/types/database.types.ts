@@ -16321,6 +16321,16 @@ export type Database = {
         Args: { p_recruiter_id?: string }
         Returns: Json
       }
+      get_recruits_checklist_summary: {
+        Args: { recruit_ids: string[] }
+        Returns: {
+          completed_items: number
+          current_phase_id: string
+          is_last_item: boolean
+          total_items: number
+          user_id: string
+        }[]
+      }
       get_role_permissions_with_inheritance: {
         Args: { p_role_id: string }
         Returns: {
@@ -17024,6 +17034,7 @@ export type Database = {
         Args: { p_keep_vendor_id: string; p_merge_vendor_ids: string[] }
         Returns: Json
       }
+      nextval: { Args: { sequence_name: string }; Returns: number }
       normalize_email_subject: { Args: { subject: string }; Returns: string }
       notify_user: {
         Args: {
