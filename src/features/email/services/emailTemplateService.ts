@@ -6,6 +6,7 @@ import type {
   EmailBlock,
 } from "@/types/email.types";
 import { blocksToHtml } from "../components/block-builder";
+import { convertHtmlToText } from "./htmlToTextService";
 
 export interface EmailTemplateFilters {
   category?: string;
@@ -70,10 +71,12 @@ export async function createEmailTemplate(
   template: CreateEmailTemplateRequest,
   userId: string,
 ): Promise<EmailTemplate> {
-  // If block template, generate HTML from blocks
+  // If block template, generate HTML and plain text from blocks
   let bodyHtml = template.body_html;
+  let bodyText = template.body_text || null;
   if (template.is_block_template && template.blocks) {
     bodyHtml = blocksToHtml(template.blocks);
+    bodyText = convertHtmlToText(bodyHtml);
   }
 
   const { data, error } = await supabase
@@ -82,7 +85,7 @@ export async function createEmailTemplate(
       name: template.name,
       subject: template.subject,
       body_html: bodyHtml,
-      body_text: template.body_text || null,
+      body_text: bodyText,
       variables: template.variables || [],
       category: template.category || "general",
       is_global: template.is_global ?? false,
@@ -101,10 +104,27 @@ export async function updateEmailTemplate(
   id: string,
   updates: Partial<CreateEmailTemplateRequest>,
 ): Promise<EmailTemplate> {
-  // If updating blocks, regenerate HTML
-  const updateData: Record<string, unknown> = { ...updates };
+  // Build explicit update payload — only include defined fields
+  const updateData: Record<string, unknown> = {};
+
+  if (updates.name !== undefined) updateData.name = updates.name;
+  if (updates.subject !== undefined) updateData.subject = updates.subject;
+  if (updates.category !== undefined) updateData.category = updates.category;
+  if (updates.is_global !== undefined) updateData.is_global = updates.is_global;
+  if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+  if (updates.variables !== undefined) updateData.variables = updates.variables;
+  if (updates.is_block_template !== undefined)
+    updateData.is_block_template = updates.is_block_template;
+
+  // If updating blocks, regenerate HTML and plain text
   if (updates.blocks) {
-    updateData.body_html = blocksToHtml(updates.blocks as EmailBlock[]);
+    updateData.blocks = updates.blocks;
+    const html = blocksToHtml(updates.blocks as EmailBlock[]);
+    updateData.body_html = html;
+    updateData.body_text = convertHtmlToText(html);
+  } else {
+    if (updates.body_html !== undefined) updateData.body_html = updates.body_html;
+    if (updates.body_text !== undefined) updateData.body_text = updates.body_text;
   }
 
   const { data, error } = await supabase

@@ -21,8 +21,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, X, Mail, Bell, MessageSquare } from "lucide-react";
+import { Loader2, X, Mail, Bell, MessageSquare, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { TemplatePicker } from "@/features/email/components/TemplatePicker";
+import { getEmailTemplate } from "@/features/email/services/emailTemplateService";
+import type { EmailTemplate } from "@/types/email.types";
 import {
   useCreateAutomation,
   useUpdateAutomation,
@@ -459,6 +462,10 @@ export function AutomationDialog({
   const [senderType, setSenderType] = useState<AutomationSenderType>("system");
   const [senderEmail, setSenderEmail] = useState<string>("");
   const [senderName, setSenderName] = useState<string>("");
+  const [emailMode, setEmailMode] = useState<"custom" | "template">("custom");
+  const [emailTemplateId, setEmailTemplateId] = useState<string | null>(null);
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string>("");
+  const [selectedTemplateSubject, setSelectedTemplateSubject] = useState<string>("");
 
   // Determine which content sections to show
   const showEmail = ["email", "both", "all"].includes(communicationType);
@@ -483,6 +490,17 @@ export function AutomationDialog({
         setSenderType(editingAutomation.sender_type || "system");
         setSenderEmail(editingAutomation.sender_email || "");
         setSenderName(editingAutomation.sender_name || "");
+
+        // Set email mode based on whether a template is linked
+        if (editingAutomation.email_template_id) {
+          setEmailMode("template");
+          setEmailTemplateId(editingAutomation.email_template_id);
+        } else {
+          setEmailMode("custom");
+          setEmailTemplateId(null);
+          setSelectedTemplateName("");
+          setSelectedTemplateSubject("");
+        }
 
         const customRecipient = editingAutomation.recipients.find(
           (r) => r.type === "custom_email",
@@ -517,6 +535,10 @@ export function AutomationDialog({
         setSenderType("system");
         setSenderEmail("");
         setSenderName("");
+        setEmailMode("custom");
+        setEmailTemplateId(null);
+        setSelectedTemplateName("");
+        setSelectedTemplateSubject("");
       }
     }
   }, [open, editingAutomation, triggers]);
@@ -536,6 +558,22 @@ export function AutomationDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only trigger on communicationType change
   }, [communicationType]);
+
+  // Fetch template details when editing an automation with a template ID
+  useEffect(() => {
+    if (emailMode === "template" && emailTemplateId && !selectedTemplateName) {
+      getEmailTemplate(emailTemplateId)
+        .then((template) => {
+          setSelectedTemplateName(template.name);
+          setSelectedTemplateSubject(template.subject || "");
+        })
+        .catch(() => {
+          // Template may have been deleted
+          setSelectedTemplateName("(Template not found)");
+          setSelectedTemplateSubject("");
+        });
+    }
+  }, [emailMode, emailTemplateId, selectedTemplateName]);
 
   const handleRecipientToggle = (type: AutomationRecipientType) => {
     const exists = recipients.some((r) => r.type === type);
@@ -665,8 +703,12 @@ export function AutomationDialog({
     }
 
     // Validate required content based on communication type
-    if (showEmail && !emailSubject.trim()) {
+    if (showEmail && emailMode === "custom" && !emailSubject.trim()) {
       toast.error("Email subject is required");
+      return;
+    }
+    if (showEmail && emailMode === "template" && !emailTemplateId) {
+      toast.error("Please select an email template");
       return;
     }
 
@@ -708,6 +750,14 @@ export function AutomationDialog({
       return r;
     });
 
+    // Determine email fields based on mode
+    const isTemplateMode = showEmail && emailMode === "template";
+    const emailFields = {
+      email_template_id: isTemplateMode ? emailTemplateId || undefined : undefined,
+      email_subject: showEmail && !isTemplateMode ? emailSubject || undefined : undefined,
+      email_body_html: showEmail && !isTemplateMode ? emailBody || undefined : undefined,
+    };
+
     try {
       if (isEditing && editingAutomation) {
         await updateAutomation.mutateAsync({
@@ -717,8 +767,7 @@ export function AutomationDialog({
             communication_type: communicationType,
             delay_days: needsDelayDays ? delayDays : undefined,
             recipients: finalRecipients,
-            email_subject: showEmail ? emailSubject || undefined : undefined,
-            email_body_html: showEmail ? emailBody || undefined : undefined,
+            ...emailFields,
             notification_title: showNotification
               ? notificationTitle || undefined
               : undefined,
@@ -739,13 +788,12 @@ export function AutomationDialog({
         const data: CreateAutomationInput = {
           phase_id: phaseId,
           checklist_item_id: checklistItemId,
-          imo_id: imoId, // Required for system automations for tenant isolation
+          imo_id: imoId,
           trigger_type: triggerType,
           communication_type: communicationType,
           delay_days: needsDelayDays ? delayDays : undefined,
           recipients: finalRecipients,
-          email_subject: showEmail ? emailSubject || undefined : undefined,
-          email_body_html: showEmail ? emailBody || undefined : undefined,
+          ...emailFields,
           notification_title: showNotification
             ? notificationTitle || undefined
             : undefined,
@@ -1052,32 +1100,105 @@ export function AutomationDialog({
                   {/* Email Tab */}
                   {showEmail && (
                     <TabsContent value="email" className="mt-3 space-y-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-foreground">
-                          Subject
-                        </Label>
-                        <Input
-                          ref={emailSubjectRef}
-                          value={emailSubject}
-                          onChange={(e) => setEmailSubject(e.target.value)}
-                          onFocus={() => setLastFocusedField("emailSubject")}
-                          placeholder="e.g., Welcome to {{phase_name}}!"
-                          className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
-                        />
+                      {/* Custom / Template Toggle */}
+                      <div className="flex items-center gap-1 p-0.5 bg-muted/50 border border-border rounded-md w-fit">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEmailMode("custom");
+                            setEmailTemplateId(null);
+                            setSelectedTemplateName("");
+                            setSelectedTemplateSubject("");
+                          }}
+                          className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                            emailMode === "custom"
+                              ? "bg-foreground text-background shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Custom
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEmailMode("template");
+                            setEmailSubject("");
+                            setEmailBody("");
+                          }}
+                          className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                            emailMode === "template"
+                              ? "bg-foreground text-background shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Use Template
+                        </button>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-foreground">
-                          Body (HTML supported)
-                        </Label>
-                        <Textarea
-                          ref={emailBodyRef}
-                          value={emailBody}
-                          onChange={(e) => setEmailBody(e.target.value)}
-                          onFocus={() => setLastFocusedField("emailBody")}
-                          placeholder="<p>Hello {{recruit_first_name}},</p><p>Welcome! 🎉</p>"
-                          className="text-sm min-h-[320px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
-                        />
-                      </div>
+
+                      {emailMode === "custom" ? (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-foreground">
+                              Subject
+                            </Label>
+                            <Input
+                              ref={emailSubjectRef}
+                              value={emailSubject}
+                              onChange={(e) => setEmailSubject(e.target.value)}
+                              onFocus={() => setLastFocusedField("emailSubject")}
+                              placeholder="e.g., Welcome to {{phase_name}}!"
+                              className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-foreground">
+                              Body (HTML supported)
+                            </Label>
+                            <Textarea
+                              ref={emailBodyRef}
+                              value={emailBody}
+                              onChange={(e) => setEmailBody(e.target.value)}
+                              onFocus={() => setLastFocusedField("emailBody")}
+                              placeholder="<p>Hello {{recruit_first_name}},</p><p>Welcome! 🎉</p>"
+                              className="text-sm min-h-[320px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-foreground">
+                              Select Template
+                            </Label>
+                            <TemplatePicker
+                              selectedTemplateId={emailTemplateId || undefined}
+                              onSelect={(template: EmailTemplate) => {
+                                setEmailTemplateId(template.id);
+                                setSelectedTemplateName(template.name);
+                                setSelectedTemplateSubject(template.subject || "");
+                              }}
+                            />
+                          </div>
+                          {emailTemplateId && (
+                            <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-xs font-medium text-foreground">
+                                  {selectedTemplateName}
+                                </span>
+                              </div>
+                              {selectedTemplateSubject && (
+                                <p className="text-xs text-muted-foreground">
+                                  Subject: {selectedTemplateSubject}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground italic">
+                                Template variables will be substituted at send time
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </TabsContent>
                   )}
 

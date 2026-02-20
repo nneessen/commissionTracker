@@ -130,6 +130,9 @@ export const pipelineAutomationService = {
       notificationTitle: data.notification_title,
       notificationMessage: data.notification_message,
       smsMessage: data.sms_message,
+      senderType: data.sender_type,
+      senderEmail: data.sender_email,
+      senderName: data.sender_name,
     };
     const entity = await automationRepository.create(createData);
     return mapEntityToType(entity);
@@ -153,6 +156,9 @@ export const pipelineAutomationService = {
       notificationTitle: updates.notification_title,
       notificationMessage: updates.notification_message,
       smsMessage: updates.sms_message,
+      senderType: updates.sender_type,
+      senderEmail: updates.sender_email,
+      senderName: updates.sender_name,
       isActive: updates.is_active,
     };
     const entity = await automationRepository.update(id, updateData);
@@ -299,21 +305,45 @@ export const pipelineAutomationService = {
 
       // Send Email
       if (shouldSendEmail) {
-        if (recipients.emails.length > 0 && automation.emailSubject) {
-          const emailBody = this.substituteVariables(
-            automation.emailBodyHtml || "",
-            context,
-          );
-          const emailSubject = this.substituteVariables(
-            automation.emailSubject,
-            context,
-          );
+        // Resolve email content: template takes priority over inline
+        let emailSubject = automation.emailSubject || "";
+        let emailBody = automation.emailBodyHtml || "";
+
+        if (automation.emailTemplateId) {
+          try {
+            const { data: template } = await supabase
+              .from("email_templates")
+              .select("subject, body_html, is_active")
+              .eq("id", automation.emailTemplateId)
+              .single();
+
+            if (template && template.is_active) {
+              emailSubject = template.subject || emailSubject;
+              emailBody = template.body_html || emailBody;
+            } else if (template && !template.is_active) {
+              console.warn(
+                `[pipelineAutomation] Email template ${automation.emailTemplateId} is inactive, falling back to inline content`,
+              );
+            }
+          } catch {
+            console.warn(
+              `[pipelineAutomation] Email template ${automation.emailTemplateId} not found, falling back to inline content`,
+            );
+          }
+        }
+
+        if (recipients.emails.length > 0 && emailSubject) {
+          const resolvedBody = this.substituteVariables(emailBody, context);
+          const resolvedSubject = this.substituteVariables(emailSubject, context);
+
+          // Resolve sender
+          const fromAddress = this.resolveSender(automation, context);
 
           await emailService.sendEmail({
             to: recipients.emails,
-            subject: emailSubject,
-            html: emailBody,
-            from: "The Standard HQ <noreply@updates.thestandardhq.com>",
+            subject: resolvedSubject,
+            html: resolvedBody,
+            from: fromAddress,
             recruitId,
             metadata: {
               automationId: automation.id,
@@ -784,6 +814,51 @@ export const pipelineAutomationService = {
       phoneNumbers: [...new Set(phoneNumbers)],
       userIds: [...new Set(userIds)],
     };
+  },
+
+  /**
+   * Resolve the sender "from" address based on automation sender config
+   */
+  resolveSender(
+    automation: PipelineAutomationEntity,
+    context: AutomationContext,
+  ): string {
+    const defaultFrom = "The Standard HQ <noreply@updates.thestandardhq.com>";
+    const senderType = automation.senderType || "system";
+
+    switch (senderType) {
+      case "system":
+        return defaultFrom;
+
+      case "custom": {
+        const email = automation.senderEmail;
+        const name = automation.senderName;
+        if (email) {
+          return name ? `${name} <${email}>` : email;
+        }
+        return defaultFrom;
+      }
+
+      case "upline": {
+        const email = context.uplineEmail;
+        const name = automation.senderName || context.uplineName;
+        if (email) {
+          return name ? `${name} <${email}>` : email;
+        }
+        return defaultFrom;
+      }
+
+      case "trainer":
+      case "contracting_manager":
+        // Not yet supported — key_contacts column doesn't exist
+        console.warn(
+          `[pipelineAutomation] sender_type '${senderType}' not yet supported, using system default`,
+        );
+        return defaultFrom;
+
+      default:
+        return defaultFrom;
+    }
   },
 
   /**
