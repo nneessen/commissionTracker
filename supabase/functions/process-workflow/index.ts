@@ -4,6 +4,10 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase-client.ts";
+import {
+  replaceTemplateVariables as sharedReplaceTemplateVariables,
+  initEmptyVariables,
+} from "../_shared/templateVariables.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -274,7 +278,7 @@ async function executeSendEmail(
   const { data: ownerProfile, error: profileError } = await supabase
     .from("user_profiles")
     .select("*")
-    .eq("user_id", workflowOwnerId)
+    .eq("id", workflowOwnerId)
     .single();
 
   if (profileError || !ownerProfile) {
@@ -437,113 +441,183 @@ async function executeSendEmail(
     };
   }
 
-  // Send emails via Resend API
+  // Check if workflow owner has Gmail connected — Gmail always takes priority
+  const { data: gmailIntegration } = await supabase
+    .from("gmail_integrations")
+    .select("id")
+    .eq("user_id", ownerProfile.id)
+    .eq("is_active", true)
+    .eq("connection_status", "connected")
+    .maybeSingle();
+
+  const useGmail = !!gmailIntegration;
+  const provider = useGmail ? "gmail" : "resend";
+  console.log(`Email provider for user ${ownerProfile.id}: ${provider}`);
+
+  // Process template variables once (same for all recipients)
+  const processedSubject = replaceTemplateVariables(
+    template.subject,
+    templateVariables,
+  );
+  const processedBodyHtml = replaceTemplateVariables(
+    template.body_html,
+    templateVariables,
+  );
+  const processedBodyText = replaceTemplateVariables(
+    template.body_text || "",
+    templateVariables,
+  );
+
   const sentEmails: string[] = [];
   const failedEmails: string[] = [];
 
   for (const recipientEmail of recipientEmails) {
     try {
-      // Replace template variables in subject and body
-      const processedSubject = replaceTemplateVariables(
-        template.subject,
-        templateVariables,
-      );
-      const processedBodyHtml = replaceTemplateVariables(
-        template.body_html,
-        templateVariables,
-      );
-      const processedBodyText = replaceTemplateVariables(
-        template.body_text || "",
-        templateVariables,
-      );
+      console.log("Sending to:", recipientEmail, "Subject:", processedSubject, "via:", provider);
 
-      console.log("Sending to:", recipientEmail, "Subject:", processedSubject);
+      if (useGmail) {
+        // Send via gmail-send-email edge function
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-      // Send via Resend API
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+          throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for Gmail send");
+        }
 
-      if (!RESEND_API_KEY) {
-        console.log("RESEND_API_KEY not configured, simulating email send");
-        sentEmails.push(recipientEmail);
-        continue;
-      }
-
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "The Standard HQ <noreply@updates.thestandardhq.com>",
-          to: [recipientEmail],
-          subject: processedSubject,
-          html: processedBodyHtml,
-          text: processedBodyText || undefined,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Resend API error:", data);
-        throw new Error(data.message || "Failed to send email");
-      }
-
-      sentEmails.push(recipientEmail);
-
-      // Record in user_emails table
-      await supabase.from("user_emails").insert({
-        user_id: ownerProfile.id,
-        sender_id: ownerProfile.id,
-        subject: processedSubject,
-        body_html: processedBodyHtml,
-        body_text: processedBodyText,
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        provider: "resend",
-        provider_message_id: data.id,
-        is_incoming: false,
-        from_address: "noreply@updates.thestandardhq.com",
-        to_addresses: [recipientEmail],
-      });
-
-      // Record for rate limiting tracking
-      await supabase
-        .rpc("record_workflow_email", {
-          p_workflow_id: workflowId,
-          p_user_id: ownerProfile.id,
-          p_recipient_email: recipientEmail,
-          p_recipient_type: recipientType,
-          p_success: true,
-          p_error_message: null,
-        })
-        .catch((err) =>
-          console.log("Rate tracking record failed (non-critical):", err),
+        const gmailResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/gmail-send-email`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: ownerProfile.id,
+              to: [recipientEmail],
+              subject: processedSubject,
+              html: processedBodyHtml,
+              text: processedBodyText || undefined,
+            }),
+          },
         );
 
-      // Increment email quota
-      const today = new Date().toISOString().split("T")[0];
-      const { data: existingQuota } = await supabase
-        .from("email_quota_tracking")
-        .select("id, emails_sent")
-        .eq("user_id", ownerProfile.id)
-        .eq("date", today)
-        .eq("provider", "resend")
-        .single();
+        const gmailData = await gmailResponse.json();
 
-      if (existingQuota) {
+        if (!gmailData.success) {
+          throw new Error(gmailData.error || "Gmail send failed");
+        }
+
+        sentEmails.push(recipientEmail);
+
+        // gmail-send-email handles its own logging and quota tracking,
+        // but we still record for workflow rate limiting
         await supabase
-          .from("email_quota_tracking")
-          .update({ emails_sent: existingQuota.emails_sent + 1 })
-          .eq("id", existingQuota.id);
+          .rpc("record_workflow_email", {
+            p_workflow_id: workflowId,
+            p_user_id: ownerProfile.id,
+            p_recipient_email: recipientEmail,
+            p_recipient_type: recipientType,
+            p_success: true,
+            p_error_message: null,
+          })
+          .catch((err) =>
+            console.log("Rate tracking record failed (non-critical):", err),
+          );
       } else {
-        await supabase.from("email_quota_tracking").insert({
+        // Fallback: Send via Mailgun using the send-email edge function
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+          throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for Mailgun send");
+        }
+
+        const ownerName = [ownerProfile.first_name, ownerProfile.last_name]
+          .filter(Boolean)
+          .join(" ") || "The Standard HQ";
+        const fromAddress = `${ownerName} <noreply@updates.thestandardhq.com>`;
+
+        const mailgunResponse = await fetch(
+          `${SUPABASE_URL}/functions/v1/send-email`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              to: [recipientEmail],
+              subject: processedSubject,
+              html: processedBodyHtml,
+              text: processedBodyText || undefined,
+              from: fromAddress,
+              replyTo: ownerProfile.email,
+            }),
+          },
+        );
+
+        const mailgunData = await mailgunResponse.json();
+
+        if (!mailgunData.success) {
+          throw new Error(mailgunData.error || "Mailgun send failed");
+        }
+
+        sentEmails.push(recipientEmail);
+
+        // Record in user_emails table
+        await supabase.from("user_emails").insert({
           user_id: ownerProfile.id,
-          date: today,
-          provider: "resend",
-          emails_sent: 1,
+          sender_id: ownerProfile.id,
+          subject: processedSubject,
+          body_html: processedBodyHtml,
+          body_text: processedBodyText,
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          provider: "mailgun",
+          provider_message_id: mailgunData.mailgunId || mailgunData.messageId,
+          is_incoming: false,
+          from_address: "noreply@updates.thestandardhq.com",
+          to_addresses: [recipientEmail],
         });
+
+        // Record for rate limiting tracking
+        await supabase
+          .rpc("record_workflow_email", {
+            p_workflow_id: workflowId,
+            p_user_id: ownerProfile.id,
+            p_recipient_email: recipientEmail,
+            p_recipient_type: recipientType,
+            p_success: true,
+            p_error_message: null,
+          })
+          .catch((err) =>
+            console.log("Rate tracking record failed (non-critical):", err),
+          );
+
+        // Increment email quota
+        const today = new Date().toISOString().split("T")[0];
+        const { data: existingQuota } = await supabase
+          .from("email_quota_tracking")
+          .select("id, emails_sent")
+          .eq("user_id", ownerProfile.id)
+          .eq("date", today)
+          .eq("provider", "mailgun")
+          .single();
+
+        if (existingQuota) {
+          await supabase
+            .from("email_quota_tracking")
+            .update({ emails_sent: existingQuota.emails_sent + 1 })
+            .eq("id", existingQuota.id);
+        } else {
+          await supabase.from("email_quota_tracking").insert({
+            user_id: ownerProfile.id,
+            date: today,
+            provider: "mailgun",
+            emails_sent: 1,
+          });
+        }
       }
     } catch (sendError) {
       console.error(`Failed to send to ${recipientEmail}:`, sendError);
@@ -579,7 +653,7 @@ async function executeSendEmail(
     failedCount: failedEmails.length,
     sentTo: sentEmails,
     failedTo: failedEmails.length > 0 ? failedEmails : undefined,
-    provider: "resend",
+    provider,
   };
 }
 
@@ -697,12 +771,22 @@ async function executeUpdateField(
   }
 
   // Determine which table to update based on context
-  // This is a simplified implementation - real version would be more sophisticated
   const targetId = context.targetId as string;
   const targetTable = context.targetTable as string;
 
   if (!targetId || !targetTable) {
     throw new Error("No target specified for field update");
+  }
+
+  // Security: only allow updates to specific tables
+  const ALLOWED_TABLES = ["user_profiles", "recruits", "policies"];
+  if (!ALLOWED_TABLES.includes(targetTable)) {
+    console.error(
+      `[update_field] Rejected write to disallowed table: ${targetTable}`,
+    );
+    throw new Error(
+      `Table "${targetTable}" is not allowed for update_field actions`,
+    );
   }
 
   const { error } = await supabase
@@ -726,40 +810,22 @@ async function buildTemplateVariables(
   ownerProfile: any,
   supabase: ReturnType<typeof createSupabaseAdminClient>,
 ): Promise<Record<string, string>> {
-  const variables: Record<string, string> = {};
+  // Start from empty defaults (prevents raw {{tags}} in output)
+  const variables: Record<string, string> = initEmptyVariables();
 
-  // Add owner/user variables (using underscores)
+  // Owner/user variables
   variables["user_name"] =
     `${ownerProfile.first_name || ""} ${ownerProfile.last_name || ""}`.trim() ||
     ownerProfile.email;
   variables["user_first_name"] = ownerProfile.first_name || "";
   variables["user_last_name"] = ownerProfile.last_name || "";
   variables["user_email"] = ownerProfile.email;
-  variables["company_name"] = "Your Insurance Agency"; // TODO: Get from settings
+  variables["company_name"] = Deno.env.get("COMPANY_NAME") || "The Standard HQ";
 
-  // Set default recruit variables to empty string to prevent showing raw tags (using underscores)
-  variables["recruit_name"] = "";
-  variables["recruit_first_name"] = "";
-  variables["recruit_last_name"] = "";
-  variables["recruit_email"] = "";
-  variables["recruit_phone"] = "";
-  variables["recruit_status"] = "";
-  variables["recruit_city"] = "";
-  variables["recruit_state"] = "";
-  variables["recruit_zip"] = "";
-  variables["recruit_address"] = "";
-  variables["recruit_contract_level"] = "";
-  variables["recruit_npn"] = "";
-  variables["recruit_license_number"] = "";
-  variables["recruit_license_expiration"] = "";
-  variables["recruit_referral_source"] = "";
-  variables["recruit_facebook"] = "";
-  variables["recruit_instagram"] = "";
-  variables["recruit_website"] = "";
-
-  // Add date variables (using underscores)
+  // Date variables
   const now = new Date();
-  variables["date_today"] = now.toLocaleDateString();
+  variables["current_date"] = now.toLocaleDateString();
+  variables["date_today"] = now.toLocaleDateString(); // alias
   variables["date_tomorrow"] = new Date(
     now.getTime() + 24 * 60 * 60 * 1000,
   ).toLocaleDateString();
@@ -771,10 +837,10 @@ async function buildTemplateVariables(
     month: "long",
   });
 
-  // Add workflow variables (using underscores)
+  // Workflow variables
   variables["workflow_name"] = (context.workflowName as string) || "";
   variables["workflow_run_id"] = (context.runId as string) || "";
-  variables["app_url"] = "https://your-app-url.com"; // TODO: Get from environment
+  variables["app_url"] = Deno.env.get("VITE_APP_URL") || "";
 
   // Try to get recipient/recruit data
   // First try recipientId, then recipientEmail, then use the workflow owner as fallback
@@ -859,31 +925,11 @@ async function buildTemplateVariables(
 }
 
 /**
- * Replace template variables in text
+ * Replace template variables in text — delegates to shared module
  */
 function replaceTemplateVariables(
   text: string,
   variables: Record<string, string>,
 ): string {
-  let result = text;
-
-  // Replace {{variable}} format
-  Object.entries(variables).forEach(([key, value]) => {
-    const regex = new RegExp(
-      `{{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*}}`,
-      "gi",
-    );
-    result = result.replace(regex, value);
-  });
-
-  // Also support {variable} format for backward compatibility
-  Object.entries(variables).forEach(([key, value]) => {
-    const regex = new RegExp(
-      `{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*}`,
-      "gi",
-    );
-    result = result.replace(regex, value);
-  });
-
-  return result;
+  return sharedReplaceTemplateVariables(text, variables);
 }

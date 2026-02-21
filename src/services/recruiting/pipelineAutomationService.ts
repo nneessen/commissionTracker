@@ -23,6 +23,7 @@ import { notificationService } from "@/services/notifications/notification/Notif
 import { smsService, isValidPhoneNumber } from "@/services/sms";
 import { supabase } from "@/services/base/supabase";
 import { processEmojiShortcodes } from "@/lib/emoji";
+import { replaceTemplateVariables } from "@/lib/templateVariables";
 
 // Repository instances
 const automationRepository = new PipelineAutomationRepository();
@@ -862,56 +863,13 @@ export const pipelineAutomationService = {
   },
 
   /**
-   * Substitute template variables in content
-   * Supports {{variable}} syntax and :emoji: shortcodes
+   * Substitute template variables in content.
+   * Uses shared replaceTemplateVariables + emoji shortcode processing.
    */
   substituteVariables(template: string, context: AutomationContext): string {
-    let result = template;
-
-    const replacements: Record<string, string> = {
-      // Recruit basic info
-      "{{recruit_name}}": context.recruitName,
-      "{{recruit_first_name}}": context.recruitFirstName,
-      "{{recruit_last_name}}": context.recruitLastName,
-      "{{recruit_email}}": context.recruitEmail,
-      "{{recruit_phone}}": context.recruitPhone || "",
-      // Recruit location
-      "{{recruit_city}}": context.recruitCity || "",
-      "{{recruit_state}}": context.recruitState || "",
-      "{{recruit_zip}}": context.recruitZip || "",
-      "{{recruit_address}}": context.recruitAddress || "",
-      // Recruit professional
-      "{{recruit_license_number}}": context.recruitLicenseNumber || "",
-      "{{recruit_npn}}": context.recruitNpn || "",
-      "{{recruit_license_state}}": context.recruitLicenseState || "",
-      "{{contract_level}}": context.contractLevel?.toString() || "",
-      // Organization
-      "{{agency_name}}": context.agencyName || "",
-      "{{imo_name}}": context.imoName || "",
-      // Pipeline
-      "{{phase_name}}": context.phaseName || "",
-      "{{template_name}}": context.templateName || "",
-      "{{item_name}}": context.itemName || "",
-      // Upline
-      "{{upline_name}}": context.uplineName || "",
-      "{{upline_first_name}}": context.uplineFirstName || "",
-      "{{upline_email}}": context.uplineEmail || "",
-      "{{upline_phone}}": context.uplinePhone || "",
-      // Calculated
-      "{{days_in_phase}}": context.daysInPhase?.toString() || "0",
-      "{{days_since_signup}}": context.daysSinceSignup?.toString() || "0",
-      "{{current_date}}": context.currentDate || "",
-      "{{portal_link}}": context.portalLink || "",
-    };
-
-    // Replace all template variables
-    for (const [variable, value] of Object.entries(replacements)) {
-      result = result.replace(new RegExp(variable, "g"), value);
-    }
-
-    // Process emoji shortcodes (:emoji: syntax)
+    const variables = contextToRecord(context);
+    let result = replaceTemplateVariables(template, variables);
     result = processEmojiShortcodes(result);
-
     return result;
   },
 
@@ -937,6 +895,52 @@ export const pipelineAutomationService = {
     return automationLogRepository.findByAutomationId(automationId);
   },
 };
+
+// ========================================
+// Helper Functions
+// ========================================
+
+/** Convert typed AutomationContext to flat Record<string, string> for shared replacement */
+function contextToRecord(context: AutomationContext): Record<string, string> {
+  return {
+    // Recruit basic
+    recruit_name: context.recruitName,
+    recruit_first_name: context.recruitFirstName,
+    recruit_last_name: context.recruitLastName,
+    recruit_email: context.recruitEmail,
+    recruit_phone: context.recruitPhone || "",
+    // Recruit location
+    recruit_city: context.recruitCity || "",
+    recruit_state: context.recruitState || "",
+    recruit_zip: context.recruitZip || "",
+    recruit_address: context.recruitAddress || "",
+    // Recruit professional
+    recruit_license_number: context.recruitLicenseNumber || "",
+    recruit_npn: context.recruitNpn || "",
+    recruit_license_state: context.recruitLicenseState || "",
+    recruit_contract_level: context.contractLevel?.toString() || "",
+    contract_level: context.contractLevel?.toString() || "", // alias
+    // Organization
+    agency_name: context.agencyName || "",
+    imo_name: context.imoName || "",
+    // Pipeline
+    phase_name: context.phaseName || "",
+    template_name: context.templateName || "",
+    item_name: context.itemName || "",
+    // Upline
+    upline_name: context.uplineName || "",
+    upline_first_name: context.uplineFirstName || "",
+    upline_email: context.uplineEmail || "",
+    upline_phone: context.uplinePhone || "",
+    // Calculated
+    days_in_phase: context.daysInPhase?.toString() || "0",
+    days_since_signup: context.daysSinceSignup?.toString() || "0",
+    current_date: context.currentDate || "",
+    date_today: context.currentDate || "", // alias
+    // Links
+    portal_link: context.portalLink || "",
+  };
+}
 
 // ========================================
 // Mapping Functions

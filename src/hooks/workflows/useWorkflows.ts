@@ -91,16 +91,9 @@ export function useUpdateWorkflow(id: string) {
       queryClient.invalidateQueries({ queryKey: ["workflows"] });
 
       toast.success(`Workflow "${data.name}" updated successfully`);
-
-      console.log("[useUpdateWorkflow] Cache updated with:", {
-        id,
-        triggerType: data.triggerType,
-        "config.trigger": data.config?.trigger,
-      });
     },
     onError: (error: Error) => {
       toast.error(`Failed to update workflow: ${error.message}`);
-      console.error("[useUpdateWorkflow] Update failed:", error);
     },
   });
 }
@@ -161,14 +154,17 @@ export function useWorkflowRuns(workflowId?: string, limit = 50) {
   });
 }
 
-export function useWorkflowRun(id: string) {
+export function useWorkflowRun(
+  id: string,
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: QUERY_KEYS.workflowRun(id),
     queryFn: () => workflowService.getWorkflowRun(id),
     enabled: !!id,
     retry: 1,
     retryDelay: 1000,
-    // TODO: Add refetchInterval when run is in progress
+    refetchInterval: options?.refetchInterval ?? false,
   });
 }
 
@@ -179,10 +175,12 @@ export function useTriggerWorkflow() {
     mutationFn: ({
       workflowId,
       context,
+      skipLimits,
     }: {
       workflowId: string;
       context?: Record<string, unknown>;
-    }) => workflowService.triggerWorkflow(workflowId, context),
+      skipLimits?: boolean;
+    }) => workflowService.triggerWorkflow(workflowId, context, { skipLimits }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.workflowRuns(data.workflowId),

@@ -1,6 +1,7 @@
 import {useMemo} from 'react'
 import type {EmailBlock, EmailBlockStyles, EmailFontFamily, ImageBlockContent, QuoteBlockContent, SocialBlockContent, ColumnsBlockContent, ButtonBlockContent} from '@/types/email.types'
 import {MODERN_EMAIL_FONTS} from '@/types/email.types'
+import {replaceTemplateVariables} from '@/lib/templateVariables'
 
 interface BlockPreviewProps {
   blocks: EmailBlock[]
@@ -72,14 +73,6 @@ function getGoogleFontsLink(fonts: EmailFontFamily[]): string {
   return `<link href="https://fonts.googleapis.com/css2?family=${googleFonts.join('&family=')}&display=swap" rel="stylesheet">`
 }
 
-function replaceVariables(text: string, variables: Record<string, string>): string {
-  let result = text
-  for (const [key, value] of Object.entries(variables)) {
-    result = result.replace(new RegExp(`{{${key}}}`, 'g'), value)
-  }
-  return result
-}
-
 function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>): string {
   const styles = getInlineStyles(block.styles)
 
@@ -92,14 +85,14 @@ function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>)
       return `
         <div style="${styles}">
           ${logoHtml}
-          <h1 style="margin: 0; font-weight: bold;">${replaceVariables(content.title, variables)}</h1>
+          <h1 style="margin: 0; font-weight: bold;">${replaceTemplateVariables(content.title, variables)}</h1>
         </div>
       `
     }
 
     case 'text': {
       const content = block.content as { html: string }
-      return `<div style="${styles}">${replaceVariables(content.html, variables)}</div>`
+      return `<div style="${styles}">${replaceTemplateVariables(content.html, variables)}</div>`
     }
 
     case 'button': {
@@ -124,7 +117,7 @@ function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>)
       `
       return `
         <div style="${styles}">
-          <a href="${content.url || '#'}" style="${buttonStyle}">${replaceVariables(content.text, variables)}</a>
+          <a href="${content.url || '#'}" style="${buttonStyle}">${replaceTemplateVariables(content.text, variables)}</a>
         </div>
       `
     }
@@ -151,7 +144,7 @@ function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>)
         : ''
       return `
         <div style="${styles}; font-size: 12px;">
-          <p style="margin: 0; white-space: pre-wrap;">${replaceVariables(content.text, variables)}</p>
+          <p style="margin: 0; white-space: pre-wrap;">${replaceTemplateVariables(content.text, variables)}</p>
           ${unsubscribeHtml}
         </div>
       `
@@ -184,7 +177,7 @@ function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>)
       return `
         <div style="${styles}">
           <div style="${quoteStyle}">
-            <p style="margin: 0;">${replaceVariables(content.text, variables)}</p>
+            <p style="margin: 0;">${replaceTemplateVariables(content.text, variables)}</p>
             ${authorHtml}
           </div>
         </div>

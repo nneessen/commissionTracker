@@ -82,15 +82,6 @@ class WorkflowService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("User not authenticated");
 
-    // Debug: Log incoming updates
-    console.log("[WorkflowService] updateWorkflow called with:", {
-      id,
-      triggerType: updates.triggerType,
-      trigger: updates.trigger,
-      hasActions: !!updates.actions,
-      fullUpdates: updates,
-    });
-
     // Fetch existing config for merging
     const existingConfig = await this.repository.getWorkflowConfig(id);
 
@@ -143,13 +134,8 @@ class WorkflowService {
 
     if (updates.trigger !== undefined) {
       configUpdate.trigger = updates.trigger;
-      console.log("[WorkflowService] Replacing trigger with:", updates.trigger);
     } else if (updates.triggerType !== undefined && !updates.trigger) {
       configUpdate.trigger = { type: updates.triggerType };
-      console.log(
-        "[WorkflowService] Creating minimal trigger for type:",
-        updates.triggerType,
-      );
     }
 
     if (updates.settings?.continueOnError !== undefined) {
@@ -158,22 +144,7 @@ class WorkflowService {
 
     updateData.config = configUpdate;
 
-    console.log("[WorkflowService] Final update data being sent:", {
-      id,
-      trigger_type: updateData.trigger_type,
-      "config.trigger": updateData.config?.trigger,
-      fullConfig: updateData.config,
-    });
-
-    const workflow = await this.repository.updateWorkflow(id, updateData);
-
-    console.log("[WorkflowService] Updated workflow result:", {
-      id: workflow.id,
-      triggerType: workflow.triggerType,
-      "config.trigger": workflow.config?.trigger,
-    });
-
-    return workflow;
+    return this.repository.updateWorkflow(id, updateData);
   }
 
   async deleteWorkflow(id: string): Promise<void> {
@@ -209,6 +180,7 @@ class WorkflowService {
   async triggerWorkflow(
     workflowId: string,
     context: Record<string, unknown> = {},
+    options?: { skipLimits?: boolean },
   ): Promise<WorkflowRun> {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("User not authenticated");
@@ -220,6 +192,7 @@ class WorkflowService {
     // Build enriched context
     const enrichedContext: Record<string, unknown> = {
       ...context,
+      workflowId: workflowId,
       triggeredBy: user.user.id,
       triggeredByEmail: user.user.email,
       triggeredAt: new Date().toISOString(),
@@ -234,14 +207,16 @@ class WorkflowService {
         user.user.user_metadata?.name || user.user.email;
     }
 
-    // Check if workflow can run
-    const canRun = await this.repository.canWorkflowRun(
-      workflowId,
-      enrichedContext.recipientId as string,
-    );
+    // Check if workflow can run (skip for manual test runs)
+    if (!options?.skipLimits) {
+      const canRun = await this.repository.canWorkflowRun(
+        workflowId,
+        enrichedContext.recipientId as string,
+      );
 
-    if (!canRun) {
-      throw new Error("Workflow cannot run due to execution limits");
+      if (!canRun) {
+        throw new Error("Workflow cannot run due to execution limits");
+      }
     }
 
     // Create workflow run
@@ -408,7 +383,7 @@ class WorkflowService {
       workflow_id: workflowId,
       trigger_source: "test",
       status: "running",
-      context: { ...testContext, isTest: true },
+      context: { ...testContext, workflowId, isTest: true },
     });
 
     // Trigger edge function for test workflow
@@ -501,11 +476,6 @@ class WorkflowService {
       .then((response) => {
         if (response.error) {
           console.error("Workflow processor returned error:", response.error);
-        } else {
-          console.log(
-            "Workflow processor invoked successfully:",
-            response.data,
-          );
         }
       })
       .catch((err) => {

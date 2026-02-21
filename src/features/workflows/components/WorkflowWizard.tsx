@@ -17,7 +17,9 @@ import {
   useCreateWorkflow,
   useUpdateWorkflow,
   useWorkflows,
+  useTriggerWorkflow,
 } from "@/hooks/workflows";
+import { useAuth } from "@/contexts/AuthContext";
 import WorkflowBasicInfo from "./WorkflowBasicInfo";
 import WorkflowTriggerSetup from "./WorkflowTriggerSetup";
 import WorkflowActionsBuilder from "./WorkflowActionsBuilder";
@@ -64,24 +66,17 @@ export default function WorkflowWizard({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { user } = useAuth();
   const createWorkflow = useCreateWorkflow();
   const updateWorkflow = useUpdateWorkflow(workflow?.id || "");
+  const triggerWorkflowMutation = useTriggerWorkflow();
   const { data: existingWorkflows = [] } = useWorkflows();
 
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
       if (workflow) {
-        // Load existing workflow
-        console.log("[WorkflowWizard] Loading workflow:", {
-          id: workflow.id,
-          name: workflow.name,
-          triggerType: workflow.triggerType,
-          "config.trigger": workflow.config?.trigger,
-          fullWorkflow: workflow,
-        });
-
-        // CRITICAL: Get trigger from config, not from the top-level triggerType
+        // Get trigger from config, not from the top-level triggerType
         const triggerConfig = workflow.config?.trigger || {};
         const actualTriggerType =
           triggerConfig.type || workflow.triggerType || "manual";
@@ -108,11 +103,6 @@ export default function WorkflowWizard({
           status: (workflow.status as WorkflowStatus) || "draft",
         });
 
-        console.log("[WorkflowWizard] Form data set to:", {
-          triggerType: actualTriggerType,
-          "trigger.type": actualTriggerType,
-          "trigger.eventName": triggerConfig.eventName,
-        });
       } else {
         // Reset for new workflow
         setFormData({
@@ -319,29 +309,8 @@ export default function WorkflowWizard({
 
     try {
       if (workflow) {
-        // Send complete formData to ensure all fields are updated properly
-        // This is critical for trigger persistence
-        console.log("[WorkflowWizard] Updating workflow with:", {
-          id: workflow.id,
-          name: formData.name,
-          triggerType: formData.triggerType,
-          trigger: formData.trigger,
-          "trigger.type": formData.trigger?.type,
-          "trigger.eventName": formData.trigger?.eventName,
-          actions: formData.actions?.length,
-          fullFormData: formData,
-        });
         await updateWorkflow.mutateAsync(formData);
       } else {
-        console.log("[WorkflowWizard] Creating workflow with:", {
-          name: formData.name,
-          triggerType: formData.triggerType,
-          trigger: formData.trigger,
-          "trigger.type": formData.trigger?.type,
-          "trigger.eventName": formData.trigger?.eventName,
-          actions: formData.actions?.length,
-          fullFormData: formData,
-        });
         await createWorkflow.mutateAsync(formData);
       }
       onOpenChange(false);
@@ -387,23 +356,20 @@ export default function WorkflowWizard({
         workflowId = result.id;
       }
 
-      // Now trigger test run
-      const { testWorkflow } = await import("@/services/workflowService").then(
-        (m) => ({ testWorkflow: m.workflowService.testWorkflow }),
-      );
-      await testWorkflow(workflowId, {
-        testMode: true,
-        testData: {
-          recipientEmail: "test@example.com",
-          recipientId: "test-user-id",
+      // Trigger real workflow run so emails actually send
+      const userName = [user?.first_name, user?.last_name]
+        .filter(Boolean)
+        .join(" ");
+      await triggerWorkflowMutation.mutateAsync({
+        workflowId,
+        context: {
+          recipientEmail: user?.email || "",
+          recipientId: user?.id || "",
+          recipientName: userName || user?.email || "",
         },
+        skipLimits: true,
       });
 
-      // Show success message
-      const { toast } = await import("sonner");
-      toast.success("Test workflow started! Check the runs tab for results.");
-
-      // Optional: Switch to runs tab or close dialog
       onOpenChange(false);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {

@@ -230,21 +230,15 @@ export interface EmailQuota {
   remaining: number
 }
 
-// Template variable definitions
-export const EMAIL_TEMPLATE_VARIABLES = [
-  { name: 'recruit_name', description: 'Full name of the recruit' },
-  { name: 'recruit_first_name', description: 'First name of the recruit' },
-  { name: 'recruit_email', description: 'Email address of the recruit' },
-  { name: 'phase_name', description: 'Current phase name' },
-  { name: 'phase_description', description: 'Phase description' },
-  { name: 'sender_name', description: 'Name of the email sender' },
-  { name: 'recruiter_name', description: 'Name of the recruiter' },
-  { name: 'checklist_items', description: 'List of pending checklist items' },
-  { name: 'current_date', description: 'Current date (formatted)' },
-  { name: 'deadline_date', description: 'Phase deadline date (if set)' },
-] as const
+// Template variable definitions — re-exported from canonical source
+import { TEMPLATE_VARIABLES, type TemplateVariableDefinition } from '@/lib/templateVariables'
 
-export type EmailTemplateVariableName = typeof EMAIL_TEMPLATE_VARIABLES[number]['name']
+/** Email template variables filtered to the email context, mapped to legacy { name, description } shape */
+export const EMAIL_TEMPLATE_VARIABLES = TEMPLATE_VARIABLES
+  .filter((v: TemplateVariableDefinition) => v.contexts.includes('email'))
+  .map((v: TemplateVariableDefinition) => ({ name: v.key, description: v.description }))
+
+export type EmailTemplateVariableName = string
 
 // ============================================
 // Email Block Builder Types (Visual Templates)

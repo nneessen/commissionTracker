@@ -44,8 +44,29 @@
 - src/services/commissions/chargebackService.ts
 - supabase/migrations/20251212_001_workflow_event_tracking.sql
 
-## Next Steps (Optional)
-- Create event monitoring dashboard
-- Add event replay for debugging
-- Implement event filtering by user/entity
-- Add batch event processing
+## Major Overhaul - Feb 2026
+
+### Problems Fixed
+1. **Client-side event matching moved to server-side edge function**: `trigger-workflow-event` edge function now handles all event matching, cooldown checks, condition evaluation, workflow run creation, and process-workflow invocation using an admin Supabase client (bypasses RLS).
+2. **workflowEventEmitter simplified**: Now just delegates to the edge function via `supabase.functions.invoke("trigger-workflow-event")`. All client-side matching/execution logic removed.
+3. **findByIdWithRelations fixed**: Removed joins to non-existent `workflow_triggers` and `workflow_actions` tables (triggers/actions are JSONB columns).
+4. **update_field action secured**: Added table allowlist (`user_profiles`, `recruits`, `policies`) to prevent arbitrary table writes via admin client.
+5. **workflowId added to context**: Both `triggerWorkflow` and `testWorkflow` now include `workflowId` in context, fixing broken rate limiting in process-workflow.
+6. **Test run infrastructure fixed**: Created `TestRunDialog` component replacing `window.prompt()`. Fixed `WorkflowWizard` test run to use real user data instead of hardcoded test IDs.
+7. **Debug console.logs cleaned up**: Removed from workflowService.ts, WorkflowWizard.tsx, useWorkflows.ts.
+
+### Files Changed
+- `supabase/functions/trigger-workflow-event/index.ts` (NEW)
+- `src/services/events/workflowEventEmitter.ts` (simplified)
+- `src/services/workflows/WorkflowRepository.ts` (fixed query)
+- `src/services/workflows/workflowService.ts` (cleaned up, added workflowId)
+- `supabase/functions/process-workflow/index.ts` (secured update_field)
+- `src/features/workflows/components/WorkflowManager.tsx` (TestRunDialog)
+- `src/features/workflows/components/WorkflowWizard.tsx` (fixed test run)
+- `src/features/workflows/components/TestRunDialog.tsx` (NEW)
+- `src/hooks/workflows/useWorkflows.ts` (cleaned up)
+
+### Deploy Steps
+1. Deploy `trigger-workflow-event` edge function to Supabase
+2. Deploy updated `process-workflow` edge function
+3. Deploy frontend build

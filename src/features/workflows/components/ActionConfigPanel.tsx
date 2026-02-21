@@ -31,6 +31,7 @@ import {
 import type { WorkflowAction } from "@/types/workflow.types";
 import { useEmailTemplates } from "@/features/email";
 import { useAuth } from "@/contexts/AuthContext";
+import { getVariablesByCategory } from "@/lib/templateVariables";
 
 interface ActionConfigPanelProps {
   action: WorkflowAction;
@@ -38,70 +39,11 @@ interface ActionConfigPanelProps {
   onClose: () => void;
 }
 
-const VARIABLE_LIST = [
-  {
-    category: "Recruit Basic",
-    variables: [
-      "{{recruit_first_name}}",
-      "{{recruit_last_name}}",
-      "{{recruit_name}}",
-      "{{recruit_email}}",
-      "{{recruit_phone}}",
-      "{{recruit_status}}",
-    ],
-  },
-  {
-    category: "Recruit Location",
-    variables: [
-      "{{recruit_city}}",
-      "{{recruit_state}}",
-      "{{recruit_zip}}",
-      "{{recruit_address}}",
-    ],
-  },
-  {
-    category: "Recruit Professional",
-    variables: [
-      "{{recruit_contract_level}}",
-      "{{recruit_npn}}",
-      "{{recruit_license_number}}",
-      "{{recruit_license_expiration}}",
-      "{{recruit_referral_source}}",
-    ],
-  },
-  {
-    category: "Recruit Social",
-    variables: [
-      "{{recruit_facebook}}",
-      "{{recruit_instagram}}",
-      "{{recruit_website}}",
-    ],
-  },
-  {
-    category: "User/Owner",
-    variables: [
-      "{{user_name}}",
-      "{{user_first_name}}",
-      "{{user_last_name}}",
-      "{{user_email}}",
-      "{{company_name}}",
-    ],
-  },
-  {
-    category: "Date",
-    variables: [
-      "{{date_today}}",
-      "{{date_tomorrow}}",
-      "{{date_next_week}}",
-      "{{date_current_month}}",
-      "{{date_current_year}}",
-    ],
-  },
-  {
-    category: "System",
-    variables: ["{{workflow_name}}", "{{workflow_run_id}}", "{{app_url}}"],
-  },
-];
+/** Workflow-context variables derived from shared source, shaped as {{ key }} strings for copy-paste */
+const VARIABLE_LIST = getVariablesByCategory("workflow").map((group) => ({
+  category: group.category,
+  variables: group.variables.map((v) => `{{${v.key}}}`),
+}));
 
 export default function ActionConfigPanel({
   action,

@@ -50,13 +50,13 @@ import {
   useWorkflowRuns,
   useUpdateWorkflowStatus,
   useDeleteWorkflow,
-  useTriggerWorkflow,
   useImoWorkflowTemplates,
   useSaveAsOrgTemplate,
   useCloneOrgTemplate,
   useDeleteOrgTemplate,
 } from "@/hooks/workflows";
 import WorkflowWizard from "./WorkflowWizard";
+import TestRunDialog from "./TestRunDialog";
 import EventTypeManager from "./EventTypeManager";
 import { EmailTemplatesTab } from "@/features/training-hub";
 import type { Workflow } from "@/types/workflow.types";
@@ -78,6 +78,7 @@ export default function WorkflowManager() {
   const [deleteWorkflowId, setDeleteWorkflowId] = useState<string | null>(null);
   const [showRecentRuns, setShowRecentRuns] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("workflows");
+  const [testRunWorkflow, setTestRunWorkflow] = useState<Workflow | null>(null);
   const [cloneTemplateId, setCloneTemplateId] = useState<string | null>(null);
   const [cloneName, setCloneName] = useState("");
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
@@ -89,7 +90,6 @@ export default function WorkflowManager() {
   });
   const updateStatus = useUpdateWorkflowStatus();
   const deleteWorkflow = useDeleteWorkflow();
-  const triggerWorkflow = useTriggerWorkflow();
   const saveAsOrgTemplate = useSaveAsOrgTemplate();
   const cloneOrgTemplate = useCloneOrgTemplate();
   const deleteOrgTemplate = useDeleteOrgTemplate();
@@ -439,22 +439,7 @@ export default function WorkflowManager() {
                               <DropdownMenuContent align="end" className="w-32">
                                 {workflow.status === "active" && (
                                   <DropdownMenuItem
-                                    onClick={() => {
-                                      // For testing: trigger with a test recipient
-                                      const testEmail = prompt(
-                                        "Enter recipient email for test (or leave empty for yourself):",
-                                      );
-                                      triggerWorkflow.mutate({
-                                        workflowId: workflow.id,
-                                        context: testEmail
-                                          ? {
-                                              recipientEmail: testEmail,
-                                              recipientId: "test-recipient",
-                                              isTest: true,
-                                            }
-                                          : {},
-                                      });
-                                    }}
+                                    onClick={() => setTestRunWorkflow(workflow)}
                                     className="text-xs"
                                   >
                                     <Play className="h-3 w-3 mr-1" />
@@ -565,6 +550,17 @@ export default function WorkflowManager() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Test Run Dialog */}
+      {testRunWorkflow && (
+        <TestRunDialog
+          open={!!testRunWorkflow}
+          onOpenChange={(open) => {
+            if (!open) setTestRunWorkflow(null);
+          }}
+          workflow={testRunWorkflow}
+        />
+      )}
 
       {/* Dialogs */}
       <WorkflowWizard

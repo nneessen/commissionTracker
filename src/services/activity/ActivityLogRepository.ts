@@ -15,9 +15,6 @@ export class ActivityLogRepository extends BaseRepository<
     super("user_activity_log");
   }
 
-  /**
-   * Find activity logs for a user
-   */
   async findByUserId(userId: string, limit = 50): Promise<ActivityLogEntity[]> {
     const { data, error } = await this.client
       .from(this.tableName)
@@ -33,9 +30,6 @@ export class ActivityLogRepository extends BaseRepository<
     return (data || []).map((row) => this.transformFromDB(row));
   }
 
-  /**
-   * Find activity logs by action type
-   */
   async findByActionType(
     actionType: string,
     limit = 100,
@@ -54,9 +48,7 @@ export class ActivityLogRepository extends BaseRepository<
     return (data || []).map((row) => this.transformFromDB(row));
   }
 
-  /**
-   * Find activity logs performed by a specific user
-   */
+  // TODO: poor name for this method. should be findByAgent instead, not performer. fix and grep to find all occurences and replace with new method name
   async findByPerformer(
     performedBy: string,
     limit = 100,
@@ -75,9 +67,7 @@ export class ActivityLogRepository extends BaseRepository<
     return (data || []).map((row) => this.transformFromDB(row));
   }
 
-  /**
-   * Find activity logs within a date range
-   */
+  // TODO: confirm the dates used in this method are correct format
   async findByDateRange(
     userId: string,
     startDate: string,
@@ -98,23 +88,14 @@ export class ActivityLogRepository extends BaseRepository<
     return (data || []).map((row) => this.transformFromDB(row));
   }
 
-  /**
-   * Log an activity (alias for create)
-   */
   async log(data: CreateActivityLogData): Promise<ActivityLogEntity> {
     return this.create(data);
   }
 
-  /**
-   * Batch log multiple activities
-   */
   async logMany(items: CreateActivityLogData[]): Promise<ActivityLogEntity[]> {
     return this.createMany(items);
   }
 
-  /**
-   * Transform database row to entity
-   */
   protected transformFromDB(
     dbRecord: Record<string, unknown>,
   ): ActivityLogEntity {
@@ -129,9 +110,6 @@ export class ActivityLogRepository extends BaseRepository<
     };
   }
 
-  /**
-   * Transform entity to database row for insert
-   */
   protected transformToDB(
     data: CreateActivityLogData,
   ): Record<string, unknown> {

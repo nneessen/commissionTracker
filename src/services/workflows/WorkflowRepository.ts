@@ -142,13 +142,7 @@ export class WorkflowRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from("workflows")
-        .select(
-          `
-          *,
-          workflow_triggers (*),
-          workflow_actions (*)
-        `,
-        )
+        .select("*")
         .eq("id", id)
         .single();
 

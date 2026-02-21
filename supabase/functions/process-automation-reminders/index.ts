@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase-client.ts";
+import { replaceTemplateVariables } from "../_shared/templateVariables.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -197,14 +198,9 @@ async function executeAutomation(
       }
     }
 
-    // Variable substitution
-    const substituteVars = (template: string): string => {
-      let result = template;
-      for (const [key, value] of Object.entries(context)) {
-        result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
-      }
-      return result;
-    };
+    // Variable substitution — uses shared module
+    const substituteVars = (template: string): string =>
+      replaceTemplateVariables(template, context);
 
     // Determine what to send
     const commType = automation.communication_type || "both";

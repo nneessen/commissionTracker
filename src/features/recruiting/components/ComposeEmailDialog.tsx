@@ -13,6 +13,7 @@ import { useSendEmail } from "../hooks/useRecruitEmails";
 import type { SendEmailRequest } from "@/services/email";
 import type { EmailTemplate } from "@/types/email.types";
 import { toast } from "sonner";
+import { replaceTemplateVariables } from "@/lib/templateVariables";
 
 interface ComposeEmailDialogProps {
   open: boolean;
@@ -23,18 +24,6 @@ interface ComposeEmailDialogProps {
   senderId: string;
   uplineEmail?: string;
   uplineName?: string;
-}
-
-// Replace variables in text with actual values
-function replaceVariables(
-  text: string,
-  variables: Record<string, string>,
-): string {
-  let result = text;
-  for (const [key, value] of Object.entries(variables)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
-  }
-  return result;
 }
 
 // Extract body innerHTML from a full HTML document so TipTap receives a fragment
@@ -127,12 +116,12 @@ export function ComposeEmailDialog({
       );
     } else if (selectedTemplate.body_html) {
       bodyHtml = extractBodyContent(
-        replaceVariables(selectedTemplate.body_html, variables),
+        replaceTemplateVariables(selectedTemplate.body_html, variables),
       );
     }
 
     const subject = selectedTemplate.subject
-      ? replaceVariables(selectedTemplate.subject, variables)
+      ? replaceTemplateVariables(selectedTemplate.subject, variables)
       : "";
 
     return { subject, bodyHtml };

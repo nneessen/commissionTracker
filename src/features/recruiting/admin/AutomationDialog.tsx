@@ -201,167 +201,19 @@ const SENDER_OPTIONS: {
   },
 ];
 
-// Template variable categories for organized display
-const TEMPLATE_VARIABLE_CATEGORIES = [
-  {
-    category: "Recruit Info",
-    variables: [
-      {
-        variable: "{{recruit_name}}",
-        description: "Full name",
-        example: "John Smith",
-      },
-      {
-        variable: "{{recruit_first_name}}",
-        description: "First name",
-        example: "John",
-      },
-      {
-        variable: "{{recruit_last_name}}",
-        description: "Last name",
-        example: "Smith",
-      },
-      {
-        variable: "{{recruit_email}}",
-        description: "Email address",
-        example: "john@email.com",
-      },
-      {
-        variable: "{{recruit_phone}}",
-        description: "Phone number",
-        example: "(555) 123-4567",
-      },
-    ],
-  },
-  {
-    category: "Location",
-    variables: [
-      { variable: "{{recruit_city}}", description: "City", example: "Dallas" },
-      { variable: "{{recruit_state}}", description: "State", example: "TX" },
-      {
-        variable: "{{recruit_zip}}",
-        description: "ZIP code",
-        example: "75001",
-      },
-      {
-        variable: "{{recruit_address}}",
-        description: "Full address",
-        example: "123 Main St, Dallas, TX 75001",
-      },
-    ],
-  },
-  {
-    category: "Professional",
-    variables: [
-      {
-        variable: "{{recruit_license_number}}",
-        description: "License number",
-        example: "1234567",
-      },
-      { variable: "{{recruit_npn}}", description: "NPN", example: "9876543" },
-      {
-        variable: "{{recruit_license_state}}",
-        description: "License state",
-        example: "TX",
-      },
-      {
-        variable: "{{contract_level}}",
-        description: "Contract level",
-        example: "75",
-      },
-    ],
-  },
-  {
-    category: "Organization",
-    variables: [
-      {
-        variable: "{{agency_name}}",
-        description: "Agency name",
-        example: "ABC Insurance",
-      },
-      {
-        variable: "{{imo_name}}",
-        description: "IMO name",
-        example: "Premier IMO",
-      },
-    ],
-  },
-  {
-    category: "Pipeline",
-    variables: [
-      {
-        variable: "{{phase_name}}",
-        description: "Current phase",
-        example: "Contracting",
-      },
-      {
-        variable: "{{template_name}}",
-        description: "Pipeline template",
-        example: "New Agent Onboarding",
-      },
-      {
-        variable: "{{item_name}}",
-        description: "Checklist item",
-        example: "Submit W-9",
-      },
-    ],
-  },
-  {
-    category: "Upline",
-    variables: [
-      {
-        variable: "{{upline_name}}",
-        description: "Full name",
-        example: "Jane Doe",
-      },
-      {
-        variable: "{{upline_first_name}}",
-        description: "First name",
-        example: "Jane",
-      },
-      {
-        variable: "{{upline_email}}",
-        description: "Email",
-        example: "jane@email.com",
-      },
-      {
-        variable: "{{upline_phone}}",
-        description: "Phone",
-        example: "(555) 987-6543",
-      },
-    ],
-  },
-  {
-    category: "Dates & Numbers",
-    variables: [
-      {
-        variable: "{{current_date}}",
-        description: "Today's date",
-        example: "Monday, January 15, 2025",
-      },
-      {
-        variable: "{{days_in_phase}}",
-        description: "Days in current phase",
-        example: "5",
-      },
-      {
-        variable: "{{days_since_signup}}",
-        description: "Days since signup",
-        example: "30",
-      },
-    ],
-  },
-  {
-    category: "Links",
-    variables: [
-      {
-        variable: "{{portal_link}}",
-        description: "Recruit portal link",
-        example: "https://...",
-      },
-    ],
-  },
-];
+// Template variable categories — derived from shared canonical source
+import { getVariablesByCategory } from "@/lib/templateVariables";
+
+const TEMPLATE_VARIABLE_CATEGORIES = getVariablesByCategory("pipeline").map(
+  (group) => ({
+    category: group.category,
+    variables: group.variables.map((v) => ({
+      variable: `{{${v.key}}}`,
+      description: v.description,
+      example: v.preview,
+    })),
+  }),
+);
 
 // Flat list for backward compatibility (used by other components that import this)
 const _TEMPLATE_VARIABLES = TEMPLATE_VARIABLE_CATEGORIES.flatMap(

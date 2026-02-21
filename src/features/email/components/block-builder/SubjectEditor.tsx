@@ -1,10 +1,11 @@
-import {useState, useRef} from 'react'
+import {useState, useRef, useMemo} from 'react'
 import {ChevronDown, AlertCircle, CheckCircle} from 'lucide-react'
 import {cn} from '@/lib/utils'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover'
 import {Button} from '@/components/ui/button'
+import {getVariablesByCategory} from '@/lib/templateVariables'
 
 interface SubjectEditorProps {
   value: string
@@ -12,16 +13,6 @@ interface SubjectEditorProps {
   previewVariables?: Record<string, string>
   className?: string
 }
-
-// Available variables for subject line
-const SUBJECT_VARIABLES = [
-  { key: 'recruit_name', label: 'Recruit Name', preview: 'John Smith' },
-  { key: 'recruit_first_name', label: 'First Name', preview: 'John' },
-  { key: 'recruit_email', label: 'Recruit Email', preview: 'john@example.com' },
-  { key: 'phase_name', label: 'Current Phase', preview: 'Application Review' },
-  { key: 'sender_name', label: 'Your Name', preview: 'Jane Doe' },
-  { key: 'company_name', label: 'Company', preview: 'ABC Insurance' },
-]
 
 export function SubjectEditor({
   value,
@@ -31,6 +22,14 @@ export function SubjectEditor({
 }: SubjectEditorProps) {
   const [variableOpen, setVariableOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Derive subject variables from shared source (email context)
+  const SUBJECT_VARIABLES = useMemo(() =>
+    getVariablesByCategory('email')
+      .flatMap(group => group.variables)
+      .map(v => ({ key: v.key, label: v.description, preview: v.preview })),
+    []
+  )
 
   // Character count and recommendations
   const charCount = value.length

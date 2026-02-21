@@ -1,23 +1,19 @@
-// File: /home/nneessen/projects/commissionTracker/src/services/events/workflowEventEmitter.ts
-// TODO: remove console.logs
+// src/services/events/workflowEventEmitter.ts
+// Client-side event emitter that delegates to server-side edge function
+// for reliable workflow matching and execution (bypasses RLS issues).
+// TODO: is bypassing RLS going to be a security issue?
 
-import {supabase} from "@/services/base/supabase";
-import type {Workflow} from "@/types/workflow.types";
+import { supabase } from "@/services/base/supabase";
 
 interface EventContext {
-  // Common context fields
   userId?: string;
   userEmail?: string;
   organizationId?: string;
   timestamp?: string;
-
-  // Entity-specific fields
   recruitId?: string;
   policyId?: string;
   commissionId?: string;
   agentId?: string;
-
-  // Additional data
   [key: string]: unknown;
 }
 
@@ -39,74 +35,58 @@ class WorkflowEventEmitter {
     return WorkflowEventEmitter.instance;
   }
 
+  
   async emit(
     eventName: string,
     context: EventContext,
   ): Promise<EventEmissionResult> {
-    const result: EventEmissionResult = {
-      success: true,
-      workflowsTriggered: 0,
-      errors: [],
-    };
-
     try {
-      console.log(`[EventEmitter] Firing event: ${eventName}`, context);
-
-      if (typeof window !== "undefined" && import.meta.env?.DEV) {
-        const { toast } = await import("sonner");
-        toast.info(`Event: ${eventName}`, {
-          description: "Workflow event triggered",
-          duration: 2000,
-        });
-      }
-
-      await this.recordEvent(eventName, context);
-
-      const workflows = await this.findTriggeredWorkflows(eventName);
-
-      if (workflows.length === 0) {
-        console.log(
-          `[EventEmitter] No active workflows found for event: ${eventName}`,
-        );
-        return result;
-      }
-
-      console.log(
-        `[EventEmitter] Found ${workflows.length} workflows for event: ${eventName}`,
+      const { data, error } = await supabase.functions.invoke(
+        "trigger-workflow-event",
+        {
+          body: { eventName, context },
+        },
       );
 
-      // Execute each workflow
-      for (const workflow of workflows) {
-        try {
-          await this.executeWorkflow(workflow, eventName, context);
-          result.workflowsTriggered++;
-        } catch (error) {
-          console.error(
-            `[EventEmitter] Failed to execute workflow ${workflow.id}:`,
-            error,
-          );
-          result.errors?.push(
-            `Workflow ${workflow.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
-          );
-        }
+      if (error) {
+        console.error(
+          `[EventEmitter] Edge function error for ${eventName}:`,
+          error,
+        );
+        return {
+          success: false,
+          workflowsTriggered: 0,
+          errors: [error.message || "Edge function invocation failed"],
+        };
       }
 
-      // Show success feedback if workflows were triggered
+      const result: EventEmissionResult = {
+        success: data?.success ?? false,
+        workflowsTriggered: data?.workflowsTriggered ?? 0,
+        errors: data?.matches
+          ?.filter(
+            (m: { status: string; error?: string }) => m.status === "failed",
+          )
+          .map(
+            (m: { workflowName: string; error?: string }) =>
+              `${m.workflowName}: ${m.error}`,
+          ),
+      };
+
       if (
-        result.workflowsTriggered > 0 &&
         typeof window !== "undefined" &&
-        import.meta.env?.DEV
+        import.meta.env?.DEV &&
+        result.workflowsTriggered > 0
       ) {
         const { toast } = await import("sonner");
-        toast.success(`${result.workflowsTriggered} workflow(s) triggered`, {
-          description: `Event: ${eventName}`,
-          duration: 3000,
-        });
+        toast.success(
+          `${result.workflowsTriggered} workflow(s) triggered by ${eventName}`,
+        );
       }
 
       return result;
     } catch (error) {
-      console.error("[EventEmitter] Error emitting event:", error);
+      console.error(`[EventEmitter] Failed to emit ${eventName}:`, error);
       return {
         success: false,
         workflowsTriggered: 0,
@@ -115,245 +95,7 @@ class WorkflowEventEmitter {
     }
   }
 
-  /**
-   * Record event occurrence for audit and debugging
-   */
-  private async recordEvent(
-    eventName: string,
-    context: EventContext,
-  ): Promise<void> {
-    try {
-      await supabase.from("workflow_events").insert({
-        event_name: eventName,
-        context,
-        fired_at: new Date().toISOString(),
-        workflows_triggered: 0, // Will be updated later
-      });
-    } catch (error) {
-      // Don't fail if we can't record the event, just log it
-      console.warn("[EventEmitter] Failed to record event:", error);
-    }
-  }
-
-  /**
-   * Find all active workflows that should be triggered by this event
-   */
-  private async findTriggeredWorkflows(eventName: string): Promise<Workflow[]> {
-    // Query workflows with event trigger matching this event name
-    const { data: workflows, error } = await supabase
-      .from("workflows")
-      .select("*")
-      .eq("status", "active")
-      .eq("trigger_type", "event")
-      .contains("config", { trigger: { eventName } });
-
-    if (error) {
-      console.error("[EventEmitter] Error finding triggered workflows:", error);
-      throw error;
-    }
-
-    // Additional filtering for workflows that match the event
-    const matchingWorkflows = (workflows || []).filter((workflow) => {
-      const trigger = workflow.config?.trigger;
-      return trigger?.eventName === eventName;
-    });
-
-    return matchingWorkflows as Workflow[];
-  }
-
-  /**
-   * Execute a workflow in response to an event
-   */
-  private async executeWorkflow(
-    workflow: Workflow,
-    eventName: string,
-    context: EventContext,
-  ): Promise<void> {
-    console.log(
-      `[EventEmitter] Executing workflow: ${workflow.name} for event: ${eventName}`,
-    );
-
-    // Check cooldown period
-    const canRun = await this.checkWorkflowCooldown(workflow, context);
-    if (!canRun) {
-      console.log(
-        `[EventEmitter] Workflow ${workflow.name} is in cooldown period`,
-      );
-      return;
-    }
-
-    // Check conditions if any
-    if (!this.evaluateConditions(workflow.conditions, context)) {
-      console.log(
-        `[EventEmitter] Workflow ${workflow.name} conditions not met`,
-      );
-      return;
-    }
-
-    // Create workflow run
-    const { data: run, error: runError } = await supabase
-      .from("workflow_runs")
-      .insert({
-        workflow_id: workflow.id,
-        trigger_source: `event:${eventName}`,
-        status: "running",
-        context: {
-          ...context,
-          eventName,
-          triggeredBy: "system",
-          triggeredAt: new Date().toISOString(),
-        },
-      })
-      .select()
-      .single();
-
-    if (runError) {
-      console.error(`[EventEmitter] Failed to create workflow run:`, runError);
-      throw runError;
-    }
-
-    // Trigger the edge function to process the workflow asynchronously
-    supabase.functions
-      .invoke("process-workflow", {
-        body: {
-          runId: run.id,
-          workflowId: workflow.id,
-          isEventTriggered: true,
-        },
-      })
-      .then((response) => {
-        if (response.error) {
-          console.error(
-            `[EventEmitter] Workflow processor error for ${workflow.name}:`,
-            response.error,
-          );
-        } else {
-          console.log(
-            `[EventEmitter] Workflow ${workflow.name} triggered successfully`,
-          );
-        }
-      })
-      .catch((err) => {
-        console.error(
-          `[EventEmitter] Failed to invoke workflow processor:`,
-          err,
-        );
-      });
-  }
-
-  /**
-   * Check if workflow can run based on cooldown and rate limits
-   */
-  private async checkWorkflowCooldown(
-    workflow: Workflow, _context: EventContext,
-  ): Promise<boolean> {
-    if (!workflow.cooldownMinutes) {
-      return true; // No cooldown configured
-    }
-
-    const cooldownTime = new Date();
-    cooldownTime.setMinutes(
-      cooldownTime.getMinutes() - workflow.cooldownMinutes,
-    );
-
-    // Check for recent runs
-    const { data: recentRuns, error } = await supabase
-      .from("workflow_runs")
-      .select("id")
-      .eq("workflow_id", workflow.id)
-      .gte("started_at", cooldownTime.toISOString())
-      .limit(1);
-
-    if (error) {
-      console.warn("[EventEmitter] Failed to check cooldown:", error);
-      return true; // Allow run if we can't check
-    }
-
-    return !recentRuns || recentRuns.length === 0;
-  }
-
-  /**
-   * Evaluate workflow conditions against the event context
-   */
-  private evaluateConditions(
-    conditions: unknown[],
-    context: EventContext,
-  ): boolean {
-    if (!conditions || conditions.length === 0) {
-      return true; // No conditions to check
-    }
-
-    for (const condition of conditions) {
-      const cond = condition as {
-        field: string;
-        operator: string;
-        value: unknown;
-      };
-      const fieldValue = this.getNestedValue(context, cond.field);
-      const conditionMet = this.evaluateCondition(
-        fieldValue,
-        cond.operator,
-        cond.value,
-      );
-
-      // For now, we'll use AND logic for all conditions
-      if (!conditionMet) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Get nested value from object using dot notation
-   */
-  private getNestedValue(obj: unknown, path: string): unknown {
-    return path
-      .split(".")
-      .reduce(
-        (current, key) => (current as Record<string, unknown>)?.[key],
-        obj,
-      );
-  }
-
-  /**
-   * Evaluate a single condition
-   */
-  private evaluateCondition(
-    fieldValue: unknown,
-    operator: string,
-    expectedValue: unknown,
-  ): boolean {
-    switch (operator) {
-      case "equals":
-        return fieldValue === expectedValue;
-      case "not_equals":
-        return fieldValue !== expectedValue;
-      case "contains":
-        return String(fieldValue).includes(String(expectedValue));
-      case "not_contains":
-        return !String(fieldValue).includes(String(expectedValue));
-      case "greater_than":
-        return Number(fieldValue) > Number(expectedValue);
-      case "less_than":
-        return Number(fieldValue) < Number(expectedValue);
-      case "in":
-        return (
-          Array.isArray(expectedValue) && expectedValue.includes(fieldValue)
-        );
-      case "not_in":
-        return (
-          Array.isArray(expectedValue) && !expectedValue.includes(fieldValue)
-        );
-      default:
-        return true; // Unknown operator, allow
-    }
-  }
-
-  /**
-   * Emit batch events for bulk operations
-   */
+  
   async emitBatch(
     events: Array<{ eventName: string; context: EventContext }>,
   ): Promise<void> {
@@ -363,10 +105,8 @@ class WorkflowEventEmitter {
   }
 }
 
-// Export singleton instance
 export const workflowEventEmitter = WorkflowEventEmitter.getInstance();
 
-// Export event names as constants for type safety
 export const WORKFLOW_EVENTS = {
   // Recruit events
   RECRUIT_CREATED: "recruit.created",
@@ -379,6 +119,7 @@ export const WORKFLOW_EVENTS = {
   POLICY_APPROVED: "policy.approved",
   POLICY_CANCELLED: "policy.cancelled",
   POLICY_RENEWED: "policy.renewed",
+  POLICY_OVER_30_DAYS_NOT_ISSUED: "policy.over_30_days_not_issued",
 
   // Commission events
   COMMISSION_EARNED: "commission.earned",
@@ -402,4 +143,3 @@ export const WORKFLOW_EVENTS = {
   // Custom events
   CUSTOM_TRIGGER: "custom.trigger",
 } as const;
-

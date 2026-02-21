@@ -1,4 +1,5 @@
 // src/services/activity/activityLogService.ts
+// TODO: can any of these methods be abstracted into a single method, that can handle multiple log actions?
 import { ActivityLogRepository } from "./ActivityLogRepository";
 import type {
   ActivityLogEntity,
@@ -14,27 +15,14 @@ class ActivityLogService {
     this.repository = new ActivityLogRepository();
   }
 
-  // ========================================
-  // Query Operations
-  // ========================================
-
-  /**
-   * Get activity log by ID
-   */
   async getById(id: string): Promise<ActivityLogEntity | null> {
     return this.repository.findById(id);
   }
 
-  /**
-   * Get activity logs for a user
-   */
   async getForUser(userId: string, limit = 50): Promise<ActivityLogEntity[]> {
     return this.repository.findByUserId(userId, limit);
   }
 
-  /**
-   * Get activity logs by action type
-   */
   async getByActionType(
     actionType: ActivityActionType | string,
     limit = 100,
@@ -42,9 +30,7 @@ class ActivityLogService {
     return this.repository.findByActionType(actionType, limit);
   }
 
-  /**
-   * Get activity logs performed by a specific user
-   */
+  // TODO: another method using 'performer' instead of 'agent'. find and replace all
   async getByPerformer(
     performedBy: string,
     limit = 100,
@@ -52,9 +38,6 @@ class ActivityLogService {
     return this.repository.findByPerformer(performedBy, limit);
   }
 
-  /**
-   * Get activity logs within a date range
-   */
   async getByDateRange(
     userId: string,
     startDate: string,
@@ -63,31 +46,14 @@ class ActivityLogService {
     return this.repository.findByDateRange(userId, startDate, endDate);
   }
 
-  // ========================================
-  // Logging Operations
-  // ========================================
-
-  /**
-   * Log a generic activity
-   */
   async log(data: CreateActivityLogData): Promise<ActivityLogEntity> {
     return this.repository.log(data);
   }
 
-  /**
-   * Log multiple activities
-   */
   async logMany(items: CreateActivityLogData[]): Promise<ActivityLogEntity[]> {
     return this.repository.logMany(items);
   }
 
-  // ========================================
-  // Convenience Logging Methods
-  // ========================================
-
-  /**
-   * Log recruit created
-   */
   async logRecruitCreated(
     userId: string,
     performedBy: string,
@@ -101,9 +67,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log recruit updated
-   */
   async logRecruitUpdated(
     userId: string,
     performedBy: string,
@@ -117,9 +80,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log phase advanced
-   */
   async logPhaseAdvanced(
     userId: string,
     performedBy: string,
@@ -134,9 +94,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log phase blocked
-   */
   async logPhaseBlocked(
     userId: string,
     performedBy: string,
@@ -151,9 +108,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log document uploaded
-   */
   async logDocumentUploaded(
     userId: string,
     performedBy: string,
@@ -168,9 +122,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log document approved
-   */
   async logDocumentApproved(
     userId: string,
     performedBy: string,
@@ -184,9 +135,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log document rejected
-   */
   async logDocumentRejected(
     userId: string,
     performedBy: string,
@@ -201,9 +149,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log email sent
-   */
   async logEmailSent(
     userId: string,
     performedBy: string,
@@ -218,9 +163,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log checklist item completed
-   */
   async logChecklistItemCompleted(
     userId: string,
     performedBy: string,
@@ -235,9 +177,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log status changed
-   */
   async logStatusChanged(
     userId: string,
     performedBy: string,
@@ -252,9 +191,6 @@ class ActivityLogService {
     });
   }
 
-  /**
-   * Log note added
-   */
   async logNoteAdded(
     userId: string,
     performedBy: string,
@@ -269,6 +205,5 @@ class ActivityLogService {
   }
 }
 
-// Export singleton instance
 export const activityLogService = new ActivityLogService();
 export { ActivityLogService };
