@@ -847,6 +847,7 @@ class HierarchyService {
 
         // Team Pace - Monthly
         team_monthly_ap_target: teamMonthlyAPTarget,
+        team_fixed_monthly_ap: fixedMonthlyAPTotal,
         team_monthly_pace_percentage: teamMonthlyPacePercentage,
         team_monthly_pace_status: teamMonthlyPaceStatus,
         team_monthly_projected: teamMonthlyProjected,

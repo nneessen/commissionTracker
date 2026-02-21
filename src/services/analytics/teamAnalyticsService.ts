@@ -288,12 +288,19 @@ class TeamAnalyticsService {
     // All policies in the date range count toward Total AP (no status filter)
     const periodPolicies = rawData.policies;
 
-    // Calculate metrics from all submissions in the period
-    const totalAPWritten = periodPolicies.reduce(
+    // Filter to policies with effective_date up to today to avoid inflating pace
+    // with future-dated policies (common in insurance: renewals, pre-dated effective dates)
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const pacePolicies = periodPolicies.filter(
+      (p) => !p.effective_date || p.effective_date <= todayStr,
+    );
+
+    // Calculate metrics from submissions up to today only
+    const totalAPWritten = pacePolicies.reduce(
       (sum, p) => sum + (p.annual_premium || 0),
       0,
     );
-    const totalPoliciesWritten = periodPolicies.length;
+    const totalPoliciesWritten = pacePolicies.length;
     const avgPremiumPerPolicy =
       totalPoliciesWritten > 0 ? totalAPWritten / totalPoliciesWritten : 0;
 
@@ -303,9 +310,10 @@ class TeamAnalyticsService {
     const nowTime = Math.min(now.getTime(), periodEnd); // Don't go past period end
 
     const msElapsed = Math.max(0, nowTime - periodStart);
+    // Use floor+1 to avoid off-by-one at midnight (day 1 = today inclusive)
     const daysElapsed = Math.max(
       1,
-      Math.ceil(msElapsed / (24 * 60 * 60 * 1000)),
+      Math.floor(msElapsed / (24 * 60 * 60 * 1000)) + 1,
     );
 
     const msRemaining = Math.max(0, periodEnd - nowTime);

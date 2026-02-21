@@ -110,6 +110,7 @@ export function TeamMetricsCard({
   // Team Pace metrics (AP-based)
   // Monthly
   const teamMonthlyAPTarget = stats?.team_monthly_ap_target || 0;
+  const teamFixedMonthlyAP = stats?.team_fixed_monthly_ap || 0; // MTD AP capped at today
   const teamMonthlyPacePercentage = stats?.team_monthly_pace_percentage || 0;
   const teamMonthlyPaceStatus = stats?.team_monthly_pace_status || "on_pace";
   const teamMonthlyProjected = stats?.team_monthly_projected || 0;
@@ -409,12 +410,12 @@ export function TeamMetricsCard({
                         {formatCurrency(teamMonthlyAPTarget)}
                       </span>
                     </div>
-                    <div title="All submissions this month (any status)">
+                    <div title="All submissions this month with effective date up to today (any status)">
                       <span className="text-zinc-500 dark:text-zinc-400">
                         MTD:{" "}
                       </span>
                       <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                        {formatCurrency(teamAPTotal)}
+                        {formatCurrency(teamFixedMonthlyAP)}
                       </span>
                     </div>
                     <div title="Total AP MTD ÷ day of month × days in month">

@@ -5,7 +5,6 @@ import { BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTeamAnalyticsData } from "@/hooks/analytics";
 import {
-  TeamPaceMetrics,
   TeamCarriersProductsBreakdown,
   TeamProductMatrix,
   TeamPolicyStatusBreakdown,
@@ -52,7 +51,6 @@ export function TeamAnalyticsDashboard({
     isLoading,
     isError,
     agentSegmentation,
-    teamPace,
     policyStatus,
     geographicBreakdown,
     carrierBreakdown,
@@ -123,10 +121,7 @@ export function TeamAnalyticsDashboard({
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2">
-              {/* 1. Pace Metrics */}
-              <TeamPaceMetrics data={teamPace} isLoading={isLoading} />
-
-              {/* 2. Carriers & Products Breakdown */}
+              {/* 1. Carriers & Products Breakdown */}
               <TeamCarriersProductsBreakdown
                 data={carrierBreakdown}
                 isLoading={isLoading}
