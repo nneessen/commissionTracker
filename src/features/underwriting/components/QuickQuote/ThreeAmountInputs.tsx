@@ -107,7 +107,10 @@ function AmountInput({
           onBlur={handleBlur}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
-          className="pl-5 text-right tabular-nums h-8 text-sm bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600"
+          className={cn(
+            "pl-5 text-right tabular-nums h-8 text-sm bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600",
+            mode === "budget" && "pr-9",
+          )}
         />
         {mode === "budget" && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">

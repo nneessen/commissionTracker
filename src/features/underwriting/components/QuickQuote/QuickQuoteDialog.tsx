@@ -1,13 +1,13 @@
 // src/features/underwriting/components/QuickQuote/QuickQuoteDialog.tsx
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Suspense, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   RefreshCw,
   AlertCircle,
   ArrowLeft,
   Calculator,
-  Zap,
+  Loader2,
   CigaretteOff,
   Cigarette,
 } from "lucide-react";
@@ -175,7 +175,27 @@ function ModeToggle({
 // Main Component
 // =============================================================================
 
+/** Full-page loading state shown while rate data is fetched */
+function QuickQuoteLoading() {
+  return (
+    <div className="flex flex-col items-center justify-center h-[calc(100vh-3.5rem)] gap-3">
+      <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+      <span className="text-sm text-muted-foreground">
+        Loading rate tables...
+      </span>
+    </div>
+  );
+}
+
 export function QuickQuoteDialog() {
+  return (
+    <Suspense fallback={<QuickQuoteLoading />}>
+      <QuickQuoteInner />
+    </Suspense>
+  );
+}
+
+function QuickQuoteInner() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
@@ -186,12 +206,16 @@ export function QuickQuoteDialog() {
     error,
   } = useAllPremiumMatrices();
 
+  // Show full-page loader until rate data is ready
+  if (isLoadingMatrices) {
+    return <QuickQuoteLoading />;
+  }
+
   return (
     <QuickQuoteContent
       form={form}
       setForm={setForm}
       matrices={matrices}
-      isLoadingMatrices={isLoadingMatrices}
       error={error}
       onBack={() => navigate({ to: "/policies" })}
     />
@@ -203,14 +227,12 @@ function QuickQuoteContent({
   form,
   setForm,
   matrices,
-  isLoadingMatrices,
   error,
   onBack,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
   matrices: ReturnType<typeof useAllPremiumMatrices>["data"];
-  isLoadingMatrices: boolean;
   error: Error | null;
   onBack: () => void;
 }) {
@@ -390,12 +412,6 @@ function QuickQuoteContent({
           </span>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {isLoadingMatrices && (
-            <span className="text-[10px] text-emerald-600 flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              Loading rates...
-            </span>
-          )}
           <Button
             variant="ghost"
             size="sm"
@@ -644,7 +660,6 @@ function QuickQuoteContent({
             quotes={quotes}
             mode={form.mode}
             amounts={currentAmounts}
-            isLoading={isLoadingMatrices}
           />
         )}
       </div>

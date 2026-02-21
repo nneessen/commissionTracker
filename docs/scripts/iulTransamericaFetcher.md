@@ -107,38 +107,26 @@ const createQuote = async (gender, age, riskClass) => {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
-    redirect: "follow",
   });
 
-  if (!res.ok) {
-    throw new Error(`Create quote failed: ${res.status} ${res.statusText}`);
-  }
-
-  const data = await res.json();
-
-  // Remix may return a redirect object or the data directly
-  if (data.redirect) {
-    // Extract quote ID from redirect URL like /agent/iul/{uuid}
-    const match = data.redirect.match(/\/agent\/iul\/([a-f0-9-]+)/);
+  // Remix returns 204 with x-remix-redirect header containing the quote URL
+  const redirectUrl = res.headers.get("x-remix-redirect");
+  if (redirectUrl) {
+    const match = redirectUrl.match(/\/agent\/iul\/([a-f0-9-]+)/);
     if (match) return match[1];
-    throw new Error(`Unexpected redirect: ${data.redirect}`);
+    throw new Error(`Unexpected redirect URL: ${redirectUrl}`);
   }
 
-  // Or the response might contain the quote ID directly
-  if (data.viewContext?.quoteById?.id) {
-    return data.viewContext.quoteById.id;
-  }
-  if (data.quoteId) {
-    return data.quoteId;
+  // Fallback: try parsing response body
+  if (res.ok && res.status !== 204) {
+    const data = await res.json();
+    if (data.viewContext?.quoteById?.id) return data.viewContext.quoteById.id;
+    if (data.quoteId) return data.quoteId;
   }
 
-  // Check if the URL changed (for document-level redirects)
-  const url = res.url;
-  const urlMatch = url.match(/\/agent\/iul\/([a-f0-9-]+)/);
-  if (urlMatch) return urlMatch[1];
-
-  console.error("Full response:", JSON.stringify(data, null, 2));
-  throw new Error("Could not extract quote ID from response");
+  throw new Error(
+    `Could not extract quote ID. Status: ${res.status}, redirect header: ${redirectUrl}`,
+  );
 };
 
 // Update illustration with a specific face amount and fetch results
@@ -162,7 +150,7 @@ const updateIllustration = async (quoteId, faceAmount, dob) => {
     yearsToWithdraw: TA_CONFIG.yearsToWithdraw,
   });
 
-  // POST to update the illustration
+  // POST to update the illustration (returns 204 on success)
   const updateRes = await fetch(
     `${BASE_URL}/agent/iul/${quoteId}${DATA_SUFFIX}`,
     {
@@ -172,14 +160,14 @@ const updateIllustration = async (quoteId, faceAmount, dob) => {
     },
   );
 
-  if (!updateRes.ok) {
+  if (!updateRes.ok && updateRes.status !== 204) {
     throw new Error(
       `Update illustration failed: ${updateRes.status} ${updateRes.statusText}`,
     );
   }
 
-  // Small delay then fetch the updated data
-  await sleep(500);
+  // Wait for server to process the illustration recalculation
+  await sleep(1500);
 
   const dataRes = await fetch(
     `${BASE_URL}/agent/iul/${quoteId}${DATA_SUFFIX}`,
