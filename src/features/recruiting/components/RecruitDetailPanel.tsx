@@ -1,42 +1,11 @@
 // src/features/recruiting/components/RecruitDetailPanel.tsx
-// Redesigned with horizontal phase stepper - compact and efficient
+// Orchestrator — delegates to focused subcomponents
 
-import React, { useState } from "react";
-import { UserProfile } from "@/types/hierarchy.types";
+import { useState } from "react";
+import type { UserProfile } from "@/types/hierarchy.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Mail,
-  Phone,
-  Activity,
-  ArrowRight,
-  AlertCircle,
-  Trash2,
-  SendHorizontal,
-  Loader2,
-  CheckCircle2,
-  Clock,
-  ListChecks,
-  FolderOpen,
-  Check,
-  Circle,
-  Ban,
-  RotateCcw,
-  AlertTriangle,
-  EyeOff,
-  Undo2,
-  X,
-  Briefcase,
-} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,14 +16,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  Briefcase,
+  Circle,
+  FolderOpen,
+  ListChecks,
+  Loader2,
+  Mail,
+  RotateCcw,
+} from "lucide-react";
 import { DeleteRecruitDialogOptimized } from "./DeleteRecruitDialog.optimized";
 import { InitializePipelineDialog } from "./InitializePipelineDialog";
-import { useRouter } from "@tanstack/react-router";
 import { PhaseChecklist } from "./PhaseChecklist";
 import { DocumentManager } from "./DocumentManager";
 import { EmailManager } from "./EmailManager";
-import { ContractingRequestCard } from "./contracting/ContractingRequestCard";
-import { AddCarrierDialog } from "./contracting/AddCarrierDialog";
+import { RecruitDetailHeader } from "./RecruitDetailHeader";
+import { RecruitActionBar } from "./RecruitActionBar";
+import { PhaseStepper } from "./PhaseStepper";
+import { ContractingTab } from "./ContractingTab";
+import { ActivityTab } from "./ActivityTab";
 import {
   useRecruitPhaseProgress,
   useCurrentPhase,
@@ -71,17 +54,19 @@ import { useCurrentUserProfile } from "@/hooks/admin";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { useRecruitEmails } from "../hooks/useRecruitEmails";
 import { useRecruitActivityLog } from "../hooks/useRecruitActivity";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
-import {
-  TERMINAL_STATUS_COLORS,
-  INVITATION_STATUS_LABELS,
-  type InvitationStatus,
+import { useRecruitCarrierContracts } from "../hooks/useRecruitCarrierContracts";
+import type {
+  InvitationStatus,
+  PipelinePhase,
+  PhaseChecklistItem,
 } from "@/types/recruiting.types";
+
+type PhaseWithChecklist = PipelinePhase & {
+  checklist_items: PhaseChecklistItem[];
+};
 import { useCancelInvitation } from "../hooks/useRecruitInvitations";
 import { useResendInvite } from "../hooks/useAuthUser";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
 import {
   useSlackIntegrations,
@@ -95,7 +80,10 @@ import {
   buildNewRecruitMessage,
   buildNpnReceivedMessage,
 } from "@/hooks/slack";
-import { Hash } from "lucide-react";
+import type {
+  RecruitEntity,
+  RecruitPermissions,
+} from "../types/recruit-detail.types";
 
 interface RecruitDetailPanelProps {
   recruit: UserProfile;
@@ -115,122 +103,100 @@ export function RecruitDetailPanel({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [initializeDialogOpen, setInitializeDialogOpen] = useState(false);
   const [unenrollDialogOpen, setUnenrollDialogOpen] = useState(false);
-  const [resendingInvite, setResendingInvite] = useState(false);
-  const [sendingNotificationType, setSendingNotificationType] = useState<
-    "new_recruit" | "npn_received" | null
-  >(null);
-  const [showAddCarrierDialog, setShowAddCarrierDialog] = useState(false);
-  const _router = useRouter();
 
-  // Invitation detection - for pending invitations that haven't registered yet
+  // ─── Entity derivation (discriminated union) ──────────────────────
   const isInvitation = recruit?.id?.startsWith("invitation-");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Virtual recruit type includes invitation fields
-  const invitationId = (recruit as any)?.invitation_id as string | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Virtual recruit type includes invitation fields
-  const invitationStatus = (recruit as any)?.invitation_status as
-    | InvitationStatus
-    | undefined;
+  const recruitAny = recruit as any;
+  const rawInvitationId: string | undefined = recruitAny?.invitation_id;
+  const entity: RecruitEntity = isInvitation
+    ? {
+        kind: "invitation",
+        recruit,
+        invitationId: rawInvitationId ?? "",
+        invitationStatus:
+          (recruitAny.invitation_status as InvitationStatus) ?? "pending",
+      }
+    : { kind: "registered", recruit, recruitId: recruit.id };
 
-  const cancelInvitation = useCancelInvitation();
-  const resendInvite = useResendInvite();
-
+  // ─── Permissions (computed once) ──────────────────────────────────
   const { data: currentUserProfile } = useCurrentUserProfile();
+  const hasStaffRole =
+    currentUserProfile?.roles?.some((role) =>
+      STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
+    ) || false;
+  const isStaff = currentUserProfile?.is_admin || hasStaffRole || false;
 
-  // For pending invitations, skip all database queries that require a valid UUID
-  // The isInvitation check happens at line 104 and uses recruit?.id?.startsWith("invitation-")
+  const permissions: RecruitPermissions = {
+    canManage: isUpline || isStaff,
+    canInitialize: isUpline || isStaff,
+    canDelete: (isUpline || isStaff) && currentUserId !== recruit.id,
+    isStaff,
+  };
+
+  // ─── Query ID (undefined for invitations → disables DB queries) ───
   const recruitIdForQueries = isInvitation ? undefined : recruit.id;
 
-  const { data: phaseProgress, isLoading: progressLoading } =
-    useRecruitPhaseProgress(recruitIdForQueries);
-  const { data: currentPhase, isLoading: currentPhaseLoading } =
-    useCurrentPhase(recruitIdForQueries);
+  // ─── Pipeline hooks ───────────────────────────────────────────────
+  const {
+    data: phaseProgress,
+    isLoading: progressLoading,
+    error: progressError,
+  } = useRecruitPhaseProgress(recruitIdForQueries);
+  const {
+    data: currentPhase,
+    isLoading: currentPhaseLoading,
+    error: currentPhaseError,
+  } = useCurrentPhase(recruitIdForQueries);
 
-  // CRITICAL: Use the recruit's actual template, not the global default
-  // Get template ID from progress records (most reliable) or from recruit profile
-  // For invitations, we don't have progress data, so fall back to default template
+  // Template resolution: recruit's own template → default for new recruits
   const recruitTemplateId = isInvitation
     ? null
     : phaseProgress?.[0]?.template_id || recruit.pipeline_template_id || null;
-
-  // Use the recruit's specific template if they have one, otherwise fall back to default for new recruits
   const { data: recruitTemplate, isLoading: recruitTemplateLoading } =
     useTemplate(recruitTemplateId ?? undefined);
   const { data: defaultTemplate, isLoading: defaultTemplateLoading } =
     useActiveTemplate();
-
-  // Use recruit's template if available, otherwise default (for new recruits without progress)
   const template = recruitTemplateId ? recruitTemplate : defaultTemplate;
   const templateLoading = recruitTemplateId
     ? recruitTemplateLoading
     : defaultTemplateLoading;
 
+  // ─── Tab data hooks (only fetch for active tab) ───────────────────
   const { data: checklistProgress } = useChecklistProgress(
     recruitIdForQueries,
     selectedPhaseId || currentPhase?.phase_id,
   );
-  const { data: documents } = useRecruitDocuments(recruitIdForQueries);
-  const { data: emails } = useRecruitEmails(recruitIdForQueries);
-  const { data: activityLog } = useRecruitActivityLog(recruitIdForQueries);
+  const { data: documents } = useRecruitDocuments(
+    activeTab === "documents" || activeTab === "checklist"
+      ? recruitIdForQueries
+      : undefined,
+  );
+  const { data: emails } = useRecruitEmails(
+    activeTab === "emails" ? recruitIdForQueries : undefined,
+  );
+  const {
+    data: activityLog,
+    isLoading: activityLoading,
+    error: activityError,
+  } = useRecruitActivityLog(
+    activeTab === "activity" ? recruitIdForQueries : undefined,
+  );
+  // Contract count for tab badge (always fetch for badge visibility)
+  const { data: contractRequests } =
+    useRecruitCarrierContracts(recruitIdForQueries);
 
-  const queryClient = useQueryClient();
-  const { data: contractRequests } = useQuery({
-    queryKey: ['carrier-contract-requests', recruitIdForQueries],
-    queryFn: () => carrierContractRequestService.getRecruitContractRequests(recruitIdForQueries!),
-    enabled: !!recruitIdForQueries,
-  });
-
-  const updateContractRequest = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
-      carrierContractRequestService.updateContractRequest(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
-      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts', recruitIdForQueries] });
-      toast.success('Contract request updated');
-    },
-    onError: (error) => {
-      toast.error('Failed to update contract request');
-      console.error(error);
-    },
-  });
-
-  const addCarrierContract = useMutation({
-    mutationFn: (carrierId: string) =>
-      carrierContractRequestService.createContractRequest({
-        recruit_id: recruit.id,
-        carrier_id: carrierId,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
-      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts', recruitIdForQueries] });
-      toast.success('Carrier contract added');
-    },
-    onError: (error) => {
-      toast.error('Failed to add carrier contract');
-      console.error(error);
-    },
-  });
-
-  const deleteContractRequest = useMutation({
-    mutationFn: (id: string) => carrierContractRequestService.deleteContractRequest(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carrier-contract-requests', recruitIdForQueries] });
-      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts', recruitIdForQueries] });
-      toast.success('Contract request deleted');
-    },
-    onError: (error) => {
-      toast.error('Failed to delete contract request');
-      console.error(error);
-    },
-  });
-
+  // ─── Mutations ────────────────────────────────────────────────────
   const advancePhase = useAdvancePhase();
   const blockPhase = useBlockPhase();
   const revertPhase = useRevertPhase();
   const updatePhaseStatus = useUpdatePhaseStatus();
   const initializeProgress = useInitializeRecruitProgress();
   const unenrollPipeline = useUnenrollFromPipeline();
+  const cancelInvitation = useCancelInvitation();
+  const resendInvite = useResendInvite();
 
-  // Slack recruit notification hooks
+  // ─── Slack ────────────────────────────────────────────────────────
   const { data: slackIntegrations = [] } = useSlackIntegrations();
   const selfMadeIntegration = findSelfMadeIntegration(slackIntegrations);
   const { data: slackChannels = [] } = useSlackChannelsById(
@@ -241,27 +207,26 @@ export function RecruitDetailPanel({
     useRecruitNotificationStatus(recruitIdForQueries);
   const sendSlackNotification = useSendRecruitSlackNotification();
 
-  const handleAdvancePhase = async () => {
-    if (!currentPhase || !confirm("Advance to next phase?")) return;
+  // ─── Handlers ─────────────────────────────────────────────────────
+  const handleAdvancePhase = async (): Promise<void> => {
+    if (!currentPhase) return;
     await advancePhase.mutateAsync({
       userId: recruit.id,
       currentPhaseId: currentPhase.phase_id,
     });
   };
 
-  const handleBlockPhase = async () => {
+  const handleBlockPhase = async (reason: string): Promise<void> => {
     if (!currentPhase) return;
-    const reason = prompt("Reason for blocking:");
-    if (reason)
-      await blockPhase.mutateAsync({
-        userId: recruit.id,
-        phaseId: currentPhase.phase_id,
-        reason,
-      });
+    await blockPhase.mutateAsync({
+      userId: recruit.id,
+      phaseId: currentPhase.phase_id,
+      reason,
+    });
   };
 
-  const handleUnblockPhase = async () => {
-    if (!currentPhase || !confirm("Unblock this phase?")) return;
+  const handleUnblockPhase = async (): Promise<void> => {
+    if (!currentPhase) return;
     await updatePhaseStatus.mutateAsync({
       userId: recruit.id,
       phaseId: currentPhase.phase_id,
@@ -275,23 +240,12 @@ export function RecruitDetailPanel({
     setActiveTab("checklist");
   };
 
-  const handleRevertPhase = async () => {
-    // Find a completed phase to revert - either the one being viewed or the most recent completed one
+  const handleRevertPhase = async (): Promise<void> => {
     const phaseToRevert = viewingPhaseId
       ? progressMap?.get(viewingPhaseId)
       : null;
 
-    // If viewing a completed phase, revert that one
     if (phaseToRevert?.status === "completed") {
-      const phaseName =
-        sortedPhases.find((p: { id: string }) => p.id === viewingPhaseId)
-          ?.phase_name || "this phase";
-      if (
-        !confirm(
-          `Revert "${phaseName}" back to In Progress? Checklist progress will be preserved.`,
-        )
-      )
-        return;
       await revertPhase.mutateAsync({
         userId: recruit.id,
         phaseId: viewingPhaseId!,
@@ -299,23 +253,15 @@ export function RecruitDetailPanel({
       return;
     }
 
-    // Otherwise, find the most recent completed phase before current
     const currentIndex = sortedPhases.findIndex(
-      (p: { id: string }) => p.id === currentPhase?.phase_id,
+      (p) => p.id === currentPhase?.phase_id,
     );
-    if (currentIndex <= 0) return; // No previous phase to revert
+    if (currentIndex <= 0) return;
 
-    // Find the last completed phase before current
     for (let i = currentIndex - 1; i >= 0; i--) {
       const phase = sortedPhases[i];
       const progress = progressMap?.get(phase.id);
       if (progress?.status === "completed") {
-        if (
-          !confirm(
-            `Revert "${phase.phase_name}" back to In Progress? Checklist progress will be preserved.`,
-          )
-        )
-          return;
         await revertPhase.mutateAsync({
           userId: recruit.id,
           phaseId: phase.id,
@@ -325,31 +271,31 @@ export function RecruitDetailPanel({
     }
   };
 
-  const handleResendInvite = async () => {
+  const handleResendInvite = async (): Promise<void> => {
     if (!recruit.email) return;
-    setResendingInvite(true);
-    try {
-      await resendInvite.mutateAsync({
-        email: recruit.email,
-        fullName:
-          `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim(),
-        roles: (recruit.roles as string[]) || ["recruit"],
-      });
-    } finally {
-      setResendingInvite(false);
-    }
-  };
-
-  const handleInitializeProgress = () => {
-    setInitializeDialogOpen(true);
-  };
-
-  const handleConfirmInitialize = async (templateId: string) => {
-    await initializeProgress.mutateAsync({
-      userId: recruit.id,
-      templateId,
+    await resendInvite.mutateAsync({
+      email: recruit.email,
+      fullName: `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim(),
+      roles: (recruit.roles as string[]) || ["recruit"],
     });
-    setInitializeDialogOpen(false);
+  };
+
+  const handleCancelInvitation = async (): Promise<void> => {
+    if (entity.kind !== "invitation" || !entity.invitationId) return;
+    await cancelInvitation.mutateAsync(entity.invitationId);
+    onRecruitDeleted?.();
+  };
+
+  const handleConfirmInitialize = async (templateId: string): Promise<void> => {
+    try {
+      await initializeProgress.mutateAsync({ userId: recruit.id, templateId });
+    } catch {
+      // hook's onError fires toast
+    } finally {
+      // Always close: multi-template users re-open to retry; single-template
+      // users re-click "Initialize" which resets autoConfirmedRef via open→false→true.
+      setInitializeDialogOpen(false);
+    }
   };
 
   const handleUnenroll = async () => {
@@ -364,18 +310,29 @@ export function RecruitDetailPanel({
     }
   };
 
-  const handleUpdateContractRequest = async (id: string, updates: any) => {
-    await updateContractRequest.mutateAsync({ id, updates });
+  const handleSendSlackNotification = async (
+    notificationType: "new_recruit" | "npn_received",
+  ): Promise<void> => {
+    // Guard: missing integration context — silent no-op (policy already hides the button)
+    if (!selfMadeIntegration || !recruitChannel || !currentUserProfile?.imo_id)
+      return;
+    const msg =
+      notificationType === "new_recruit"
+        ? buildNewRecruitMessage(recruit)
+        : buildNpnReceivedMessage(recruit);
+    // mutateAsync rejects on error; hook's onError fires the toast
+    await sendSlackNotification.mutateAsync({
+      integrationId: selfMadeIntegration.id,
+      channelId: recruitChannel.id,
+      text: msg.text,
+      blocks: msg.blocks,
+      notificationType,
+      recruitId: recruit.id,
+      imoId: currentUserProfile.imo_id!,
+    });
   };
 
-  const handleAddCarrier = async (carrierId: string) => {
-    await addCarrierContract.mutateAsync(carrierId);
-  };
-
-  const handleDeleteContractRequest = async (id: string) => {
-    await deleteContractRequest.mutateAsync(id);
-  };
-
+  // ─── Loading state ────────────────────────────────────────────────
   if (progressLoading || currentPhaseLoading || templateLoading) {
     return (
       <div className="p-3 space-y-2">
@@ -386,6 +343,22 @@ export function RecruitDetailPanel({
     );
   }
 
+  // ─── Error state ──────────────────────────────────────────────────
+  if (progressError || currentPhaseError) {
+    return (
+      <div className="p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+        <p className="text-sm text-red-600 font-medium mb-1">
+          Failed to load pipeline data
+        </p>
+        <p className="text-xs text-zinc-500">
+          {(progressError || currentPhaseError)?.message || "Unknown error"}
+        </p>
+      </div>
+    );
+  }
+
+  // ─── Derived state ────────────────────────────────────────────────
   const hasPipelineProgress = phaseProgress && phaseProgress.length > 0;
   const displayName =
     recruit.first_name && recruit.last_name
@@ -396,34 +369,31 @@ export function RecruitDetailPanel({
       ? `${recruit.first_name[0]}${recruit.last_name[0]}`.toUpperCase()
       : recruit.email?.substring(0, 2).toUpperCase() || "??";
 
-  const phases = template?.phases || [];
-
+  const phases: PhaseWithChecklist[] = (template?.phases ||
+    []) as PhaseWithChecklist[];
   const sortedPhases = [...phases].sort(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
-    (a: any, b: any) => a.phase_order - b.phase_order,
+    (a, b) => a.phase_order - b.phase_order,
   );
   const progressMap = new Map(phaseProgress?.map((p) => [p.phase_id, p]) || []);
   const completedCount =
     phaseProgress?.filter((p) => p.status === "completed").length || 0;
 
   const viewingPhaseId = selectedPhaseId || currentPhase?.phase_id;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
-  const viewingPhase = sortedPhases.find((p: any) => p.id === viewingPhaseId);
+  const viewingPhase = sortedPhases.find((p) => p.id === viewingPhaseId);
   const viewingChecklistItems = viewingPhase?.checklist_items || [];
 
-  // Check if we can revert: viewing a completed phase OR there's a completed phase before current
+  // Revert eligibility
   const viewingPhaseProgress = viewingPhaseId
     ? progressMap.get(viewingPhaseId)
     : null;
   const canRevertViewingPhase = viewingPhaseProgress?.status === "completed";
   const hasCompletedPhaseBefore = (() => {
     const currentIndex = sortedPhases.findIndex(
-      (p: { id: string }) => p.id === currentPhase?.phase_id,
+      (p) => p.id === currentPhase?.phase_id,
     );
     if (currentIndex <= 0) return false;
     for (let i = currentIndex - 1; i >= 0; i--) {
-      const phase = sortedPhases[i];
-      const progress = progressMap.get(phase.id);
+      const progress = progressMap.get(sortedPhases[i].id);
       if (progress?.status === "completed") return true;
     }
     return false;
@@ -432,467 +402,74 @@ export function RecruitDetailPanel({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Compact Header */}
+      {/* Header */}
       <div className="px-3 py-2.5 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="h-9 w-9 shrink-0">
-            <AvatarImage src={recruit.profile_photo_url || undefined} />
-            <AvatarFallback className="text-xs font-medium bg-zinc-200 dark:bg-zinc-700">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                {displayName}
-              </h2>
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "text-[10px] px-1.5 py-0 h-4",
-                  recruit.onboarding_status
-                    ? TERMINAL_STATUS_COLORS[recruit.onboarding_status] ||
-                        "bg-blue-100 text-blue-800"
-                    : "",
-                )}
-              >
-                {recruit.onboarding_status?.replace(/_/g, " ") || "New"}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-              {recruit.email && (
-                <a
-                  href={`mailto:${recruit.email}`}
-                  className="flex items-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-300 truncate"
-                >
-                  <Mail className="h-3 w-3" />
-                  <span className="truncate max-w-[140px]">
-                    {recruit.email}
-                  </span>
-                </a>
-              )}
-              {recruit.phone && (
-                <a
-                  href={`tel:${recruit.phone}`}
-                  className="flex items-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-300"
-                >
-                  <Phone className="h-3 w-3" />
-                  {recruit.phone}
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions - Inline */}
-        {/* Allow uplines, admins, and staff roles (trainer, contracting_manager) to manage recruits */}
-        {(isUpline ||
-          currentUserProfile?.is_admin ||
-          currentUserProfile?.roles?.some((role) =>
-            STAFF_ONLY_ROLES.includes(
-              role as (typeof STAFF_ONLY_ROLES)[number],
-            ),
-          )) && (
-          <div className="flex items-center gap-1 mt-2 overflow-x-auto pb-2 -mb-2 scrollbar-thin">
-            {isInvitation ? (
-              /* Invitation-specific actions */
-              <>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] px-1.5 py-0 h-5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                >
-                  {invitationStatus
-                    ? INVITATION_STATUS_LABELS[invitationStatus]
-                    : "Pending"}
-                </Badge>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleResendInvite}
-                  disabled={resendingInvite}
-                  className="h-6 text-[10px] px-2 flex-shrink-0"
-                >
-                  {resendingInvite ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <SendHorizontal className="h-3 w-3 mr-0.5" />
-                  )}
-                  Resend
-                </Button>
-                <div className="flex-1" />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    if (
-                      invitationId &&
-                      confirm(
-                        "Cancel this invitation? The registration link will no longer work.",
-                      )
-                    ) {
-                      cancelInvitation.mutate(invitationId, {
-                        onSuccess: () => {
-                          onRecruitDeleted?.();
-                        },
-                      });
-                    }
-                  }}
-                  disabled={cancelInvitation.isPending || !invitationId}
-                  className="h-6 text-[10px] px-2 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                >
-                  {cancelInvitation.isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <X className="h-3 w-3 mr-0.5" />
-                  )}
-                  Cancel
-                </Button>
-              </>
-            ) : hasPipelineProgress ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAdvancePhase}
-                  disabled={!currentPhase || currentPhase?.status === "blocked"}
-                  className="h-6 text-[10px] px-2 flex-shrink-0"
-                >
-                  <ArrowRight className="h-3 w-3 mr-0.5" />
-                  Advance
-                </Button>
-                {canRevert && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleRevertPhase}
-                    disabled={revertPhase.isPending}
-                    className="h-6 text-[10px] px-2 flex-shrink-0"
-                  >
-                    {revertPhase.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Undo2 className="h-3 w-3 mr-0.5" />
-                    )}
-                    Revert
-                  </Button>
-                )}
-                {currentPhase?.status === "blocked" ? (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={handleUnblockPhase}
-                    className="h-6 text-[10px] px-2 flex-shrink-0"
-                  >
-                    <CheckCircle2 className="h-3 w-3 mr-0.5" />
-                    Unblock
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleBlockPhase}
-                    disabled={!currentPhase}
-                    className="h-6 text-[10px] px-2 flex-shrink-0"
-                  >
-                    <Ban className="h-3 w-3 mr-0.5" />
-                    Block
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setUnenrollDialogOpen(true)}
-                  disabled={unenrollPipeline.isPending}
-                  className="h-6 text-[10px] px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 flex-shrink-0"
-                  title="Remove from pipeline to re-enroll in a different one"
-                >
-                  <RotateCcw className="h-3 w-3 mr-0.5" />
-                  Unenroll
-                </Button>
-              </>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleInitializeProgress}
-                disabled={initializeProgress.isPending}
-                className="h-6 text-[10px] px-2 flex-shrink-0"
-              >
-                {initializeProgress.isPending ? (
-                  <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
-                ) : (
-                  <Clock className="h-3 w-3 mr-0.5" />
-                )}
-                Initialize
-              </Button>
-            )}
-            {/* Slack notification buttons */}
-            {!isInvitation &&
-              selfMadeIntegration &&
-              recruitChannel &&
-              currentUserProfile?.imo_id && (
-                <>
-                  {recruit.agent_status === "unlicensed" && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={
-                              notificationStatus?.newRecruitSent ||
-                              sendSlackNotification.isPending
-                            }
-                            onClick={() => {
-                              setSendingNotificationType("new_recruit");
-                              const msg = buildNewRecruitMessage(recruit);
-                              sendSlackNotification.mutate(
-                                {
-                                  integrationId: selfMadeIntegration.id,
-                                  channelId: recruitChannel.id,
-                                  text: msg.text,
-                                  blocks: msg.blocks,
-                                  notificationType: "new_recruit",
-                                  recruitId: recruit.id,
-                                  imoId: currentUserProfile.imo_id!,
-                                },
-                                {
-                                  onSettled: () =>
-                                    setSendingNotificationType(null),
-                                },
-                              );
-                            }}
-                            className={cn(
-                              "h-6 text-[10px] px-2 flex-shrink-0",
-                              notificationStatus?.newRecruitSent &&
-                                "text-emerald-600 border-emerald-300",
-                            )}
-                          >
-                            {sendingNotificationType === "new_recruit" ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : notificationStatus?.newRecruitSent ? (
-                              <Check className="h-3 w-3 mr-0.5" />
-                            ) : (
-                              <Hash className="h-3 w-3 mr-0.5" />
-                            )}
-                            {notificationStatus?.newRecruitSent
-                              ? "Sent"
-                              : "Slack: New Recruit"}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-[10px]">
-                            {notificationStatus?.newRecruitSent
-                              ? "New recruit notification already sent"
-                              : "Post to #new-agent-testing-odette"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  {recruit.npn && (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={
-                              notificationStatus?.npnReceivedSent ||
-                              sendSlackNotification.isPending
-                            }
-                            onClick={() => {
-                              setSendingNotificationType("npn_received");
-                              const msg = buildNpnReceivedMessage(recruit);
-                              sendSlackNotification.mutate(
-                                {
-                                  integrationId: selfMadeIntegration.id,
-                                  channelId: recruitChannel.id,
-                                  text: msg.text,
-                                  blocks: msg.blocks,
-                                  notificationType: "npn_received",
-                                  recruitId: recruit.id,
-                                  imoId: currentUserProfile.imo_id!,
-                                },
-                                {
-                                  onSettled: () =>
-                                    setSendingNotificationType(null),
-                                },
-                              );
-                            }}
-                            className={cn(
-                              "h-6 text-[10px] px-2 flex-shrink-0",
-                              notificationStatus?.npnReceivedSent &&
-                                "text-emerald-600 border-emerald-300",
-                            )}
-                          >
-                            {sendingNotificationType === "npn_received" ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : notificationStatus?.npnReceivedSent ? (
-                              <Check className="h-3 w-3 mr-0.5" />
-                            ) : (
-                              <Hash className="h-3 w-3 mr-0.5" />
-                            )}
-                            {notificationStatus?.npnReceivedSent
-                              ? "Sent"
-                              : "Slack: NPN"}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-[10px]">
-                            {notificationStatus?.npnReceivedSent
-                              ? "NPN received notification already sent"
-                              : "Post NPN received to #new-agent-testing-odette"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </>
-              )}
-            {/* Common actions for registered recruits */}
-            {!isInvitation && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleResendInvite}
-                  disabled={resendingInvite}
-                  className="h-6 text-[10px] px-2 flex-shrink-0"
-                >
-                  {resendingInvite ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <SendHorizontal className="h-3 w-3 mr-0.5" />
-                  )}
-                  Invite
-                </Button>
-                <div className="flex-1" />
-                {currentUserId !== recruit.id && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setDeleteDialogOpen(true)}
-                    className="h-6 text-[10px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <RecruitDetailHeader
+          recruit={recruit}
+          displayName={displayName || ""}
+          initials={initials}
+        />
+        <RecruitActionBar
+          entity={entity}
+          permissions={permissions}
+          recruit={recruit}
+          hasPipelineProgress={!!hasPipelineProgress}
+          currentPhase={currentPhase}
+          canRevert={canRevert}
+          slack={{
+            selfMadeIntegration,
+            recruitChannel,
+            imoId: currentUserProfile?.imo_id ?? null,
+            notificationStatus,
+          }}
+          actions={{
+            onAdvancePhase: handleAdvancePhase,
+            onBlockPhase: handleBlockPhase,
+            onUnblockPhase: handleUnblockPhase,
+            onRevertPhase: handleRevertPhase,
+            onInitialize: () => setInitializeDialogOpen(true),
+            onUnenroll: () => setUnenrollDialogOpen(true),
+            onResendInvite: handleResendInvite,
+            onCancelInvitation: handleCancelInvitation,
+            onDeleteOpen: () => setDeleteDialogOpen(true),
+            onSendSlackNotification: handleSendSlackNotification,
+          }}
+          loading={{
+            isAdvancing: advancePhase.isPending,
+            isReverting: revertPhase.isPending,
+            isInitializing: initializeProgress.isPending,
+            isUnenrolling: unenrollPipeline.isPending,
+            isResendingInvite: resendInvite.isPending,
+            isCancellingInvitation: cancelInvitation.isPending,
+            isSendingSlack: sendSlackNotification.isPending,
+          }}
+        />
       </div>
 
-      {/* Horizontal Phase Stepper - Hidden for invitations */}
+      {/* Phase Stepper */}
       {!isInvitation && hasPipelineProgress && sortedPhases.length > 0 && (
-        <div className="px-3 py-2 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Pipeline Progress
-            </span>
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-              {completedCount}/{sortedPhases.length} complete
-            </span>
-          </div>
-          <TooltipProvider delayDuration={200}>
-            <div className="flex items-center gap-0.5">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type */}
-              {sortedPhases.map((phase: any, index: number) => {
-                const progress = progressMap.get(phase.id);
-                const status = progress?.status || "not_started";
-                const isActive = phase.id === viewingPhaseId;
-                const isCurrent = phase.id === currentPhase?.phase_id;
-                const isHidden = phase.visible_to_recruit === false;
-
-                return (
-                  <Tooltip key={phase.id}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => handlePhaseClick(phase.id)}
-                        className={cn(
-                          "flex-1 h-7 rounded transition-all relative group",
-                          "flex items-center justify-center",
-                          status === "completed" &&
-                            "bg-emerald-500 hover:bg-emerald-600",
-                          status === "in_progress" &&
-                            "bg-amber-500 hover:bg-amber-600",
-                          status === "blocked" && "bg-red-500 hover:bg-red-600",
-                          status === "not_started" &&
-                            "bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600",
-                          isActive &&
-                            "ring-2 ring-zinc-900 dark:ring-zinc-100 ring-offset-1",
-                          // Hidden phase styling - dashed ring indicator
-                          isHidden &&
-                            "ring-1 ring-dashed ring-amber-400 dark:ring-amber-600",
-                        )}
-                      >
-                        {status === "completed" ? (
-                          <Check className="h-3.5 w-3.5 text-white" />
-                        ) : status === "in_progress" ? (
-                          <Clock className="h-3 w-3 text-white" />
-                        ) : status === "blocked" ? (
-                          <Ban className="h-3 w-3 text-white" />
-                        ) : null}
-                        {isCurrent && status !== "completed" && (
-                          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500" />
-                        )}
-                        {/* Hidden phase indicator */}
-                        {isHidden && (
-                          <span className="absolute -top-1 -right-1">
-                            <EyeOff className="h-2.5 w-2.5 text-amber-500 dark:text-amber-400" />
-                          </span>
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      <p className="font-medium">{phase.phase_name}</p>
-                      <p className="text-zinc-400 capitalize">
-                        {status.replace("_", " ")}
-                      </p>
-                      {isHidden && (
-                        <p className="text-amber-400 text-[10px] mt-0.5">
-                          Hidden from recruit
-                        </p>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </TooltipProvider>
-          {viewingPhase && (
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                {viewingPhase.phase_name}
-              </span>
-              {viewingPhaseId &&
-                progressMap.get(viewingPhaseId)?.status === "blocked" && (
-                  <Badge
-                    variant="destructive"
-                    className="text-[10px] h-4 px-1.5"
-                  >
-                    <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
-                    Blocked
-                  </Badge>
-                )}
-            </div>
-          )}
-        </div>
+        <PhaseStepper
+          sortedPhases={sortedPhases}
+          progressMap={progressMap}
+          completedCount={completedCount}
+          currentPhaseId={currentPhase?.phase_id}
+          viewingPhaseId={viewingPhaseId}
+          onPhaseClick={handlePhaseClick}
+        />
       )}
 
-      {/* No Pipeline State - Hidden for invitations */}
+      {/* No Pipeline State */}
       {!isInvitation && !hasPipelineProgress && (
         <div className="px-3 py-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-center">
           <Circle className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
             Pipeline not initialized
           </p>
-          {isUpline && (
+          {permissions.canInitialize && (
             <Button
               size="sm"
               variant="outline"
-              onClick={handleInitializeProgress}
+              onClick={() => setInitializeDialogOpen(true)}
               disabled={initializeProgress.isPending}
               className="h-7 text-xs"
             >
@@ -939,7 +516,9 @@ export function RecruitDetailPanel({
             <Briefcase className="h-3.5 w-3.5 mr-1" />
             Contracts
             {contractRequests && contractRequests.length > 0 && (
-              <Badge className="ml-1 h-4 px-1 text-[10px] bg-blue-500">{contractRequests.length}</Badge>
+              <span className="ml-1 text-[10px] bg-blue-500 text-white rounded-full px-1 min-w-[16px] h-4 inline-flex items-center justify-center">
+                {contractRequests.length}
+              </span>
             )}
           </TabsTrigger>
           <TabsTrigger
@@ -976,15 +555,7 @@ export function RecruitDetailPanel({
                 currentUserId={currentUserId}
                 currentPhaseId={currentPhase?.phase_id}
                 viewedPhaseId={viewingPhaseId}
-                isAdmin={
-                  currentUserProfile?.is_admin ||
-                  currentUserProfile?.roles?.some((role) =>
-                    STAFF_ONLY_ROLES.includes(
-                      role as (typeof STAFF_ONLY_ROLES)[number],
-                    ),
-                  ) ||
-                  false
-                }
+                isAdmin={isStaff}
                 onPhaseComplete={() => {}}
                 recruitEmail={recruit.email || ""}
                 recruitName={displayName}
@@ -1003,104 +574,58 @@ export function RecruitDetailPanel({
           </TabsContent>
 
           <TabsContent value="contracting" className="mt-0">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Carrier Contracts</h3>
-                {(currentUserProfile?.is_admin ||
-                  currentUserProfile?.roles?.some((role) =>
-                    STAFF_ONLY_ROLES.includes(
-                      role as (typeof STAFF_ONLY_ROLES)[number],
-                    ),
-                  )) && (
-                  <Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setShowAddCarrierDialog(true)}>
-                    Add Carrier
-                  </Button>
-                )}
-              </div>
-
-              {contractRequests?.map((request: any) => (
-                <ContractingRequestCard
-                  key={request.id}
-                  request={request}
-                  onUpdate={handleUpdateContractRequest}
-                  onDelete={handleDeleteContractRequest}
-                  isStaff={
-                    currentUserProfile?.is_admin ||
-                    currentUserProfile?.roles?.some((role) =>
-                      STAFF_ONLY_ROLES.includes(
-                        role as (typeof STAFF_ONLY_ROLES)[number],
-                      ),
-                    ) ||
-                    false
-                  }
-                />
-              ))}
-
-              {(!contractRequests || contractRequests.length === 0) && (
-                <div className="text-center py-8 text-sm text-muted-foreground">
-                  No carrier contracts requested yet.
-                </div>
-              )}
-            </div>
-
-            <AddCarrierDialog
-              recruitId={recruit.id}
-              open={showAddCarrierDialog}
-              onClose={() => setShowAddCarrierDialog(false)}
-              onAdd={handleAddCarrier}
-            />
+            <ContractingTab entity={entity} permissions={permissions} />
           </TabsContent>
 
           <TabsContent value="documents" className="mt-0">
-            <DocumentManager
-              userId={recruit.id}
-              documents={documents}
-              isUpline={isUpline}
-              currentUserId={currentUserId}
-            />
+            {isInvitation ? (
+              <div className="py-8 text-center">
+                <FolderOpen className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+                <p className="text-xs text-zinc-500">
+                  Available after registration
+                </p>
+              </div>
+            ) : (
+              <DocumentManager
+                userId={recruit.id}
+                documents={documents}
+                isUpline={isUpline}
+                currentUserId={currentUserId}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="emails" className="mt-0">
-            <EmailManager
-              recruitId={recruit.id}
-              recruitEmail={recruit.email}
-              recruitName={displayName}
-              emails={emails}
-              isUpline={isUpline}
-              currentUserId={currentUserId}
-            />
+            {isInvitation ? (
+              <div className="py-8 text-center">
+                <Mail className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+                <p className="text-xs text-zinc-500">
+                  Available after registration
+                </p>
+              </div>
+            ) : (
+              <EmailManager
+                recruitId={recruit.id}
+                recruitEmail={recruit.email}
+                recruitName={displayName}
+                emails={emails}
+                isUpline={isUpline}
+                currentUserId={currentUserId}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="activity" className="mt-0">
-            {activityLog && activityLog.length > 0 ? (
-              <div className="space-y-1.5">
-                {activityLog.slice(0, 20).map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-start gap-2 py-1.5 px-2 rounded bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800"
-                  >
-                    <Activity className="h-3 w-3 text-zinc-400 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 truncate">
-                        {activity.action_type.replace(/_/g, " ")}
-                      </p>
-                      <p className="text-[10px] text-zinc-400">
-                        {new Date(activity.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center">
-                <Activity className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-                <p className="text-xs text-zinc-500">No activity yet</p>
-              </div>
-            )}
+            <ActivityTab
+              activityLog={activityLog}
+              isLoading={activityLoading}
+              error={activityError}
+            />
           </TabsContent>
         </div>
       </Tabs>
 
+      {/* Dialogs */}
       <DeleteRecruitDialogOptimized
         recruit={recruit}
         open={deleteDialogOpen}

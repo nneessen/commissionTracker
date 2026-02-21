@@ -1,18 +1,21 @@
 // src/services/recruiting/carrierContractRequestService.ts
-import { supabase } from '@/services/base/supabase';
-import type { Database } from '@/types/database.types';
+import { supabase } from "../base/supabase";
+import type { Database, Json } from "@/types/database.types";
 
-type CarrierContractRequest = Database['public']['Tables']['carrier_contract_requests']['Row'];
-type CarrierContractRequestInsert = Database['public']['Tables']['carrier_contract_requests']['Insert'];
-type CarrierContractRequestUpdate = Database['public']['Tables']['carrier_contract_requests']['Update'];
+type CarrierContractRequest =
+  Database["public"]["Tables"]["carrier_contract_requests"]["Row"];
+type CarrierContractRequestInsert =
+  Database["public"]["Tables"]["carrier_contract_requests"]["Insert"];
+type CarrierContractRequestUpdate =
+  Database["public"]["Tables"]["carrier_contract_requests"]["Update"];
 
 // Properly typed response for joined queries
 interface CarrierContractRequestWithRelations extends CarrierContractRequest {
   carrier: {
     id: string;
     name: string;
-    contracting_metadata: any;
-    commission_structure?: any;
+    contracting_metadata: Json | null;
+    commission_structure?: Json | null;
   } | null;
   recruit: {
     id: string;
@@ -27,6 +30,25 @@ interface CarrierContractRequestWithRelations extends CarrierContractRequest {
     file_name: string;
     storage_path: string;
   } | null;
+}
+
+// Local row shape for the getRecruitsWithContracts joined query
+interface ContractQueryRow {
+  recruit_id: string;
+  carrier_id: string;
+  status: string;
+  requested_date: string | null;
+  writing_received_date: string | null;
+  writing_number: string | null;
+  recruit: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    phone: string | null;
+    onboarding_status: string | null;
+  };
+  carrier: { id: string; name: string } | null;
 }
 
 interface RecruitWithContracts {
@@ -53,9 +75,12 @@ interface RecruitWithContracts {
  * @throws Error if user is not authenticated
  */
 async function getCurrentUserId(): Promise<string> {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
   if (error || !user) {
-    throw new Error('User not authenticated');
+    throw new Error("User not authenticated");
   }
   return user.id;
 }
@@ -67,8 +92,8 @@ async function getCurrentUserId(): Promise<string> {
 function getCurrentLocalDate(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -79,20 +104,24 @@ export const carrierContractRequestService = {
    * @returns Array of contract requests with joined carrier, recruit, and document data
    * @throws Error if query fails
    */
-  async getRecruitContractRequests(recruitId: string): Promise<CarrierContractRequestWithRelations[]> {
+  async getRecruitContractRequests(
+    recruitId: string,
+  ): Promise<CarrierContractRequestWithRelations[]> {
     const { data, error } = await supabase
-      .from('carrier_contract_requests')
-      .select(`
+      .from("carrier_contract_requests")
+      .select(
+        `
         *,
         carrier:carriers(id, name, contracting_metadata),
         recruit:user_profiles!recruit_id(id, first_name, last_name, email),
         contract_document:user_documents(id, document_name, file_name, storage_path)
-      `)
-      .eq('recruit_id', recruitId)
-      .order('request_order', { ascending: true });
+      `,
+      )
+      .eq("recruit_id", recruitId)
+      .order("request_order", { ascending: true });
 
     if (error) {
-      console.error('Failed to fetch contract requests:', error);
+      console.error("Failed to fetch contract requests:", error);
       throw new Error(`Failed to fetch contract requests: ${error.message}`);
     }
 
@@ -107,17 +136,23 @@ export const carrierContractRequestService = {
    * @throws Error if user not authenticated or insert fails
    */
   async createContractRequest(
-    data: Omit<CarrierContractRequestInsert, 'request_order' | 'created_by' | 'updated_by'>
+    data: Omit<
+      CarrierContractRequestInsert,
+      "request_order" | "created_by" | "updated_by"
+    >,
   ): Promise<CarrierContractRequest> {
     const currentUserId = await getCurrentUserId();
 
     // Get next request order using sequence (prevents race conditions)
-    const { data: orderData, error: orderError } = await supabase.rpc('nextval', {
-      sequence_name: 'carrier_contract_request_order_seq'
-    });
+    const { data: orderData, error: orderError } = await supabase.rpc(
+      "nextval",
+      {
+        sequence_name: "carrier_contract_request_order_seq",
+      },
+    );
 
     if (orderError) {
-      console.error('Failed to get next order number:', orderError);
+      console.error("Failed to get next order number:", orderError);
       throw new Error(`Failed to get next order number: ${orderError.message}`);
     }
 
@@ -125,20 +160,21 @@ export const carrierContractRequestService = {
 
     // Get carrier instructions from metadata
     const { data: carrier, error: carrierError } = await supabase
-      .from('carriers')
-      .select('contracting_metadata')
-      .eq('id', data.carrier_id)
+      .from("carriers")
+      .select("contracting_metadata")
+      .eq("id", data.carrier_id)
       .single();
 
     if (carrierError) {
-      console.error('Failed to fetch carrier:', carrierError);
+      console.error("Failed to fetch carrier:", carrierError);
       throw new Error(`Failed to fetch carrier: ${carrierError.message}`);
     }
 
-    const carrierInstructions = carrier?.contracting_metadata?.instructions || null;
+    const carrierInstructions =
+      carrier?.contracting_metadata?.instructions || null;
 
     const { data: newRequest, error: insertError } = await supabase
-      .from('carrier_contract_requests')
+      .from("carrier_contract_requests")
       .insert({
         ...data,
         request_order: nextOrder,
@@ -150,12 +186,14 @@ export const carrierContractRequestService = {
       .single();
 
     if (insertError) {
-      console.error('Failed to create contract request:', insertError);
-      throw new Error(`Failed to create contract request: ${insertError.message}`);
+      console.error("Failed to create contract request:", insertError);
+      throw new Error(
+        `Failed to create contract request: ${insertError.message}`,
+      );
     }
 
     if (!newRequest) {
-      throw new Error('Contract request created but no data returned');
+      throw new Error("Contract request created but no data returned");
     }
 
     return newRequest;
@@ -171,36 +209,39 @@ export const carrierContractRequestService = {
    */
   async updateContractRequest(
     id: string,
-    updates: CarrierContractRequestUpdate
+    updates: CarrierContractRequestUpdate,
   ): Promise<CarrierContractRequest> {
     // Auto-set dates based on status transitions (using local timezone)
     const enrichedUpdates = { ...updates };
     const currentDate = getCurrentLocalDate();
 
-    if (updates.status === 'in_progress' && !updates.in_progress_date) {
+    if (updates.status === "in_progress" && !updates.in_progress_date) {
       enrichedUpdates.in_progress_date = currentDate;
     }
-    if (updates.status === 'writing_received' && !updates.writing_received_date) {
+    if (
+      updates.status === "writing_received" &&
+      !updates.writing_received_date
+    ) {
       enrichedUpdates.writing_received_date = currentDate;
     }
-    if (updates.status === 'completed' && !updates.completed_date) {
+    if (updates.status === "completed" && !updates.completed_date) {
       enrichedUpdates.completed_date = currentDate;
     }
 
     const { data, error } = await supabase
-      .from('carrier_contract_requests')
+      .from("carrier_contract_requests")
       .update(enrichedUpdates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      console.error('Failed to update contract request:', error);
+      console.error("Failed to update contract request:", error);
       throw new Error(`Failed to update contract request: ${error.message}`);
     }
 
     if (!data) {
-      throw new Error('Contract request updated but no data returned');
+      throw new Error("Contract request updated but no data returned");
     }
 
     return data;
@@ -213,12 +254,12 @@ export const carrierContractRequestService = {
    */
   async deleteContractRequest(id: string): Promise<void> {
     const { error } = await supabase
-      .from('carrier_contract_requests')
+      .from("carrier_contract_requests")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
-      console.error('Failed to delete contract request:', error);
+      console.error("Failed to delete contract request:", error);
       throw new Error(`Failed to delete contract request: ${error.message}`);
     }
   },
@@ -237,9 +278,8 @@ export const carrierContractRequestService = {
     recruits: RecruitWithContracts[];
     totalCount: number;
   }> {
-    let query = supabase
-      .from('carrier_contract_requests')
-      .select(`
+    let query = supabase.from("carrier_contract_requests").select(
+      `
         recruit_id,
         recruit:user_profiles!recruit_id(
           id,
@@ -255,10 +295,12 @@ export const carrierContractRequestService = {
         requested_date,
         writing_received_date,
         writing_number
-      `, { count: 'exact' });
+      `,
+      { count: "exact" },
+    );
 
     if (filters?.status?.length) {
-      query = query.in('status', filters.status);
+      query = query.in("status", filters.status);
     }
 
     // Note: Search filtering is done client-side due to Supabase join limitations
@@ -267,14 +309,15 @@ export const carrierContractRequestService = {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Failed to fetch contracts:', error);
+      console.error("Failed to fetch contracts:", error);
       throw new Error(`Failed to fetch contracts: ${error.message}`);
     }
 
     // Group by recruit
     const recruitMap = new Map<string, RecruitWithContracts>();
 
-    (data || []).forEach((row: any) => {
+    const rows = (data ?? []) as unknown as ContractQueryRow[];
+    rows.forEach((row) => {
       if (!recruitMap.has(row.recruit_id)) {
         recruitMap.set(row.recruit_id, {
           recruit: row.recruit,
@@ -296,14 +339,16 @@ export const carrierContractRequestService = {
 
     if (filters?.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
-      recruits = recruits.filter((item) =>
-        item.recruit.first_name?.toLowerCase().includes(query) ||
-        item.recruit.last_name?.toLowerCase().includes(query) ||
-        item.recruit.email.toLowerCase().includes(query) ||
-        item.contracts.some((c) =>
-          c.carrier?.name?.toLowerCase().includes(query) ||
-          c.writing_number?.toLowerCase().includes(query)
-        )
+      recruits = recruits.filter(
+        (item) =>
+          item.recruit.first_name?.toLowerCase().includes(query) ||
+          item.recruit.last_name?.toLowerCase().includes(query) ||
+          item.recruit.email.toLowerCase().includes(query) ||
+          item.contracts.some(
+            (c) =>
+              c.carrier?.name?.toLowerCase().includes(query) ||
+              c.writing_number?.toLowerCase().includes(query),
+          ),
       );
     }
 
@@ -320,18 +365,23 @@ export const carrierContractRequestService = {
    * @returns Array of available carriers
    * @throws Error if RPC call fails
    */
-  async getAvailableCarriers(recruitId: string): Promise<Array<{
-    id: string;
-    name: string;
-    contracting_metadata: any;
-    priority: number;
-  }>> {
-    const { data, error } = await supabase.rpc('get_available_carriers_for_recruit', {
-      p_recruit_id: recruitId,
-    });
+  async getAvailableCarriers(recruitId: string): Promise<
+    Array<{
+      id: string;
+      name: string;
+      contracting_metadata: Json | null;
+      priority: number;
+    }>
+  > {
+    const { data, error } = await supabase.rpc(
+      "get_available_carriers_for_recruit",
+      {
+        p_recruit_id: recruitId,
+      },
+    );
 
     if (error) {
-      console.error('Failed to get available carriers:', error);
+      console.error("Failed to get available carriers:", error);
       throw new Error(`Failed to get available carriers: ${error.message}`);
     }
 
@@ -347,29 +397,30 @@ export const carrierContractRequestService = {
    */
   async bulkUpdateStatus(
     ids: string[],
-    status: CarrierContractRequestUpdate['status']
+    status: CarrierContractRequestUpdate["status"],
   ): Promise<CarrierContractRequest[]> {
     const currentUserId = await getCurrentUserId();
     const currentDate = getCurrentLocalDate();
 
     // Build date updates based on status transition
     const dateUpdates: Record<string, string | null> = {};
-    if (status === 'in_progress') dateUpdates.in_progress_date = currentDate;
-    if (status === 'writing_received') dateUpdates.writing_received_date = currentDate;
-    if (status === 'completed') dateUpdates.completed_date = currentDate;
+    if (status === "in_progress") dateUpdates.in_progress_date = currentDate;
+    if (status === "writing_received")
+      dateUpdates.writing_received_date = currentDate;
+    if (status === "completed") dateUpdates.completed_date = currentDate;
 
     const { data, error } = await supabase
-      .from('carrier_contract_requests')
+      .from("carrier_contract_requests")
       .update({
         status,
         ...dateUpdates,
         updated_by: currentUserId,
       })
-      .in('id', ids)
+      .in("id", ids)
       .select();
 
     if (error) {
-      console.error('Bulk update failed:', error);
+      console.error("Bulk update failed:", error);
       throw new Error(`Bulk update failed: ${error.message}`);
     }
 
@@ -383,12 +434,12 @@ export const carrierContractRequestService = {
    */
   async bulkDelete(ids: string[]): Promise<void> {
     const { error } = await supabase
-      .from('carrier_contract_requests')
+      .from("carrier_contract_requests")
       .delete()
-      .in('id', ids);
+      .in("id", ids);
 
     if (error) {
-      console.error('Bulk delete failed:', error);
+      console.error("Bulk delete failed:", error);
       throw new Error(`Bulk delete failed: ${error.message}`);
     }
   },
@@ -416,26 +467,27 @@ export const carrierContractRequestService = {
     const pageSize = filters.pageSize || 50;
     const offset = (page - 1) * pageSize;
 
-    let query = supabase
-      .from('carrier_contract_requests')
-      .select(`
+    let query = supabase.from("carrier_contract_requests").select(
+      `
         *,
         carrier:carriers(id, name, contracting_metadata, commission_structure),
         recruit:user_profiles!recruit_id(id, first_name, last_name, email, contract_level)
-      `, { count: 'exact' });
+      `,
+      { count: "exact" },
+    );
 
     // Apply filters
     if (filters.status?.length) {
-      query = query.in('status', filters.status);
+      query = query.in("status", filters.status);
     }
     if (filters.startDate) {
-      query = query.gte('requested_date', filters.startDate);
+      query = query.gte("requested_date", filters.startDate);
     }
     if (filters.endDate) {
-      query = query.lte('requested_date', filters.endDate);
+      query = query.lte("requested_date", filters.endDate);
     }
     if (filters.carrierId) {
-      query = query.eq('carrier_id', filters.carrierId);
+      query = query.eq("carrier_id", filters.carrierId);
     }
 
     // Text search (across recruit name, email, writing number)
@@ -443,20 +495,18 @@ export const carrierContractRequestService = {
     // or search across joined tables using RPC
     if (filters.searchQuery) {
       const searchTerm = `%${filters.searchQuery}%`;
-      query = query.or(
-        `writing_number.ilike.${searchTerm}`
-      );
+      query = query.or(`writing_number.ilike.${searchTerm}`);
     }
 
     // Pagination
     query = query
-      .order('requested_date', { ascending: false })
+      .order("requested_date", { ascending: false })
       .range(offset, offset + pageSize - 1);
 
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Filter query failed:', error);
+      console.error("Filter query failed:", error);
       throw new Error(`Filter query failed: ${error.message}`);
     }
 
@@ -465,12 +515,13 @@ export const carrierContractRequestService = {
 
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
-      filteredData = filteredData.filter((req) =>
-        req.recruit?.first_name?.toLowerCase().includes(query) ||
-        req.recruit?.last_name?.toLowerCase().includes(query) ||
-        req.recruit?.email?.toLowerCase().includes(query) ||
-        req.carrier?.name?.toLowerCase().includes(query) ||
-        req.writing_number?.toLowerCase().includes(query)
+      filteredData = filteredData.filter(
+        (req) =>
+          req.recruit?.first_name?.toLowerCase().includes(query) ||
+          req.recruit?.last_name?.toLowerCase().includes(query) ||
+          req.recruit?.email?.toLowerCase().includes(query) ||
+          req.carrier?.name?.toLowerCase().includes(query) ||
+          req.writing_number?.toLowerCase().includes(query),
       );
     }
 
@@ -487,7 +538,9 @@ export const carrierContractRequestService = {
    * @returns CSV string
    * @throws Error if export fails
    */
-  async exportToCSV(filters: Parameters<typeof this.getContractRequestsWithFilters>[0]): Promise<string> {
+  async exportToCSV(
+    filters: Parameters<typeof this.getContractRequestsWithFilters>[0],
+  ): Promise<string> {
     // Get all matching records (no pagination limit for export)
     const { requests } = await this.getContractRequestsWithFilters({
       ...filters,
@@ -497,39 +550,39 @@ export const carrierContractRequestService = {
 
     // Build CSV headers
     const headers = [
-      'Recruit Name',
-      'Recruit Email',
-      'Carrier',
-      'Status',
-      'Request Order',
-      'Writing Number',
-      'Requested Date',
-      'In Progress Date',
-      'Writing Received Date',
-      'Completed Date',
+      "Recruit Name",
+      "Recruit Email",
+      "Carrier",
+      "Status",
+      "Request Order",
+      "Writing Number",
+      "Requested Date",
+      "In Progress Date",
+      "Writing Received Date",
+      "Completed Date",
     ];
 
     // Build CSV rows
     const rows = requests.map((r) => [
-      `${r.recruit?.first_name || ''} ${r.recruit?.last_name || ''}`.trim(),
-      r.recruit?.email || '',
-      r.carrier?.name || '',
-      r.status || '',
-      String(r.request_order || ''),
-      r.writing_number || '',
-      r.requested_date || '',
-      r.in_progress_date || '',
-      r.writing_received_date || '',
-      r.completed_date || '',
+      `${r.recruit?.first_name || ""} ${r.recruit?.last_name || ""}`.trim(),
+      r.recruit?.email || "",
+      r.carrier?.name || "",
+      r.status || "",
+      String(r.request_order || ""),
+      r.writing_number || "",
+      r.requested_date || "",
+      r.in_progress_date || "",
+      r.writing_received_date || "",
+      r.completed_date || "",
     ]);
 
     // Format as CSV (escape quotes)
     const csvContent = [
-      headers.join(','),
+      headers.join(","),
       ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
       ),
-    ].join('\n');
+    ].join("\n");
 
     return csvContent;
   },

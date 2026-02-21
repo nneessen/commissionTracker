@@ -1,7 +1,7 @@
 // src/features/recruiting/components/InitializePipelineDialog.tsx
 // Dialog for selecting a pipeline template when initializing recruit progress
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 interface InitializePipelineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (templateId: string) => void;
+  onConfirm: (templateId: string) => Promise<void> | void;
   isLoading?: boolean;
 }
 
@@ -37,6 +37,17 @@ export function InitializePipelineDialog({
     null,
   );
 
+  // Stable ref so the auto-confirm effect doesn't re-run when the parent
+  // re-renders and produces a new callback reference (React 19: no useCallback).
+  const onConfirmRef = useRef(onConfirm);
+  onConfirmRef.current = onConfirm;
+
+  // Prevent duplicate auto-confirm fires within a single open session.
+  const autoConfirmedRef = useRef(false);
+  useEffect(() => {
+    if (!open) autoConfirmedRef.current = false;
+  }, [open]);
+
   // Set default template when templates load
   useEffect(() => {
     if (templates && templates.length > 0 && !selectedTemplateId) {
@@ -48,17 +59,26 @@ export function InitializePipelineDialog({
 
   const handleConfirm = () => {
     if (selectedTemplateId) {
-      onConfirm(selectedTemplateId);
+      // onConfirm (= handleConfirmInitialize) has internal try/catch — won't reject
+      void onConfirmRef.current(selectedTemplateId);
     }
   };
 
-  // Auto-confirm if only one template exists
+  // Auto-confirm if only one template exists. Uses onConfirmRef to avoid
+  // retriggering on every parent render, and autoConfirmedRef to fire at most once.
   useEffect(() => {
-    if (open && templates && templates.length === 1 && !isLoading) {
-      // If only one template, auto-select and confirm
-      onConfirm(templates[0].id);
+    if (
+      open &&
+      templates &&
+      templates.length === 1 &&
+      !isLoading &&
+      !autoConfirmedRef.current
+    ) {
+      autoConfirmedRef.current = true;
+      void onConfirmRef.current(templates[0].id);
     }
-  }, [open, templates, isLoading, onConfirm]);
+    // onConfirmRef is a stable ref — intentionally excluded from deps
+  }, [open, templates, isLoading]);
 
   // Don't render dialog if only one template (auto-confirmed above)
   if (templates && templates.length === 1) {

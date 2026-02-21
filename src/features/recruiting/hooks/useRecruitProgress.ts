@@ -1,6 +1,7 @@
 // src/features/recruiting/hooks/useRecruitProgress.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { checklistService } from "@/services/recruiting/checklistService";
 import type { UpdateChecklistItemStatusInput } from "@/types/recruiting.types";
 
@@ -66,6 +67,9 @@ export function useInitializeRecruitProgress() {
         queryKey: ["recruits", variables.userId],
       });
     },
+    onError: () => {
+      toast.error("Failed to initialize pipeline");
+    },
   });
 }
 
@@ -106,6 +110,9 @@ export function useUpdatePhaseStatus() {
         queryKey: ["recruit-current-phase", variables.userId],
       });
     },
+    onError: () => {
+      toast.error("Failed to update phase status");
+    },
   });
 }
 
@@ -133,6 +140,9 @@ export function useAdvancePhase() {
       });
       queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
     },
+    onError: () => {
+      toast.error("Failed to advance phase");
+    },
   });
 }
 
@@ -157,6 +167,9 @@ export function useBlockPhase() {
         queryKey: ["recruit-current-phase", variables.userId],
       });
     },
+    onError: () => {
+      toast.error("Failed to block phase");
+    },
   });
 }
 
@@ -178,6 +191,9 @@ export function useRevertPhase() {
         predicate: (query) => query.queryKey[0] === "recruits",
       });
       queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
+    },
+    onError: () => {
+      toast.error("Failed to revert phase");
     },
   });
 }
