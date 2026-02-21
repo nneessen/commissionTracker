@@ -23,8 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Loader2, X, Mail, Bell, MessageSquare, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { TemplatePicker } from "@/features/email/components/TemplatePicker";
-import { getEmailTemplate } from "@/features/email/services/emailTemplateService";
+import { TemplatePicker, getEmailTemplate } from "@/features/email";
 import type { EmailTemplate } from "@/types/email.types";
 import {
   useCreateAutomation,
@@ -317,7 +316,8 @@ export function AutomationDialog({
   const [emailMode, setEmailMode] = useState<"custom" | "template">("custom");
   const [emailTemplateId, setEmailTemplateId] = useState<string | null>(null);
   const [selectedTemplateName, setSelectedTemplateName] = useState<string>("");
-  const [selectedTemplateSubject, setSelectedTemplateSubject] = useState<string>("");
+  const [selectedTemplateSubject, setSelectedTemplateSubject] =
+    useState<string>("");
 
   // Determine which content sections to show
   const showEmail = ["email", "both", "all"].includes(communicationType);
@@ -605,9 +605,13 @@ export function AutomationDialog({
     // Determine email fields based on mode
     const isTemplateMode = showEmail && emailMode === "template";
     const emailFields = {
-      email_template_id: isTemplateMode ? emailTemplateId || undefined : undefined,
-      email_subject: showEmail && !isTemplateMode ? emailSubject || undefined : undefined,
-      email_body_html: showEmail && !isTemplateMode ? emailBody || undefined : undefined,
+      email_template_id: isTemplateMode
+        ? emailTemplateId || undefined
+        : undefined,
+      email_subject:
+        showEmail && !isTemplateMode ? emailSubject || undefined : undefined,
+      email_body_html:
+        showEmail && !isTemplateMode ? emailBody || undefined : undefined,
     };
 
     try {
@@ -698,10 +702,10 @@ export function AutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl p-0">
-        <div className="flex">
+      <DialogContent className="max-w-6xl max-h-[calc(100vh-2rem)] p-0 overflow-hidden">
+        <div className="flex flex-col md:flex-row min-h-0 h-full max-h-[calc(100vh-2rem)]">
           {/* LEFT COLUMN - Settings */}
-          <div className="w-72 shrink-0 border-r border-border p-4 space-y-3 bg-muted/30">
+          <div className="w-full md:w-72 shrink-0 border-b md:border-b-0 md:border-r border-border p-4 space-y-3 bg-muted/30 overflow-y-auto">
             <div>
               <h3 className="text-sm font-semibold text-foreground">
                 {isEditing ? "Edit Automation" : "Add Automation"}
@@ -927,9 +931,9 @@ export function AutomationDialog({
           </div>
 
           {/* RIGHT SECTION - Content & Variables */}
-          <div className="flex-1 flex">
+          <div className="flex-1 flex flex-col md:flex-row min-h-0">
             {/* CENTER - Message Content */}
-            <div className="flex-1 p-4 space-y-3">
+            <div className="flex-1 p-4 space-y-3 overflow-y-auto min-h-0">
               {availableTabs.length > 0 && (
                 <Tabs
                   value={activeTab}
@@ -997,7 +1001,9 @@ export function AutomationDialog({
                               ref={emailSubjectRef}
                               value={emailSubject}
                               onChange={(e) => setEmailSubject(e.target.value)}
-                              onFocus={() => setLastFocusedField("emailSubject")}
+                              onFocus={() =>
+                                setLastFocusedField("emailSubject")
+                              }
                               placeholder="e.g., Welcome to {{phase_name}}!"
                               className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                             />
@@ -1012,7 +1018,7 @@ export function AutomationDialog({
                               onChange={(e) => setEmailBody(e.target.value)}
                               onFocus={() => setLastFocusedField("emailBody")}
                               placeholder="<p>Hello {{recruit_first_name}},</p><p>Welcome! 🎉</p>"
-                              className="text-sm min-h-[320px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                              className="text-sm min-h-[180px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                             />
                           </div>
                         </>
@@ -1027,7 +1033,9 @@ export function AutomationDialog({
                               onSelect={(template: EmailTemplate) => {
                                 setEmailTemplateId(template.id);
                                 setSelectedTemplateName(template.name);
-                                setSelectedTemplateSubject(template.subject || "");
+                                setSelectedTemplateSubject(
+                                  template.subject || "",
+                                );
                               }}
                             />
                           </div>
@@ -1045,7 +1053,8 @@ export function AutomationDialog({
                                 </p>
                               )}
                               <p className="text-[10px] text-muted-foreground italic">
-                                Template variables will be substituted at send time
+                                Template variables will be substituted at send
+                                time
                               </p>
                             </div>
                           )}
@@ -1089,7 +1098,7 @@ export function AutomationDialog({
                             setLastFocusedField("notificationMessage")
                           }
                           placeholder="{{recruit_name}} has entered {{phase_name}}"
-                          className="text-sm min-h-[280px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                          className="text-sm min-h-[140px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                         />
                       </div>
                     </TabsContent>
@@ -1113,7 +1122,7 @@ export function AutomationDialog({
                           onChange={(e) => setSmsMessage(e.target.value)}
                           onFocus={() => setLastFocusedField("smsMessage")}
                           placeholder="Hi {{recruit_first_name}}, reminder about {{phase_name}}..."
-                          className="text-sm min-h-[280px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                          className="text-sm min-h-[140px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                           maxLength={320}
                         />
                         <p className="text-xs text-muted-foreground">
@@ -1126,8 +1135,8 @@ export function AutomationDialog({
               )}
             </div>
 
-            {/* RIGHT - Template Variables & Emojis Sidebar */}
-            <div className="w-64 shrink-0 border-l border-border p-3 bg-muted/30 space-y-3">
+            {/* RIGHT - Template Variables & Emojis Sidebar (hidden on mobile) */}
+            <div className="hidden md:block w-64 shrink-0 border-l border-border p-3 bg-muted/30 overflow-y-auto">
               <div className="text-xs text-muted-foreground text-center font-medium">
                 Click to insert at cursor
               </div>
