@@ -55,6 +55,18 @@ export function AgeSlider({
     setIsEditing(true);
   }, [value]);
 
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      setEditValue(raw);
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed) && parsed >= min && parsed <= max) {
+        onChange(parsed);
+      }
+    },
+    [onChange, min, max],
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
@@ -114,7 +126,7 @@ export function AgeSlider({
           min={min}
           max={max}
           value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          onChange={handleInputChange}
           onBlur={commitEdit}
           onKeyDown={handleKeyDown}
           className="h-7 w-10 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-center text-xs font-semibold tabular-nums outline-none focus:ring-1 focus:ring-primary"

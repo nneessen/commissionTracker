@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-21 15:33:22
+
+### Changed Files
+- `docs/scripts/iulFetcher.md`
+- `src/features/underwriting/components/QuickQuote/age-slider.tsx`
+
+### Statistics
+```
+ 2 files changed, 42 insertions(+), 25 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-21 12:36:02
 
 ### Changed Files

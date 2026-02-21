@@ -163,7 +163,12 @@ const fetchAllRates = async () => {
 
   const CONFIG = {
     state: "IL",
-    faceAmounts: [100000, 150000, 250000, 500000, 750000, 1000000],
+    faceAmounts: [
+      155000, 160000, 165000, 170000, 175000, 180000, 185000, 190000, 195000,
+      200000, 205000, 210000, 215000, 220000, 225000, 230000, 235000, 240000,
+      245000, 250000, 255000, 260000, 265000, 270000, 275000, 280000, 285000,
+      290000, 295000, 300000,
+    ],
     ages: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75],
     genders: ["Male", "Female"],
     tobaccos: ["None", "Tobacco"],
@@ -436,32 +441,32 @@ And it starts fetching!
 
 ## IUL CSV Columns
 
-| Column        | Description                     | Example                                  |
-| ------------- | ------------------------------- | ---------------------------------------- |
-| face_amount   | Death benefit face amount       | 250000                                   |
-| company       | Carrier with product name       | "North American (IUL 20)"               |
-| plan_name     | Full plan name                  | "IUL 20"                                 |
-| tier_name     | Health class tier               | "Preferred Plus", "Standard"             |
-| coverage_type | Empty for IUL                   | (empty)                                  |
-| monthly       | Monthly target premium          | 245.50                                   |
-| yearly        | Annual target premium           | 2823.25                                  |
-| state         | State code                      | IL                                       |
-| gender        | Male/Female                     | Male                                     |
-| age           | Issue age                       | 45                                       |
-| term_years    | Empty for IUL (permanent)       | (empty)                                  |
-| tobacco       | None/Tobacco                    | None                                     |
+| Column        | Description               | Example                      |
+| ------------- | ------------------------- | ---------------------------- |
+| face_amount   | Death benefit face amount | 250000                       |
+| company       | Carrier with product name | "North American (IUL 20)"    |
+| plan_name     | Full plan name            | "IUL 20"                     |
+| tier_name     | Health class tier         | "Preferred Plus", "Standard" |
+| coverage_type | Empty for IUL             | (empty)                      |
+| monthly       | Monthly target premium    | 245.50                       |
+| yearly        | Annual target premium     | 2823.25                      |
+| state         | State code                | IL                           |
+| gender        | Male/Female               | Male                         |
+| age           | Issue age                 | 45                           |
+| term_years    | Empty for IUL (permanent) | (empty)                      |
+| tobacco       | None/Tobacco              | None                         |
 
 ## Comparison: FEX vs IUL
 
-| Parameter          | FEX/Whole Life   | IUL                  |
-| ------------------ | ---------------- | -------------------- |
-| Toolkit            | `'FEX'`          | `'IUL'`              |
-| URL                | /fex/quoter      | /iul/quoter          |
-| Term years         | None (permanent) | None (permanent)     |
-| Coverage type      | Level/Graded/etc | None                 |
-| Age range          | 30-85            | 20-75                |
-| Typical face range | $5k - $50k       | $100k - $1M          |
-| Use case           | Final Expense    | Cash value / growth  |
+| Parameter          | FEX/Whole Life   | IUL                 |
+| ------------------ | ---------------- | ------------------- |
+| Toolkit            | `'FEX'`          | `'IUL'`             |
+| URL                | /fex/quoter      | /iul/quoter         |
+| Term years         | None (permanent) | None (permanent)    |
+| Coverage type      | Level/Graded/etc | None                |
+| Age range          | 30-85            | 20-75               |
+| Typical face range | $5k - $50k       | $100k - $1M         |
+| Use case           | Final Expense    | Cash value / growth |
 
 ## Troubleshooting
 
