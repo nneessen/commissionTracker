@@ -10,6 +10,17 @@ import type {
   SessionSaveData,
 } from "../types/underwriting.types";
 
+export interface PaginatedSessionsResult {
+  data: UnderwritingSession[];
+  count: number;
+}
+
+interface PaginatedSessionsParams {
+  page: number;
+  pageSize: number;
+  search: string;
+}
+
 async function fetchUserSessions(
   userId: string,
 ): Promise<UnderwritingSession[]> {
@@ -40,6 +51,66 @@ async function fetchAgencySessions(
   }
 
   return data || [];
+}
+
+async function fetchAgencySessionsPaginated(
+  agencyId: string,
+  { page, pageSize, search }: PaginatedSessionsParams,
+): Promise<PaginatedSessionsResult> {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("underwriting_sessions")
+    .select("*", { count: "exact" })
+    .eq("agency_id", agencyId);
+
+  if (search.trim()) {
+    const pattern = `%${search.trim()}%`;
+    query = query.or(
+      `client_name.ilike.${pattern},client_state.ilike.${pattern},health_tier.ilike.${pattern}`,
+    );
+  }
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw new Error(`Failed to fetch agency sessions: ${error.message}`);
+  }
+
+  return { data: data || [], count: count ?? 0 };
+}
+
+async function fetchUserSessionsPaginated(
+  userId: string,
+  { page, pageSize, search }: PaginatedSessionsParams,
+): Promise<PaginatedSessionsResult> {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("underwriting_sessions")
+    .select("*", { count: "exact" })
+    .eq("created_by", userId);
+
+  if (search.trim()) {
+    const pattern = `%${search.trim()}%`;
+    query = query.or(
+      `client_name.ilike.${pattern},client_state.ilike.${pattern},health_tier.ilike.${pattern}`,
+    );
+  }
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw new Error(`Failed to fetch sessions: ${error.message}`);
+  }
+
+  return { data: data || [], count: count ?? 0 };
 }
 
 async function fetchSession(sessionId: string): Promise<UnderwritingSession> {
@@ -173,5 +244,53 @@ export function useAgencySessions() {
     queryKey: underwritingQueryKeys.agencySessions(agency?.id || ""),
     queryFn: () => fetchAgencySessions(agency!.id!),
     enabled: !!agency?.id && !imoLoading,
+  });
+}
+
+/**
+ * Hook to fetch paginated agency sessions with optional search
+ */
+export function useAgencySessionsPaginated(
+  page: number,
+  pageSize: number,
+  search: string,
+) {
+  const { agency, loading: imoLoading } = useImo();
+
+  return useQuery({
+    queryKey: underwritingQueryKeys.agencySessionsPaginated(
+      agency?.id || "",
+      page,
+      pageSize,
+      search,
+    ),
+    queryFn: () =>
+      fetchAgencySessionsPaginated(agency!.id!, { page, pageSize, search }),
+    enabled: !!agency?.id && !imoLoading,
+    placeholderData: (prev) => prev,
+  });
+}
+
+/**
+ * Hook to fetch paginated user sessions with optional search
+ */
+export function useUserSessionsPaginated(
+  page: number,
+  pageSize: number,
+  search: string,
+) {
+  const { user, loading: userLoading } = useAuth();
+
+  return useQuery({
+    queryKey: underwritingQueryKeys.sessionsPaginated(
+      user?.id || "",
+      page,
+      pageSize,
+      search,
+    ),
+    queryFn: () =>
+      fetchUserSessionsPaginated(user!.id!, { page, pageSize, search }),
+    enabled: !!user?.id && !userLoading,
+    placeholderData: (prev) => prev,
   });
 }

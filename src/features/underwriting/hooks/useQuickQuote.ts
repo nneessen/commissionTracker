@@ -1,8 +1,9 @@
 // src/features/underwriting/hooks/useQuickQuote.ts
 // TanStack Query hooks for the quoting service
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useImo } from "@/contexts/ImoContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   getQuotesForCoverage,
   getQuotesForBudget,
@@ -14,6 +15,10 @@ import {
   getAllPremiumMatricesForIMO,
   type PremiumMatrixWithCarrier,
 } from "@/services/underwriting/premiumMatrixService";
+import {
+  quickQuotePresetsService,
+  type QuickQuotePresets,
+} from "@/services/underwriting/quickQuotePresetsService";
 
 // Re-export types for convenience
 export type {
@@ -290,4 +295,47 @@ export function useAllPremiumMatrices(): {
     error: query.error,
     refetch: query.refetch,
   };
+}
+
+// ============================================================================
+// Quick Quote Presets Hooks
+// ============================================================================
+
+export const presetKeys = {
+  all: ["quick-quote-presets"] as const,
+  user: (userId: string) => [...presetKeys.all, userId] as const,
+};
+
+/**
+ * Hook to fetch the current user's Quick Quote presets.
+ */
+export function useQuickQuotePresets() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+
+  return useQuery<QuickQuotePresets | null>({
+    queryKey: presetKeys.user(userId),
+    queryFn: () => quickQuotePresetsService.getPresets(userId),
+    enabled: !!userId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
+ * Mutation hook to upsert the current user's Quick Quote presets.
+ */
+export function useUpdatePresets() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const queryClient = useQueryClient();
+
+  return useMutation<QuickQuotePresets, Error, Partial<QuickQuotePresets>>({
+    mutationFn: (presets) => {
+      if (!userId) throw new Error("User not authenticated");
+      return quickQuotePresetsService.upsertPresets(userId, presets);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: presetKeys.user(userId) });
+    },
+  });
 }

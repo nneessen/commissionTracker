@@ -55,8 +55,6 @@ import { toast } from "sonner";
 import { useImo } from "@/contexts/ImoContext";
 import { useTemporaryAccessCheck } from "@/hooks/subscription";
 import {
-  UnderwritingWizard,
-  QuickQuoteDialog,
   useUnderwritingFeatureFlag,
 } from "@/features/underwriting";
 
@@ -138,9 +136,6 @@ export default function Sidebar({
     useOwnerDownlineAccess();
   const { data: userRoles } = useUserRoles();
   const { imo, agency, loading: imoLoading, error: imoError } = useImo();
-  const [isUnderwritingWizardOpen, setIsUnderwritingWizardOpen] =
-    useState(false);
-  const [isQuickQuoteOpen, setIsQuickQuoteOpen] = useState(false);
   const { isEnabled: isUnderwritingEnabled, isLoading: isUnderwritingLoading } =
     useUnderwritingFeatureFlag();
   const { shouldGrantTemporaryAccess, isLoading: tempAccessLoading } =
@@ -328,31 +323,31 @@ export default function Sidebar({
         },
       ],
     },
-    ...(!isUnderwritingLoading && isUnderwritingEnabled
-      ? [
-          {
-            id: "tools",
-            label: "Tools",
-            separatorAfter: true,
-            items: [
+    {
+      id: "tools",
+      label: "Tools",
+      separatorAfter: true,
+      items: [
+        // UW Wizard — gated behind underwriting feature flag
+        ...(!isUnderwritingLoading && isUnderwritingEnabled
+          ? [
               {
                 icon: ShieldCheck,
                 label: "UW Wizard",
-                type: "action" as const,
-                onClick: () => setIsUnderwritingWizardOpen(true),
-                colorClass: "text-blue-600 dark:text-blue-400",
-              },
-              {
-                icon: Calculator,
-                label: "Quick Quote",
-                type: "action" as const,
-                onClick: () => setIsQuickQuoteOpen(true),
-                colorClass: "text-emerald-600 dark:text-emerald-400",
-              },
-            ] as NavItem[],
-          },
-        ]
-      : []),
+                href: "/underwriting/wizard",
+                public: true,
+              } as NavItem,
+            ]
+          : []),
+        // Quick Quote — free for all users
+        {
+          icon: Calculator,
+          label: "Quick Quote",
+          href: "/underwriting/quick-quote",
+          public: true,
+        },
+      ] as NavItem[],
+    },
     {
       id: "training",
       label: "Training",
@@ -965,22 +960,6 @@ export default function Sidebar({
           </div>
         </TooltipProvider>
       </div>
-
-      {/* Underwriting Wizard Dialog */}
-      {isUnderwritingEnabled && (
-        <UnderwritingWizard
-          open={isUnderwritingWizardOpen}
-          onOpenChange={setIsUnderwritingWizardOpen}
-        />
-      )}
-
-      {/* Quick Quote Dialog */}
-      {isUnderwritingEnabled && (
-        <QuickQuoteDialog
-          open={isQuickQuoteOpen}
-          onOpenChange={setIsQuickQuoteOpen}
-        />
-      )}
 
       {/* Main content margin helper */}
       <style>{`

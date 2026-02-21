@@ -12167,6 +12167,33 @@ export type Database = {
           },
         ]
       }
+      user_quick_quote_presets: {
+        Row: {
+          budget_presets: Json
+          coverage_presets: Json
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_presets?: Json
+          coverage_presets?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_presets?: Json
+          coverage_presets?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_slack_preferences: {
         Row: {
           auto_post_enabled: boolean | null

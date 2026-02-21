@@ -877,3 +877,31 @@ export function getAvailableTermYearsForAge(
 
   return [...termYearsSet].sort((a, b) => a - b);
 }
+
+/**
+ * Get available health classes from the rate data for the selected product types.
+ * Returns only health classes that actually have rate entries, sorted best to worst.
+ */
+export function getAvailableHealthClasses(
+  matrices: PremiumMatrixWithCarrier[],
+  productTypes: QuickQuoteProductType[],
+): HealthClass[] {
+  const HEALTH_CLASS_ORDER: HealthClass[] = [
+    "preferred_plus",
+    "preferred",
+    "standard_plus",
+    "standard",
+    "table_rated",
+  ];
+
+  const classSet = new Set<HealthClass>();
+
+  for (const m of matrices) {
+    if (!m.product) continue;
+    if (!productTypes.includes(m.product.product_type as QuickQuoteProductType))
+      continue;
+    classSet.add(m.health_class as HealthClass);
+  }
+
+  return HEALTH_CLASS_ORDER.filter((c) => classSet.has(c));
+}

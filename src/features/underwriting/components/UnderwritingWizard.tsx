@@ -1,10 +1,16 @@
 // src/features/underwriting/components/UnderwritingWizard.tsx
 
-import { useState, useCallback, useEffect } from "react";
-import { ArrowLeft, ArrowRight, Save, Sparkles, Zap } from "lucide-react";
+import { useState, useCallback, Suspense } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Save, Sparkles, Zap, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useUnderwritingAnalysis,
@@ -13,6 +19,7 @@ import {
   transformWizardToDecisionEngineInput,
   useUWWizardUsage,
   getUsageStatus,
+  useUnderwritingFeatureFlag,
 } from "../hooks";
 import { calculateBMI } from "../utils/bmiCalculator";
 import type {
@@ -33,7 +40,7 @@ import { WIZARD_STEPS } from "../types/underwriting.types";
 import { safeParseJsonObject, safeParseJsonArray } from "../utils/formatters";
 
 // Layout and step components
-import { WizardDialogLayout } from "./WizardDialogLayout";
+import { WizardPageLayout } from "./wizard-page-layout";
 import { WizardSessionHistory } from "./SessionHistory";
 import { UWLimitReachedDialog } from "./UWLimitReachedDialog";
 import ClientInfoStep from "./WizardSteps/ClientInfoStep";
@@ -42,11 +49,6 @@ import MedicationsStep from "./WizardSteps/MedicationsStep";
 import CoverageRequestStep from "./WizardSteps/CoverageRequestStep";
 import ReviewStep from "./WizardSteps/ReviewStep";
 import RecommendationsStep from "./WizardSteps/RecommendationsStep";
-
-interface UnderwritingWizardProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
 
 const initialClientInfo: ClientInfo = {
   name: "",
@@ -65,37 +67,29 @@ const initialHealthInfo: HealthInfo = {
     currentUse: false,
   },
   medications: {
-    // Cardiovascular
     bpMedCount: 0,
     bloodThinners: false,
     heartMeds: false,
     cholesterolMedCount: 0,
-    // Diabetes
     insulinUse: false,
     oralDiabetesMeds: false,
-    // Mental Health
     antidepressants: false,
     antianxiety: false,
     antipsychotics: false,
     moodStabilizers: false,
     sleepAids: false,
     adhdMeds: false,
-    // Pain & Neurological
     painMedications: "none",
     seizureMeds: false,
     migraineMeds: false,
-    // Respiratory
     inhalers: false,
     copdMeds: false,
-    // Thyroid & Hormonal
     thyroidMeds: false,
     hormonalTherapy: false,
     steroids: false,
-    // Immune & Autoimmune
     immunosuppressants: false,
     biologics: false,
     dmards: false,
-    // Specialty
     cancerTreatment: false,
     antivirals: false,
     osteoporosisMeds: false,
@@ -109,10 +103,10 @@ const initialCoverageRequest: CoverageRequest = {
   productTypes: ["term_life"],
 };
 
-export default function UnderwritingWizard({
-  open,
-  onOpenChange,
-}: UnderwritingWizardProps) {
+export default function UnderwritingWizardPage() {
+  const navigate = useNavigate();
+  const { isEnabled, isLoading: featureLoading } = useUnderwritingFeatureFlag();
+
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>({
     client: initialClientInfo,
@@ -127,11 +121,8 @@ export default function UnderwritingWizard({
   const [selectedTermYears, setSelectedTermYears] = useState<number | null>(
     null,
   );
-  // Track if data changed since last analysis to avoid unnecessary re-runs
   const [lastAnalyzedData, setLastAnalyzedData] = useState<string | null>(null);
-  // Session history view toggle
-  const [showingHistory, setShowingHistory] = useState(false);
-  // Limit reached dialog
+  const [showHistorySheet, setShowHistorySheet] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
 
   const { user } = useAuth();
@@ -139,34 +130,27 @@ export default function UnderwritingWizard({
   const decisionEngineMutation = useDecisionEngineRecommendations();
   const saveSessionMutation = useSaveUnderwritingSession();
 
-  // Usage tracking for quota limits
   const { data: usageData, refetch: refetchUsage } = useUWWizardUsage();
   const usageStatus = getUsageStatus(usageData);
 
   const currentStep = WIZARD_STEPS[currentStepIndex];
 
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (open) {
-      setCurrentStepIndex(0);
-      setFormData({
-        client: initialClientInfo,
-        health: initialHealthInfo,
-        coverage: initialCoverageRequest,
-      });
-      setErrors({});
-      setAnalysisResult(null);
-      setSelectedTermYears(null);
-      setLastAnalyzedData(null);
-      setShowingHistory(false);
-      analysisMutation.reset();
-      decisionEngineMutation.reset();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  // Feature flag redirect
+  if (!featureLoading && !isEnabled) {
+    navigate({ to: "/policies" });
+    return null;
+  }
+
+  if (featureLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
+        <div className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Validation functions
-  const validateClientInfo = useCallback((): boolean => {
+  const validateClientInfo = (): boolean => {
     const newErrors: Record<string, string> = {};
     const { client } = formData;
 
@@ -194,28 +178,15 @@ export default function UnderwritingWizard({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  };
 
-  const validateHealthInfo = useCallback((): boolean => {
+  const validateHealthInfo = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    // Check if any selected conditions have required follow-up questions that are unanswered
-    for (const condition of formData.health.conditions) {
-      // Find the condition definition to get its follow-up schema
-      // We'll need to access the conditions from the query
-      const _hasUnansweredRequired =
-        condition.responses === undefined ||
-        Object.keys(condition.responses).length === 0;
-
-      // For now, we'll allow proceeding - the detailed validation happens
-      // when we have access to the full condition schema
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData.health.conditions]);
+  };
 
-  const validateCoverageRequest = useCallback((): boolean => {
+  const validateCoverageRequest = (): boolean => {
     const newErrors: Record<string, string> = {};
     const { coverage } = formData;
 
@@ -231,49 +202,36 @@ export default function UnderwritingWizard({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  };
 
-  const validateMedications = useCallback((): boolean => {
-    return true;
-  }, []);
+  const validateStep = (stepId: WizardStep): boolean => {
+    switch (stepId) {
+      case "client":
+        return validateClientInfo();
+      case "health":
+        return validateHealthInfo();
+      case "medications":
+        return true;
+      case "coverage":
+        return validateCoverageRequest();
+      case "review":
+      case "results":
+        return true;
+      default:
+        return true;
+    }
+  };
 
-  const validateStep = useCallback(
-    (stepId: WizardStep): boolean => {
-      switch (stepId) {
-        case "client":
-          return validateClientInfo();
-        case "health":
-          return validateHealthInfo();
-        case "medications":
-          return validateMedications();
-        case "coverage":
-          return validateCoverageRequest();
-        case "review":
-        case "results":
-          return true;
-        default:
-          return true;
-      }
-    },
-    [
-      validateClientInfo,
-      validateHealthInfo,
-      validateMedications,
-      validateCoverageRequest,
-    ],
-  );
-
-  // Create a hash of form data to detect changes
-  const getDataHash = useCallback(() => {
+  const getDataHash = () => {
     return JSON.stringify({
       client: formData.client,
       health: formData.health,
       coverage: formData.coverage,
     });
-  }, [formData]);
+  };
 
   // Navigation handlers
-  const handleNext = useCallback(async () => {
+  const handleNext = async () => {
     if (!validateStep(currentStep.id)) {
       return;
     }
@@ -281,13 +239,11 @@ export default function UnderwritingWizard({
     if (currentStep.id === "review") {
       const currentDataHash = getDataHash();
 
-      // If data unchanged and we have results, just navigate to results
       if (lastAnalyzedData === currentDataHash && analysisResult) {
         setCurrentStepIndex((prev) => prev + 1);
         return;
       }
 
-      // Check usage limit before running analysis
       if (usageData && usageData.runs_remaining <= 0) {
         setShowLimitDialog(true);
         return;
@@ -315,7 +271,6 @@ export default function UnderwritingWizard({
           medications: formData.health.medications,
         },
         coverage: {
-          // Use primary (first valid) face amount for AI analysis
           faceAmount:
             formData.coverage.faceAmounts.find((a) => a >= 10000) ||
             formData.coverage.faceAmounts[0] ||
@@ -333,13 +288,11 @@ export default function UnderwritingWizard({
         selectedTermYears,
       );
 
-      // Track what data we're analyzing
       setLastAnalyzedData(currentDataHash);
 
       analysisMutation.mutate(aiRequest, {
         onSuccess: (result) => {
           setAnalysisResult(result);
-          // Refetch usage to update the badge after a run
           refetchUsage();
         },
         onError: () =>
@@ -354,30 +307,17 @@ export default function UnderwritingWizard({
     }
 
     setCurrentStepIndex((prev) => Math.min(prev + 1, WIZARD_STEPS.length - 1));
-  }, [
-    currentStep,
-    validateStep,
-    formData,
-    analysisMutation,
-    decisionEngineMutation,
-    user,
-    selectedTermYears,
-    getDataHash,
-    lastAnalyzedData,
-    analysisResult,
-  ]);
+  };
 
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     setCurrentStepIndex((prev) => Math.max(prev - 1, 0));
     setErrors({});
-  }, []);
+  };
 
   const canNavigateToStep = useCallback(
     (stepId: WizardStep): boolean => {
       const targetIndex = WIZARD_STEPS.findIndex((s) => s.id === stepId);
-      // Can go back to any previous step
       if (targetIndex < currentStepIndex) return true;
-      // Can go to results if we have results and data unchanged
       if (
         stepId === "results" &&
         analysisResult &&
@@ -387,10 +327,10 @@ export default function UnderwritingWizard({
       }
       return false;
     },
-    [currentStepIndex, analysisResult, lastAnalyzedData, getDataHash],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentStepIndex, analysisResult, lastAnalyzedData, formData],
   );
 
-  // Step navigation from sidebar
   const handleStepClick = useCallback(
     (stepId: WizardStep) => {
       if (!canNavigateToStep(stepId)) return;
@@ -467,7 +407,6 @@ export default function UnderwritingWizard({
       formData.client.weight,
     );
 
-    // Get top 3 rate table recommendations (from decision engine, not AI)
     const decisionEngineRecs =
       decisionEngineMutation.data?.recommendations || [];
     const topRateTableRecs = decisionEngineRecs.slice(0, 3).map((rec) => ({
@@ -500,7 +439,6 @@ export default function UnderwritingWizard({
       tobaccoDetails: formData.health.tobacco,
       requestedFaceAmounts: formData.coverage.faceAmounts,
       requestedProductTypes: formData.coverage.productTypes,
-      // Store top 3 rate table recommendations instead of AI analysis
       aiAnalysis: null,
       healthTier: analysisResult.healthTier,
       riskFactors: analysisResult.riskFactors,
@@ -516,7 +454,7 @@ export default function UnderwritingWizard({
         agencyId: user.agency_id || null,
         data: sessionData,
       });
-      onOpenChange(false);
+      navigate({ to: "/policies" });
     } catch {
       setErrors({ submit: "Failed to save session. Please try again." });
     }
@@ -527,34 +465,25 @@ export default function UnderwritingWizard({
     formData,
     sessionStartTime,
     saveSessionMutation,
-    onOpenChange,
+    navigate,
   ]);
 
-  // Load a previous session into the form for editing
   const handleLoadSession = useCallback(
     (session: UnderwritingSession) => {
-      // Parse height from total inches (if stored) or from BMI calculation
-      const totalHeightInches = session.client_height_inches || 66; // default 5'6"
+      const totalHeightInches = session.client_height_inches || 66;
       const heightFeet = Math.floor(totalHeightInches / 12);
       const heightInches = totalHeightInches % 12;
 
-      // Parse health responses from JSON
       const healthResponses = safeParseJsonObject<
         Record<string, ConditionResponse>
       >(session.health_responses);
 
-      // Convert health responses back to array format
       const conditions: ConditionResponse[] = Object.values(healthResponses);
-
-      // Parse tobacco details
       const tobaccoDetails = session.tobacco_details as TobaccoInfo | null;
-
-      // Parse product types
       const productTypes = safeParseJsonArray<ProductType>(
         session.requested_product_types,
       );
 
-      // Build the form data from session
       const loadedFormData: WizardFormData = {
         client: {
           name: session.client_name || "",
@@ -571,35 +500,28 @@ export default function UnderwritingWizard({
           tobacco: tobaccoDetails || {
             currentUse: session.tobacco_use || false,
           },
-          // Medications aren't stored in session - use defaults
           medications: initialHealthInfo.medications,
         },
         coverage: {
-          // Session stores single face amount, convert to array with common options
           faceAmounts: session.requested_face_amount
             ? [
+                Math.max(50000, Math.round(session.requested_face_amount / 2)),
                 session.requested_face_amount,
-                session.requested_face_amount * 2,
-                session.requested_face_amount * 4,
-              ].filter((amt) => amt <= 5000000)
+                Math.min(5000000, session.requested_face_amount * 2),
+              ]
             : [250000, 500000, 1000000],
           productTypes: productTypes.length > 0 ? productTypes : ["term_life"],
         },
       };
 
-      // Update form state
       setFormData(loadedFormData);
-
-      // Reset analysis state since we're editing
       setAnalysisResult(null);
       setLastAnalyzedData(null);
       setSelectedTermYears(null);
       analysisMutation.reset();
       decisionEngineMutation.reset();
-
-      // Navigate to first step and close history
       setCurrentStepIndex(0);
-      setShowingHistory(false);
+      setShowHistorySheet(false);
       setErrors({});
     },
     [analysisMutation, decisionEngineMutation],
@@ -673,139 +595,159 @@ export default function UnderwritingWizard({
   const isSaving = saveSessionMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-[98vw] p-0 gap-0 overflow-hidden bg-background border-0">
-        <DialogTitle className="sr-only">Underwriting Wizard</DialogTitle>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
+          <div className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <WizardPageLayout
+        currentStep={currentStep.id}
+        onStepClick={handleStepClick}
+        canNavigateToStep={canNavigateToStep}
+        onBack={() => navigate({ to: "/policies" })}
+        headerRight={
+          <>
+            {/* Usage Badge */}
+            {usageData && (
+              <Badge
+                variant={
+                  usageStatus.status === "exceeded"
+                    ? "destructive"
+                    : usageStatus.status === "critical"
+                      ? "destructive"
+                      : usageStatus.status === "warning"
+                        ? "outline"
+                        : "secondary"
+                }
+                className={`flex items-center gap-1 text-[10px] px-2 py-0.5 ${
+                  usageStatus.status === "warning"
+                    ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                    : ""
+                }`}
+              >
+                <Zap className="h-3 w-3" />
+                {usageData.runs_used}/{usageData.runs_limit}
+              </Badge>
+            )}
 
-        <WizardDialogLayout
-          currentStep={currentStep.id}
-          onStepClick={handleStepClick}
-          canNavigateToStep={canNavigateToStep}
-          onHistoryClick={() => setShowingHistory(!showingHistory)}
-          showingHistory={showingHistory}
-        >
-          {showingHistory ? (
-            /* Session History View */
+            {/* History Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistorySheet(true)}
+              className="h-7 text-xs gap-1.5"
+            >
+              <History className="h-3 w-3" />
+              History
+            </Button>
+          </>
+        }
+      >
+        {/* Step Content Container */}
+        <div className="flex-1 flex flex-col overflow-hidden p-4">
+          {/* Step Title */}
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50 flex-shrink-0">
+            <Sparkles className="h-5 w-5 text-amber-500" />
+            <h3 className="text-base font-semibold text-foreground">
+              {currentStep.label}
+            </h3>
+
+            {currentStep.id === "results" && (
+              <span className="text-xs text-red-500 ml-auto">
+                BETA - Do not use for actual recommendations
+              </span>
+            )}
+          </div>
+
+          {/* Error display */}
+          {errors.submit && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.submit}
+              </p>
+            </div>
+          )}
+
+          {/* Step Form */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {renderStepContent()}
+          </div>
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/50 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => navigate({ to: "/policies" })}
+            size="sm"
+            className="h-8 text-xs px-3"
+            disabled={isAnalyzing || isSaving}
+          >
+            Cancel
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStepIndex === 0 || isAnalyzing || isSaving}
+              size="sm"
+              className="h-8 text-xs px-3"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+              Back
+            </Button>
+
+            {isLastStep ? (
+              <Button
+                onClick={handleSaveSession}
+                disabled={isSaving || !analysisResult}
+                size="sm"
+                className="h-8 text-xs px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                {isSaving ? "Saving..." : "Save Session"}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                size="sm"
+                disabled={isAnalyzing}
+                className="h-8 text-xs px-4 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {currentStep.id === "review" ? (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                    {isAnalyzing ? "Analyzing..." : "Get Recommendations"}
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+      </WizardPageLayout>
+
+      {/* Session History Sheet */}
+      <Sheet open={showHistorySheet} onOpenChange={setShowHistorySheet}>
+        <SheetContent side="right" className="w-full sm:max-w-lg p-0">
+          <SheetHeader className="px-4 py-3 border-b">
+            <SheetTitle className="text-sm">Session History</SheetTitle>
+          </SheetHeader>
+          <div className="overflow-y-auto h-[calc(100%-3.5rem)]">
             <WizardSessionHistory
-              onClose={() => setShowingHistory(false)}
+              onClose={() => setShowHistorySheet(false)}
               onLoadSession={handleLoadSession}
             />
-          ) : (
-            <>
-              {/* Step Content Container - Flex column to allow step to fill height */}
-              <div className="flex-1 flex flex-col overflow-hidden p-4">
-                {/* Step Title */}
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50 flex-shrink-0">
-                  <Sparkles className="h-5 w-5 text-amber-500" />
-                  <h3 className="text-base font-semibold text-foreground">
-                    {currentStep.label}
-                  </h3>
-
-                  {/* Usage Badge */}
-                  {usageData && (
-                    <Badge
-                      variant={
-                        usageStatus.status === "exceeded"
-                          ? "destructive"
-                          : usageStatus.status === "critical"
-                            ? "destructive"
-                            : usageStatus.status === "warning"
-                              ? "outline"
-                              : "secondary"
-                      }
-                      className={`ml-auto flex items-center gap-1 text-[10px] px-2 py-0.5 ${
-                        usageStatus.status === "warning"
-                          ? "border-amber-500 text-amber-600 dark:text-amber-400"
-                          : ""
-                      }`}
-                    >
-                      <Zap className="h-3 w-3" />
-                      {usageData.runs_used}/{usageData.runs_limit}
-                    </Badge>
-                  )}
-
-                  {currentStep.id === "results" && (
-                    <span className="text-xs text-red-500">
-                      BETA - Do not use for actual recommendations
-                    </span>
-                  )}
-                </div>
-
-                {/* Error display */}
-                {errors.submit && (
-                  <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      {errors.submit}
-                    </p>
-                  </div>
-                )}
-
-                {/* Step Form - Fills remaining height */}
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                  {renderStepContent()}
-                </div>
-              </div>
-
-              {/* Fixed Footer */}
-              <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-muted/50 flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  onClick={() => onOpenChange(false)}
-                  size="sm"
-                  className="h-8 text-xs px-3"
-                  disabled={isAnalyzing || isSaving}
-                >
-                  Cancel
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={currentStepIndex === 0 || isAnalyzing || isSaving}
-                    size="sm"
-                    className="h-8 text-xs px-3"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                    Back
-                  </Button>
-
-                  {isLastStep ? (
-                    <Button
-                      onClick={handleSaveSession}
-                      disabled={isSaving || !analysisResult}
-                      size="sm"
-                      className="h-8 text-xs px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      <Save className="h-3.5 w-3.5 mr-1.5" />
-                      {isSaving ? "Saving..." : "Save Session"}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleNext}
-                      size="sm"
-                      disabled={isAnalyzing}
-                      className="h-8 text-xs px-4 bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                      {currentStep.id === "review" ? (
-                        <>
-                          <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                          {isAnalyzing ? "Analyzing..." : "Get Recommendations"}
-                        </>
-                      ) : (
-                        <>
-                          Next
-                          <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </WizardDialogLayout>
-      </DialogContent>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Limit Reached Dialog */}
       <UWLimitReachedDialog
@@ -813,6 +755,6 @@ export default function UnderwritingWizard({
         onOpenChange={setShowLimitDialog}
         usage={usageData ?? null}
       />
-    </Dialog>
+    </Suspense>
   );
 }

@@ -1,8 +1,8 @@
 // src/features/underwriting/index.ts
 
-// Components
-export { default as UnderwritingWizard } from "./components/UnderwritingWizard";
-export { QuickQuoteDialog } from "./components/QuickQuote";
+// Page components (full-page routes, no props)
+export { default as UnderwritingWizardPage } from "./components/UnderwritingWizard";
+export { QuickQuotePage } from "./components/QuickQuote";
 export { UnderwritingSettingsTab } from "./components/UnderwritingSettingsTab";
 export {
   SessionHistoryList,

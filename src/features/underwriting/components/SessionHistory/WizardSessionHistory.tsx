@@ -1,6 +1,6 @@
 // src/features/underwriting/components/SessionHistory/WizardSessionHistory.tsx
 
-import { useState } from "react";
+import { useState, useDeferredValue } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -11,9 +11,13 @@ import {
   AlertTriangle,
   Building2,
   DollarSign,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -25,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAgencySessions } from "../../hooks/useUnderwritingSessions";
+import { useUserSessionsPaginated } from "../../hooks/useUnderwritingSessions";
 import type {
   UnderwritingSession,
   CarrierRecommendation,
@@ -45,6 +49,8 @@ import {
   safeParseJsonObject,
 } from "../../utils/formatters";
 
+const PAGE_SIZE = 15;
+
 interface WizardSessionHistoryProps {
   onClose: () => void;
   onLoadSession: (session: UnderwritingSession) => void;
@@ -54,9 +60,25 @@ export function WizardSessionHistory({
   onClose,
   onLoadSession,
 }: WizardSessionHistoryProps) {
-  const { data: sessions, isLoading, error } = useAgencySessions();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const deferredSearch = useDeferredValue(search);
+
+  const { data: result, isLoading, error, isFetching } =
+    useUserSessionsPaginated(page, PAGE_SIZE, deferredSearch);
+
+  const sessions = result?.data ?? [];
+  const totalCount = result?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
   const [viewingSession, setViewingSession] =
     useState<UnderwritingSession | null>(null);
+
+  // Reset to page 0 when search changes
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(0);
+  };
 
   // Show session detail view
   if (viewingSession) {
@@ -82,13 +104,26 @@ export function WizardSessionHistory({
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-foreground">
             Session History
           </h3>
           <p className="text-[10px] text-muted-foreground">
-            View past sessions or load one to edit
+            {totalCount} session{totalCount !== 1 ? "s" : ""} found
           </p>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="px-4 py-2 border-b border-border/30 flex-shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search by client name, state, or health tier..."
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="h-8 pl-8 text-xs"
+          />
         </div>
       </div>
 
@@ -105,7 +140,7 @@ export function WizardSessionHistory({
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : sessions && sessions.length > 0 ? (
+          ) : sessions.length > 0 ? (
             <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
@@ -199,13 +234,43 @@ export function WizardSessionHistory({
             <div className="text-center py-12">
               <Activity className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
               <p className="text-xs text-muted-foreground">
-                No sessions found. Complete the wizard and save to create your
-                first session.
+                {search
+                  ? "No sessions match your search."
+                  : "No sessions found. Complete the wizard and save to create your first session."}
               </p>
             </div>
           )}
         </div>
       </ScrollArea>
+
+      {/* Pagination Footer */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-2 border-t border-border/50 flex-shrink-0 bg-card/80">
+          <span className="text-[10px] text-muted-foreground">
+            Page {page + 1} of {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 w-6 p-0"
+              disabled={page === 0 || isFetching}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 w-6 p-0"
+              disabled={page >= totalPages - 1 || isFetching}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

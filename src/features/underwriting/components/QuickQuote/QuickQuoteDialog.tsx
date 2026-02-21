@@ -1,13 +1,18 @@
 // src/features/underwriting/components/QuickQuote/QuickQuoteDialog.tsx
-// Quick Quote as a dialog with split-panel layout matching UW Wizard design
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { X, RefreshCw, Zap, AlertCircle, Calculator } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  RefreshCw,
+  AlertCircle,
+  ArrowLeft,
+  Calculator,
+  Zap,
+  CigaretteOff,
+  Cigarette,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -15,20 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
 import { QuoteComparisonGrid } from "./QuoteComparisonGrid";
+import { ThreeAmountInputs } from "./ThreeAmountInputs";
+import { AgeSlider } from "./age-slider";
+import { IconToggle } from "./icon-toggle";
+import { MaleIcon, FemaleIcon } from "./gender-icons";
 import {
-  ThreeAmountInputs,
+  QuickOptionsPresets,
   TERM_COVERAGE_PRESETS,
   PERM_COVERAGE_PRESETS,
-} from "./ThreeAmountInputs";
+} from "./quick-options-presets";
 import { useAllPremiumMatrices } from "../../hooks/useQuickQuote";
 import {
   calculateQuotesForCoverage,
   calculateQuotesForBudget,
   getAvailableTermYearsForAge,
+  getAvailableHealthClasses,
   hasTermProducts,
   type QuickQuoteInput,
   type QuickQuoteProductType,
@@ -63,7 +72,7 @@ const DEFAULT_FORM: FormState = {
   gender: "male",
   tobaccoUse: false,
   healthClass: "standard",
-  productTypes: ["term_life", "whole_life"],
+  productTypes: ["term_life"],
   termYears: 20,
   mode: "coverage",
   coverageAmounts: [250000, 500000, 1000000],
@@ -77,33 +86,98 @@ const PRODUCT_OPTIONS: { value: QuickQuoteProductType; label: string }[] = [
   { value: "indexed_universal_life", label: "IUL" },
 ];
 
-const HEALTH_CLASS_OPTIONS: { value: HealthClass; label: string }[] = [
-  { value: "preferred_plus", label: "Preferred+" },
-  { value: "preferred", label: "Preferred" },
-  { value: "standard_plus", label: "Standard+" },
-  { value: "standard", label: "Standard" },
-  { value: "table_rated", label: "Table" },
-];
+const HEALTH_CLASS_LABELS: Record<HealthClass, string> = {
+  preferred_plus: "Preferred+",
+  preferred: "Preferred",
+  standard_plus: "Standard+",
+  standard: "Standard",
+  table_rated: "Table",
+};
 
 const TERM_OPTIONS: TermYears[] = [10, 15, 20, 25, 30];
 
 // =============================================================================
-// Props
+// Sub-Components
 // =============================================================================
 
-interface QuickQuoteDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+/** Multi-select segmented group for product types */
+function ProductPills({
+  selected,
+  onToggle,
+}: {
+  selected: QuickQuoteProductType[];
+  onToggle: (productType: QuickQuoteProductType, checked: boolean) => void;
+}) {
+  return (
+    <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden h-7">
+      {PRODUCT_OPTIONS.map((opt, idx) => {
+        const isActive = selected.includes(opt.value);
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onToggle(opt.value, !isActive)}
+            className={cn(
+              "px-3 text-xs font-medium transition-colors",
+              isActive
+                ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+                : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800",
+              idx > 0 && "border-l border-zinc-200 dark:border-zinc-700",
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Mode toggle for coverage vs budget */
+function ModeToggle({
+  value,
+  onChange,
+}: {
+  value: QuoteMode;
+  onChange: (value: QuoteMode) => void;
+}) {
+  return (
+    <div className="flex rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden h-7">
+      <button
+        type="button"
+        onClick={() => onChange("coverage")}
+        className={cn(
+          "px-3 text-xs font-medium transition-colors",
+          value === "coverage"
+            ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+            : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800",
+        )}
+      >
+        Face Amount
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("budget")}
+        className={cn(
+          "px-3 text-xs font-medium transition-colors border-l border-zinc-200 dark:border-zinc-700",
+          value === "budget"
+            ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+            : "bg-white text-zinc-500 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800",
+        )}
+      >
+        Budget
+      </button>
+    </div>
+  );
 }
 
 // =============================================================================
 // Main Component
 // =============================================================================
 
-export function QuickQuoteDialog({
-  open,
-  onOpenChange,
-}: QuickQuoteDialogProps) {
+export function QuickQuoteDialog() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
   const {
@@ -112,6 +186,34 @@ export function QuickQuoteDialog({
     error,
   } = useAllPremiumMatrices();
 
+  return (
+    <QuickQuoteContent
+      form={form}
+      setForm={setForm}
+      matrices={matrices}
+      isLoadingMatrices={isLoadingMatrices}
+      error={error}
+      onBack={() => navigate({ to: "/policies" })}
+    />
+  );
+}
+
+// Separate content component to keep hooks stable
+function QuickQuoteContent({
+  form,
+  setForm,
+  matrices,
+  isLoadingMatrices,
+  error,
+  onBack,
+}: {
+  form: FormState;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  matrices: ReturnType<typeof useAllPremiumMatrices>["data"];
+  isLoadingMatrices: boolean;
+  error: Error | null;
+  onBack: () => void;
+}) {
   // Derived: available term years from the data (filtered by user age)
   const availableTermYears = useMemo(() => {
     if (!matrices) return TERM_OPTIONS;
@@ -127,8 +229,30 @@ export function QuickQuoteDialog({
     return hasTermProducts(form.productTypes);
   }, [form.productTypes]);
 
+  // Derive available health classes from rate data for selected products
+  const availableHealthClasses = useMemo(() => {
+    if (!matrices) return Object.keys(HEALTH_CLASS_LABELS) as HealthClass[];
+    const available = getAvailableHealthClasses(matrices, form.productTypes);
+    return available.length > 0
+      ? available
+      : (Object.keys(HEALTH_CLASS_LABELS) as HealthClass[]);
+  }, [matrices, form.productTypes]);
+
+  // Auto-correct health class if current selection isn't available for selected products
+  useEffect(() => {
+    if (
+      availableHealthClasses.length > 0 &&
+      !availableHealthClasses.includes(form.healthClass)
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        healthClass: availableHealthClasses[0],
+      }));
+    }
+  }, [availableHealthClasses, form.healthClass, setForm]);
+
   // Determine product category for presets
-  const { isTermOnly, isPermOnly, coveragePresets } = useMemo(() => {
+  const { isTermOnly, isPermOnly, coveragePresetDefaults } = useMemo(() => {
     const hasTerm = form.productTypes.includes("term_life");
     const hasPerm = form.productTypes.some((t) =>
       [
@@ -141,19 +265,17 @@ export function QuickQuoteDialog({
     const termOnly = hasTerm && !hasPerm;
     const permOnly = hasPerm && !hasTerm;
 
-    // Select appropriate presets
     let presets: [number, number, number][] | undefined;
     if (termOnly) {
       presets = TERM_COVERAGE_PRESETS;
     } else if (permOnly) {
       presets = PERM_COVERAGE_PRESETS;
     }
-    // undefined = use default mixed presets
 
     return {
       isTermOnly: termOnly,
       isPermOnly: permOnly,
-      coveragePresets: presets,
+      coveragePresetDefaults: presets,
     };
   }, [form.productTypes]);
 
@@ -166,16 +288,13 @@ export function QuickQuoteDialog({
     if (currentCategory !== prevCategory) {
       prevProductCategoryRef.current = currentCategory;
 
-      // Only auto-switch if in coverage mode
       if (form.mode === "coverage") {
         if (currentCategory === "perm") {
-          // Switch to perm defaults: 15k, 25k, 35k
           setForm((prev) => ({
             ...prev,
             coverageAmounts: [15000, 25000, 35000],
           }));
         } else if (currentCategory === "term") {
-          // Switch to term defaults: 250k, 500k, 1M
           setForm((prev) => ({
             ...prev,
             coverageAmounts: [250000, 500000, 1000000],
@@ -183,7 +302,7 @@ export function QuickQuoteDialog({
         }
       }
     }
-  }, [isTermOnly, isPermOnly, form.mode]);
+  }, [isTermOnly, isPermOnly, form.mode, setForm]);
 
   // Auto-correct term when age changes
   useEffect(() => {
@@ -194,7 +313,7 @@ export function QuickQuoteDialog({
         termYears: availableTermYears[0],
       }));
     }
-  }, [availableTermYears, form.termYears, showTermSelector]);
+  }, [availableTermYears, form.termYears, showTermSelector, setForm]);
 
   // INSTANT quote calculation
   const quotes: QuickQuoteResult[] = useMemo(() => {
@@ -233,7 +352,7 @@ export function QuickQuoteDialog({
 
   const handleReset = useCallback(() => {
     setForm(DEFAULT_FORM);
-  }, []);
+  }, [setForm]);
 
   const handleProductToggle = useCallback(
     (productType: QuickQuoteProductType, checked: boolean) => {
@@ -244,7 +363,7 @@ export function QuickQuoteDialog({
         return { ...prev, productTypes: newTypes };
       });
     },
-    [],
+    [setForm],
   );
 
   const currentAmounts =
@@ -253,393 +372,290 @@ export function QuickQuoteDialog({
   const isValid = form.gender && form.age >= 18 && form.productTypes.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-5xl w-[95vw] p-0 gap-0 overflow-hidden bg-background border-0 shadow-2xl ring-0 outline-none"
-        hideCloseButton
-      >
-        <DialogTitle className="sr-only">Quick Quote Calculator</DialogTitle>
+    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+      {/* Header Bar */}
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-background flex-shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="h-7 w-7 p-0"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <Calculator className="h-4 w-4 text-emerald-500" />
+          <span className="text-sm font-semibold tracking-wide">
+            Quick Quote
+          </span>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {isLoadingMatrices && (
+            <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+              <Zap className="h-3 w-3" />
+              Loading rates...
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="h-7 text-xs"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Reset
+          </Button>
+        </div>
+      </div>
 
-        <div className="flex h-[75vh] overflow-hidden">
-          {/* Left Panel - Branding */}
-          <div className="hidden lg:flex lg:w-[240px] bg-foreground relative overflow-hidden flex-shrink-0">
-            {/* Grid pattern overlay */}
-            <div className="absolute inset-0 opacity-[0.04]">
-              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern
-                    id="quickquote-grid"
-                    width="32"
-                    height="32"
-                    patternUnits="userSpaceOnUse"
-                  >
-                    <path
-                      d="M 32 0 L 0 0 0 32"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="0.5"
-                    />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#quickquote-grid)" />
-              </svg>
-            </div>
+      {/* Error State */}
+      {error && (
+        <div className="mx-4 mt-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-center gap-2">
+          <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+          <p className="text-xs text-red-600 dark:text-red-400">
+            Failed to load rates: {error.message}
+          </p>
+        </div>
+      )}
 
-            {/* Animated glow orbs */}
-            <div className="absolute top-1/4 -left-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-            <div
-              className="absolute bottom-1/4 -right-16 w-56 h-56 bg-emerald-400/5 rounded-full blur-3xl animate-pulse"
-              style={{ animationDelay: "1s" }}
+      {/* Control Panel */}
+      <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-3 space-y-3">
+        {/* Row 1: Age | Gender | Tobacco | Health Class | Term | Products */}
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Age */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Age</Label>
+            <AgeSlider
+              value={form.age}
+              onChange={(age) =>
+                setForm((prev) => ({ ...prev, age }))
+              }
             />
-
-            {/* Content */}
-            <div className="relative z-10 flex flex-col justify-between p-6 w-full">
-              {/* Logo */}
-              <div className="flex items-center gap-3 group">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-emerald-500/20 rounded-lg blur-lg group-hover:bg-emerald-500/30 transition-all duration-500" />
-                  <img
-                    src="/logos/Light Letter Logo .png"
-                    alt="The Standard"
-                    className="relative h-10 w-10 drop-shadow-xl dark:hidden"
-                  />
-                  <img
-                    src="/logos/LetterLogo.png"
-                    alt="The Standard"
-                    className="relative h-10 w-10 drop-shadow-xl hidden dark:block"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span
-                    className="text-white dark:text-black text-lg font-bold tracking-wide"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                  >
-                    Quick Quote
-                  </span>
-                  <span className="text-emerald-400 text-[9px] uppercase tracking-[0.2em] font-medium">
-                    Instant Comparison
-                  </span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="flex-1 flex flex-col justify-center space-y-4 py-8">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-white/80 dark:text-black/80">
-                    <Zap className="h-4 w-4 text-emerald-400" />
-                    <span className="text-sm font-medium">Real-time rates</span>
-                  </div>
-                  <p className="text-xs text-white/50 dark:text-black/50 pl-6">
-                    Quotes calculate instantly as you adjust parameters
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-white/80 dark:text-black/80">
-                    <Calculator className="h-4 w-4 text-emerald-400" />
-                    <span className="text-sm font-medium">
-                      Compare products
-                    </span>
-                  </div>
-                  <p className="text-xs text-white/50 dark:text-black/50 pl-6">
-                    Term, Whole Life, Part. WL, and IUL side by side
-                  </p>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="text-[10px] text-white/30 dark:text-black/30">
-                Rates are estimates. Final premium depends on underwriting.
-              </div>
-            </div>
           </div>
 
-          {/* Right Panel - Form & Results */}
-          <div className="flex-1 flex flex-col min-w-0 bg-background">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-              <div className="flex items-center gap-2 lg:hidden">
-                <Zap className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-medium">Quick Quote</span>
-              </div>
-              <div className="hidden lg:flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Configure parameters below
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleReset}
-                  className="h-7 text-xs"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Reset
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => onOpenChange(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+          {/* Vertical divider */}
+          <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-700 self-end" />
 
-            {/* Error State */}
-            {error && (
-              <div className="mx-4 mt-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-center gap-2">
-                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                <p className="text-xs text-red-600 dark:text-red-400">
-                  Failed to load rates: {error.message}
-                </p>
-              </div>
-            )}
+          {/* Gender */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Gender</Label>
+            <IconToggle
+              value={form.gender || "male"}
+              onChange={(v) =>
+                setForm((prev) => ({ ...prev, gender: v as GenderType }))
+              }
+              options={[
+                {
+                  value: "male",
+                  label: "Male",
+                  content: <MaleIcon />,
+                },
+                {
+                  value: "female",
+                  label: "Female",
+                  content: <FemaleIcon />,
+                },
+              ]}
+            />
+          </div>
 
-            {/* Form Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Demographics Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-3 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
-                {/* Age */}
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">
-                    Age
-                  </Label>
-                  <Input
-                    type="number"
-                    min={18}
-                    max={100}
-                    value={form.age}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        age: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    className="h-7 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-                  />
-                </div>
+          {/* Vertical divider */}
+          <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-700 self-end" />
 
-                {/* Gender */}
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">
-                    Gender
-                  </Label>
-                  <Select
-                    value={form.gender}
-                    onValueChange={(v) =>
-                      setForm((prev) => ({ ...prev, gender: v as GenderType }))
-                    }
-                  >
-                    <SelectTrigger className="h-7 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Tobacco */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Tobacco</Label>
+            <IconToggle
+              value={form.tobaccoUse ? "yes" : "no"}
+              onChange={(v) =>
+                setForm((prev) => ({ ...prev, tobaccoUse: v === "yes" }))
+              }
+              options={[
+                {
+                  value: "no",
+                  label: "Non-Tobacco",
+                  content: (
+                    <>
+                      <CigaretteOff className="h-3.5 w-3.5" />
+                      <span>NT</span>
+                    </>
+                  ),
+                },
+                {
+                  value: "yes",
+                  label: "Tobacco",
+                  content: (
+                    <>
+                      <Cigarette className="h-3.5 w-3.5" />
+                      <span>T</span>
+                    </>
+                  ),
+                },
+              ]}
+            />
+          </div>
 
-                {/* Tobacco */}
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">
-                    Tobacco
-                  </Label>
-                  <div className="flex items-center h-7 gap-1.5">
-                    <Checkbox
-                      id="qq-tobacco"
-                      checked={form.tobaccoUse}
-                      onCheckedChange={(checked) =>
-                        setForm((prev) => ({ ...prev, tobaccoUse: !!checked }))
-                      }
-                      className="h-3.5 w-3.5"
-                    />
-                    <label
-                      htmlFor="qq-tobacco"
-                      className="text-xs cursor-pointer"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                </div>
+          {/* Vertical divider */}
+          <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-700 self-end" />
 
-                {/* Health Class */}
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">
-                    Health Class
-                  </Label>
-                  <Select
-                    value={form.healthClass}
-                    onValueChange={(v) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        healthClass: v as HealthClass,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="h-7 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {HEALTH_CLASS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Term Selector (conditional) */}
-                {showTermSelector && (
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">
-                      Term
-                    </Label>
-                    <Select
-                      value={form.termYears.toString()}
-                      onValueChange={(v) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          termYears: parseInt(v) as TermYears,
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="h-7 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableTermYears.map((term) => (
-                          <SelectItem key={term} value={term.toString()}>
-                            {term}yr
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              {/* Products Row */}
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  Products
-                </span>
-                {PRODUCT_OPTIONS.map((opt) => (
-                  <div key={opt.value} className="flex items-center gap-1">
-                    <Checkbox
-                      id={`qq-product-${opt.value}`}
-                      checked={form.productTypes.includes(opt.value)}
-                      onCheckedChange={(checked) =>
-                        handleProductToggle(opt.value, !!checked)
-                      }
-                      className="h-3.5 w-3.5"
-                    />
-                    <label
-                      htmlFor={`qq-product-${opt.value}`}
-                      className={cn(
-                        "text-xs cursor-pointer",
-                        form.productTypes.includes(opt.value)
-                          ? "text-foreground font-medium"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {opt.label}
-                    </label>
-                  </div>
+          {/* Health Class */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">
+              Health Class
+            </Label>
+            <Select
+              value={form.healthClass}
+              onValueChange={(v) =>
+                setForm((prev) => ({
+                  ...prev,
+                  healthClass: v as HealthClass,
+                }))
+              }
+            >
+              <SelectTrigger className="h-7 w-28 text-xs bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableHealthClasses.map((hc) => (
+                  <SelectItem key={hc} value={hc}>
+                    {HEALTH_CLASS_LABELS[hc]}
+                  </SelectItem>
                 ))}
-              </div>
+              </SelectContent>
+            </Select>
+          </div>
 
-              {/* Mode & Amounts */}
-              <div className="space-y-3 p-3 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
-                <RadioGroup
-                  value={form.mode}
-                  onValueChange={(v) =>
-                    setForm((prev) => ({ ...prev, mode: v as QuoteMode }))
-                  }
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <RadioGroupItem value="coverage" id="qq-mode-coverage" />
-                    <label
-                      htmlFor="qq-mode-coverage"
-                      className={cn(
-                        "text-xs cursor-pointer",
-                        form.mode === "coverage" && "font-medium",
-                      )}
-                    >
-                      By Face Amount
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <RadioGroupItem value="budget" id="qq-mode-budget" />
-                    <label
-                      htmlFor="qq-mode-budget"
-                      className={cn(
-                        "text-xs cursor-pointer",
-                        form.mode === "budget" && "font-medium",
-                      )}
-                    >
-                      By Monthly Budget
-                    </label>
-                  </div>
-                </RadioGroup>
-
-                <ThreeAmountInputs
-                  mode={form.mode}
-                  values={currentAmounts}
-                  onChange={(values) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      [form.mode === "coverage"
-                        ? "coverageAmounts"
-                        : "budgetAmounts"]: values,
-                    }))
-                  }
-                  customPresets={
-                    form.mode === "coverage" ? coveragePresets : undefined
-                  }
-                />
-              </div>
-
-              {/* Results */}
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium">Results</span>
-                  {quotes.length > 0 && (
-                    <span className="text-[10px] text-muted-foreground">
-                      ({quotes.length} products)
-                    </span>
-                  )}
-                  {isLoadingMatrices && (
-                    <span className="text-[10px] text-emerald-600">
-                      Loading rates...
-                    </span>
-                  )}
-                </div>
-
-                {!isValid ? (
-                  <div className="flex items-center justify-center p-6 text-center border rounded bg-muted/30">
-                    <p className="text-xs text-muted-foreground">
-                      Enter age, select gender, and choose at least one product
-                    </p>
-                  </div>
-                ) : (
-                  <QuoteComparisonGrid
-                    quotes={quotes}
-                    mode={form.mode}
-                    amounts={currentAmounts}
-                    isLoading={isLoadingMatrices}
-                  />
-                )}
-              </div>
+          {/* Term Selector (conditional) */}
+          {showTermSelector && (
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Term</Label>
+              <Select
+                value={form.termYears.toString()}
+                onValueChange={(v) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    termYears: parseInt(v) as TermYears,
+                  }))
+                }
+              >
+                <SelectTrigger className="h-7 w-20 text-xs bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTermYears.map((term) => (
+                    <SelectItem key={term} value={term.toString()}>
+                      {term}yr
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          )}
+
+          {/* Vertical divider */}
+          <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-700 self-end" />
+
+          {/* Products */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Products</Label>
+            <ProductPills
+              selected={form.productTypes}
+              onToggle={handleProductToggle}
+            />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Divider */}
+        <div className="border-t border-zinc-200 dark:border-zinc-800" />
+
+        {/* Row 2: Mode | Quick Options | 3x Amount Inputs */}
+        <div className="flex flex-wrap items-end gap-4">
+          {/* Mode */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">
+              Quote By
+            </Label>
+            <ModeToggle
+              value={form.mode}
+              onChange={(v) => setForm((prev) => ({ ...prev, mode: v }))}
+            />
+          </div>
+
+          {/* Vertical divider */}
+          <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-700 self-end" />
+
+          {/* Quick Options Presets */}
+          <QuickOptionsPresets
+            mode={form.mode}
+            currentAmounts={currentAmounts as [number, number, number]}
+            onPresetSelect={(values) =>
+              setForm((prev) => ({
+                ...prev,
+                [form.mode === "coverage"
+                  ? "coverageAmounts"
+                  : "budgetAmounts"]: values,
+              }))
+            }
+            systemDefaults={
+              form.mode === "coverage" ? coveragePresetDefaults : undefined
+            }
+          />
+
+          {/* Vertical divider */}
+          <div className="h-7 w-px bg-zinc-200 dark:bg-zinc-700 self-end" />
+
+          {/* Amounts */}
+          <ThreeAmountInputs
+            mode={form.mode}
+            values={currentAmounts}
+            onChange={(values) =>
+              setForm((prev) => ({
+                ...prev,
+                [form.mode === "coverage"
+                  ? "coverageAmounts"
+                  : "budgetAmounts"]: values,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Results Area — fills remaining viewport */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">
+            Results
+          </span>
+          {quotes.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              {quotes.length} product{quotes.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+
+        {!isValid ? (
+          <div className="flex items-center justify-center p-8 text-center border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg">
+            <p className="text-xs text-muted-foreground">
+              Enter age, select gender, and choose at least one product
+            </p>
+          </div>
+        ) : (
+          <QuoteComparisonGrid
+            quotes={quotes}
+            mode={form.mode}
+            amounts={currentAmounts}
+            isLoading={isLoadingMatrices}
+          />
+        )}
+      </div>
+
+      {/* Disclaimer footer */}
+      <div className="flex-shrink-0 px-4 py-1.5 border-t border-border/50 bg-muted/20">
+        <p className="text-[10px] text-muted-foreground text-center">
+          Rates are estimates. Final premium depends on underwriting.
+        </p>
+      </div>
+    </div>
   );
 }
 

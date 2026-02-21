@@ -19,7 +19,10 @@ export {
   useUnderwritingSession,
   useSaveUnderwritingSession,
   useAgencySessions,
+  useAgencySessionsPaginated,
+  useUserSessionsPaginated,
 } from "./useUnderwritingSessions";
+export type { PaginatedSessionsResult } from "./useUnderwritingSessions";
 
 export {
   useCarriersWithProducts,
@@ -76,6 +79,9 @@ export {
   type QuoteResult,
   type QuoteMode,
   type EligibilityStatus,
+  presetKeys,
+  useQuickQuotePresets,
+  useUpdatePresets,
 } from "./useQuickQuote";
 
 export {

@@ -62,6 +62,15 @@ import { TheStandardTeamPage } from "./features/the-standard-team";
 import { BillingPage } from "./features/billing/BillingPage";
 import { LeadIntelligenceDashboard } from "./features/admin/components/lead-vendors";
 
+// Lazy-loaded underwriting pages
+const UnderwritingWizardPage = lazy(
+  () => import("./features/underwriting/components/UnderwritingWizard"),
+);
+const QuickQuotePage = lazy(
+  () =>
+    import("./features/underwriting/components/QuickQuote/QuickQuoteDialog"),
+);
+
 // Create root route with App layout
 const rootRoute = createRootRoute({
   component: () => (
@@ -501,6 +510,24 @@ const testRegistrationRoute = createRoute({
   component: TestRegistration,
 });
 
+// Underwriting Wizard route - full-page wizard, feature flag guarded internally
+const underwritingWizardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "underwriting/wizard",
+  component: () => (
+    <RouteGuard noRecruits noStaffRoles>
+      <UnderwritingWizardPage />
+    </RouteGuard>
+  ),
+});
+
+// Quick Quote route - free for all authenticated users
+const quickQuoteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "underwriting/quick-quote",
+  component: () => <QuickQuotePage />,
+});
+
 // Alternative join route - catches /join-* pattern using catch-all
 // This handles URLs like /join-the-standard without redirect
 // Uses stable wrapper component (not inline function) so React Query works correctly
@@ -812,6 +839,8 @@ const routeTree = rootRoute.addChildren([
   billingRoute,
   theStandardTeamRoute,
   leadVendorsRoute,
+  underwritingWizardRoute,
+  quickQuoteRoute,
   publicJoinAltRoute, // Catch-all for /join-* pattern - must be last
 ]);
 

@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2026-02-21 12:27:20
+
+### Changed Files
+- `docs/scripts/iulFetcher.md`
+- `docs/scripts/iulTransamericaFetcher.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/underwriting/components/QuickQuote/QuickQuoteDialog.tsx`
+- `src/features/underwriting/components/QuickQuote/QuoteComparisonGrid.tsx`
+- `src/features/underwriting/components/QuickQuote/ThreeAmountInputs.tsx`
+- `src/features/underwriting/components/QuickQuote/age-slider.tsx`
+- `src/features/underwriting/components/QuickQuote/gender-icons.tsx`
+- `src/features/underwriting/components/QuickQuote/icon-toggle.tsx`
+- `src/features/underwriting/components/QuickQuote/index.ts`
+- `src/features/underwriting/components/QuickQuote/quick-options-presets.tsx`
+- `src/features/underwriting/components/SessionHistory/SessionHistoryList.tsx`
+- `src/features/underwriting/components/SessionHistory/WizardSessionHistory.tsx`
+- `src/features/underwriting/components/UnderwritingWizard.tsx`
+- `src/features/underwriting/components/WizardDialogLayout.tsx`
+- `src/features/underwriting/components/WizardSteps/RecommendationsStep.tsx`
+- `src/features/underwriting/components/wizard-page-layout.tsx`
+- `src/features/underwriting/hooks/index.ts`
+- `src/features/underwriting/hooks/useHealthConditions.ts`
+- `src/features/underwriting/hooks/useQuickQuote.ts`
+- `src/features/underwriting/hooks/useUnderwritingSessions.ts`
+- `src/features/underwriting/index.ts`
+- `src/router.tsx`
+- `src/services/underwriting/quickQuoteCalculator.ts`
+- `src/services/underwriting/quickQuotePresetsService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20260221114955_add_quick_quote_presets.sql`
+
+### Statistics
+```
+ 27 files changed, 3181 insertions(+), 2124 deletions(-)
+```
+
 ## [Checkpoint] - 2026-02-20 19:25:16
 
 ### Changed Files
