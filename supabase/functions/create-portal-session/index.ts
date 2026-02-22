@@ -72,7 +72,26 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!subscription?.stripe_customer_id) {
+    let customerId = subscription?.stripe_customer_id ?? null;
+
+    // Fallback: if stripe_customer_id is missing from DB (e.g. webhook delay or
+    // prior webhook failure), look up the customer directly in Stripe by email.
+    if (!customerId && user.email) {
+      const customers = await stripe.customers.list({
+        email: user.email,
+        limit: 1,
+      });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        // Backfill the DB so future calls don't need this fallback
+        await supabase
+          .from("user_subscriptions")
+          .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id);
+      }
+    }
+
+    if (!customerId) {
       return new Response(
         JSON.stringify({ error: "No Stripe customer found" }),
         {
@@ -83,7 +102,7 @@ serve(async (req) => {
     }
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripe_customer_id,
+      customer: customerId,
       return_url:
         returnUrl || `${req.headers.get("origin")}/settings?tab=billing`,
     });

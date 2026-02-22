@@ -100,14 +100,14 @@ export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
 
     // If selecting Free plan, direct to portal to cancel
     if (!subscriptionService.isPaidPlan(plan)) {
-      if (subscription?.stripe_subscription_id) {
-        setLoadingPlanId(plan.id);
-        try {
-          const portalUrl = await subscriptionService.createPortalSession(user.id);
-          if (portalUrl) window.open(portalUrl, "_blank");
-        } finally {
-          setLoadingPlanId(null);
-        }
+      setLoadingPlanId(plan.id);
+      try {
+        const portalUrl = await subscriptionService.createPortalSession(user.id);
+        if (portalUrl) window.open(portalUrl, "_blank");
+      } catch {
+        // portal session failed — nothing to do, error handled in service
+      } finally {
+        setLoadingPlanId(null);
       }
       return;
     }
