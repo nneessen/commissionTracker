@@ -69,8 +69,7 @@ export function UpgradePrompt({
         </span>
         {showCTA && (
           <Link
-            to="/settings"
-            search={{ tab: "billing" }}
+            to="/billing"
             className="text-blue-600 dark:text-blue-400 hover:underline ml-1"
           >
             Upgrade
@@ -105,7 +104,7 @@ export function UpgradePrompt({
           </div>
         </div>
         {showCTA && (
-          <Link to="/settings" search={{ tab: "billing" }}>
+          <Link to="/billing">
             <Button
               size="sm"
               className="h-6 text-[10px] bg-amber-600 hover:bg-amber-700 text-white"
@@ -134,7 +133,7 @@ export function UpgradePrompt({
           {requiredPlan} feature
         </span>
         {showCTA && (
-          <Link to="/settings" search={{ tab: "billing" }}>
+          <Link to="/billing">
             <Button
               size="sm"
               variant="ghost"
@@ -191,7 +190,7 @@ export function UpgradePrompt({
 
         {/* CTA */}
         {showCTA && (
-          <Link to="/settings" search={{ tab: "billing" }} className="w-full">
+          <Link to="/billing" className="w-full">
             <Button className="w-full h-8 text-[11px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm">
               <Sparkles className="h-3.5 w-3.5 mr-1.5" />
               {buttonLabel}
@@ -218,8 +217,7 @@ export function UpgradePromptCompact({
 
   return (
     <Link
-      to="/settings"
-      search={{ tab: "billing" }}
+      to="/billing"
       className={cn(
         "flex items-center gap-1.5 px-2 py-1 rounded text-[9px]",
         "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300",

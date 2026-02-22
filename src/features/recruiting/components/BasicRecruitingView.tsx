@@ -252,7 +252,7 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
           asChild
           className="h-7 text-[10px] border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50"
         >
-          <Link to="/settings" search={{ tab: "billing" }}>
+          <Link to="/billing">
             Upgrade
             <ArrowRight className="h-3 w-3 ml-1" />
           </Link>
@@ -433,13 +433,24 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                   </TableCell>
                   <TableCell className="py-2">
                     {(() => {
-                      const terminalStatuses = ["completed", "dropped", "withdrawn"];
-                      const isTerminal = terminalStatuses.includes(recruit.onboarding_status || "");
+                      const terminalStatuses = [
+                        "completed",
+                        "dropped",
+                        "withdrawn",
+                      ];
+                      const isTerminal = terminalStatuses.includes(
+                        recruit.onboarding_status || "",
+                      );
                       if (isTerminal) {
                         return (
                           <Badge
                             variant="secondary"
-                            className={cn("text-[9px] h-4", TERMINAL_STATUS_COLORS[recruit.onboarding_status!])}
+                            className={cn(
+                              "text-[9px] h-4",
+                              TERMINAL_STATUS_COLORS[
+                                recruit.onboarding_status!
+                              ],
+                            )}
                           >
                             {recruit.onboarding_status!.replace(/_/g, " ")}
                           </Badge>
@@ -447,7 +458,10 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
                       }
                       if (recruit.pipeline_template_id) {
                         return (
-                          <Badge variant="secondary" className="text-[9px] h-4 bg-blue-100 text-blue-800">
+                          <Badge
+                            variant="secondary"
+                            className="text-[9px] h-4 bg-blue-100 text-blue-800"
+                          >
                             {recruit.current_onboarding_phase || "In Pipeline"}
                           </Badge>
                         );

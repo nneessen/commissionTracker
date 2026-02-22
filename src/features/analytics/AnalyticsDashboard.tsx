@@ -297,7 +297,7 @@ function AnalyticsDashboardContent() {
                       </div>
                     </div>
 
-                    <Link to="/settings" search={{ tab: "billing" }}>
+                    <Link to="/billing">
                       <Button
                         size="sm"
                         className="h-8 px-4 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 whitespace-nowrap"

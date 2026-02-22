@@ -62,7 +62,7 @@ export const GatedKPISection: React.FC<GatedKPISectionProps> = ({
               Upgrade to {requiredTier} to unlock
             </p>
           </div>
-          <Link to="/settings" search={{ tab: "billing" }}>
+          <Link to="/billing">
             <Button
               size="sm"
               variant="outline"

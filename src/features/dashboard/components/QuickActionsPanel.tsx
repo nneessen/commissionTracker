@@ -24,7 +24,7 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   const navigate = useNavigate();
 
   const handleLockedClick = () => {
-    navigate({ to: "/settings", search: { tab: "billing" } });
+    navigate({ to: "/billing" });
   };
 
   return (

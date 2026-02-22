@@ -119,7 +119,7 @@ export function SendInvitationModal({
                     Max {teamLimit?.limit} direct downlines on{" "}
                     {teamLimit?.planName}
                   </p>
-                  <Link to="/settings" search={{ tab: "billing" }}>
+                  <Link to="/billing">
                     <Button
                       size="sm"
                       variant="outline"

@@ -53,7 +53,7 @@ export const GatedAction: React.FC<GatedActionProps> = ({
   const navigate = useNavigate();
 
   const handleLockedClick = () => {
-    navigate({ to: "/settings", search: { tab: "billing" } });
+    navigate({ to: "/billing" });
   };
 
   if (hasAccess) {

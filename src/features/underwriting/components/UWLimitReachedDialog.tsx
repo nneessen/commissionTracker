@@ -12,7 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "@tanstack/react-router";
-import { getDaysRemaining, type UWWizardUsage } from "../hooks/useUWWizardUsage";
+import {
+  getDaysRemaining,
+  type UWWizardUsage,
+} from "../hooks/useUWWizardUsage";
 
 interface UWLimitReachedDialogProps {
   open: boolean;
@@ -35,13 +38,14 @@ export function UWLimitReachedDialog({
   const navigate = useNavigate();
   const daysRemaining = getDaysRemaining(usage);
 
-  const currentTier = TIER_INFO.find((t) => t.id === usage?.tier_id) || TIER_INFO[0];
+  const currentTier =
+    TIER_INFO.find((t) => t.id === usage?.tier_id) || TIER_INFO[0];
   const currentTierIndex = TIER_INFO.findIndex((t) => t.id === usage?.tier_id);
   const upgradeTiers = TIER_INFO.slice(currentTierIndex + 1);
 
   const handleUpgrade = () => {
     onOpenChange(false);
-    navigate({ to: "/settings", search: { tab: "billing" } });
+    navigate({ to: "/billing" });
   };
 
   return (
@@ -56,7 +60,8 @@ export function UWLimitReachedDialog({
           </div>
           <DialogDescription className="text-left">
             You've used all {usage?.runs_limit || 0} runs included in your{" "}
-            <span className="font-medium">{currentTier.name}</span> plan this month.
+            <span className="font-medium">{currentTier.name}</span> plan this
+            month.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,7 +108,9 @@ export function UWLimitReachedDialog({
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">{tier.price}</p>
-                      <p className="text-[10px] text-muted-foreground">/month</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        /month
+                      </p>
                     </div>
                   </div>
                 ))}
