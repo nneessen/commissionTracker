@@ -1136,58 +1136,77 @@ export function AutomationDialog({
             </div>
 
             {/* RIGHT - Template Variables & Emojis Sidebar (hidden on mobile) */}
-            <div className="hidden md:block w-64 shrink-0 border-l border-border p-3 bg-muted/30 overflow-y-auto">
-              <div className="text-xs text-muted-foreground text-center font-medium">
+            <div className="hidden md:block w-64 shrink-0 border-l border-border p-3 bg-muted/30 overflow-y-auto space-y-3">
+              <p className="text-[10px] text-muted-foreground text-center">
                 Click to insert at cursor
-              </div>
+              </p>
 
-              {/* Template Variables */}
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                  Variables
-                </span>
-                <div className="space-y-2">
-                  {TEMPLATE_VARIABLE_CATEGORIES.map(
-                    ({ category, variables }) => (
-                      <div key={category}>
-                        <span className="text-xs font-medium text-muted-foreground block mb-1">
-                          {category}
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                          {variables.map(({ variable, description }) => (
-                            <TooltipProvider key={variable}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    type="button"
-                                    onClick={() => insertVariable(variable)}
-                                    className="px-1.5 py-0.5 text-xs font-mono bg-background border border-input rounded shadow-sm hover:shadow-md hover:bg-accent hover:text-accent-foreground active:shadow-none transition-all"
-                                  >
-                                    {variable.replace(/\{\{|\}\}/g, "")}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="left" className="text-xs">
-                                  <p className="font-mono">{variable}</p>
-                                  <p className="text-muted-foreground">
-                                    {description}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ))}
-                        </div>
+              {/* Template Variables — color-coded by category */}
+              {TEMPLATE_VARIABLE_CATEGORIES.map(
+                ({ category, variables }, idx) => {
+                  // Rotate through distinct left-border colors per category
+                  const borderColors = [
+                    "border-l-blue-400",
+                    "border-l-emerald-400",
+                    "border-l-amber-400",
+                    "border-l-violet-400",
+                    "border-l-rose-400",
+                    "border-l-cyan-400",
+                    "border-l-orange-400",
+                    "border-l-pink-400",
+                    "border-l-lime-400",
+                    "border-l-indigo-400",
+                    "border-l-teal-400",
+                    "border-l-red-400",
+                  ];
+                  const borderColor = borderColors[idx % borderColors.length];
+                  return (
+                    <div
+                      key={category}
+                      className={`border-l-2 ${borderColor} pl-2 space-y-1`}
+                    >
+                      <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider block">
+                        {category}
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {variables.map(({ variable, description }) => (
+                          <TooltipProvider key={variable}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => insertVariable(variable)}
+                                  className="px-1.5 py-0.5 text-[11px] font-mono bg-background border border-input rounded hover:bg-accent hover:text-accent-foreground active:bg-accent/80 transition-colors"
+                                >
+                                  {variable
+                                    .replace(/\{\{|\}\}/g, "")
+                                    .replace(/^(recruit_|date_)/, "")}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="left"
+                                className="text-xs max-w-[200px]"
+                              >
+                                <p className="font-mono text-[10px] text-muted-foreground">
+                                  {variable}
+                                </p>
+                                <p>{description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
                       </div>
-                    ),
-                  )}
-                </div>
-              </div>
+                    </div>
+                  );
+                },
+              )}
 
               {/* Emoji Shortcuts */}
               <div className="pt-2 border-t border-border">
-                <span className="text-xs font-semibold text-foreground uppercase tracking-wide block mb-2">
+                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider block mb-1.5">
                   Emojis
                 </span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   {EMOJI_SHORTCUTS.map(({ emoji, label }) => (
                     <TooltipProvider key={emoji}>
                       <Tooltip>
@@ -1195,7 +1214,7 @@ export function AutomationDialog({
                           <button
                             type="button"
                             onClick={() => insertVariable(emoji)}
-                            className="w-8 h-8 text-lg flex items-center justify-center bg-background border border-input rounded shadow-sm hover:shadow-md hover:bg-accent active:shadow-none transition-all"
+                            className="w-7 h-7 text-base flex items-center justify-center bg-background border border-input rounded hover:bg-accent active:bg-accent/80 transition-colors"
                           >
                             {emoji}
                           </button>

@@ -640,13 +640,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Checkpoint] - 2026-02-15 12:37:26
 
 ### Changed Files
-- `src/features/community/CommunityPage.tsx`
 - `src/features/targets/TargetsPage.tsx`
-- `src/hooks/community/useCommunityMutations.ts`
-- `src/lib/communityValidation.ts`
-- `src/services/community/CommunityService.ts`
-- `src/services/community/communityValidation.ts`
-- `src/types/community.types.ts`
 
 ### Statistics
 ```
@@ -657,13 +651,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed Files
 - `.serena/memories/HEALTH_CONDITIONS_CARRIER_ACCEPTANCE_FLOW.md`
-- `docs/features/forum-faq-phase1-implementation-spec.md`
 - `docs/scripts/fexFetcher.md`
 - `src/components/layout/Sidebar.tsx`
 - `src/features/admin/components/RolePermissionEditor.tsx`
 - `src/features/analytics/components/TimePeriodSelector.tsx`
-- `src/features/community/CommunityPage.tsx`
-- `src/features/community/index.ts`
 - `src/features/comps/CLAUDE.md`
 - `src/features/underwriting/components/CoverageBuilder/CarrierCoverageList.tsx`
 - `src/features/underwriting/components/CoverageBuilder/ConditionChecklist.tsx`
@@ -675,30 +666,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/features/underwriting/components/WizardSteps/HealthConditionsStep.tsx`
 - `src/features/underwriting/hooks/index.ts`
 - `src/features/underwriting/hooks/useCoverageStats.ts`
-- `src/hooks/community/__tests__/communityKeys.test.ts`
-- `src/hooks/community/communityKeys.ts`
-- `src/hooks/community/index.ts`
-- `src/hooks/community/useCommunityMutations.ts`
-- `src/hooks/community/useCommunityQueries.ts`
 - `src/hooks/index.ts`
 - `src/router.tsx`
-- `src/services/community/CommunityService.ts`
-- `src/services/community/__tests__/communityValidation.test.ts`
-- `src/services/community/communityValidation.ts`
-- `src/services/community/index.ts`
 - `src/services/index.ts`
-- `src/types/community.types.ts`
 - `src/types/database.types.ts`
 - `src/types/permissions.types.ts`
 - `supabase/migrations/20260215102714_deactivate_carrier_imported_conditions.sql`
-- `supabase/migrations/20260215114000_create_forum_faq_schema_and_rls.sql`
-- `supabase/migrations/20260215121000_create_forum_faq_rpcs.sql`
-- `supabase/migrations/20260215123000_add_community_permissions.sql`
-- `supabase/migrations/20260215124500_fix_community_permission_role_mappings.sql`
-- `supabase/migrations/reverts/20260215114000_create_forum_faq_schema_and_rls_revert.sql`
-- `supabase/migrations/reverts/20260215121000_create_forum_faq_rpcs_revert.sql`
-- `supabase/migrations/reverts/20260215123000_add_community_permissions_revert.sql`
-- `supabase/migrations/reverts/20260215124500_fix_community_permission_role_mappings_revert.sql`
 
 ### Statistics
 ```

@@ -251,6 +251,9 @@ export function RecruitListTable({
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                 Email
               </TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 w-[110px]">
+                Phone
+              </TableHead>
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 w-[160px]">
                 Progress
               </TableHead>
@@ -268,7 +271,7 @@ export function RecruitListTable({
           <TableBody>
             {paginatedRecruits.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   <div className="flex flex-col items-center">
                     <Users className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -328,6 +331,9 @@ export function RecruitListTable({
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5 truncate max-w-[180px]">
                       {recruit.email || "—"}
                     </TableCell>
+                    <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5">
+                      {recruit.phone || "—"}
+                    </TableCell>
                     <TableCell className="py-1.5">
                       {recruit.onboarding_status === "completed" ||
                       recruit.onboarding_status === "dropped" ||
@@ -335,59 +341,65 @@ export function RecruitListTable({
                         <Badge
                           variant="secondary"
                           className={`text-[9px] px-1.5 py-0 h-4 ${
-                            TERMINAL_STATUS_COLORS[
-                              recruit.onboarding_status
-                            ] || ""
+                            TERMINAL_STATUS_COLORS[recruit.onboarding_status] ||
+                            ""
                           }`}
                         >
                           {recruit.onboarding_status.replace(/_/g, " ")}
                         </Badge>
-                      ) : (() => {
-                        const summary = checklistSummary?.get(recruit.id);
-                        const phaseName =
-                          recruit.current_onboarding_phase || "Not started";
-                        const pct =
-                          summary && summary.totalItems > 0
-                            ? Math.round(
-                                (summary.completedItems / summary.totalItems) *
-                                  100,
-                              )
-                            : 0;
-                        return (
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate block">
-                                {phaseName}
-                              </span>
-                              {summary && summary.totalItems > 0 && (
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <div className="flex-1 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-blue-500 rounded-full transition-all"
-                                      style={{ width: `${pct}%` }}
-                                    />
+                      ) : (
+                        (() => {
+                          const summary = checklistSummary?.get(recruit.id);
+                          const phaseName =
+                            recruit.current_onboarding_phase || "Not started";
+                          const pct =
+                            summary && summary.totalItems > 0
+                              ? Math.round(
+                                  (summary.completedItems /
+                                    summary.totalItems) *
+                                    100,
+                                )
+                              : 0;
+                          return (
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="flex-1 min-w-0">
+                                <span className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate block">
+                                  {phaseName}
+                                </span>
+                                {summary && summary.totalItems > 0 && (
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="flex-1 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-blue-500 rounded-full transition-all"
+                                        style={{ width: `${pct}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                                      {summary.completedItems}/
+                                      {summary.totalItems}
+                                    </span>
                                   </div>
-                                  <span className="text-[9px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                                    {summary.completedItems}/{summary.totalItems}
-                                  </span>
-                                </div>
+                                )}
+                              </div>
+                              {summary?.isLastItem && (
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <ArrowRight className="h-3 w-3 text-amber-500 shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                      side="top"
+                                      className="text-[10px]"
+                                    >
+                                      About to advance to next phase
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
-                            {summary?.isLastItem && (
-                              <TooltipProvider delayDuration={200}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <ArrowRight className="h-3 w-3 text-amber-500 shrink-0" />
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-[10px]">
-                                    About to advance to next phase
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        );
-                      })()}
+                          );
+                        })()
+                      )}
                     </TableCell>
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5">
                       {recruitWithRelations.recruiter?.first_name

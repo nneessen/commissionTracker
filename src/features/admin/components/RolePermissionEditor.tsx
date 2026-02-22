@@ -51,10 +51,6 @@ const CATEGORY_CONFIG: Record<string, { label: string; description: string }> =
       label: "Recruiting",
       description: "Recruiting pipeline management",
     },
-    community: {
-      label: "Community",
-      description: "Forum, FAQ, and moderation permissions",
-    },
     carriers: {
       label: "Carriers",
       description: "Carrier and product management",

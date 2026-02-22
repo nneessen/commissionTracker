@@ -3,16 +3,13 @@
 
 import { useState, useEffect } from "react";
 import { useSearch, useNavigate } from "@tanstack/react-router";
-import { Wallet, ChevronRight, HelpCircle, Wrench } from "lucide-react";
+import { Wallet, ChevronRight, HelpCircle } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useImo } from "@/contexts/ImoContext";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  subscriptionKeys,
-  type SubscriptionPlan,
-} from "@/hooks/subscription";
+import { subscriptionKeys, type SubscriptionPlan } from "@/hooks/subscription";
 import { CurrentPlanCard } from "./components/CurrentPlanCard";
 import { PricingCards } from "./components/PricingCards";
 import { UsageOverview } from "./components/UsageOverview";
@@ -105,21 +102,6 @@ export function BillingPage() {
         <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
           Manage your subscription, add-ons, and usage
         </p>
-      </div>
-
-      {/* Coming Soon Banner */}
-      <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2.5 border border-amber-200 dark:border-amber-800/50">
-        <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
-            Subscriptions are not live yet
-          </p>
-          <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
-            We're polishing features, finalizing pricing, and preparing
-            everything for launch. All users currently have full access while we
-            get things ready. Stay tuned!
-          </p>
-        </div>
       </div>
 
       {/* Scrollable content */}

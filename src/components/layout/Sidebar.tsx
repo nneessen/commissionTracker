@@ -26,7 +26,6 @@ import {
   ShieldCheck,
   Calculator,
   Trophy,
-  MessageSquare,
   Wallet,
   Store,
 } from "lucide-react";
@@ -54,9 +53,7 @@ import { NotificationDropdown } from "@/components/notifications";
 import { toast } from "sonner";
 import { useImo } from "@/contexts/ImoContext";
 import { useTemporaryAccessCheck } from "@/hooks/subscription";
-import {
-  useUnderwritingFeatureFlag,
-} from "@/features/underwriting";
+import { useUnderwritingFeatureFlag } from "@/features/underwriting";
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -314,13 +311,6 @@ export default function Sidebar({
           permission: "nav.messages",
           subscriptionFeature: "email",
         },
-        {
-          icon: MessageSquare,
-          label: "Community",
-          href: "/community",
-          permission: "nav.community",
-          allowedEmails: ["nickneessen@thestandardhq.com"],
-        },
       ],
     },
     {
@@ -440,13 +430,6 @@ export default function Sidebar({
           href: "/messages",
           public: true,
         },
-        {
-          icon: MessageSquare,
-          label: "Community",
-          href: "/community",
-          permission: "nav.community",
-          allowedEmails: ["nickneessen@thestandardhq.com"],
-        },
       ],
     },
   ];
@@ -503,7 +486,12 @@ export default function Sidebar({
     const navItem = item as NavigationItem;
     if (navItem.public) return true;
     // Items need at least one access gate; if none, hide by default
-    if (!navItem.permission && !navItem.subscriptionFeature && !navItem.subscriptionFeatures) return false;
+    if (
+      !navItem.permission &&
+      !navItem.subscriptionFeature &&
+      !navItem.subscriptionFeatures
+    )
+      return false;
     if (isLoading) return false;
     // Permission gate (if present)
     if (navItem.permission && !can(navItem.permission)) return false;
@@ -524,7 +512,12 @@ export default function Sidebar({
     if (navItem.public) return true;
     if (navItem.allowedEmails) return isEmailAllowed(navItem.allowedEmails);
     // Items need at least one access gate; if none, hide by default
-    if (!navItem.permission && !navItem.subscriptionFeature && !navItem.subscriptionFeatures) return false;
+    if (
+      !navItem.permission &&
+      !navItem.subscriptionFeature &&
+      !navItem.subscriptionFeatures
+    )
+      return false;
     if (isLoading) return false;
     // Permission gate (if present)
     if (navItem.permission && !can(navItem.permission)) return false;

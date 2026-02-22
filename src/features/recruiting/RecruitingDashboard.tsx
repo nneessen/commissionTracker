@@ -451,6 +451,7 @@ function RecruitingDashboardContent() {
           </SheetDescription>
           {selectedRecruit && (
             <RecruitDetailPanel
+              key={selectedRecruit.id}
               recruit={selectedRecruit}
               currentUserId={user?.id}
               isUpline={true}
@@ -645,6 +646,7 @@ function FreeUplineRecruitingView() {
           </SheetDescription>
           {selectedRecruit && (
             <RecruitDetailPanel
+              key={selectedRecruit.id}
               recruit={selectedRecruit}
               currentUserId={user?.id}
               isUpline={true}

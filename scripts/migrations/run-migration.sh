@@ -240,7 +240,9 @@ fi
 echo ""
 echo -e "${BLUE}[4/5] Applying migration...${NC}"
 
-if psql "$CONN_STR" -f "$MIGRATION_FILE" 2>&1; then
+# IMPORTANT: ON_ERROR_STOP prevents psql from continuing after SQL errors and
+# falsely reporting success when a transaction rolls back.
+if psql -v ON_ERROR_STOP=1 "$CONN_STR" -f "$MIGRATION_FILE" 2>&1; then
     echo -e "${GREEN}✓ Migration SQL executed successfully.${NC}"
 else
     echo -e "${RED}✗ Migration failed!${NC}"
@@ -255,12 +257,12 @@ echo ""
 echo -e "${BLUE}[5/5] Updating tracking tables...${NC}"
 
 # Track migration
-psql "$CONN_STR" -c "INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('$VERSION', '$NAME') ON CONFLICT (version) DO UPDATE SET name = EXCLUDED.name;" 2>/dev/null
+psql -v ON_ERROR_STOP=1 "$CONN_STR" -c "INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('$VERSION', '$NAME') ON CONFLICT (version) DO UPDATE SET name = EXCLUDED.name;" 2>/dev/null
 echo -e "  ${GREEN}✓ schema_migrations updated${NC}"
 
 # Update function versions
 for func in $FUNCTIONS_IN_MIGRATION; do
-    psql "$CONN_STR" -c "INSERT INTO supabase_migrations.function_versions (function_name, current_version) VALUES ('$func', '$VERSION') ON CONFLICT (function_name) DO UPDATE SET current_version = EXCLUDED.current_version, updated_at = NOW();" 2>/dev/null
+    psql -v ON_ERROR_STOP=1 "$CONN_STR" -c "INSERT INTO supabase_migrations.function_versions (function_name, current_version) VALUES ('$func', '$VERSION') ON CONFLICT (function_name) DO UPDATE SET current_version = EXCLUDED.current_version, updated_at = NOW();" 2>/dev/null
     echo -e "  ${GREEN}✓ function_versions: $func → $VERSION${NC}"
 done
 

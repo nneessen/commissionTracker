@@ -6,6 +6,7 @@ Scope: End-to-end subscription/billing/Stripe implementation audit across fronte
 ## 1) What I audited
 
 ### Frontend/UI
+
 - `src/features/billing/BillingPage.tsx`
 - `src/features/billing/components/PricingCards.tsx`
 - `src/features/billing/components/CurrentPlanCard.tsx`
@@ -19,6 +20,7 @@ Scope: End-to-end subscription/billing/Stripe implementation audit across fronte
 - `src/features/underwriting/hooks/useUnderwritingFeatureFlag.ts`
 
 ### Service/hooks
+
 - `src/services/subscription/subscriptionService.ts`
 - `src/services/subscription/SubscriptionRepository.ts`
 - `src/services/subscription/adminSubscriptionService.ts`
@@ -30,12 +32,14 @@ Scope: End-to-end subscription/billing/Stripe implementation audit across fronte
 - `src/hooks/subscription/useUserActiveAddons.ts`
 
 ### Edge functions
+
 - `supabase/functions/create-checkout-session/index.ts`
 - `supabase/functions/create-portal-session/index.ts`
 - `supabase/functions/manage-subscription-items/index.ts`
 - `supabase/functions/stripe-webhook/index.ts`
 
 ### DB migrations/policies/RPCs
+
 - `supabase/migrations/20260216141453_stripe_migration.sql`
 - `supabase/migrations/20260216144006_fix_stripe_idempotency.sql`
 - `supabase/migrations/20260217145520_stripe_live_mode_and_team_uw_wizard.sql`
@@ -52,6 +56,7 @@ Scope: End-to-end subscription/billing/Stripe implementation audit across fronte
 - `supabase/migrations/20260131103758_fix_default_subscription_to_free.sql`
 
 ### Docs
+
 - `docs/subscription-tiers/doc.md`
 - `docs/billing/subcriptions.md`
 - `docs/billing/TEMPORARY_FREE_ACCESS.md`
@@ -59,6 +64,7 @@ Scope: End-to-end subscription/billing/Stripe implementation audit across fronte
 ## 2) Current implementation flow
 
 ### Main subscription checkout
+
 1. UI calls `subscriptionService.createCheckoutSession(...)` from `PricingCards`/`AddonUpsellDialog`.
 2. Service invokes `create-checkout-session`.
 3. Edge function creates Stripe Checkout Session (`mode: subscription`) and includes `metadata.user_id`.
@@ -69,11 +75,13 @@ Scope: End-to-end subscription/billing/Stripe implementation audit across fronte
 5. Billing page polls/refetches subscription state and shows success dialog.
 
 ### Customer portal
+
 1. UI calls `subscriptionService.createPortalSession(...)`.
 2. Service invokes `create-portal-session`.
 3. Edge function creates Stripe Billing Portal session and returns portal URL.
 
 ### Add-ons + seat packs
+
 1. UI calls `manage-subscription-items` through service methods (`addSubscriptionAddon`, `addSeatPack`, etc.).
 2. Function mutates Stripe subscription line items.
 3. Function mirrors line-item state into `user_subscription_addons` / `team_seat_packs`.
@@ -127,52 +135,62 @@ Verified via read-only SQL on 2026-02-21.
 ### CRITICAL-1: Privileged Stripe RPCs are callable by `PUBLIC`/`anon`/`authenticated`
 
 Evidence:
+
 - `process_stripe_subscription_event` + `record_stripe_payment` are `SECURITY DEFINER` and can mutate billing tables (`supabase/migrations/20260216141453_stripe_migration.sql:107`, `supabase/migrations/20260216141453_stripe_migration.sql:224`).
 - Live grants show `EXECUTE` for `PUBLIC`, `anon`, and `authenticated` (verified via `information_schema.routine_privileges`).
 - No authorization check inside these functions (no `auth.uid()` guard).
 
 Impact:
+
 - Client-side callers could forge subscription/payment events.
 - Potential unauthorized plan/status changes, fake payments, and cross-user mutation by passing arbitrary `p_user_id`.
 
 ### CRITICAL-2: Users can directly update their own `user_subscriptions` row
 
 Evidence:
+
 - Live RLS policy `user_subscriptions_update_own` allows any authenticated user to update any columns on own row.
 - Table privileges include `UPDATE` for `authenticated`.
 
 Impact:
+
 - Users can self-upgrade in DB (e.g., set `plan_id`, `status='active'`) without payment.
 - Direct entitlement bypass risk independent of Stripe.
 
 ### HIGH-1: “Change Plan” creates a new Stripe subscription instead of modifying existing one
 
 Evidence:
+
 - UI button shows “Change Plan” when a subscription exists (`src/features/billing/components/PricingCards.tsx:306`).
 - Flow still calls new checkout session (`src/features/billing/components/PricingCards.tsx:123`).
 - Checkout function creates `mode: subscription` new sessions (`supabase/functions/create-checkout-session/index.ts:83`).
 
 Impact:
+
 - Possible double subscriptions and double billing in Stripe.
 - Local DB tracks only one `stripe_subscription_id`, so extra subscriptions can become orphan charges.
 
 ### HIGH-2: Team plan displayed price does not match Stripe live charge
 
 Evidence:
+
 - DB plan price currently Team = `$150/mo` (`15000`) and `$1650/yr` (`165000`) in production.
 - Team Stripe price IDs in DB still point to live Stripe prices `$250/mo` and `$2750/yr`.
 - Audit log confirms pricing changed in DB on 2026-02-20 from 25000/275000 to 15000/165000.
 
 Impact:
+
 - Users can see one price in UI but be charged a higher amount in Stripe checkout.
 
 ### HIGH-3: Seat pack schema/code mismatch
 
 Evidence:
+
 - Live DB has `UNIQUE(stripe_subscription_id)` on `team_seat_packs`.
 - Code inserts one row per seat-pack purchase and also contains logic expecting multiple rows per subscription item.
 
 Impact:
+
 - Additional seat-pack purchases likely fail DB write and require rollback.
 - If rollback fails, Stripe can remain changed while DB fails to reflect it.
 
@@ -181,46 +199,56 @@ Impact:
 ### MED-1: Checkout trusts client-provided `priceId`
 
 Evidence:
+
 - `create-checkout-session` uses request `priceId` directly (`supabase/functions/create-checkout-session/index.ts:66`, `supabase/functions/create-checkout-session/index.ts:84`).
 - No server-side allowlist check against `subscription_plans`.
 
 Impact:
+
 - A caller can attempt checkout for any active price in account.
 - Can create billed subscriptions that do not map cleanly to app plans.
 
 ### MED-2: Portal return URL is client-controlled
 
 Evidence:
+
 - `create-portal-session` accepts `returnUrl` from request and passes directly to Stripe (`supabase/functions/create-portal-session/index.ts:66`, `supabase/functions/create-portal-session/index.ts:87`).
 
 Impact:
+
 - Open-redirect style behavior after portal exit to attacker-supplied URL.
 
 ### MED-3: Missing code-handled event for `invoice.payment_action_required`
 
 Evidence:
+
 - Webhook handles `invoice.paid` and `invoice.payment_failed`, but not explicit action-required flows.
 
 Impact:
+
 - Incomplete dunning/UX for SCA-required scenarios.
 
 ### MED-4: `stripe-webhook` auth mode is not codified in repo
 
 Evidence:
+
 - No `supabase/functions/stripe-webhook/config.toml` file in repo.
 - Deployed endpoint currently behaves as public webhook (signature-verified), but this is config drift risk.
 
 Impact:
+
 - Future redeploy/config changes could accidentally re-enable JWT requirement and break webhooks.
 
 ## 8) Payment failure handling: what exists vs missing
 
 ### Exists
+
 - `invoice.payment_failed` sets base subscription to `past_due` and records failed payment (`supabase/functions/stripe-webhook/index.ts:870`).
 - Payment failure email path exists.
 - Feature checks using `useSubscription().isActive` generally treat `past_due` as inactive.
 
 ### Missing / weak
+
 - No robust dunning workflow state model in app.
 - No explicit access revocation workflow beyond status-dependent checks.
 - UW Wizard add-on access path can remain decoupled from base subscription state (depends on add-on row status/period, not base subscription `past_due`).
@@ -228,10 +256,12 @@ Impact:
 ## 9) Can users be double-charged or get access without paying?
 
 ### Double-charge risk: Yes
+
 - Plan changes currently create new subscriptions instead of updating existing subscriptions.
 - Concurrent add-on/seat actions can still race at Stripe line-item level.
 
 ### Not charged but still get access: Yes (critical paths)
+
 - Direct self-edit of `user_subscriptions` via permissive update policy.
 - Forged invocation of privileged Stripe RPCs exposed to `PUBLIC`/`anon`.
 - Existing manual grants on free-plan users (`user_subscription_addons` manual grants).

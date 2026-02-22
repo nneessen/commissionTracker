@@ -78,7 +78,6 @@ The sidebar is organized into 8+ collapsible sections:
 
 4. **Connect** (id: "connect", separatorAfter: true)
    - Messages (href: "/messages")
-   - Community (href: "/community")
 
 5. **Tools** (Conditional - if underwriting enabled)
    - UW Wizard (action: opens dialog)
@@ -107,7 +106,6 @@ For trainers/contracting managers:
 
 3. **Connect** (id: "staff-connect")
    - Messages (href: "/messages")
-   - Community (href: "/community")
 
 ### Recruit Navigation Groups
 For recruits:

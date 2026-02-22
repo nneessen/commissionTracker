@@ -29,10 +29,7 @@ interface AddonTierConfig {
   tiers: AddonTier[];
 }
 
-function jsonResponse(
-  data: Record<string, unknown>,
-  status = 200,
-): Response {
+function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -66,14 +63,14 @@ serve(async (req) => {
 
     // Verify user is authenticated
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
@@ -91,7 +88,10 @@ serve(async (req) => {
 
     if (subError || !userSub?.stripe_subscription_id) {
       return jsonResponse(
-        { error: "No active subscription found. Please subscribe to a plan first." },
+        {
+          error:
+            "No active subscription found. Please subscribe to a plan first.",
+        },
         400,
       );
     }
@@ -113,7 +113,9 @@ serve(async (req) => {
         // Validate addon exists and is active — server-side lookup
         const { data: addon, error: addonLookupError } = await supabase
           .from("subscription_addons")
-          .select("id, name, is_active, stripe_price_id_monthly, stripe_price_id_annual, tier_config")
+          .select(
+            "id, name, is_active, stripe_price_id_monthly, stripe_price_id_annual, tier_config",
+          )
           .eq("id", addonId)
           .maybeSingle();
 
@@ -122,7 +124,10 @@ serve(async (req) => {
         }
 
         if (!addon.is_active) {
-          return jsonResponse({ error: "This addon is no longer available" }, 400);
+          return jsonResponse(
+            { error: "This addon is no longer available" },
+            400,
+          );
         }
 
         // Resolve the correct price ID server-side
@@ -143,7 +148,9 @@ serve(async (req) => {
           const tier = tierConfig.tiers.find((t) => t.id === tierId);
           if (!tier) {
             return jsonResponse(
-              { error: `Invalid tier: ${tierId}. Valid tiers: ${tierConfig.tiers.map((t) => t.id).join(", ")}` },
+              {
+                error: `Invalid tier: ${tierId}. Valid tiers: ${tierConfig.tiers.map((t) => t.id).join(", ")}`,
+              },
               400,
             );
           }
@@ -347,8 +354,7 @@ serve(async (req) => {
         // If item count didn't increase and the item existed before, Stripe
         // incremented quantity on the existing item.
         const isQuantityIncrement =
-          existingSeatItem &&
-          updatedSub.items.data.length <= itemCountBefore;
+          existingSeatItem && updatedSub.items.data.length <= itemCountBefore;
 
         // Record the quantity on the Stripe item for audit
         const stripeQuantity = newSeatItem.quantity || 1;
@@ -397,7 +403,10 @@ serve(async (req) => {
               rollbackErr,
             );
           }
-          return jsonResponse({ error: "Failed to save seat pack record" }, 500);
+          return jsonResponse(
+            { error: "Failed to save seat pack record" },
+            500,
+          );
         }
 
         if (isQuantityIncrement) {
@@ -432,10 +441,7 @@ serve(async (req) => {
           .eq("status", "active")
           .maybeSingle();
 
-        if (
-          seatLookupError ||
-          !seatPackRecord?.stripe_subscription_item_id
-        ) {
+        if (seatLookupError || !seatPackRecord?.stripe_subscription_item_id) {
           return jsonResponse(
             { error: "Active seat pack not found or missing item ID" },
             404,
@@ -447,7 +453,10 @@ serve(async (req) => {
         const { count: sharedCount } = await supabase
           .from("team_seat_packs")
           .select("id", { count: "exact", head: true })
-          .eq("stripe_subscription_item_id", seatPackRecord.stripe_subscription_item_id)
+          .eq(
+            "stripe_subscription_item_id",
+            seatPackRecord.stripe_subscription_item_id,
+          )
           .eq("status", "active");
 
         const otherActivePacksOnSameItem = (sharedCount || 0) - 1;
@@ -513,17 +522,14 @@ serve(async (req) => {
 
       default:
         return jsonResponse(
-          { error: `Unknown action: ${action}. Valid actions: add_addon, remove_addon, add_seat_pack, remove_seat_pack` },
+          {
+            error: `Unknown action: ${action}. Valid actions: add_addon, remove_addon, add_seat_pack, remove_seat_pack`,
+          },
           400,
         );
     }
   } catch (err) {
-    console.error("[manage-subscription-items] Error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("[manage-subscription-items] Unhandled error:", err);
+    return jsonResponse({ error: "Subscription update failed" }, 500);
   }
 });

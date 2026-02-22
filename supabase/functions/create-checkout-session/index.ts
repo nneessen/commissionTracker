@@ -44,7 +44,7 @@ serve(async (req) => {
 
     // Verify the user is authenticated
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -54,7 +54,7 @@ serve(async (req) => {
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -132,12 +132,13 @@ serve(async (req) => {
       },
     );
   } catch (err) {
-    console.error("[create-checkout-session] Error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
-
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("[create-checkout-session] Unhandled error:", err);
+    return new Response(
+      JSON.stringify({ error: "Checkout session creation failed" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

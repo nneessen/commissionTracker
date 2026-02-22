@@ -59,7 +59,6 @@ export type PermissionResource =
   | "commission_overrides"
   | "recruiting"
   | "expenses"
-  | "community"
   | "navigation"
   | "users"
   | "roles"
@@ -172,7 +171,6 @@ export type PermissionCategory =
   | "commissions"
   | "recruiting"
   | "expenses"
-  | "community"
   | "navigation"
   | "admin";
 

@@ -75,6 +75,7 @@ export interface UpdatePlanMetadataParams {
   planId: string;
   displayName?: string;
   description?: string;
+  stripeProductId?: string | null;
   stripePriceIdMonthly?: string | null;
   stripePriceIdAnnual?: string | null;
   changedBy: string;
@@ -266,43 +267,17 @@ class AdminSubscriptionService {
    * Update plan pricing
    */
   async updatePlanPricing(params: UpdatePlanPricingParams): Promise<void> {
-    const { planId, priceMonthly, priceAnnual, changedBy } = params;
+    const { planId, priceMonthly, priceAnnual } = params;
 
     try {
-      // Get current plan for audit
-      const currentPlan = await this.getPlanById(planId);
-      if (!currentPlan) {
-        throw new Error(`Plan not found: ${planId}`);
-      }
-
-      // Update plan
-      const { error: updateError } = await supabase
-        .from("subscription_plans")
-        .update({
-          price_monthly: priceMonthly,
-          price_annual: priceAnnual,
-        })
-        .eq("id", planId);
-
-      if (updateError) {
-        logger.error("AdminSubscriptionService.updatePlanPricing", updateError);
-        throw updateError;
-      }
-
-      // Create audit entry
-      await this.createPlanChangeAudit({
-        planId,
-        changedBy,
-        changeType: "pricing",
-        oldValue: {
-          price_monthly: currentPlan.price_monthly,
-          price_annual: currentPlan.price_annual,
-        },
-        newValue: {
-          price_monthly: priceMonthly,
-          price_annual: priceAnnual,
-        },
+      const { error } = await supabase.functions.invoke("update-plan-pricing", {
+        body: { planId, priceMonthly, priceAnnual },
       });
+
+      if (error) {
+        logger.error("AdminSubscriptionService.updatePlanPricing", error);
+        throw error;
+      }
     } catch (error) {
       logger.error(
         "AdminSubscriptionService.updatePlanPricing",
@@ -392,6 +367,11 @@ class AdminSubscriptionService {
         updateData.description = updates.description;
         oldValues.description = currentPlan.description;
         newValues.description = updates.description;
+      }
+      if (updates.stripeProductId !== undefined) {
+        updateData.stripe_product_id = updates.stripeProductId;
+        oldValues.stripe_product_id = currentPlan.stripe_product_id;
+        newValues.stripe_product_id = updates.stripeProductId;
       }
       if (updates.stripePriceIdMonthly !== undefined) {
         updateData.stripe_price_id_monthly = updates.stripePriceIdMonthly;

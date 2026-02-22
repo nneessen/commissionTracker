@@ -482,6 +482,7 @@ export function RecruitingTab({ searchQuery }: RecruitingTabProps) {
           </SheetDescription>
           {selectedRecruit && (
             <RecruitDetailPanel
+              key={selectedRecruit.id}
               recruit={selectedRecruit}
               currentUserId={currentUser?.id}
               isUpline={true}

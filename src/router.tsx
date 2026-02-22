@@ -53,7 +53,6 @@ import PresentationRecordPage from "./features/training-modules/components/prese
 import PresentationDetailPage from "./features/training-modules/components/presentations/PresentationDetailPage";
 import { ContractingPage } from "./features/contracting/ContractingPage";
 import { MessagesPage } from "./features/messages";
-import { CommunityPage } from "./features/community";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
 import { WorkflowAdminPage } from "./features/workflows";
@@ -545,7 +544,11 @@ const leadsQueueRoute = createRoute({
     <RouteGuard
       permission="nav.recruiting_pipeline"
       noRecruits
-      subscriptionFeatures={["recruiting", "recruiting_basic", "recruiting_custom_pipeline"]}
+      subscriptionFeatures={[
+        "recruiting",
+        "recruiting_basic",
+        "recruiting_custom_pipeline",
+      ]}
     >
       <LeadsQueueDashboard />
     </RouteGuard>
@@ -643,20 +646,6 @@ const contractingRoute = createRoute({
   component: () => (
     <RouteGuard permission="nav.contracting_hub" noRecruits allowPending>
       <ContractingPage />
-    </RouteGuard>
-  ),
-});
-
-// Messages route - Communications Hub, requires email subscription feature
-const communityRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "community",
-  component: () => (
-    <RouteGuard
-      permission="nav.community"
-      allowedEmails={["nickneessen@thestandardhq.com"]}
-    >
-      <CommunityPage />
     </RouteGuard>
   ),
 });
@@ -831,7 +820,6 @@ const routeTree = rootRoute.addChildren([
   myTrainingModuleRoute,
   trainerDashboardRoute,
   contractingRoute,
-  communityRoute,
   messagesRoute,
   slackNameLeaderboardRoute,
   termsRoute,

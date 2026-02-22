@@ -510,60 +510,6 @@ ALTER POLICY expenses_select_own_only ON public.expenses
 ALTER POLICY expenses_update_own ON public.expenses
   USING (((user_id = (select auth.uid())) AND has_permission((select auth.uid()), 'expenses.update.own'::text)));
 
-ALTER POLICY faq_articles_insert_admin ON public.faq_articles
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND is_imo_admin() AND (created_by = (select auth.uid())) AND (updated_by = (select auth.uid())))));
-
-ALTER POLICY faq_articles_update_admin ON public.faq_articles
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND is_imo_admin() AND (updated_by = (select auth.uid())))));
-
-ALTER POLICY forum_post_votes_delete_own ON public.forum_post_votes
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (user_id = (select auth.uid())))));
-
-ALTER POLICY forum_post_votes_insert_own ON public.forum_post_votes
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (user_id = (select auth.uid())))));
-
-ALTER POLICY forum_post_votes_select ON public.forum_post_votes
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND ((user_id = (select auth.uid())) OR is_imo_admin()))));
-
-ALTER POLICY forum_post_votes_update_own ON public.forum_post_votes
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (user_id = (select auth.uid())))))
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (user_id = (select auth.uid())))));
-
-ALTER POLICY forum_posts_insert_own ON public.forum_posts
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (author_id = (select auth.uid())) AND (is_deleted = false))));
-
-ALTER POLICY forum_posts_select ON public.forum_posts
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND ((is_deleted = false) OR (author_id = (select auth.uid())) OR is_imo_admin()))));
-
-ALTER POLICY forum_posts_update_own ON public.forum_posts
-  USING (((imo_id = get_my_imo_id()) AND (author_id = (select auth.uid())) AND (is_deleted = false)))
-  WITH CHECK (((imo_id = get_my_imo_id()) AND (author_id = (select auth.uid())) AND (is_deleted = false)));
-
-ALTER POLICY forum_reports_insert ON public.forum_reports
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (reported_by = (select auth.uid())) AND (status = 'open'::text) AND (resolved_at IS NULL))));
-
-ALTER POLICY forum_reports_select ON public.forum_reports
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND ((reported_by = (select auth.uid())) OR is_imo_admin()))));
-
-ALTER POLICY forum_topic_follows_delete_own_or_admin ON public.forum_topic_follows
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND ((user_id = (select auth.uid())) OR is_imo_admin()))));
-
-ALTER POLICY forum_topic_follows_insert_own ON public.forum_topic_follows
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (user_id = (select auth.uid())))));
-
-ALTER POLICY forum_topic_follows_select ON public.forum_topic_follows
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND ((user_id = (select auth.uid())) OR is_imo_admin()))));
-
-ALTER POLICY forum_topics_insert_own ON public.forum_topics
-  WITH CHECK ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND (author_id = (select auth.uid())) AND (is_deleted = false) AND (status = 'open'::text) AND (accepted_post_id IS NULL) AND (last_post_id IS NULL))));
-
-ALTER POLICY forum_topics_select ON public.forum_topics
-  USING ((is_super_admin() OR ((imo_id = get_my_imo_id()) AND ((is_deleted = false) OR (author_id = (select auth.uid())) OR is_imo_admin()))));
-
-ALTER POLICY forum_topics_update_own ON public.forum_topics
-  USING (((imo_id = get_my_imo_id()) AND (author_id = (select auth.uid())) AND (is_deleted = false) AND (status = ANY (ARRAY['open'::text, 'resolved'::text]))))
-  WITH CHECK (((imo_id = get_my_imo_id()) AND (author_id = (select auth.uid())) AND (is_deleted = false) AND (status = ANY (ARRAY['open'::text, 'resolved'::text]))));
-
 ALTER POLICY gmail_integrations_delete ON public.gmail_integrations
   USING ((user_id = (select auth.uid())));
 
