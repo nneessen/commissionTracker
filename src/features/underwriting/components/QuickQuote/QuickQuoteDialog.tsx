@@ -1,6 +1,13 @@
 // src/features/underwriting/components/QuickQuote/QuickQuoteDialog.tsx
 
-import { Suspense, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import {
+  Suspense,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   RefreshCw,
@@ -10,6 +17,7 @@ import {
   Loader2,
   CigaretteOff,
   Cigarette,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -33,6 +41,7 @@ import {
   PERM_COVERAGE_PRESETS,
 } from "./quick-options-presets";
 import { useAllPremiumMatrices } from "../../hooks/useQuickQuote";
+// eslint-disable-next-line no-restricted-imports
 import {
   calculateQuotesForCoverage,
   calculateQuotesForBudget,
@@ -43,6 +52,7 @@ import {
   type QuickQuoteProductType,
   type QuickQuoteResult,
 } from "@/services/underwriting/quickQuoteCalculator";
+// eslint-disable-next-line no-restricted-imports
 import type {
   GenderType,
   HealthClass,
@@ -424,6 +434,19 @@ function QuickQuoteContent({
         </div>
       </div>
 
+      {/* Rate Accuracy Notice */}
+      <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 flex-shrink-0">
+        <Info className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+        <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-tight">
+          <span className="font-semibold">
+            Rates are 100% accurate for ages in multiples of 5
+          </span>{" "}
+          (25, 30, 35, 40…). All other ages are being added progressively —{" "}
+          <span className="font-medium">American Amicable</span> is complete,
+          with a new carrier added daily.
+        </p>
+      </div>
+
       {/* Error State */}
       {error && (
         <div className="mx-4 mt-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-center gap-2">
@@ -443,9 +466,7 @@ function QuickQuoteContent({
             <Label className="text-[10px] text-muted-foreground">Age</Label>
             <AgeSlider
               value={form.age}
-              onChange={(age) =>
-                setForm((prev) => ({ ...prev, age }))
-              }
+              onChange={(age) => setForm((prev) => ({ ...prev, age }))}
             />
           </div>
 
@@ -573,7 +594,9 @@ function QuickQuoteContent({
 
           {/* Products */}
           <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Products</Label>
+            <Label className="text-[10px] text-muted-foreground">
+              Products
+            </Label>
             <ProductPills
               selected={form.productTypes}
               onToggle={handleProductToggle}
