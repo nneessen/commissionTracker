@@ -2,7 +2,14 @@
 
 import { useState, useCallback, Suspense } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Save, Sparkles, Zap, History } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  Sparkles,
+  Zap,
+  History,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -103,10 +110,37 @@ const initialCoverageRequest: CoverageRequest = {
   productTypes: ["term_life"],
 };
 
+/**
+ * Thin wrapper: checks the feature flag and guards against rendering
+ * the inner component (which contains all hooks) until the flag is resolved.
+ * This ensures all hooks in UnderwritingWizardInner run unconditionally.
+ */
 export default function UnderwritingWizardPage() {
   const navigate = useNavigate();
   const { isEnabled, isLoading: featureLoading } = useUnderwritingFeatureFlag();
 
+  if (featureLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
+        <div className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isEnabled) {
+    navigate({ to: "/policies" });
+    return null;
+  }
+
+  return <UnderwritingWizardInner />;
+}
+
+/**
+ * Inner component: all hooks are unconditional.
+ * No early returns before any hook call.
+ */
+function UnderwritingWizardInner() {
+  const navigate = useNavigate();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>({
     client: initialClientInfo,
@@ -134,20 +168,6 @@ export default function UnderwritingWizardPage() {
   const usageStatus = getUsageStatus(usageData);
 
   const currentStep = WIZARD_STEPS[currentStepIndex];
-
-  // Feature flag redirect
-  if (!featureLoading && !isEnabled) {
-    navigate({ to: "/policies" });
-    return null;
-  }
-
-  if (featureLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
-        <div className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   // Validation functions
   const validateClientInfo = (): boolean => {

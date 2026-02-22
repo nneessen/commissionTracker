@@ -1,6 +1,6 @@
 // src/features/recruiting/components/interactive/VideoEmbedItem.tsx
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, Play, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import type {
   VideoEmbedMetadata,
   VideoEmbedResponse,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface VideoEmbedItemProps {
@@ -59,24 +60,16 @@ export function VideoEmbedItem({
 }: VideoEmbedItemProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const embedUrl = metadata?.platform && metadata?.video_id
-    ? getEmbedUrl(metadata.platform, metadata.video_id)
-    : "";
+  const embedUrl =
+    metadata?.platform && metadata?.video_id
+      ? getEmbedUrl(metadata.platform, metadata.video_id)
+      : "";
   const platformName = metadata?.platform
     ? getPlatformName(metadata.platform)
     : "Video";
 
-  // Handle null/missing platform or video_id
-  if (!metadata?.platform || !metadata?.video_id) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-        <AlertCircle className="h-3.5 w-3.5" />
-        <span>Video configuration error: Missing platform or video ID</span>
-      </div>
-    );
-  }
-
-  const handleMarkWatched = useCallback(async () => {
+  // Defined unconditionally before any early return
+  const handleMarkWatched = async () => {
     setIsSubmitting(true);
     try {
       const result = await checklistResponseService.submitVideoWatchResponse(
@@ -97,7 +90,17 @@ export function VideoEmbedItem({
     } finally {
       setIsSubmitting(false);
     }
-  }, [progressId, metadata, onComplete]);
+  };
+
+  // Handle null/missing platform or video_id
+  if (!metadata?.platform || !metadata?.video_id) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span>Video configuration error: Missing platform or video ID</span>
+      </div>
+    );
+  }
 
   // If already watched
   if (existingResponse?.watched) {

@@ -170,6 +170,9 @@ class SubscriptionService {
   isSubscriptionActive(subscription: UserSubscription | null): boolean {
     if (!subscription) return false;
 
+    // Free plan is always active — it never expires
+    if (subscription.plan?.name === "free") return true;
+
     const validStatuses = ["active", "trialing"];
     if (!validStatuses.includes(subscription.status)) return false;
 
@@ -290,14 +293,14 @@ class SubscriptionService {
    * Create a Stripe Customer Portal session
    * Returns the portal URL to redirect the user to
    */
-  async createPortalSession(userId: string): Promise<string | null> {
+  async createPortalSession(_userId: string): Promise<string | null> {
     // Do not guard on stripe_customer_id here — the edge function resolves it
     // via email fallback if missing (e.g. webhook delay or prior failure).
     try {
       const { data: result, error } = await this.repository.invokeEdgeFunction(
         "create-portal-session",
         {
-          returnUrl: `${window.location.origin}/billing`,
+          returnUrl: `${window.location.origin}/billing?portal_return=1`,
         },
       );
 
@@ -335,7 +338,10 @@ class SubscriptionService {
         return { success: false, error };
       }
 
-      return { success: !!data?.success, error: (data?.error as string) || undefined };
+      return {
+        success: !!data?.success,
+        error: (data?.error as string) || undefined,
+      };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       return { success: false, error: msg };
@@ -361,7 +367,10 @@ class SubscriptionService {
         return { success: false, error };
       }
 
-      return { success: !!data?.success, error: (data?.error as string) || undefined };
+      return {
+        success: !!data?.success,
+        error: (data?.error as string) || undefined,
+      };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       return { success: false, error: msg };
@@ -592,7 +601,10 @@ class SubscriptionService {
         return { success: false, error };
       }
 
-      return { success: !!data?.success, error: (data?.error as string) || undefined };
+      return {
+        success: !!data?.success,
+        error: (data?.error as string) || undefined,
+      };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       return { success: false, error: msg };
@@ -618,7 +630,10 @@ class SubscriptionService {
         return { success: false, error };
       }
 
-      return { success: !!data?.success, error: (data?.error as string) || undefined };
+      return {
+        success: !!data?.success,
+        error: (data?.error as string) || undefined,
+      };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       return { success: false, error: msg };

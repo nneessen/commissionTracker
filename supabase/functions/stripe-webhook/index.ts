@@ -412,9 +412,7 @@ serve(async (req) => {
               {
                 first_name: userDetails?.first_name || "there",
                 plan_name: productName,
-                amount: formatCents(
-                  planItem?.price?.unit_amount || 0,
-                ),
+                amount: formatCents(planItem?.price?.unit_amount || 0),
                 billing_interval: priceInterval === "year" ? "year" : "month",
                 next_billing_date: formatDate(
                   timestampToISO(subscription.current_period_end),
@@ -567,15 +565,77 @@ serve(async (req) => {
           break;
         }
 
-        await supabase
+        // Look up the free plan to downgrade to
+        const { data: freePlan } = await supabase
+          .from("subscription_plans")
+          .select("id")
+          .eq("name", "free")
+          .maybeSingle();
+
+        // Abort retryably if free plan is not configured — we cannot safely downgrade
+        if (!freePlan?.id) {
+          console.error(
+            "[stripe-webhook] subscription.deleted: free plan not found — aborting for retry",
+          );
+          return new Response("Free plan not found", { status: 500 });
+        }
+
+        const cancelUpdate = {
+          plan_id: freePlan.id, // guaranteed non-null
+          status: "active", // free plans are always active — not "cancelled"
+          stripe_subscription_id: null, // clear the paid subscription ID
+          cancelled_at: new Date().toISOString(),
+          cancel_at_period_end: false,
+          updated_at: new Date().toISOString(),
+        };
+
+        // Primary: update by stripe_subscription_id
+        const { data: updatedBySub, error: primaryErr } = await supabase
           .from("user_subscriptions")
-          .update({
-            status: "cancelled",
-            cancelled_at: new Date().toISOString(),
-            cancel_at_period_end: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("stripe_subscription_id", subscription.id);
+          .update(cancelUpdate)
+          .eq("stripe_subscription_id", subscription.id)
+          .select("id");
+
+        if (primaryErr) {
+          console.error(
+            "[stripe-webhook] subscription.deleted primary update failed:",
+            primaryErr,
+          );
+          return new Response("DB update failed", { status: 500 });
+        }
+
+        // Fallback: ONLY if the row had no stripe_subscription_id set (repair case)
+        if (!updatedBySub?.length) {
+          const { data: fallbackRows, error: fallbackErr } = await supabase
+            .from("user_subscriptions")
+            .update(cancelUpdate)
+            .eq("user_id", userId)
+            .is("stripe_subscription_id", null) // narrow: only truly null rows
+            .select("id");
+
+          if (fallbackErr) {
+            console.error(
+              "[stripe-webhook] subscription.deleted fallback update failed:",
+              fallbackErr,
+            );
+            return new Response("DB fallback update failed", { status: 500 });
+          }
+
+          // If neither path matched a row, abort retryably — do NOT insert the audit event
+          if (!fallbackRows?.length) {
+            console.error(
+              "[stripe-webhook] subscription.deleted: no subscription row matched for user:",
+              userId,
+              "stripe_subscription_id:",
+              subscription.id,
+            );
+            return new Response("No subscription row updated", { status: 500 });
+          }
+
+          console.log(
+            `[stripe-webhook] subscription.deleted: matched by user_id fallback (stripe_subscription_id was null)`,
+          );
+        }
 
         // Also cancel any addon subscriptions tied to this Stripe subscription
         await supabase

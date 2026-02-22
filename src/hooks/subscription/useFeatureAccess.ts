@@ -209,8 +209,13 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
 
     // Check if feature is enabled in the user's plan
     // Only grant access if subscription is active (active/trialing with valid period)
-    const features = subscription?.plan?.features;
-    const hasSubscriptionAccess = isActive && (features?.[feature] ?? false);
+    // Free plan is always considered active regardless of DB status field
+    const features = subscription?.plan?.features as
+      | Record<string, boolean>
+      | undefined;
+    const isPlanFree = subscription?.plan?.name === "free";
+    const hasSubscriptionAccess =
+      (isActive || isPlanFree) && (features?.[feature] ?? false);
 
     // Direct downlines of owner get access to granted features
     // (Team-tier features, but NOT admin features)
@@ -319,7 +324,10 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
       };
     }
 
-    const planFeatures = subscription?.plan?.features;
+    const planFeatures = subscription?.plan?.features as
+      | Record<string, boolean>
+      | undefined;
+    const isPlanFree = subscription?.plan?.name === "free";
 
     // Helper to check temporary access using database config
     const checkTempAccess = (f: FeatureKey) =>
@@ -331,16 +339,16 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
           )
         : false;
 
-    // Check subscription access (only if active), owner downline access, and temporary access
+    // Check subscription access (only if active or free plan), owner downline access, and temporary access
     const accessibleFeatures = features.filter(
       (f) =>
-        (isActive && planFeatures?.[f]) ||
+        ((isActive || isPlanFree) && planFeatures?.[f]) ||
         (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) ||
         checkTempAccess(f),
     );
     const lockedFeatures = features.filter(
       (f) =>
-        !(isActive && planFeatures?.[f]) &&
+        !((isActive || isPlanFree) && planFeatures?.[f]) &&
         !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
         !checkTempAccess(f),
     );
@@ -422,7 +430,10 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
       };
     }
 
-    const planFeatures = subscription?.plan?.features;
+    const planFeatures = subscription?.plan?.features as
+      | Record<string, boolean>
+      | undefined;
+    const isPlanFree = subscription?.plan?.name === "free";
 
     // Helper to check temporary access using database config
     const checkTempAccess = (f: FeatureKey) =>
@@ -434,10 +445,10 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
           )
         : false;
 
-    // Check subscription access (only if active), owner downline access, and temporary access
+    // Check subscription access (only if active or free plan), owner downline access, and temporary access
     const missingFeatures = features.filter(
       (f) =>
-        !(isActive && planFeatures?.[f]) &&
+        !((isActive || isPlanFree) && planFeatures?.[f]) &&
         !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)) &&
         !checkTempAccess(f),
     );

@@ -41,10 +41,18 @@ export function UpgradePrompt({
   const featureName = FEATURE_DISPLAY_NAMES[feature];
   const { requiredPlan } = useFeatureAccess(feature);
 
-  const defaultTitle = title ?? `Unlock ${featureName}`;
+  const isFreeRequired = requiredPlan?.toLowerCase() === "free";
+  const defaultTitle =
+    title ??
+    (isFreeRequired ? `Enable ${featureName}` : `Unlock ${featureName}`);
   const defaultDescription =
     description ??
-    `${featureName} is available on the ${requiredPlan} plan and above. Upgrade to access this feature.`;
+    (isFreeRequired
+      ? `${featureName} is available on all plans. Please contact support if you cannot access it.`
+      : `${featureName} is available on the ${requiredPlan} plan and above. Upgrade to access this feature.`);
+  const buttonLabel = isFreeRequired
+    ? "Get Started"
+    : `Upgrade to ${requiredPlan}`;
 
   // Minimal variant - just an inline message
   if (variant === "minimal") {
@@ -186,7 +194,7 @@ export function UpgradePrompt({
           <Link to="/settings" search={{ tab: "billing" }} className="w-full">
             <Button className="w-full h-8 text-[11px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm">
               <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-              Upgrade to {requiredPlan}
+              {buttonLabel}
               <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
             </Button>
           </Link>
