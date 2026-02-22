@@ -291,12 +291,8 @@ class SubscriptionService {
    * Returns the portal URL to redirect the user to
    */
   async createPortalSession(userId: string): Promise<string | null> {
-    const data = await this.repository.getCustomerPortalInfo(userId);
-
-    if (!data?.stripe_customer_id) {
-      return null;
-    }
-
+    // Do not guard on stripe_customer_id here — the edge function resolves it
+    // via email fallback if missing (e.g. webhook delay or prior failure).
     try {
       const { data: result, error } = await this.repository.invokeEdgeFunction(
         "create-portal-session",
