@@ -9,12 +9,7 @@ import { logger } from "./services/base/logger";
 import { ApprovalGuard } from "./components/auth/ApprovalGuard";
 import { CookieConsentBanner } from "./features/legal";
 import { getDisplayName } from "./types/user.types";
-import { SubscriptionAnnouncementDialog } from "./components/subscription";
-import {
-  useSubscriptionAnnouncement,
-  useSubscription,
-  useTemporaryAccessCheck,
-} from "./hooks/subscription";
+import { useSubscription, useTemporaryAccessCheck } from "./hooks/subscription";
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
 import { PublicLandingPage } from "./features/landing";
 import { RecruitHeader } from "./components/layout/RecruitHeader";
@@ -111,8 +106,6 @@ function AuthenticatedApp() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const { shouldShow: showAnnouncement, dismiss: dismissAnnouncement } =
-    useSubscriptionAnnouncement();
   const { subscription, isActive: _isSubscriptionActive } = useSubscription();
 
   // Always show sidebar - even for free tier users
@@ -216,10 +209,6 @@ function AuthenticatedApp() {
     <>
       <Toaster />
       <CookieConsentBanner />
-      <SubscriptionAnnouncementDialog
-        open={showAnnouncement}
-        onDismiss={dismissAnnouncement}
-      />
       <ImoProvider>
         <div className="flex min-h-screen flex-col">
           {shouldHideSidebar ? (
