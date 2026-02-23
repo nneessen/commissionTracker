@@ -1,7 +1,9 @@
 // supabase/functions/send-sms/index.ts
 // Send SMS Edge Function - Sends SMS messages via Twilio API
+// AUTH: Requires valid authenticated session or service_role key match.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,35 +33,35 @@ interface TwilioMessageResponse {
   error_message?: string;
 }
 
+const ALLOWED_KEYS = new Set([
+  "to",
+  "message",
+  "recruitId",
+  "automationId",
+  "trigger",
+]);
+
 /**
  * Normalize phone number to E.164 format
- * Handles common US formats: (555) 123-4567, 555-123-4567, 5551234567, +15551234567
  */
 function normalizePhoneNumber(phone: string): string | null {
   if (!phone) return null;
 
-  // Remove all non-digit characters except leading +
   const cleaned = phone.replace(/[^\d+]/g, "");
 
-  // If starts with +, validate it's a full international number
   if (cleaned.startsWith("+")) {
-    // Already in international format, validate length
     if (cleaned.length >= 11 && cleaned.length <= 15) {
       return cleaned;
     }
     return null;
   }
 
-  // Handle US numbers
   if (cleaned.length === 10) {
-    // Standard 10-digit US number
     return `+1${cleaned}`;
   } else if (cleaned.length === 11 && cleaned.startsWith("1")) {
-    // 11-digit with leading 1
     return `+${cleaned}`;
   }
 
-  // Invalid format
   return null;
 }
 
@@ -67,7 +69,6 @@ function normalizePhoneNumber(phone: string): string | null {
  * Validate E.164 phone number format
  */
 function isValidE164(phone: string): boolean {
-  // E.164 format: + followed by 1-15 digits
   return /^\+[1-9]\d{1,14}$/.test(phone);
 }
 
@@ -79,6 +80,71 @@ serve(async (req) => {
 
   try {
     console.log("[send-sms] Function invoked");
+
+    // ========== AUTH CHECK ==========
+    // Two valid callers:
+    // 1. service_role: edge-to-edge calls (e.g. slack-policy-notification) — verify by exact key match
+    // 2. authenticated user: any logged-in user (staff, agents, recruits) — verify via getUser()
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Unauthorized",
+        } as SendSmsResponse),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+    const bearerToken = authHeader.slice(7);
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (bearerToken === SUPABASE_SERVICE_ROLE_KEY) {
+      // Exact match against the known service_role key — trusted server-to-server call
+      console.log("[send-sms] Auth: service_role verified");
+    } else {
+      // Must be a valid authenticated user session
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Server configuration error",
+          } as SendSmsResponse),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      const supabaseAdmin = createClient(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY,
+        {
+          auth: { autoRefreshToken: false, persistSession: false },
+        },
+      );
+      // getUser() verifies the JWT signature server-side against Supabase's signing key
+      const { data: userData, error: userError } =
+        await supabaseAdmin.auth.getUser(bearerToken);
+      if (userError || !userData?.user) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Unauthorized",
+          } as SendSmsResponse),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      console.log("[send-sms] Auth: user verified, id:", userData.user.id);
+    }
+    // ========== END AUTH CHECK ==========
 
     // Get Twilio credentials
     const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
@@ -97,7 +163,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "SMS service not configured. Missing Twilio credentials.",
+          error: "SMS service not configured",
         } as SendSmsResponse),
         {
           status: 500,
@@ -113,7 +179,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Invalid Twilio phone number configuration",
+          error: "Invalid SMS service configuration",
         } as SendSmsResponse),
         {
           status: 500,
@@ -123,14 +189,29 @@ serve(async (req) => {
     }
 
     const body: SendSmsRequest = await req.json();
+
+    // Reject unknown keys
+    const unknownKeys = Object.keys(body).filter((k) => !ALLOWED_KEYS.has(k));
+    if (unknownKeys.length > 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Unknown fields in request",
+        } as SendSmsResponse),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     console.log("[send-sms] Request received:", {
-      to: body.to,
+      hasRecipient: !!body.to,
       messageLength: body.message?.length,
-      recruitId: body.recruitId,
-      automationId: body.automationId,
+      trigger: body.trigger,
     });
 
-    const { to, message, recruitId, automationId, trigger } = body;
+    const { to, message, trigger } = body;
 
     // Validate required fields
     if (!to) {
@@ -162,11 +243,11 @@ serve(async (req) => {
     // Normalize the recipient phone number
     const toNumber = normalizePhoneNumber(to);
     if (!toNumber || !isValidE164(toNumber)) {
-      console.error("[send-sms] Invalid phone number:", to);
+      console.error("[send-sms] Invalid phone number format");
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Invalid phone number format: ${to}. Must be a valid US or international number.`,
+          error: "Invalid phone number format",
         } as SendSmsResponse),
         {
           status: 400,
@@ -178,21 +259,18 @@ serve(async (req) => {
     // Build Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
 
-    // Prepare form data for Twilio
     const formData = new URLSearchParams();
     formData.append("To", toNumber);
     formData.append("From", fromNumber);
     formData.append("Body", message);
 
-    // Add status callback URL if we have one configured
     const statusCallbackUrl = Deno.env.get("TWILIO_STATUS_CALLBACK_URL");
     if (statusCallbackUrl) {
       formData.append("StatusCallback", statusCallbackUrl);
     }
 
     console.log("[send-sms] Sending to Twilio:", {
-      to: toNumber,
-      from: fromNumber,
+      hasRecipient: true,
       messagePreview: message.substring(0, 50),
     });
 
@@ -219,7 +297,6 @@ serve(async (req) => {
       console.log("[send-sms] Twilio response:", {
         status: response.status,
         statusText: response.statusText,
-        body: responseText.substring(0, 500),
       });
 
       try {
@@ -229,7 +306,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `Twilio returned non-JSON response: ${responseText.substring(0, 200)}`,
+            error: "SMS service error",
           } as SendSmsResponse),
           {
             status: 200,
@@ -242,7 +319,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Failed to connect to Twilio: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+          error: "Failed to connect to SMS service",
         } as SendSmsResponse),
         {
           status: 200,
@@ -256,12 +333,11 @@ serve(async (req) => {
       console.error("[send-sms] Twilio API error:", {
         status: response.status,
         errorCode: data.error_code,
-        errorMessage: data.error_message,
       });
       return new Response(
         JSON.stringify({
           success: false,
-          error: data.error_message || `Twilio API error: ${response.status}`,
+          error: "SMS service error",
         } as SendSmsResponse),
         {
           status: 200,
@@ -273,17 +349,12 @@ serve(async (req) => {
     console.log("[send-sms] SMS sent successfully:", {
       sid: data.sid,
       status: data.status,
-      to: toNumber,
-      recruitId,
-      automationId,
+      hasRecipient: true,
       trigger,
     });
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        messageId: data.sid,
-      } as SendSmsResponse),
+      JSON.stringify({ success: true, messageId: data.sid } as SendSmsResponse),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -291,12 +362,11 @@ serve(async (req) => {
     );
   } catch (err) {
     console.error("[send-sms] Unexpected error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: errorMessage,
+        error: "Something went wrong",
       } as SendSmsResponse),
       {
         status: 500,

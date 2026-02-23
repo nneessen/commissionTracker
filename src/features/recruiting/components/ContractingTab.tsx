@@ -14,8 +14,6 @@ import { useUplineCarrierContracts } from "../hooks/useUplineCarrierContracts";
 import { useQuery } from "@tanstack/react-query";
 // eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
-// eslint-disable-next-line no-restricted-imports
-import { smsService } from "@/services/sms/smsService";
 import { toast } from "sonner";
 import type {
   RecruitEntity,
@@ -49,20 +47,6 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
       return data;
     },
     enabled: !!uplineId,
-  });
-
-  // Fetch upline contact info only for staff (PII minimization)
-  const { data: uplineContact } = useQuery({
-    queryKey: ["upline-contact", uplineId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("user_profiles")
-        .select("phone, email")
-        .eq("id", uplineId!)
-        .single();
-      return data;
-    },
-    enabled: !!uplineId && permissions.isStaff,
   });
 
   const uplineName = uplineProfile
@@ -121,54 +105,19 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
     await deleteContract.mutateAsync(id);
   };
 
-  const escapeHtml = (str: string) =>
-    str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-
   const handleRequestUpdate = async () => {
-    if (!uplineProfile || !uplineContact) return;
-
-    const firstName = uplineProfile.first_name || "there";
-    const phone = uplineContact.phone;
-    const email = uplineContact.email;
-
-    if (!phone && !email) {
-      toast.error("No contact info available for upline");
-      return;
-    }
+    if (!recruitId) return;
 
     setRequestingUpdate(true);
 
-    const message = `Hi ${firstName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to Settings to toggle which carriers you're contracted with. Thank you!`;
-
     try {
-      if (phone) {
-        const result = await smsService.sendSms({
-          to: phone,
-          message,
-          recruitId,
-          trigger: "upline_contract_update",
-        });
-        if (!result.success) throw new Error(result.error || "SMS failed");
-        toast.success(`Update request sent to ${uplineName} via SMS`);
-      } else {
-        const safeName = escapeHtml(firstName);
-        const htmlBody = `<p>Hi ${safeName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to <a href="https://www.thestandardhq.com/settings">Settings &gt; Profile</a> to toggle which carriers you're contracted with. Thank you!</p>`;
-        const { error } = await supabase.functions.invoke("send-email", {
-          body: {
-            to: [email],
-            subject: "Action Required: Update Your Carrier Contracts",
-            html: htmlBody,
-            text: message,
-            from: "Teagen Keyser <noreply@updates.thestandardhq.com>",
-          },
-        });
-        if (error) throw error;
-        toast.success(`Update request sent to ${uplineName} via email`);
-      }
+      const { data, error } = await supabase.functions.invoke(
+        "request-upline-contract-update",
+        { body: { recruitId } },
+      );
+      if (error) throw error;
+      const method = data?.method === "sms" ? "SMS" : "email";
+      toast.success(`Update request sent to ${uplineName} via ${method}`);
     } catch (err) {
       console.error("[ContractingTab] Request update failed:", err);
       toast.error("Failed to send update request");

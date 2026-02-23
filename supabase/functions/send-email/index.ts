@@ -1,5 +1,6 @@
-// File: /home/nneessen/projects/commissionTracker/supabase/functions/send-email/index.ts
+// File: supabase/functions/send-email/index.ts
 // Send Email Edge Function - Sends user-composed emails via Mailgun API
+// AUTH: Requires valid authenticated session or service_role key match.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -53,6 +54,32 @@ interface MailgunResponse {
   message: string;
 }
 
+const ALLOWED_KEYS = new Set([
+  "to",
+  "cc",
+  "bcc",
+  "subject",
+  "html",
+  "text",
+  "from",
+  "replyTo",
+  "trackingId",
+  "userId",
+  "threadId",
+  "messageId",
+  "inReplyTo",
+  "references",
+  "attachments",
+  "trainingDocuments",
+  // Passed by client callers (pipelineAutomationService, UserEmailService)
+  "recruitId",
+  "senderId",
+  "metadata",
+  // Passed by ActionConfigPanel (legacy — maps to html/text server-side)
+  "bodyHtml",
+  "bodyText",
+]);
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -62,15 +89,72 @@ serve(async (req) => {
   try {
     console.log("[send-email] Function invoked");
 
+    // ========== AUTH CHECK ==========
+    // Two valid callers:
+    // 1. service_role: edge-to-edge calls — verify by comparing raw token to env var
+    // 2. authenticated user: any logged-in user — verify via supabaseAdmin.auth.getUser()
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+    const bearerToken = authHeader.slice(7);
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (bearerToken === SUPABASE_SERVICE_ROLE_KEY) {
+      // Exact match against the known service_role key — trusted server-to-server call
+      console.log("[send-email] Auth: service_role verified");
+    } else {
+      // Must be a valid authenticated user session
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Server configuration error",
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      const supabaseAdmin = createClient(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY,
+        {
+          auth: { autoRefreshToken: false, persistSession: false },
+        },
+      );
+      // getUser() verifies the JWT signature server-side against Supabase's signing key
+      const { data: userData, error: userError } =
+        await supabaseAdmin.auth.getUser(bearerToken);
+      if (userError || !userData?.user) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Unauthorized" }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      console.log("[send-email] Auth: user verified, id:", userData.user.id);
+    }
+    // ========== END AUTH CHECK ==========
+
     // Get Mailgun credentials FIRST to fail fast
     const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
     const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
 
     console.log("[send-email] Env check:", {
       hasApiKey: !!MAILGUN_API_KEY,
-      apiKeyLength: MAILGUN_API_KEY?.length || 0,
       hasDomain: !!MAILGUN_DOMAIN,
-      domain: MAILGUN_DOMAIN || "NOT SET",
     });
 
     if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
@@ -78,7 +162,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Email service not configured. API Key: ${!!MAILGUN_API_KEY}, Domain: ${!!MAILGUN_DOMAIN}`,
+          error: "Email service not configured",
         }),
         {
           status: 500,
@@ -88,11 +172,24 @@ serve(async (req) => {
     }
 
     const body: SendEmailRequest = await req.json();
-    console.log("[send-email] Request body parsed:", {
-      to: body.to,
+
+    // Reject unknown keys
+    const unknownKeys = Object.keys(body).filter((k) => !ALLOWED_KEYS.has(k));
+    if (unknownKeys.length > 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unknown fields in request" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    console.log("[send-email] Request:", {
+      recipientCount: body.to?.length,
       subject: body.subject?.substring(0, 30),
       hasHtml: !!body.html,
-      from: body.from,
+      hasSender: !!body.from,
     });
 
     const {
@@ -221,7 +318,6 @@ serve(async (req) => {
             attachment.filename,
             attachError,
           );
-          // Continue with other attachments
         }
       }
     }
@@ -248,7 +344,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `Total attachment size (${sizeMB}MB) exceeds the 25MB limit. Please reduce the number or size of attachments.`,
+            error: `Total attachment size (${sizeMB}MB) exceeds the 25MB limit.`,
           }),
           {
             status: 400,
@@ -268,7 +364,6 @@ serve(async (req) => {
           try {
             console.log("[send-email] Downloading attachment:", doc.fileName);
 
-            // Download the file from storage
             const { data: fileData, error: downloadError } =
               await supabase.storage
                 .from("training-documents")
@@ -276,15 +371,14 @@ serve(async (req) => {
 
             if (downloadError) {
               console.error(
-                "[send-email] Failed to download attachment:",
+                "[send-email] Failed to download:",
                 doc.fileName,
                 downloadError,
               );
-              continue; // Skip this attachment but continue with others
+              continue;
             }
 
             if (fileData) {
-              // Mailgun expects attachments as File or Blob with filename
               const file = new File([fileData], doc.fileName, {
                 type: doc.fileType || "application/octet-stream",
               });
@@ -293,11 +387,10 @@ serve(async (req) => {
             }
           } catch (attachError) {
             console.error(
-              "[send-email] Error attaching document:",
+              "[send-email] Error attaching:",
               doc.fileName,
               attachError,
             );
-            // Continue with other attachments
           }
         }
       } else {
@@ -309,9 +402,7 @@ serve(async (req) => {
 
     const mailgunUrl = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`;
     console.log("[send-email] Sending to Mailgun:", {
-      url: mailgunUrl,
-      from,
-      to,
+      recipientCount: to.length,
       subject: subject.substring(0, 50),
       messageId: finalMessageId,
     });
@@ -321,7 +412,6 @@ serve(async (req) => {
     let data: MailgunResponse;
 
     try {
-      // Use TextEncoder for base64 encoding (more reliable in Deno)
       const credentials = `api:${MAILGUN_API_KEY}`;
       const encoder = new TextEncoder();
       const credentialsBytes = encoder.encode(credentials);
@@ -339,7 +429,6 @@ serve(async (req) => {
       console.log("[send-email] Mailgun response:", {
         status: response.status,
         statusText: response.statusText,
-        body: responseText.substring(0, 500),
       });
 
       try {
@@ -347,10 +436,7 @@ serve(async (req) => {
       } catch {
         console.error("[send-email] Failed to parse Mailgun response as JSON");
         return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Mailgun returned non-JSON response: ${responseText.substring(0, 200)}`,
-          }),
+          JSON.stringify({ success: false, error: "Email service error" }),
           {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -362,7 +448,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Failed to connect to Mailgun: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+          error: "Failed to connect to email service",
         }),
         {
           status: 200,
@@ -374,10 +460,7 @@ serve(async (req) => {
     if (!response.ok) {
       console.error("[send-email] Mailgun API error:", response.status, data);
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: data.message || `Mailgun API error: ${response.status}`,
-        }),
+        JSON.stringify({ success: false, error: "Email service error" }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -385,7 +468,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Email sent successfully:", data.id);
+    console.log("[send-email] Email sent successfully:", data.id);
 
     return new Response(
       JSON.stringify({
@@ -399,11 +482,10 @@ serve(async (req) => {
       },
     );
   } catch (err) {
-    console.error("Send email error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("[send-email] Error:", err);
 
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: "Something went wrong" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

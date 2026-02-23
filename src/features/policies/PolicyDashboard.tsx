@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PolicyDialog } from "./components/PolicyDialog";
 import { FirstSellerNamingDialog } from "./components/FirstSellerNamingDialog";
 import { LeadSourceDialog } from "./components/LeadSourceDialog";
+import { useFeatureAccess } from "@/hooks/subscription";
 import { LogoSpinner } from "@/components/ui/logo-spinner";
 import { PolicyList } from "./PolicyList";
 import {
@@ -66,6 +67,12 @@ export const PolicyDashboard: React.FC = () => {
   const pollingAbortRef = useRef<AbortController | null>(null);
 
   const { user } = useAuth();
+
+  // Lead source tracking is a Pro feature
+  const {
+    hasAccess: canTrackLeadSource,
+    isLoading: isLeadSourceAccessLoading,
+  } = useFeatureAccess("dashboard");
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -196,6 +203,23 @@ export const PolicyDashboard: React.FC = () => {
     }
   };
 
+  // If lead source access resolves to false after policy creation, clear the pending
+  // lead-source state and continue to first-seller detection for all tiers.
+  useEffect(() => {
+    if (!pendingLeadSource || pendingFirstSaleGroup || !user?.id) return;
+    if (isLeadSourceAccessLoading || canTrackLeadSource) return;
+
+    setPendingLeadSource(null);
+    checkFirstSeller(user.id);
+  }, [
+    pendingLeadSource,
+    pendingFirstSaleGroup,
+    user?.id,
+    canTrackLeadSource,
+    isLeadSourceAccessLoading,
+    checkFirstSeller,
+  ]);
+
   const { isLoading, error, refetch } = usePolicies();
   const { data: editingPolicy, isLoading: isEditingPolicyLoading } =
     usePolicy(editingPolicyId);
@@ -244,7 +268,7 @@ export const PolicyDashboard: React.FC = () => {
         onNewPolicy={() => setIsPolicyFormOpen(true)}
       />
 
-      {pendingLeadSource && !pendingFirstSaleGroup && (
+      {canTrackLeadSource && pendingLeadSource && !pendingFirstSaleGroup && (
         <LeadSourceDialog
           open={true}
           onOpenChange={() => {}}
@@ -338,12 +362,18 @@ export const PolicyDashboard: React.FC = () => {
                 `Policy ${result.policyNumber} created successfully!`,
               );
 
-              // Show lead source dialog BEFORE checking first seller
-              // The dialog's onComplete will trigger checkFirstSeller
-              setPendingLeadSource({
-                policyId: result.id,
-                policyNumber: result.policyNumber,
-              });
+              if (canTrackLeadSource || isLeadSourceAccessLoading) {
+                // Show lead source dialog BEFORE checking first seller
+                // The dialog's onComplete will trigger checkFirstSeller
+                setPendingLeadSource({
+                  policyId: result.id,
+                  policyNumber: result.policyNumber,
+                });
+              } else {
+                // Free tier skips lead source attribution, but should still
+                // continue to first-seller detection.
+                checkFirstSeller(user.id);
+              }
 
               return result;
             }

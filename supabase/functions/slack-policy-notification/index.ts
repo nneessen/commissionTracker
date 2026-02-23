@@ -373,10 +373,7 @@ const FLAVOR_TEXT = {
 /**
  * Get random flavor text for a milestone
  */
-function getFlavorText(
-  type: "policy" | "ap" | "dual",
-  value?: number,
-): string {
+function getFlavorText(type: "policy" | "ap" | "dual", value?: number): string {
   let pool: string[];
   if (type === "dual") {
     pool = FLAVOR_TEXT.dual;
@@ -600,9 +597,14 @@ async function checkAndPostCelebration(
       new_ap_milestone || null,
     );
 
-    const celebrationResult = await postSlackMessage(botToken, channelId, text, {
-      blocks,
-    });
+    const celebrationResult = await postSlackMessage(
+      botToken,
+      channelId,
+      text,
+      {
+        blocks,
+      },
+    );
 
     if (!celebrationResult.ok) {
       console.error(
@@ -691,9 +693,9 @@ async function sendMegaMilestoneSMS(
 
     // Get the edge function URL for send-sms
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error("[slack-policy-notification] Missing Supabase env vars");
       return false;
     }
@@ -702,38 +704,43 @@ async function sendMegaMilestoneSMS(
     const smsUrl = `${SUPABASE_URL}/functions/v1/send-sms`;
 
     // Send SMS to each user (in parallel with a limit)
-    const sendPromises = users.slice(0, 50).map(async (user: { phone: string; first_name: string }) => {
-      if (!user.phone) return false;
+    const sendPromises = users
+      .slice(0, 50)
+      .map(async (user: { phone: string; first_name: string }) => {
+        if (!user.phone) return false;
 
-      try {
-        const response = await fetch(smsUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            to: user.phone,
-            message,
-            trigger: "mega_milestone",
-          }),
-        });
+        try {
+          const response = await fetch(smsUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              to: user.phone,
+              message,
+              trigger: "mega_milestone",
+            }),
+          });
 
-        const result = await response.json();
-        if (result.success) {
-          successCount++;
-          return true;
+          const result = await response.json();
+          if (result.success) {
+            successCount++;
+            return true;
+          }
+          console.log(
+            `[slack-policy-notification] SMS failed for ${user.first_name}:`,
+            result.error,
+          );
+          return false;
+        } catch (err) {
+          console.error(
+            `[slack-policy-notification] SMS error for ${user.first_name}:`,
+            err,
+          );
+          return false;
         }
-        console.log(
-          `[slack-policy-notification] SMS failed for ${user.first_name}:`,
-          result.error,
-        );
-        return false;
-      } catch (err) {
-        console.error(`[slack-policy-notification] SMS error for ${user.first_name}:`, err);
-        return false;
-      }
-    });
+      });
 
     await Promise.all(sendPromises);
     console.log(
@@ -884,7 +891,9 @@ function buildLeaderboardWithPeriods(
   if (agencyTotals && agencyTotals.length > 0) {
     if (scopeAgencyId) {
       // Find the scoped agency's totals
-      const scopedAgency = agencyTotals.find((a) => a.agency_id === scopeAgencyId);
+      const scopedAgency = agencyTotals.find(
+        (a) => a.agency_id === scopeAgencyId,
+      );
       if (scopedAgency) {
         wtdTotalAP = scopedAgency.wtd_ap;
         mtdTotalAP = scopedAgency.mtd_ap;
@@ -1201,22 +1210,25 @@ async function handleCompleteFirstSale(
 
   if (integration.include_leaderboard_with_policy) {
     // Get today's production for leaderboard with WTD/MTD data
-    const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] = await Promise.all([
-      supabase.rpc("get_slack_leaderboard_with_periods", {
-        p_imo_id: log.imo_id,
-        p_agency_id: integration.agency_id,
-      }),
-      supabase.rpc("get_all_agencies_submit_totals", {
-        p_imo_id: log.imo_id,
-      }),
-      !integration.agency_id
-        ? supabase.rpc("get_imo_submit_totals", { p_imo_id: log.imo_id })
-        : Promise.resolve({ data: null }),
-    ]);
+    const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] =
+      await Promise.all([
+        supabase.rpc("get_slack_leaderboard_with_periods", {
+          p_imo_id: log.imo_id,
+          p_agency_id: integration.agency_id,
+        }),
+        supabase.rpc("get_all_agencies_submit_totals", {
+          p_imo_id: log.imo_id,
+        }),
+        !integration.agency_id
+          ? supabase.rpc("get_imo_submit_totals", { p_imo_id: log.imo_id })
+          : Promise.resolve({ data: null }),
+      ]);
 
     const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
     const agencyTotals: AgencySubmitTotals[] = agencyData || [];
-    const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData) ? imoData[0] || null : null;
+    const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData)
+      ? imoData[0] || null
+      : null;
 
     // Build leaderboard with the title (use override, then log title, then default)
     // Sanitize user-provided title to prevent Slack injection
@@ -1225,7 +1237,14 @@ async function handleCompleteFirstSale(
       : log.title
         ? sanitizeSlackTitle(log.title)
         : getDefaultDailyTitle();
-    const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals, integration.agency_id, imoTotals);
+    const { text: leaderboardText, blocks: leaderboardBlocks } =
+      buildLeaderboardWithPeriods(
+        title,
+        production,
+        agencyTotals,
+        integration.agency_id,
+        imoTotals,
+      );
 
     // Post the leaderboard with Block Kit (use workspace logo if configured)
     const leaderboardResult = await postSlackMessage(
@@ -1354,29 +1373,39 @@ async function handleUpdateLeaderboard(
   const botToken = await decrypt(integration.bot_token_encrypted);
 
   // Get today's production for leaderboard with WTD/MTD data
-  const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] = await Promise.all([
-    supabase.rpc("get_slack_leaderboard_with_periods", {
-      p_imo_id: log.imo_id,
-      p_agency_id: integration.agency_id,
-    }),
-    supabase.rpc("get_all_agencies_submit_totals", {
-      p_imo_id: log.imo_id,
-    }),
-    !integration.agency_id
-      ? supabase.rpc("get_imo_submit_totals", { p_imo_id: log.imo_id })
-      : Promise.resolve({ data: null }),
-  ]);
+  const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] =
+    await Promise.all([
+      supabase.rpc("get_slack_leaderboard_with_periods", {
+        p_imo_id: log.imo_id,
+        p_agency_id: integration.agency_id,
+      }),
+      supabase.rpc("get_all_agencies_submit_totals", {
+        p_imo_id: log.imo_id,
+      }),
+      !integration.agency_id
+        ? supabase.rpc("get_imo_submit_totals", { p_imo_id: log.imo_id })
+        : Promise.resolve({ data: null }),
+    ]);
 
   const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
   const agencyTotals: AgencySubmitTotals[] = agencyData || [];
-  const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData) ? imoData[0] || null : null;
+  const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData)
+    ? imoData[0] || null
+    : null;
 
   // Build leaderboard with the title from database (which was just updated)
   // Sanitize user-provided title to prevent Slack injection
   const title = log.title
     ? sanitizeSlackTitle(log.title)
     : getDefaultDailyTitle();
-  const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(title, production, agencyTotals, integration.agency_id, imoTotals);
+  const { text: leaderboardText, blocks: leaderboardBlocks } =
+    buildLeaderboardWithPeriods(
+      title,
+      production,
+      agencyTotals,
+      integration.agency_id,
+      imoTotals,
+    );
 
   // Update the Slack message with Block Kit
   const updateResult = await updateSlackMessage(
@@ -1782,7 +1811,8 @@ serve(async (req) => {
         agentResult.data.email
       : "Unknown";
     const agentEmail = agentResult.data?.email || null;
-    const slackMemberOverrides = (agentResult.data?.slack_member_overrides || {}) as Record<
+    const slackMemberOverrides = (agentResult.data?.slack_member_overrides ||
+      {}) as Record<
       string,
       { slack_member_id: string; display_name: string; avatar_url: string }
     >;
@@ -1976,7 +2006,11 @@ serve(async (req) => {
         // - The Standard's scoreboard shows only The Standard's sales
         // - Self Made's scoreboard shows Self Made + all child agencies
         const integrationAgencyId = integration.agency_id;
-        const [{ data: leaderboardData }, { data: agencyData }, { data: imoData }] = await Promise.all([
+        const [
+          { data: leaderboardData },
+          { data: agencyData },
+          { data: imoData },
+        ] = await Promise.all([
           supabase.rpc("get_slack_leaderboard_with_periods", {
             p_imo_id: imoId,
             p_agency_id: integrationAgencyId,
@@ -1991,7 +2025,9 @@ serve(async (req) => {
 
         const production: LeaderboardEntryWithPeriods[] = leaderboardData || [];
         const agencyTotals: AgencySubmitTotals[] = agencyData || [];
-        const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData) ? imoData[0] || null : null;
+        const imoTotals: ImoSubmitTotals | null = Array.isArray(imoData)
+          ? imoData[0] || null
+          : null;
 
         // Detect if this is effectively the first sale of the day
         // More robust check: if log exists, verify the first_seller still has production
@@ -2134,15 +2170,16 @@ serve(async (req) => {
           // Subsequent sale - delete old leaderboard and post fresh one
           // This ensures leaderboard always appears AFTER the latest policy notification
           // Sanitize user-provided title to prevent Slack injection
-          const { text: leaderboardText, blocks: leaderboardBlocks } = buildLeaderboardWithPeriods(
-            existingLog.title
-              ? sanitizeSlackTitle(existingLog.title)
-              : getDefaultDailyTitle(),
-            production,
-            agencyTotals,
-            integration.agency_id,
-            imoTotals,
-          );
+          const { text: leaderboardText, blocks: leaderboardBlocks } =
+            buildLeaderboardWithPeriods(
+              existingLog.title
+                ? sanitizeSlackTitle(existingLog.title)
+                : getDefaultDailyTitle(),
+              production,
+              agencyTotals,
+              integration.agency_id,
+              imoTotals,
+            );
 
           // Delete old leaderboard message if it exists (ignore errors - message may be gone)
           if (existingLog.leaderboard_message_ts) {

@@ -1,7 +1,8 @@
 // src/features/policies/components/PolicyFormPolicySection.tsx
 
 import React from "react";
-import { FileText } from "lucide-react";
+import { FileText, Lock } from "lucide-react";
+import { useFeatureAccess } from "@/hooks/subscription";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,7 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NewPolicyForm, PolicyStatus, PolicyLifecycleStatus, PaymentFrequency } from "../../../types/policy.types";
+import {
+  NewPolicyForm,
+  PolicyStatus,
+  PolicyLifecycleStatus,
+  PaymentFrequency,
+} from "../../../types/policy.types";
 import { isToday } from "../hooks/usePolicyForm";
 
 interface PolicyFormPolicySectionProps {
@@ -24,7 +30,9 @@ interface PolicyFormPolicySectionProps {
   onSelectChange: (name: string, value: string) => void;
 }
 
-export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = ({
+export const PolicyFormPolicySection: React.FC<
+  PolicyFormPolicySectionProps
+> = ({
   formData,
   displayErrors,
   policyId,
@@ -35,6 +43,9 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
 }) => {
   // Show lifecycle status dropdown only when status is approved
   const showLifecycleStatus = formData.status === "approved";
+
+  // Commission details are a Pro feature
+  const { hasAccess: canViewCommissions } = useFeatureAccess("dashboard");
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200/80 dark:border-zinc-700/60 shadow-sm">
@@ -49,7 +60,9 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
       <div className="p-3 space-y-3">
         {/* Identification Group */}
         <div className="space-y-2.5 p-2.5 rounded-md bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-700/30">
-          <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Identification</p>
+          <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+            Identification
+          </p>
 
           {/* Policy Number */}
           <div className="flex flex-col gap-1">
@@ -100,11 +113,13 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
                   {displayErrors.submitDate}
                 </span>
               )}
-              {!policyId && isToday(formData.submitDate) && !displayErrors.submitDate && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                  Defaulted to today — change if entering an older policy
-                </span>
-              )}
+              {!policyId &&
+                isToday(formData.submitDate) &&
+                !displayErrors.submitDate && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                    Defaulted to today — change if entering an older policy
+                  </span>
+                )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -133,7 +148,9 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
 
         {/* Premium & Payment Group */}
         <div className="space-y-2.5 p-2.5 rounded-md bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-700/30">
-          <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Premium & Payment</p>
+          <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+            Premium & Payment
+          </p>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -193,11 +210,16 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
 
         {/* Status Group */}
         <div className="space-y-2.5 p-2.5 rounded-md bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-700/30">
-          <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Status</p>
+          <p className="text-[9px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+            Status
+          </p>
 
           <div className={showLifecycleStatus ? "grid grid-cols-2 gap-2" : ""}>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="status" className="text-[11px] text-muted-foreground">
+              <Label
+                htmlFor="status"
+                className="text-[11px] text-muted-foreground"
+              >
                 Application Status
               </Label>
               <Select
@@ -210,7 +232,10 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
                   }
                 }}
               >
-                <SelectTrigger id="status" className="h-8 text-[11px] border-input">
+                <SelectTrigger
+                  id="status"
+                  className="h-8 text-[11px] border-input"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,16 +252,25 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
 
             {showLifecycleStatus && (
               <div className="flex flex-col gap-1">
-                <Label htmlFor="lifecycleStatus" className="text-[11px] text-muted-foreground">
+                <Label
+                  htmlFor="lifecycleStatus"
+                  className="text-[11px] text-muted-foreground"
+                >
                   Policy Lifecycle
                 </Label>
                 <Select
                   value={formData.lifecycleStatus || "active"}
                   onValueChange={(value) =>
-                    onSelectChange("lifecycleStatus", value as PolicyLifecycleStatus)
+                    onSelectChange(
+                      "lifecycleStatus",
+                      value as PolicyLifecycleStatus,
+                    )
                   }
                 >
-                  <SelectTrigger id="lifecycleStatus" className="h-8 text-[11px] border-input">
+                  <SelectTrigger
+                    id="lifecycleStatus"
+                    className="h-8 text-[11px] border-input"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -254,34 +288,58 @@ export const PolicyFormPolicySection: React.FC<PolicyFormPolicySectionProps> = (
           </div>
         </div>
 
-        {/* Financial Summary Card */}
-        <div className="rounded-lg border border-zinc-200/60 dark:border-zinc-700/60 border-l-[3px] border-l-amber-500 dark:border-l-amber-400 bg-gradient-to-r from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-zinc-800 dark:to-zinc-800 shadow-sm overflow-hidden">
-          <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-700/40">
-            <p className="text-[9px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">Financial Summary</p>
+        {/* Financial Summary Card — Pro feature */}
+        {canViewCommissions ? (
+          <div className="rounded-lg border border-zinc-200/60 dark:border-zinc-700/60 border-l-[3px] border-l-amber-500 dark:border-l-amber-400 bg-gradient-to-r from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-zinc-800 dark:to-zinc-800 shadow-sm overflow-hidden">
+            <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-700/40">
+              <p className="text-[9px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                Financial Summary
+              </p>
+            </div>
+            <div className="px-3 py-2.5 space-y-2">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-muted-foreground">Annual Premium</span>
+                <strong className="text-[hsl(var(--info))] font-semibold font-mono">
+                  ${annualPremium.toFixed(2)}
+                </strong>
+              </div>
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-muted-foreground">Commission Rate</span>
+                <strong className="text-foreground font-semibold">
+                  {formData.commissionPercentage.toFixed(2)}%
+                </strong>
+              </div>
+              <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-zinc-100 dark:border-zinc-700/40">
+                <span className="text-muted-foreground">
+                  Expected Advance (9 mo)
+                </span>
+                <strong className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                  ${expectedCommission.toFixed(2)}
+                </strong>
+              </div>
+            </div>
           </div>
-          <div className="px-3 py-2.5 space-y-2">
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-muted-foreground">Annual Premium</span>
-              <strong className="text-[hsl(var(--info))] font-semibold font-mono">
-                ${annualPremium.toFixed(2)}
-              </strong>
+        ) : (
+          <div className="rounded-lg border border-zinc-200/60 dark:border-zinc-700/60 border-l-[3px] border-l-zinc-300 dark:border-l-zinc-600 bg-zinc-50/50 dark:bg-zinc-800/50 shadow-sm overflow-hidden">
+            <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-700/40">
+              <p className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                Financial Summary
+              </p>
             </div>
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-muted-foreground">Commission Rate</span>
-              <strong className="text-foreground font-semibold">
-                {formData.commissionPercentage.toFixed(2)}%
-              </strong>
-            </div>
-            <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-zinc-100 dark:border-zinc-700/40">
-              <span className="text-muted-foreground">
-                Expected Advance (9 mo)
-              </span>
-              <strong className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                ${expectedCommission.toFixed(2)}
-              </strong>
+            <div className="px-3 py-2.5 space-y-2">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-muted-foreground">Annual Premium</span>
+                <strong className="text-[hsl(var(--info))] font-semibold font-mono">
+                  ${annualPremium.toFixed(2)}
+                </strong>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 pt-1.5 border-t border-zinc-100 dark:border-zinc-700/40">
+                <Lock className="h-3 w-3" />
+                <span>Commission details available on Pro plan</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

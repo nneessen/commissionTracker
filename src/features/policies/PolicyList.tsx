@@ -196,8 +196,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const { mutateAsync: checkSharedClient } = useCheckSharedClient();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
 
-  // Check if user has access to commission data (dashboard feature gates this)
-  // Free tier users can see and manage policies but not commission calculations
+  // Commission amounts are a Pro feature; status tracking is available to all tiers
   const { hasAccess: canViewCommissions } = useFeatureAccess("dashboard");
 
   // UI state
@@ -503,7 +502,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             </div>
             <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
 
-            {/* Commission metrics - hidden for Free tier users */}
             {canViewCommissions && (
               <>
                 <div className="flex items-center gap-1">
@@ -773,11 +771,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   Commission
                 </TableHead>
               )}
-              {canViewCommissions && (
-                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-center">
-                  Comm Status
-                </TableHead>
-              )}
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2 text-center">
+                Comm Status
+              </TableHead>
               <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 px-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -840,7 +836,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={canViewCommissions ? 9 : 7}
+                  colSpan={canViewCommissions ? 9 : 8}
                   className="text-center py-12"
                 >
                   <LogoSpinner size="xl" className="mr-2" />
@@ -850,7 +846,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             ) : error ? (
               <TableRow>
                 <TableCell
-                  colSpan={canViewCommissions ? 9 : 7}
+                  colSpan={canViewCommissions ? 9 : 8}
                   className="text-center py-12"
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -873,7 +869,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             ) : policies.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={canViewCommissions ? 9 : 7}
+                  colSpan={canViewCommissions ? 9 : 8}
                   className="text-center py-12"
                 >
                   <div className="flex flex-col items-center justify-center p-4">
@@ -1075,47 +1071,48 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                         </div>
                       </TableCell>
                     )}
-                    {canViewCommissions && (
-                      <TableCell className="py-1.5 px-2 text-center">
-                        {policyCommission ? (
-                          <Select
-                            value={policyCommission.status}
-                            onValueChange={(value) =>
-                              handleStatusChange(
-                                policyCommission,
-                                value,
-                                policy,
-                              )
-                            }
+                    <TableCell className="py-1.5 px-2">
+                      {policyCommission ? (
+                        <Select
+                          value={policyCommission.status}
+                          onValueChange={(value) =>
+                            handleStatusChange(policyCommission, value, policy)
+                          }
+                        >
+                          <SelectTrigger
+                            className={cn(
+                              "h-6 text-[10px] w-[90px] mx-auto px-1.5 gap-1 font-medium border",
+                              policyCommission.status === "paid" &&
+                                "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+                              policyCommission.status === "pending" &&
+                                "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+                              (policyCommission.status as string) ===
+                                "earned" &&
+                                "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+                              policyCommission.status === "charged_back" &&
+                                "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
+                            )}
                           >
-                            <SelectTrigger
-                              className={cn(
-                                "h-6 text-[10px] w-[90px] px-1.5 gap-1 font-medium border",
-                                policyCommission.status === "paid" &&
-                                  "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
-                                policyCommission.status === "pending" &&
-                                  "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-                                policyCommission.status === "charged_back" &&
-                                  "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800",
-                              )}
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="charged_back">
-                                Charged Back
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">
-                            No commission
-                          </span>
-                        )}
-                      </TableCell>
-                    )}
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            {/* Display-only state used by some existing workflows (e.g. reinstatement) */}
+                            <SelectItem value="earned" disabled>
+                              Earned
+                            </SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="charged_back">
+                              Charged Back
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-zinc-400 dark:text-zinc-500 text-[10px] block text-center">
+                          No commission
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5 px-2">
                       {dateColumnType === "effective"
                         ? formatDate(policy.effectiveDate)
@@ -1142,7 +1139,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                             <Edit className="mr-2 h-3.5 w-3.5" />
                             Edit Policy
                           </DropdownMenuItem>
-                          {!policy.leadPurchaseId && (
+                          {canViewCommissions && !policy.leadPurchaseId && (
                             <DropdownMenuItem
                               onClick={() => {
                                 setPolicyToLink(policy);

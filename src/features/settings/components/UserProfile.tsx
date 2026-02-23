@@ -87,6 +87,7 @@ export function UserProfile() {
   const [emailChangeStatus, setEmailChangeStatus] =
     useState<EmailChangeStatus>("idle");
   const [newEmailInput, setNewEmailInput] = useState("");
+  const [emailChangePassword, setEmailChangePassword] = useState("");
   const [emailChangeError, setEmailChangeError] = useState("");
 
   const handleEmailChangeSubmit = async (
@@ -94,10 +95,32 @@ export function UserProfile() {
   ) => {
     e.preventDefault();
     setEmailChangeError("");
+
+    // Require password re-verification
+    if (!emailChangePassword.trim()) {
+      setEmailChangeError("Please enter your current password to confirm");
+      setEmailChangeStatus("error");
+      return;
+    }
+
     setEmailChangeStatus("sending");
     try {
+      // Verify password before proceeding.
+      // Note: signInWithPassword refreshes the session token but the identity
+      // stays the same (same user re-authenticating). This is expected.
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: emailChangePassword,
+      });
+      if (authError) {
+        setEmailChangeError("Incorrect password");
+        setEmailChangeStatus("error");
+        return;
+      }
+
       await requestEmailChange(newEmailInput.trim());
       setEmailChangeStatus("sent");
+      setEmailChangePassword("");
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Failed to send confirmation";
@@ -425,14 +448,14 @@ export function UserProfile() {
             </div>
           ) : (
             <form onSubmit={handleEmailChangeSubmit}>
-              <div className="max-w-md">
-                <label
-                  htmlFor="newEmail"
-                  className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
-                >
-                  New email address
-                </label>
-                <div className="flex gap-2">
+              <div className="max-w-md space-y-2">
+                <div>
+                  <label
+                    htmlFor="newEmail"
+                    className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+                  >
+                    New email address
+                  </label>
                   <Input
                     id="newEmail"
                     type="email"
@@ -445,24 +468,48 @@ export function UserProfile() {
                     disabled={emailChangeStatus === "sending"}
                     className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                   />
-                  <Button
-                    type="submit"
-                    disabled={
-                      emailChangeStatus === "sending" || !newEmailInput.trim()
-                    }
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700 flex-shrink-0"
+                </div>
+                <div>
+                  <label
+                    htmlFor="emailChangePassword"
+                    className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
                   >
-                    {emailChangeStatus === "sending" ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      "Send Link"
-                    )}
-                  </Button>
+                    Current password (required)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="emailChangePassword"
+                      type="password"
+                      value={emailChangePassword}
+                      onChange={(e) => {
+                        setEmailChangePassword(e.target.value);
+                        setEmailChangeError("");
+                      }}
+                      placeholder="Enter your password"
+                      disabled={emailChangeStatus === "sending"}
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={
+                        emailChangeStatus === "sending" ||
+                        !newEmailInput.trim() ||
+                        !emailChangePassword.trim()
+                      }
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700 flex-shrink-0"
+                    >
+                      {emailChangeStatus === "sending" ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Send Link"
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 {emailChangeStatus === "error" && emailChangeError && (
                   <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">

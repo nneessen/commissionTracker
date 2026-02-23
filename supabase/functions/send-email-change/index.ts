@@ -1,6 +1,7 @@
 // supabase/functions/send-email-change/index.ts
 // Sends email change confirmation emails via Mailgun.
-// With double_confirm_changes=true, BOTH the new and current address must confirm.
+// With double_confirm_changes disabled, only the new address confirms.
+// Compensating control: old email gets a notification about the change attempt.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
@@ -14,6 +15,8 @@ const corsHeaders = {
 interface EmailChangeRequest {
   newEmail: string;
 }
+
+const ALLOWED_KEYS = new Set(["newEmail"]);
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -63,7 +66,7 @@ serve(async (req) => {
       );
     }
 
-    // Validate caller is authenticated — extract JWT from Authorization header
+    // Validate caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -91,7 +94,7 @@ serve(async (req) => {
     const { data: userData, error: userError } =
       await supabaseAdmin.auth.getUser(jwt);
     if (userError || !userData?.user) {
-      console.error("[send-email-change] JWT validation failed:", userError);
+      console.error("[send-email-change] JWT validation failed");
       return new Response(
         JSON.stringify({ success: false, error: "Invalid session" }),
         {
@@ -116,6 +119,19 @@ serve(async (req) => {
     }
 
     const body: EmailChangeRequest = await req.json();
+
+    // Reject unknown keys
+    const unknownKeys = Object.keys(body).filter((k) => !ALLOWED_KEYS.has(k));
+    if (unknownKeys.length > 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unknown fields in request" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const { newEmail } = body;
 
     // Validate new email
@@ -176,14 +192,11 @@ serve(async (req) => {
 
     const redirectTo = `${normalizedSiteUrl}/auth/callback`;
     console.log(
-      "[send-email-change] Generating links for:",
-      currentEmail,
-      "→",
-      trimmedNew,
+      "[send-email-change] Generating link for user:",
+      userData.user.id,
     );
 
     // Generate confirmation link for the new address only.
-    // double_confirm_changes is disabled — one click from the new address commits.
     const { data: newLinkData, error: newLinkError } =
       await supabaseAdmin.auth.admin.generateLink({
         type: "email_change_new",
@@ -197,14 +210,13 @@ serve(async (req) => {
 
     if (newLinkError || !newLinkData?.properties?.action_link) {
       console.error(
-        "[send-email-change] Failed to generate email change link:",
-        newLinkError,
+        "[send-email-change] Failed to generate link:",
+        newLinkError?.message,
       );
       return new Response(
         JSON.stringify({
           success: false,
-          error:
-            newLinkError?.message || "Failed to generate confirmation link",
+          error: "Something went wrong",
         }),
         {
           status: 500,
@@ -221,6 +233,7 @@ serve(async (req) => {
     const base64Credentials = btoa(String.fromCharCode(...credentialsBytes));
     const mailgunUrl = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`;
 
+    // --- Email to NEW address: confirmation link ---
     const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -264,7 +277,7 @@ serve(async (req) => {
           <tr>
             <td style="padding: 16px 32px 24px; text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #a1a1aa;">
-                © ${new Date().getFullYear()} The Standard HQ. All rights reserved.
+                &copy; ${new Date().getFullYear()} The Standard HQ. All rights reserved.
               </p>
             </td>
           </tr>
@@ -299,16 +312,18 @@ This link expires in 24 hours. If you did not request this change, you can safel
       body: form,
     });
 
-    const responseText = await mailgunResponse.text();
+    await mailgunResponse.text();
     console.log("[send-email-change] Mailgun response:", {
       status: mailgunResponse.status,
-      body: responseText.substring(0, 200),
     });
 
     if (!mailgunResponse.ok) {
-      console.error("[send-email-change] Mailgun error:", responseText);
+      console.error(
+        "[send-email-change] Mailgun error, status:",
+        mailgunResponse.status,
+      );
       return new Response(
-        JSON.stringify({ success: false, error: "Failed to send email" }),
+        JSON.stringify({ success: false, error: "Something went wrong" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -316,7 +331,98 @@ This link expires in 24 hours. If you did not request this change, you can safel
       );
     }
 
-    console.log("[send-email-change] Confirmation email sent to:", trimmedNew);
+    console.log(
+      "[send-email-change] Confirmation email sent for user:",
+      userData.user.id,
+    );
+
+    // --- Notification to OLD email (fire-and-forget) ---
+    try {
+      const notifyHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Change Request</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 32px 32px 24px;">
+              <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 600; color: #18181b;">Email Change Request</h1>
+              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #52525b;">
+                A request was made to change the email address on your The Standard HQ account. If this was you, no action is needed.
+              </p>
+              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #dc2626; font-weight: 600;">
+                If you did not make this request, please contact support immediately.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;">
+              <p style="margin: 0; font-size: 12px; color: #a1a1aa;">
+                This is an automated security notification. You do not need to click any links.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 32px 24px; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #a1a1aa;">
+                &copy; ${new Date().getFullYear()} The Standard HQ. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+
+      const notifyText = `Email Change Request\n\nA request was made to change the email address on your The Standard HQ account. If this was you, no action is needed.\n\nIf you did not make this request, please contact support immediately.\n\n© ${new Date().getFullYear()} The Standard HQ`;
+
+      const notifyForm = new FormData();
+      notifyForm.append("from", `The Standard HQ <noreply@${MAILGUN_DOMAIN}>`);
+      notifyForm.append("to", currentEmail);
+      notifyForm.append(
+        "subject",
+        "Security Alert: Email change requested — The Standard HQ",
+      );
+      notifyForm.append("html", notifyHtml);
+      notifyForm.append("text", notifyText);
+      notifyForm.append("o:tracking", "no");
+
+      // Await the notification to ensure it's sent before the edge runtime shuts down.
+      // Use a short timeout so it doesn't block the response for too long on Mailgun issues.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+      try {
+        const notifyResp = await fetch(mailgunUrl, {
+          method: "POST",
+          headers: { Authorization: `Basic ${base64Credentials}` },
+          body: notifyForm,
+          signal: controller.signal,
+        });
+        console.log(
+          "[send-email-change] Old email notification sent, status:",
+          notifyResp.status,
+        );
+      } catch (fetchErr) {
+        console.error(
+          "[send-email-change] Old email notification failed:",
+          fetchErr instanceof Error ? fetchErr.message : "unknown",
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
+    } catch (notifyError) {
+      // Don't fail the main request if notification fails
+      console.error(
+        "[send-email-change] Old email notification error:",
+        notifyError instanceof Error ? notifyError.message : "unknown",
+      );
+    }
 
     return new Response(
       JSON.stringify({
@@ -329,11 +435,13 @@ This link expires in 24 hours. If you did not request this change, you can safel
       },
     );
   } catch (err) {
-    console.error("[send-email-change] Error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error(
+      "[send-email-change] Error:",
+      err instanceof Error ? err.message : "Unknown",
+    );
 
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: "Something went wrong" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
