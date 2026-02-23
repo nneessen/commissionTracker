@@ -1,8 +1,8 @@
 // src/features/contracting/components/BulkActionToolbar.tsx
 // Floating toolbar for bulk actions on selected contract requests
 
-import { Button } from '@/components/ui/button';
-import { FileDown, Trash2, X, RefreshCw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { FileDown, Trash2, X, RefreshCw } from "lucide-react";
 
 interface BulkActionToolbarProps {
   selectedCount: number;
@@ -22,14 +22,16 @@ export function BulkActionToolbar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg shadow-xl px-4 py-2 flex items-center gap-3 z-50 animate-in slide-in-from-bottom-2">
-      <span className="text-xs font-medium">{selectedCount} selected</span>
-      <div className="h-4 w-px bg-zinc-700 dark:bg-zinc-300" />
+    <div className="fixed bottom-4 left-1/2 z-50 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-border bg-background/95 px-3 py-2 text-foreground shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/85 animate-in slide-in-from-bottom-2">
+      <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground">
+        {selectedCount} selected
+      </span>
+      <div className="h-4 w-px bg-border" />
       <Button
         size="sm"
         variant="ghost"
         onClick={onStatusChange}
-        className="h-7 px-2 text-xs text-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
+        className="h-7 bg-transparent px-2 text-xs text-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
       >
         <RefreshCw className="h-3 w-3 mr-1" />
         Change Status
@@ -38,7 +40,7 @@ export function BulkActionToolbar({
         size="sm"
         variant="ghost"
         onClick={onExport}
-        className="h-7 px-2 text-xs text-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
+        className="h-7 bg-transparent px-2 text-xs text-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
       >
         <FileDown className="h-3 w-3 mr-1" />
         Export
@@ -47,17 +49,17 @@ export function BulkActionToolbar({
         size="sm"
         variant="ghost"
         onClick={onDelete}
-        className="h-7 px-2 text-xs text-red-300 hover:text-red-100 hover:bg-red-500/20"
+        className="h-7 bg-transparent px-2 text-xs text-red-600 shadow-none hover:bg-red-500/10 hover:text-red-700 dark:bg-transparent dark:text-red-400 dark:hover:text-red-300"
       >
         <Trash2 className="h-3 w-3 mr-1" />
         Delete
       </Button>
-      <div className="h-4 w-px bg-zinc-700 dark:bg-zinc-300" />
+      <div className="h-4 w-px bg-border" />
       <Button
         size="sm"
         variant="ghost"
         onClick={onClear}
-        className="h-7 px-2 text-xs text-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
+        className="h-7 bg-transparent px-2 text-xs text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
       >
         <X className="h-3 w-3" />
       </Button>
