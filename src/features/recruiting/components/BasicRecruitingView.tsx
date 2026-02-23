@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Table,
   TableBody,
   TableCell,
@@ -117,6 +122,7 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
     null,
   );
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showUpgradeDetails, setShowUpgradeDetails] = useState(false);
   const [resendingRecruitId, setResendingRecruitId] = useState<string | null>(
     null,
   );
@@ -240,100 +246,136 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
       </div>
 
       {/* Full Pipeline Upgrade Card */}
-      <Link to="/billing" className="block group">
-        <div className="rounded-lg border-2 border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 via-white to-indigo-50 dark:from-violet-950/40 dark:via-zinc-900 dark:to-indigo-950/30 p-4 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-md transition-all cursor-pointer">
-          {/* Header row */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/50 group-hover:bg-violet-200 dark:group-hover:bg-violet-800/60 transition-colors flex-shrink-0">
-                <Sparkles className="h-4.5 w-4.5 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-violet-900 dark:text-violet-100 leading-tight">
-                  Unlock the Full Recruiting Pipeline
-                </p>
-                <p className="text-[10px] text-violet-600 dark:text-violet-400 mt-0.5">
-                  Everything you need to build, onboard, and grow your team —
-                  available on the{" "}
-                  <span className="font-semibold">Team plan</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 bg-violet-600 group-hover:bg-violet-700 text-white rounded-md px-3 py-1.5 text-[11px] font-semibold flex-shrink-0 transition-colors shadow-sm">
-              Upgrade to Team
-              <ArrowRight className="h-3 w-3" />
-            </div>
-          </div>
+      <Collapsible
+        open={showUpgradeDetails}
+        onOpenChange={setShowUpgradeDetails}
+      >
+        <div className="rounded-lg border-2 border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 via-white to-indigo-50 dark:from-violet-950/40 dark:via-zinc-900 dark:to-indigo-950/30">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="w-full p-4 text-left hover:bg-violet-50/60 dark:hover:bg-violet-950/10 transition-colors rounded-lg"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/50 flex-shrink-0">
+                    <Sparkles className="h-4.5 w-4.5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-violet-900 dark:text-violet-100 leading-tight">
+                      Unlock the Full Recruiting Pipeline
+                    </p>
+                    <p className="text-[10px] text-violet-600 dark:text-violet-400 mt-0.5">
+                      Expand to preview Team plan features and upgrade options
+                    </p>
+                  </div>
+                </div>
 
-          {/* Feature grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(
-              [
-                {
-                  icon: Layers,
-                  label: "Custom Pipeline Stages",
-                  desc: "Define unlimited phases with your own names, order, and requirements",
-                },
-                {
-                  icon: ListChecks,
-                  label: "Interactive Checklists",
-                  desc: "Embed videos, quizzes, e-sign docs, file downloads, and more per phase",
-                },
-                {
-                  icon: FolderOpen,
-                  label: "Document Management",
-                  desc: "Track uploads, approvals, and expiration dates for every recruit",
-                },
-                {
-                  icon: Inbox,
-                  label: "Leads Queue",
-                  desc: "Accept inbound leads directly from your public recruiting landing page",
-                },
-                {
-                  icon: Zap,
-                  label: "Automated Workflows",
-                  desc: "Trigger emails and notifications automatically on phase changes",
-                },
-                {
-                  icon: Globe,
-                  label: "Public Recruiting Page",
-                  desc: "Branded landing page at your own personalized recruiting URL",
-                },
-                {
-                  icon: Building2,
-                  label: "Carrier Contracting",
-                  desc: "Manage carrier contract requests per recruit, directly in the pipeline",
-                },
-                {
-                  icon: MessageSquare,
-                  label: "Communication Hub",
-                  desc: "Send emails and track every recruit interaction in one place",
-                },
-              ] as { icon: React.ElementType; label: string; desc: string }[]
-            ).map(({ icon: Icon, label, desc }) => (
-              <div
-                key={label}
-                className="flex items-start gap-2 p-2 rounded-md bg-white/80 dark:bg-zinc-800/60 border border-violet-100 dark:border-violet-900/50"
-              >
-                <Icon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">
-                    {label}
-                  </p>
-                  <p className="text-[9px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                    {desc}
-                  </p>
+                <div className="flex items-center gap-1.5 text-violet-700 dark:text-violet-300 bg-white/80 dark:bg-zinc-900/60 border border-violet-200 dark:border-violet-800 rounded-md px-2.5 py-1 text-[10px] font-semibold flex-shrink-0">
+                  {showUpgradeDetails ? "Hide" : "View"}
+                  {showUpgradeDetails ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            </button>
+          </CollapsibleTrigger>
 
-          {/* Click hint */}
-          <p className="text-center text-[9px] text-violet-500 dark:text-violet-500 mt-2.5 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors">
-            Click anywhere to see pricing and upgrade →
-          </p>
+          <CollapsibleContent className="px-4 pb-4">
+            <div className="border-t border-violet-200/80 dark:border-violet-800/80 pt-3">
+              <Link to="/billing" className="block group">
+                <div className="rounded-md border border-violet-100 dark:border-violet-900/50 bg-white/80 dark:bg-zinc-900/40 p-3 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-sm transition-all cursor-pointer">
+                  {/* CTA row */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <p className="text-[10px] text-violet-700 dark:text-violet-300 leading-tight">
+                      Everything you need to build, onboard, and grow your team
+                      on the <span className="font-semibold">Team plan</span>
+                    </p>
+                    <div className="flex items-center gap-1.5 bg-violet-600 group-hover:bg-violet-700 text-white rounded-md px-3 py-1.5 text-[11px] font-semibold flex-shrink-0 transition-colors shadow-sm">
+                      Upgrade to Team
+                      <ArrowRight className="h-3 w-3" />
+                    </div>
+                  </div>
+
+                  {/* Feature grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {(
+                      [
+                        {
+                          icon: Layers,
+                          label: "Custom Pipeline Stages",
+                          desc: "Define unlimited phases with your own names, order, and requirements",
+                        },
+                        {
+                          icon: ListChecks,
+                          label: "Interactive Checklists",
+                          desc: "Embed videos, quizzes, e-sign docs, file downloads, and more per phase",
+                        },
+                        {
+                          icon: FolderOpen,
+                          label: "Document Management",
+                          desc: "Track uploads, approvals, and expiration dates for every recruit",
+                        },
+                        {
+                          icon: Inbox,
+                          label: "Leads Queue",
+                          desc: "Accept inbound leads directly from your public recruiting landing page",
+                        },
+                        {
+                          icon: Zap,
+                          label: "Automated Workflows",
+                          desc: "Trigger emails and notifications automatically on phase changes",
+                        },
+                        {
+                          icon: Globe,
+                          label: "Public Recruiting Page",
+                          desc: "Branded landing page at your own personalized recruiting URL",
+                        },
+                        {
+                          icon: Building2,
+                          label: "Recruit Portal",
+                          desc: "Give recruits a guided portal to complete tasks, upload docs, track progress, and message their recruiter",
+                        },
+                        {
+                          icon: MessageSquare,
+                          label: "Communication Hub",
+                          desc: "Send emails and track every recruit interaction in one place",
+                        },
+                      ] as {
+                        icon: React.ElementType;
+                        label: string;
+                        desc: string;
+                      }[]
+                    ).map(({ icon: Icon, label, desc }) => (
+                      <div
+                        key={label}
+                        className="flex items-start gap-2 p-2 rounded-md bg-white/80 dark:bg-zinc-800/60 border border-violet-100 dark:border-violet-900/50"
+                      >
+                        <Icon className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">
+                            {label}
+                          </p>
+                          <p className="text-[9px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                            {desc}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Click hint */}
+                  <p className="text-center text-[9px] text-violet-500 dark:text-violet-500 mt-2.5 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors">
+                    Click anywhere in this panel to see pricing and upgrade →
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </CollapsibleContent>
         </div>
-      </Link>
+      </Collapsible>
 
       {/* Recruiting Process Instructions */}
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">

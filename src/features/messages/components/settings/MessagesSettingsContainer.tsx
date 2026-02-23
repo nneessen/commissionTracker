@@ -10,7 +10,15 @@ import { InstagramSettingsPanel } from "./InstagramSettingsPanel";
 
 type SettingsTab = "email" | "slack" | "instagram";
 
-export function MessagesSettingsContainer() {
+interface MessagesSettingsContainerProps {
+  showSlack?: boolean;
+  showInstagram?: boolean;
+}
+
+export function MessagesSettingsContainer({
+  showSlack = true,
+  showInstagram = true,
+}: MessagesSettingsContainerProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>("email");
 
   return (
@@ -39,32 +47,40 @@ export function MessagesSettingsContainer() {
             <Mail className="h-3 w-3 mr-1.5" />
             Email
           </TabsTrigger>
-          <TabsTrigger
-            value="slack"
-            className="h-7 px-3 text-[11px] data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-none rounded-md"
-          >
-            <MessageSquare className="h-3 w-3 mr-1.5" />
-            Slack
-          </TabsTrigger>
-          <TabsTrigger
-            value="instagram"
-            className="h-7 px-3 text-[11px] data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-none rounded-md"
-          >
-            <Instagram className="h-3 w-3 mr-1.5" />
-            Instagram
-          </TabsTrigger>
+          {showSlack && (
+            <TabsTrigger
+              value="slack"
+              className="h-7 px-3 text-[11px] data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-none rounded-md"
+            >
+              <MessageSquare className="h-3 w-3 mr-1.5" />
+              Slack
+            </TabsTrigger>
+          )}
+          {showInstagram && (
+            <TabsTrigger
+              value="instagram"
+              className="h-7 px-3 text-[11px] data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-none rounded-md"
+            >
+              <Instagram className="h-3 w-3 mr-1.5" />
+              Instagram
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="flex-1 overflow-auto">
           <TabsContent value="email" className="h-full mt-0 p-4">
             <EmailSettingsPanel />
           </TabsContent>
-          <TabsContent value="slack" className="h-full mt-0 p-4">
-            <SlackSettingsPanel />
-          </TabsContent>
-          <TabsContent value="instagram" className="h-full mt-0 p-4">
-            <InstagramSettingsPanel />
-          </TabsContent>
+          {showSlack && (
+            <TabsContent value="slack" className="h-full mt-0 p-4">
+              <SlackSettingsPanel />
+            </TabsContent>
+          )}
+          {showInstagram && (
+            <TabsContent value="instagram" className="h-full mt-0 p-4">
+              <InstagramSettingsPanel />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

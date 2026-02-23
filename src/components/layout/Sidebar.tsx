@@ -28,7 +28,9 @@ import {
   Trophy,
   Wallet,
   Store,
+  LifeBuoy,
 } from "lucide-react";
+import { SupportDialog } from "./SupportDialog";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,6 +123,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const { can, isLoading } = usePermissionCheck();
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
   const { supabaseUser } = useAuth();
@@ -917,6 +920,31 @@ export default function Sidebar({
             {/* Footer nav items (Billing, Settings) */}
             {footerNavItems.map((item) => renderNavItem(item, item.href))}
 
+            {/* Contact Support button */}
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="relative flex items-center h-9 w-9 justify-center mx-auto rounded-md text-sm transition-colors mb-0.5 text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                    onClick={() => setSupportOpen(true)}
+                  >
+                    <LifeBuoy size={16} className="flex-shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>
+                  Contact Support
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                className="relative flex items-center h-9 w-full gap-2.5 px-3 rounded-md text-sm transition-colors mb-0.5 text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                onClick={() => setSupportOpen(true)}
+              >
+                <LifeBuoy size={16} className="flex-shrink-0" />
+                <span className="truncate">Contact Support</span>
+              </button>
+            )}
+
             {/* Separator */}
             <div className="my-1.5 mx-1 border-t border-border/50" />
 
@@ -953,6 +981,13 @@ export default function Sidebar({
           </div>
         </TooltipProvider>
       </div>
+
+      {/* Support dialog */}
+      <SupportDialog
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        userName={userName}
+      />
 
       {/* Main content margin helper */}
       <style>{`

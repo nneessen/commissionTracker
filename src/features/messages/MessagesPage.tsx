@@ -151,7 +151,6 @@ export function MessagesPage() {
           : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
-
   }, [queryClient]);
 
   // Get email quota
@@ -234,6 +233,10 @@ export function MessagesPage() {
     setIsComposeOpen(true);
   };
 
+  // Staff-only users are allowed to use built-in Email inside the Messages hub
+  // even though they do not globally bypass subscription-gated messaging features.
+  const hasBuiltInEmailAccess = hasEmailAccess || isStaffOnlyUser;
+
   // Tab configuration - filter based on role and subscription features
   const allTabs: {
     id: TabType;
@@ -241,7 +244,12 @@ export function MessagesPage() {
     icon: typeof Inbox;
     hasAccess: boolean;
   }[] = [
-    { id: "email", label: "Email", icon: Mail, hasAccess: hasEmailAccess },
+    {
+      id: "email",
+      label: "Email",
+      icon: Mail,
+      hasAccess: hasBuiltInEmailAccess,
+    },
     {
       id: "slack",
       label: "Slack",
@@ -565,7 +573,10 @@ export function MessagesPage() {
 
             {activeTab === "settings" && (
               <div className="h-full overflow-hidden">
-                <MessagesSettingsContainer />
+                <MessagesSettingsContainer
+                  showSlack={!isStaffOnlyUser}
+                  showInstagram={!isStaffOnlyUser}
+                />
               </div>
             )}
           </div>
