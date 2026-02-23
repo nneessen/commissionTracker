@@ -11,6 +11,8 @@ import {
   Link2,
   Copy,
   Check,
+  Mail,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,9 +29,10 @@ import type { RoleName } from "@/types/permissions.types";
 import { CustomDomainManager } from "./custom-domains";
 import { BrandingSettings } from "./BrandingSettings";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { toast } from "sonner";
 
 export function UserProfile() {
-  const { user } = useAuth();
+  const { user, requestEmailChange } = useAuth();
   const queryClient = useQueryClient();
   const updateProfile = useUpdateUserProfile();
   const updateHierarchy = useUpdateAgentHierarchy();
@@ -76,6 +79,31 @@ export function UserProfile() {
   const [slugError, setSlugError] = useState<string>("");
   const [showSlugSuccess, setShowSlugSuccess] = useState(false);
   const [slugCopied, setSlugCopied] = useState(false);
+
+  // Email change state
+  type EmailChangeStatus = "idle" | "sending" | "sent" | "error";
+  const [emailChangeStatus, setEmailChangeStatus] =
+    useState<EmailChangeStatus>("idle");
+  const [newEmailInput, setNewEmailInput] = useState("");
+  const [emailChangeError, setEmailChangeError] = useState("");
+
+  const handleEmailChangeSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    setEmailChangeError("");
+    setEmailChangeStatus("sending");
+    try {
+      await requestEmailChange(newEmailInput.trim());
+      setEmailChangeStatus("sent");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to send confirmation";
+      setEmailChangeError(msg);
+      setEmailChangeStatus("error");
+      toast.error(msg);
+    }
+  };
 
   // Load current user profile data on mount
   useEffect(() => {
@@ -373,6 +401,76 @@ export function UserProfile() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Change Email Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <Mail className="h-3.5 w-3.5 text-zinc-400" />
+          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            Change Email
+          </h3>
+        </div>
+        <div className="p-3">
+          {emailChangeStatus === "sent" ? (
+            <div className="flex items-start gap-2 text-[11px] text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>
+                Confirmation email sent to your new address. Click the link to
+                complete the change. It expires in 24 hours.
+              </span>
+            </div>
+          ) : (
+            <form onSubmit={handleEmailChangeSubmit}>
+              <div className="max-w-md">
+                <label
+                  htmlFor="newEmail"
+                  className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+                >
+                  New email address
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    id="newEmail"
+                    type="email"
+                    value={newEmailInput}
+                    onChange={(e) => {
+                      setNewEmailInput(e.target.value);
+                      setEmailChangeError("");
+                    }}
+                    placeholder="new@example.com"
+                    disabled={emailChangeStatus === "sending"}
+                    className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={
+                      emailChangeStatus === "sending" || !newEmailInput.trim()
+                    }
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700 flex-shrink-0"
+                  >
+                    {emailChangeStatus === "sending" ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Link"
+                    )}
+                  </Button>
+                </div>
+                {emailChangeStatus === "error" && emailChangeError && (
+                  <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                    <AlertCircle className="h-3 w-3" />
+                    {emailChangeError}
+                  </div>
+                )}
+              </div>
+            </form>
+          )}
         </div>
       </div>
 

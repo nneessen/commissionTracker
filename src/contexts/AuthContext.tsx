@@ -38,6 +38,7 @@ interface AuthContextType {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- user metadata type
   updateUserMetadata: (metadata: any) => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<void>;
+  requestEmailChange: (newEmail: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -533,6 +534,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const requestEmailChange = async (newEmail: string) => {
+    const { data, error: fnError } = await supabase.functions.invoke(
+      "send-email-change",
+      { body: { newEmail } },
+    );
+    if (fnError || !data?.success) {
+      throw new Error(
+        data?.error || fnError?.message || "Failed to send confirmation email",
+      );
+    }
+    logger.auth("Email change confirmation sent");
+  };
+
   const value: AuthContextType = {
     user,
     supabaseUser,
@@ -547,6 +561,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshSession,
     updateUserMetadata,
     resendVerificationEmail,
+    requestEmailChange,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -58,25 +58,33 @@ function getRankEmoji(rank: number): string {
 }
 
 /**
- * Get date range for current week
+ * Get date range for the previous week (Mon-Sun)
+ * When run on Monday we want to report the just-completed week, not the current one.
  */
 function getWeekRange(): string {
   const now = new Date();
-  const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const et = new Date(
+    now.toLocaleString("en-US", { timeZone: "America/New_York" }),
+  );
 
   // Get Monday of current week
   const day = et.getDay();
   const diff = et.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  const monday = new Date(et);
-  monday.setDate(diff);
+  const currentMonday = new Date(et);
+  currentMonday.setDate(diff);
 
-  // Get Sunday (today or end of week)
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
+  // Previous week: Monday = currentMonday - 7, Sunday = currentMonday - 1
+  const monday = new Date(currentMonday);
+  monday.setDate(currentMonday.getDate() - 7);
+  const sunday = new Date(currentMonday);
+  sunday.setDate(currentMonday.getDate() - 1);
 
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-  const mondayStr = monday.toLocaleDateString('en-US', options);
-  const sundayStr = sunday.toLocaleDateString('en-US', options);
+  const options: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+  };
+  const mondayStr = monday.toLocaleDateString("en-US", options);
+  const sundayStr = sunday.toLocaleDateString("en-US", options);
 
   return `${mondayStr} - ${sundayStr}`;
 }
@@ -87,7 +95,7 @@ function getWeekRange(): string {
 function buildIPLeaderboardMessage(
   agents: IPLeaderboardEntry[],
   agencies: AgencyIPEntry[],
-  totalAgentCount: number
+  totalAgentCount: number,
 ): string {
   const weekRange = getWeekRange();
 
@@ -98,7 +106,9 @@ function buildIPLeaderboardMessage(
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
   // Top Producers WTD - agents with WTD IP > 0
-  const agentsWithWTD = agents.filter(a => a.wtd_ip > 0).sort((a, b) => b.wtd_ip - a.wtd_ip);
+  const agentsWithWTD = agents
+    .filter((a) => a.wtd_ip > 0)
+    .sort((a, b) => b.wtd_ip - a.wtd_ip);
   const agentsWithZeroWTD = totalAgentCount - agentsWithWTD.length;
 
   if (agentsWithWTD.length > 0) {
@@ -108,15 +118,15 @@ function buildIPLeaderboardMessage(
       const emoji = getRankEmoji(rank);
       const ip = formatCurrency(agent.wtd_ip);
       const policies = agent.wtd_policies;
-      const paddedIP = ip.padStart(10, ' ');
-      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? 'policy' : 'policies'})\n`;
+      const paddedIP = ip.padStart(10, " ");
+      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? "policy" : "policies"})\n`;
     });
     message += `\n`;
   }
 
   // Show agents with zero WTD
   if (agentsWithZeroWTD > 0) {
-    message += `_${agentsWithZeroWTD} agent${agentsWithZeroWTD === 1 ? '' : 's'} with $0 IP this week_\n\n`;
+    message += `_${agentsWithZeroWTD} agent${agentsWithZeroWTD === 1 ? "" : "s"} with $0 IP this week_\n\n`;
   }
 
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
@@ -132,15 +142,15 @@ function buildIPLeaderboardMessage(
       const emoji = getRankEmoji(rank);
       const ip = formatCurrency(agent.mtd_ip);
       const policies = agent.mtd_policies;
-      const paddedIP = ip.padStart(10, ' ');
-      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? 'policy' : 'policies'})\n`;
+      const paddedIP = ip.padStart(10, " ");
+      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? "policy" : "policies"})\n`;
     });
     message += `\n`;
   }
 
   // Show agents with zero MTD
   if (agentsWithZeroMTD > 0) {
-    message += `_${agentsWithZeroMTD} agent${agentsWithZeroMTD === 1 ? '' : 's'} with $0 IP this month_\n\n`;
+    message += `_${agentsWithZeroMTD} agent${agentsWithZeroMTD === 1 ? "" : "s"} with $0 IP this month_\n\n`;
   }
 
   // Use top-level agency (Self Made = highest MTD, first in list) for accurate totals
@@ -158,8 +168,8 @@ function buildIPLeaderboardMessage(
   message += `:office: *Agency Rankings*\n\n`;
 
   sortedAgencies
-    .filter(a => a.mtd_ip > 0)
-    .forEach(agency => {
+    .filter((a) => a.mtd_ip > 0)
+    .forEach((agency) => {
       message += `${agency.agency_name}:  WTD ${formatCurrency(agency.wtd_ip)} · MTD ${formatCurrency(agency.mtd_ip)}\n`;
     });
 
@@ -232,9 +242,7 @@ serve(async (req) => {
 
     // Check if leaderboard channel is configured
     if (!integration.leaderboard_channel_id) {
-      console.log(
-        "[slack-ip-leaderboard] No leaderboard channel configured",
-      );
+      console.log("[slack-ip-leaderboard] No leaderboard channel configured");
       return new Response(
         JSON.stringify({
           ok: true,
@@ -293,7 +301,10 @@ serve(async (req) => {
       );
     }
 
-    if ((!agents || agents.length === 0) && (!agencies || agencies.every((a: AgencyIPEntry) => a.mtd_ip === 0))) {
+    if (
+      (!agents || agents.length === 0) &&
+      (!agencies || agencies.every((a: AgencyIPEntry) => a.mtd_ip === 0))
+    ) {
       console.log("[slack-ip-leaderboard] No IP data available");
       return new Response(
         JSON.stringify({
@@ -320,7 +331,7 @@ serve(async (req) => {
     const message = buildIPLeaderboardMessage(
       (agents || []) as IPLeaderboardEntry[],
       (agencies || []) as AgencyIPEntry[],
-      totalAgentCount ?? 0
+      totalAgentCount ?? 0,
     );
 
     // Decrypt bot token
