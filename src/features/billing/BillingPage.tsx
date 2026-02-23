@@ -3,7 +3,17 @@
 
 import { useState, useEffect } from "react";
 import { useSearch, useNavigate } from "@tanstack/react-router";
-import { Wallet, ChevronRight, HelpCircle } from "lucide-react";
+import {
+  Wallet,
+  ChevronRight,
+  HelpCircle,
+  Rocket,
+  Brain,
+  Plug2,
+  BarChart3,
+  Sparkles,
+  FlaskConical,
+} from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,6 +56,13 @@ export function BillingPage() {
   useEffect(() => {
     let shouldClearParams = false;
 
+    // Returning from Stripe portal — refresh subscription data
+    if (searchParams?.portal_return === "1") {
+      shouldClearParams = true;
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+      toast.success("Subscription updated.");
+    }
+
     if (searchParams?.checkout === "success") {
       shouldClearParams = true;
 
@@ -71,6 +88,7 @@ export function BillingPage() {
       navigate({ to: "/billing", search: {}, replace: true });
     }
   }, [
+    searchParams?.portal_return,
     searchParams?.checkout,
     searchParams?.pending_addon_id,
     searchParams?.billing_interval,
@@ -112,6 +130,22 @@ export function BillingPage() {
         {/* Pricing Cards */}
         <PricingCards onPlanSelect={handlePlanSelect} />
 
+        {/* Team Early Access Strip */}
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/20 border border-violet-200 dark:border-violet-800">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/50 flex-shrink-0">
+            <Rocket className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-violet-900 dark:text-violet-100">
+              Team subscribers are first in line for every new feature
+            </p>
+            <p className="text-[10px] text-violet-600 dark:text-violet-400">
+              Every major addition ships to Team before any other tier — no
+              waiting, no extra cost.
+            </p>
+          </div>
+        </div>
+
         {/* Premium Add-ons */}
         <PremiumAddonsSection />
 
@@ -120,6 +154,114 @@ export function BillingPage() {
 
         {/* Compare All Features (collapsible) */}
         <PlanComparisonTable />
+
+        {/* What's Coming */}
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+          {/* Header */}
+          <div className="px-4 py-3 bg-gradient-to-r from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900">
+            <div className="flex items-center gap-2 mb-1">
+              <FlaskConical className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">
+                What's Coming
+              </span>
+              <span className="text-[9px] font-medium bg-amber-400 text-zinc-900 rounded-full px-2 py-0.5 ml-1">
+                Team gets early access
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-300 leading-snug">
+              This is just the beginning. The roadmap ahead is massive — and
+              heavily AI-driven. Team subscribers get every new feature first,
+              the moment it ships.
+            </p>
+          </div>
+
+          {/* Feature columns */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100 dark:divide-zinc-800">
+            {/* AI Suite */}
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Brain className="h-3.5 w-3.5 text-indigo-500" />
+                <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wide">
+                  AI Suite
+                </p>
+              </div>
+              {[
+                "AI-powered policy & coverage recommendations",
+                "Smart underwriting insights from health data",
+                "AI-drafted recruit emails & follow-ups",
+                "Automated document review & flagging",
+                "Conversational AI for client objection handling",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-1.5">
+                  <Sparkles className="h-3 w-3 text-indigo-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-tight">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* CRM Integrations */}
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Plug2 className="h-3.5 w-3.5 text-emerald-500" />
+                <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wide">
+                  CRM Integrations
+                </p>
+              </div>
+              {[
+                "Close.io — bi-directional contact & lead sync",
+                "GoHighLevel — pipeline and automation bridge",
+                "Automated lead routing from either CRM",
+                "Two-way activity & note sync",
+                "Native dialer & SMS log import",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-1.5">
+                  <Sparkles className="h-3 w-3 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-tight">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Power Tools */}
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-1.5 mb-2">
+                <BarChart3 className="h-3.5 w-3.5 text-amber-500" />
+                <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wide">
+                  Power Tools
+                </p>
+              </div>
+              {[
+                "Advanced analytics & custom report builder",
+                "AI-generated training modules from your content",
+                "Predictive persistency & chargeback alerts",
+                "Bulk policy import & carrier data sync",
+                "Open API access for custom integrations",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-1.5">
+                  <Sparkles className="h-3 w-3 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-tight">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer note */}
+          <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center">
+              Features roll out to{" "}
+              <span className="font-semibold text-violet-600 dark:text-violet-400">
+                Team
+              </span>{" "}
+              first — then down to other tiers over time. Upgrade once, stay
+              ahead always.
+            </p>
+          </div>
+        </div>
 
         {/* FAQ (collapsible) */}
         <Collapsible.Root open={faqOpen} onOpenChange={setFaqOpen}>
