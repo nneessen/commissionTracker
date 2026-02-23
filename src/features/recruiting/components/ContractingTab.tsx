@@ -1,7 +1,7 @@
 // src/features/recruiting/components/ContractingTab.tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Briefcase, Info } from "lucide-react";
+import { AlertCircle, Briefcase, Info, Send, Loader2 } from "lucide-react";
 import { ContractingRequestCard } from "./contracting/ContractingRequestCard";
 import { AddCarrierDialog } from "./contracting/AddCarrierDialog";
 import {
@@ -14,6 +14,9 @@ import { useUplineCarrierContracts } from "../hooks/useUplineCarrierContracts";
 import { useQuery } from "@tanstack/react-query";
 // eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
+// eslint-disable-next-line no-restricted-imports
+import { smsService } from "@/services/sms/smsService";
+import { toast } from "sonner";
 import type {
   RecruitEntity,
   RecruitPermissions,
@@ -26,6 +29,7 @@ interface ContractingTabProps {
 
 export function ContractingTab({ entity, permissions }: ContractingTabProps) {
   const [showAddCarrierDialog, setShowAddCarrierDialog] = useState(false);
+  const [requestingUpdate, setRequestingUpdate] = useState(false);
 
   // For invitations, don't fetch contracts
   const recruitId = entity.kind === "registered" ? entity.recruitId : undefined;
@@ -33,7 +37,7 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
   // Extract upline info from the recruit
   const uplineId = entity.recruit?.upline_id ?? null;
 
-  // Fetch upline name if we have an upline_id
+  // Fetch upline name for all viewers
   const { data: uplineProfile } = useQuery({
     queryKey: ["upline-name", uplineId],
     queryFn: async () => {
@@ -45,6 +49,20 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
       return data;
     },
     enabled: !!uplineId,
+  });
+
+  // Fetch upline contact info only for staff (PII minimization)
+  const { data: uplineContact } = useQuery({
+    queryKey: ["upline-contact", uplineId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_profiles")
+        .select("phone, email")
+        .eq("id", uplineId!)
+        .single();
+      return data;
+    },
+    enabled: !!uplineId && permissions.isStaff,
   });
 
   const uplineName = uplineProfile
@@ -103,6 +121,62 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
     await deleteContract.mutateAsync(id);
   };
 
+  const escapeHtml = (str: string) =>
+    str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const handleRequestUpdate = async () => {
+    if (!uplineProfile || !uplineContact) return;
+
+    const firstName = uplineProfile.first_name || "there";
+    const phone = uplineContact.phone;
+    const email = uplineContact.email;
+
+    if (!phone && !email) {
+      toast.error("No contact info available for upline");
+      return;
+    }
+
+    setRequestingUpdate(true);
+
+    const message = `Hi ${firstName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to Settings > Profile to toggle which carriers you're contracted with. Thank you!`;
+
+    try {
+      if (phone) {
+        const result = await smsService.sendSms({
+          to: phone,
+          message,
+          recruitId,
+          trigger: "upline_contract_update",
+        });
+        if (!result.success) throw new Error(result.error || "SMS failed");
+        toast.success(`Update request sent to ${uplineName} via SMS`);
+      } else {
+        const safeName = escapeHtml(firstName);
+        const htmlBody = `<p>Hi ${safeName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to <a href="https://www.thestandardhq.com/settings/profile">Settings &gt; Profile</a> to toggle which carriers you're contracted with. Thank you!</p>`;
+        const { error } = await supabase.functions.invoke("send-email", {
+          body: {
+            to: [email],
+            subject: "Action Required: Update Your Carrier Contracts",
+            html: htmlBody,
+            text: message,
+            from: "Teagen Keyser <noreply@updates.thestandardhq.com>",
+          },
+        });
+        if (error) throw error;
+        toast.success(`Update request sent to ${uplineName} via email`);
+      }
+    } catch (err) {
+      console.error("[ContractingTab] Request update failed:", err);
+      toast.error("Failed to send update request");
+    } finally {
+      setRequestingUpdate(false);
+    }
+  };
+
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between mb-2">
@@ -131,6 +205,22 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
             </span>
             &apos;s contracts ({uplineCarrierCount} active)
           </p>
+          {permissions.isStaff && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 text-[10px] px-1.5 ml-auto text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              onClick={handleRequestUpdate}
+              disabled={requestingUpdate}
+            >
+              {requestingUpdate ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Send className="h-3 w-3 mr-1" />
+              )}
+              Request Update
+            </Button>
+          )}
         </div>
       )}
       {!uplineId && (
