@@ -142,7 +142,7 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
 
     setRequestingUpdate(true);
 
-    const message = `Hi ${firstName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to Settings > Profile to toggle which carriers you're contracted with. Thank you!`;
+    const message = `Hi ${firstName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to Settings to toggle which carriers you're contracted with. Thank you!`;
 
     try {
       if (phone) {
@@ -156,7 +156,7 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
         toast.success(`Update request sent to ${uplineName} via SMS`);
       } else {
         const safeName = escapeHtml(firstName);
-        const htmlBody = `<p>Hi ${safeName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to <a href="https://www.thestandardhq.com/settings/profile">Settings &gt; Profile</a> to toggle which carriers you're contracted with. Thank you!</p>`;
+        const htmlBody = `<p>Hi ${safeName}, you have a recruit in the contracting phase but we can't move forward until you update your active carrier contracts. Please log in and go to <a href="https://www.thestandardhq.com/settings">Settings &gt; Profile</a> to toggle which carriers you're contracted with. Thank you!</p>`;
         const { error } = await supabase.functions.invoke("send-email", {
           body: {
             to: [email],
