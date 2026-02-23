@@ -1,7 +1,7 @@
 // src/features/recruiting/components/ContractingTab.tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Briefcase } from "lucide-react";
+import { AlertCircle, Briefcase, Info } from "lucide-react";
 import { ContractingRequestCard } from "./contracting/ContractingRequestCard";
 import { AddCarrierDialog } from "./contracting/AddCarrierDialog";
 import {
@@ -10,6 +10,10 @@ import {
   useAddCarrierContract,
   useDeleteCarrierContract,
 } from "../hooks/useRecruitCarrierContracts";
+import { useUplineCarrierContracts } from "../hooks/useUplineCarrierContracts";
+import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
+import { supabase } from "@/services/base/supabase";
 import type {
   RecruitEntity,
   RecruitPermissions,
@@ -25,6 +29,31 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
 
   // For invitations, don't fetch contracts
   const recruitId = entity.kind === "registered" ? entity.recruitId : undefined;
+
+  // Extract upline info from the recruit
+  const uplineId = entity.recruit?.upline_id ?? null;
+
+  // Fetch upline name if we have an upline_id
+  const { data: uplineProfile } = useQuery({
+    queryKey: ["upline-name", uplineId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_profiles")
+        .select("first_name, last_name")
+        .eq("id", uplineId!)
+        .single();
+      return data;
+    },
+    enabled: !!uplineId,
+  });
+
+  const uplineName = uplineProfile
+    ? `${uplineProfile.first_name || ""} ${uplineProfile.last_name || ""}`.trim()
+    : undefined;
+
+  // Fetch upline's active carrier count for the banner
+  const { data: uplineCarrierIds } = useUplineCarrierContracts(uplineId);
+  const uplineCarrierCount = uplineCarrierIds?.length ?? 0;
 
   const {
     data: contractRequests,
@@ -91,6 +120,28 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
         )}
       </div>
 
+      {/* Upline context banner */}
+      {uplineId && uplineName && (
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-zinc-50 dark:bg-zinc-800/50 mb-2">
+          <Info className="h-3 w-3 text-zinc-400 flex-shrink-0" />
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Carriers available through{" "}
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              {uplineName}
+            </span>
+            &apos;s contracts ({uplineCarrierCount} active)
+          </p>
+        </div>
+      )}
+      {!uplineId && (
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-zinc-50 dark:bg-zinc-800/50 mb-2">
+          <Info className="h-3 w-3 text-zinc-400 flex-shrink-0" />
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            No upline assigned — all carriers available
+          </p>
+        </div>
+      )}
+
       {contractRequests?.map((request) => (
         <ContractingRequestCard
           key={request.id}
@@ -112,6 +163,8 @@ export function ContractingTab({ entity, permissions }: ContractingTabProps) {
         open={showAddCarrierDialog}
         onClose={() => setShowAddCarrierDialog(false)}
         onAdd={handleAdd}
+        uplineId={uplineId}
+        uplineName={uplineName}
       />
     </div>
   );

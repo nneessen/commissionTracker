@@ -29,6 +29,8 @@ import type { RoleName } from "@/types/permissions.types";
 import { CustomDomainManager } from "./custom-domains";
 import { BrandingSettings } from "./BrandingSettings";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
+// eslint-disable-next-line no-restricted-imports
+import { MyCarrierContractsCard } from "@/features/contracting/components/MyCarrierContractsCard";
 import { toast } from "sonner";
 
 export function UserProfile() {
@@ -747,6 +749,9 @@ export function UserProfile() {
               </div>
             </div>
           </div>
+
+          {/* Carrier Contracts Card */}
+          {user?.id && <MyCarrierContractsCard agentId={user.id} />}
         </>
       )}
     </div>

@@ -224,6 +224,73 @@ class ContractingService {
       rejected: contracts.filter((c) => c.status === "rejected").length,
     };
   }
+
+  async getContractsByAgentId(agentId: string): Promise<ContractWithDetails[]> {
+    const { data, error } = await supabase
+      .from("carrier_contracts")
+      .select(
+        `
+        *,
+        carrier:carrier_id(id, name, code)
+      `,
+      )
+      .eq("agent_id", agentId)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching agent contracts:", error);
+      throw error;
+    }
+
+    return (data || []) as ContractWithDetails[];
+  }
+
+  async upsertContract(
+    agentId: string,
+    carrierId: string,
+    status: ContractStatus,
+  ): Promise<ContractWithDetails> {
+    const updates: CarrierContractInsert = {
+      agent_id: agentId,
+      carrier_id: carrierId,
+      status,
+      approved_date:
+        status === "approved" ? new Date().toISOString().split("T")[0] : null,
+    };
+
+    const { data, error } = await supabase
+      .from("carrier_contracts")
+      .upsert(updates, { onConflict: "agent_id,carrier_id" })
+      .select(
+        `
+        *,
+        carrier:carrier_id(id, name, code)
+      `,
+      )
+      .single();
+
+    if (error) {
+      console.error("Error upserting contract:", error);
+      throw error;
+    }
+
+    return data as ContractWithDetails;
+  }
+
+  async getActiveCarrierIds(agentId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("carrier_contracts")
+      .select("carrier_id")
+      .eq("agent_id", agentId)
+      .eq("status", "approved");
+
+    if (error) {
+      console.error("Error fetching active carrier IDs:", error);
+      throw error;
+    }
+
+    return (data || []).map((d) => d.carrier_id);
+  }
 }
 
 export const contractingService = new ContractingService();

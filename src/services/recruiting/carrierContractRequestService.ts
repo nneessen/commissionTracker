@@ -371,6 +371,7 @@ export const carrierContractRequestService = {
       name: string;
       contracting_metadata: Json | null;
       priority: number;
+      upline_has_contract: boolean;
     }>
   > {
     const { data, error } = await supabase.rpc(

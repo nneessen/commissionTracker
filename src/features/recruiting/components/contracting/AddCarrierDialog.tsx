@@ -1,5 +1,5 @@
 // src/features/recruiting/components/contracting/AddCarrierDialog.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
 // eslint-disable-next-line no-restricted-imports
 import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
-import { AlertCircle, Plus, Loader2 } from "lucide-react";
+import { AlertCircle, Plus, Loader2, Info, ShieldAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddCarrierDialogProps {
@@ -20,6 +20,8 @@ interface AddCarrierDialogProps {
   open: boolean;
   onClose: () => void;
   onAdd: (carrierId: string) => Promise<void>;
+  uplineId?: string | null;
+  uplineName?: string;
 }
 
 export function AddCarrierDialog({
@@ -27,6 +29,8 @@ export function AddCarrierDialog({
   open,
   onClose,
   onAdd,
+  uplineId,
+  uplineName,
 }: AddCarrierDialogProps) {
   const [selectedCarrierIds, setSelectedCarrierIds] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -58,11 +62,9 @@ export function AddCarrierDialog({
     setIsAdding(true);
 
     try {
-      // Add carriers sequentially to maintain order
       for (const carrierId of selectedCarrierIds) {
         await onAdd(carrierId);
       }
-      // Only close if all successful
       onClose();
       setSelectedCarrierIds([]);
     } catch (err) {
@@ -85,9 +87,23 @@ export function AddCarrierDialog({
     }
   };
 
-  const sortedCarriers = (availableCarriers || []).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  // Sort: upline-contracted first, then non-contracted (disabled) at bottom
+  const sortedCarriers = useMemo(() => {
+    const carriers = availableCarriers || [];
+    return [...carriers].sort((a, b) => {
+      if (a.upline_has_contract !== b.upline_has_contract) {
+        return a.upline_has_contract ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [availableCarriers]);
+
+  const hasUpline = uplineId != null;
+  const uplineContractedCount = sortedCarriers.filter(
+    (c) => c.upline_has_contract,
+  ).length;
+  const allBlocked =
+    hasUpline && sortedCarriers.length > 0 && uplineContractedCount === 0;
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -100,6 +116,46 @@ export function AddCarrierDialog({
             Select carriers to request contracts for this recruit
           </p>
         </DialogHeader>
+
+        {/* Upline Context Banner */}
+        {hasUpline && !isLoading && !queryError && (
+          <div className="px-5 pt-3">
+            {allBlocked ? (
+              <Alert className="py-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
+                <ShieldAlert className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-xs text-amber-700 dark:text-amber-300">
+                  <span className="font-medium">{uplineName || "Upline"}</span>{" "}
+                  has no active carrier contracts configured. All carriers are
+                  blocked until the upline adds contracts in their profile.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+                <Info className="h-3 w-3 flex-shrink-0" />
+                <span>
+                  Carriers available through{" "}
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {uplineName || "upline"}
+                  </span>
+                  &apos;s contracts ({uplineContractedCount} active)
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* No upline info */}
+        {!hasUpline &&
+          !isLoading &&
+          !queryError &&
+          sortedCarriers.length > 0 && (
+            <div className="px-5 pt-3">
+              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+                <Info className="h-3 w-3 flex-shrink-0" />
+                <span>No upline assigned — all carriers available</span>
+              </div>
+            </div>
+          )}
 
         {/* Error Alert */}
         {error && (
@@ -138,32 +194,51 @@ export function AddCarrierDialog({
             <div className="grid grid-cols-2 gap-2">
               {sortedCarriers.map((carrier) => {
                 const isSelected = selectedCarrierIds.includes(carrier.id);
+                const isBlocked = hasUpline && !carrier.upline_has_contract;
+
                 return (
                   <label
                     key={carrier.id}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded border-2 cursor-pointer transition-all
+                      flex items-center gap-3 px-3 py-2.5 rounded border-2 transition-all
                       ${
-                        isSelected
-                          ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
-                          : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900"
+                        isBlocked
+                          ? "border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 cursor-not-allowed opacity-60"
+                          : isSelected
+                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 cursor-pointer"
+                            : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900 cursor-pointer"
                       }
                       ${isAdding ? "opacity-50 cursor-not-allowed" : ""}
                     `}
                   >
                     <Checkbox
                       checked={isSelected}
-                      disabled={isAdding}
+                      disabled={isAdding || isBlocked}
                       onCheckedChange={() =>
-                        !isAdding && handleToggleCarrier(carrier.id)
+                        !isAdding &&
+                        !isBlocked &&
+                        handleToggleCarrier(carrier.id)
                       }
                       className="flex-shrink-0"
                     />
-                    <span
-                      className={`text-sm font-medium flex-1 ${isSelected ? "text-emerald-900 dark:text-emerald-100" : "text-zinc-900 dark:text-zinc-100"}`}
-                    >
-                      {carrier.name}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span
+                        className={`text-sm font-medium block truncate ${
+                          isBlocked
+                            ? "text-zinc-400 dark:text-zinc-600"
+                            : isSelected
+                              ? "text-emerald-900 dark:text-emerald-100"
+                              : "text-zinc-900 dark:text-zinc-100"
+                        }`}
+                      >
+                        {carrier.name}
+                      </span>
+                      {isBlocked && (
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                          Upline not contracted
+                        </span>
+                      )}
+                    </div>
                   </label>
                 );
               })}

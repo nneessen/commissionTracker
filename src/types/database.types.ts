@@ -14471,6 +14471,16 @@ export type Database = {
           table_name: string;
         }[];
       };
+      get_agent_carrier_contracts: {
+        Args: { p_agent_id: string };
+        Returns: {
+          approved_date: string | null;
+          carrier_id: string;
+          carrier_name: string;
+          status: string;
+          writing_number: string | null;
+        }[];
+      };
       get_available_carriers_for_recruit: {
         Args: { p_recruit_id: string };
         Returns: {
@@ -14478,6 +14488,7 @@ export type Database = {
           id: string;
           name: string;
           priority: number;
+          upline_has_contract: boolean;
         }[];
       };
       get_available_imos_for_join: {

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   contractingService,
   type ContractFilters,
+  type ContractStatus,
 } from "../services/contractingService";
 import type { Database } from "@/types/database.types";
 import { toast } from "sonner";
@@ -91,6 +92,36 @@ export function useDeleteContract() {
     onError: (error) => {
       console.error("Error deleting contract:", error);
       toast.error("Failed to delete contract");
+    },
+  });
+}
+
+export function useAgentContracts(agentId: string | undefined) {
+  return useQuery({
+    queryKey: ["agent-contracts", agentId],
+    queryFn: () => contractingService.getContractsByAgentId(agentId!),
+    enabled: !!agentId,
+  });
+}
+
+export function useUpsertAgentContract(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      carrierId,
+      status,
+    }: {
+      carrierId: string;
+      status: ContractStatus;
+    }) => contractingService.upsertContract(agentId!, carrierId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent-contracts", agentId] });
+      toast.success("Carrier contract updated");
+    },
+    onError: (error) => {
+      console.error("Error upserting contract:", error);
+      toast.error("Failed to update carrier contract");
     },
   });
 }
