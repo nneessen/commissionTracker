@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   contractingService,
   type ContractFilters,
-  type ContractStatus,
 } from "../services/contractingService";
 import type { Database } from "@/types/database.types";
 import { toast } from "sonner";
@@ -104,23 +103,26 @@ export function useAgentContracts(agentId: string | undefined) {
   });
 }
 
-export function useUpsertAgentContract(agentId: string | undefined) {
+export function useToggleAgentContract(agentId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
       carrierId,
-      status,
+      active,
     }: {
       carrierId: string;
-      status: ContractStatus;
-    }) => contractingService.upsertContract(agentId!, carrierId, status),
+      active: boolean;
+    }) => contractingService.toggleContract(carrierId, active),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-contracts", agentId] });
+      queryClient.invalidateQueries({
+        queryKey: ["upline-carrier-contracts", agentId],
+      });
       toast.success("Carrier contract updated");
     },
     onError: (error) => {
-      console.error("Error upserting contract:", error);
+      console.error("Error toggling contract:", error);
       toast.error("Failed to update carrier contract");
     },
   });

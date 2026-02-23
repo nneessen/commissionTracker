@@ -13,140 +13,143 @@ Contracting managers had no way to know which carriers an agent's upline is cont
 
 ## Changes Made
 
-### 1. Database Migration (`supabase/migrations/20260223115515_agent_carrier_contract_management.sql`)
+### Migration 1: `20260223115515_agent_carrier_contract_management.sql`
 
 **1A. RLS Policy Fix — IMO Isolation**
 
-The existing `carrier_contracts` RLS policies had NO IMO (tenant) isolation:
-- **Before:** Any staff member could see/manage contracts across ALL organizations
-- **After:** Staff policies join through `user_profiles.imo_id` to enforce tenant boundary
-
-New policies:
 | Policy | Scope | Operation |
 |--------|-------|-----------|
 | `Staff can view contracts in IMO` | Same-IMO staff (trainer/contracting_manager/admin) | SELECT |
 | `Staff can manage contracts in IMO` | Same-IMO staff | ALL (with IMO check in USING + WITH CHECK) |
 | `Agents can view own contracts` | `agent_id = auth.uid()` | SELECT |
-| `Agents can insert own contracts` | `agent_id = auth.uid()` | INSERT |
-| `Agents can update own contracts` | `agent_id = auth.uid()` | UPDATE |
 
-**Review concern:** The `Staff can manage contracts in IMO` policy uses `FOR ALL` which includes DELETE. Agents cannot delete their own contracts (only INSERT/UPDATE). Consider whether staff should be able to delete contracts or if `terminated` status is sufficient.
+Agents have **read-only** RLS access. All writes go through a server-side RPC (see migration 2).
 
 **1B. Updated `get_available_carriers_for_recruit` RPC**
 
-Added `upline_has_contract BOOLEAN` to the return type. Logic:
-- Looks up `upline_id` from `user_profiles` for the recruit
-- If `upline_id IS NULL`: returns `TRUE` for all carriers (no constraint)
-- If upline exists: checks `carrier_contracts` for `agent_id = v_upline_id AND status = 'approved'`
+Added `upline_has_contract BOOLEAN` to the return type. If upline exists, checks `carrier_contracts` for `agent_id = v_upline_id AND status = 'approved'`. If no upline, returns `TRUE` for all.
 
-**Review concern:** The upline contract check uses `status = 'approved'` only. Other statuses (`pending`, `submitted`) are not considered "active." Verify this matches business requirements — should a `submitted` upline contract allow downstream assignment?
+**1C. `get_agent_carrier_contracts` RPC**
 
-**1C. New `get_agent_carrier_contracts` RPC**
+Returns all carrier contracts for an agent, filtered to carriers in the agent's IMO. Security: caller must be the agent OR same-IMO staff/admin.
 
-Returns all carrier contracts for an agent. Security: caller must be the agent OR same-IMO staff/admin. Returns all statuses (not just approved) for the self-service UI to show full state.
+### Migration 2: `20260223121512_harden_carrier_contract_security.sql`
 
-### 2. Type Updates (`src/types/database.types.ts`)
+This migration was created in response to security review findings.
 
-- Added `upline_has_contract: boolean` to `get_available_carriers_for_recruit` return type
-- Added `get_agent_carrier_contracts` function type definition
-- **Note:** Supabase CLI type generation failed (API access issue), so types were manually edited. They should be regenerated when CLI access is restored.
+**Fix #1: BEFORE INSERT trigger on `carrier_contract_requests`** (Critical finding)
 
-### 3. Service Layer Extensions
+The `enforce_upline_carrier_contract` trigger runs on every INSERT to `carrier_contract_requests`. It checks:
+- If the recruit has no `upline_id`: allows all carriers (RETURN NEW)
+- If upline exists: verifies `carrier_contracts` has a row with `agent_id = upline_id AND carrier_id = NEW.carrier_id AND status = 'approved'`
+- If check fails: raises exception with `check_violation` error code
 
-**`src/features/contracting/services/contractingService.ts`** — 3 new methods:
-- `getContractsByAgentId(agentId)` — fetches all contracts with carrier join
-- `upsertContract(agentId, carrierId, status)` — uses Supabase `.upsert()` with `UNIQUE(agent_id, carrier_id)` constraint. Sets `approved_date` when status is `approved`.
-- `getActiveCarrierIds(agentId)` — lightweight query returning just carrier IDs where `status = 'approved'`
+This is the **database-level enforcement** of the upline contract rule. The UI disable is now a convenience; the trigger is the actual guard.
 
-**`src/services/recruiting/carrierContractRequestService.ts`** — updated `getAvailableCarriers` return type to include `upline_has_contract: boolean`
+**Fix #2: `toggle_agent_carrier_contract` RPC** (Critical finding)
 
-**Review concern:** The `upsertContract` method sets `approved_date` to today when toggling ON. It does NOT clear `approved_date` when toggling OFF (setting status to `terminated`). This preserves the original approval date for audit. Verify this is desired behavior.
+Replaced direct agent INSERT/UPDATE RLS policies with a narrow SECURITY DEFINER RPC that:
+- Validates caller is authenticated (`auth.uid()`)
+- Validates carrier belongs to agent's IMO (cross-tenant protection)
+- Only allows `approved` or `terminated` status (no arbitrary status injection)
+- Stamps `approved_date` server-side using `CURRENT_DATE` (timezone-safe)
+- Preserves `approved_date` when deactivating (audit trail)
+- Uses `ON CONFLICT (agent_id, carrier_id) DO UPDATE` for atomic upsert
 
-### 4. Hook Layer
+Agent INSERT/UPDATE RLS policies were dropped. Agents can only read their own contracts via RLS.
 
-**`src/features/contracting/hooks/useContracts.ts`** — 2 new hooks:
-- `useAgentContracts(agentId)` — query key: `["agent-contracts", agentId]`
-- `useUpsertAgentContract(agentId)` — mutation that invalidates agent-contracts cache
+**Fix #3: Hardened `get_agent_carrier_contracts`** (Moderate finding)
 
-**`src/features/recruiting/hooks/useUplineCarrierContracts.ts`** — new file:
-- `useUplineCarrierContracts(uplineId)` — fetches upline's approved carrier IDs for ContractingTab banner
+Added `AND c.imo_id = v_agent_imo_id` to the carrier JOIN, preventing cross-tenant data leaks if mixed-tenant `carrier_contracts` rows exist.
 
-### 5. UI Components
+### Service Layer
 
-**`src/features/contracting/components/MyCarrierContractsCard.tsx`** — new component:
-- Compact card showing all IMO carriers as toggleable rows
-- Each row: carrier name + Switch toggle (approved/terminated) + writing number display
-- Added to `UserProfile.tsx` after the Commission Settings card, visible only for non-staff-only users
+**`contractingService.ts`** — key methods:
+- `getContractsByAgentId(agentId)` — fetches all contracts with carrier join (uses RLS)
+- `toggleContract(carrierId, active)` — calls `toggle_agent_carrier_contract` RPC
+- `getActiveCarrierIds(agentId)` — lightweight query for carrier IDs where `status = 'approved'`
 
-**Review concern:** The toggle sets status directly to `approved` (no pending workflow). This means agents can self-declare carrier contracts without staff verification. For most orgs this is fine (agents know what they're contracted with), but some may want a verification step.
+**`carrierContractRequestService.ts`** — `getAvailableCarriers` return type includes `upline_has_contract: boolean`
 
-**`src/features/recruiting/components/contracting/AddCarrierDialog.tsx`** — updated:
-- New props: `uplineId?: string | null`, `uplineName?: string`
-- Carriers where `upline_has_contract === false` are **hard blocked**: grayed out, disabled checkbox, "Upline not contracted" label
-- Carriers where `upline_has_contract === true`: normal selectable (existing green style)
-- Sort order: upline-contracted carriers first, then non-contracted (disabled, at bottom)
-- If upline has zero contracts: amber alert banner with explanation
-- If no upline (null): info note "No upline assigned — all carriers available"
+### Hooks
 
-**`src/features/recruiting/components/ContractingTab.tsx`** — updated:
-- Fetches upline name via lightweight query
-- Fetches upline active carrier count via `useUplineCarrierContracts`
-- Shows context banner: "Carriers available through **[Upline Name]**'s contracts (X active)"
-- Passes `uplineId` and `uplineName` to `AddCarrierDialog`
+- `useAgentContracts(agentId)` — query for agent's carrier contracts
+- `useToggleAgentContract(agentId)` — mutation calling the server-side RPC, invalidates both `agent-contracts` and `upline-carrier-contracts` caches
+- `useUplineCarrierContracts(uplineId)` — fetches upline's approved carrier IDs
+
+### UI Components
+
+**`MyCarrierContractsCard`** — self-service carrier toggle card in agent profile
+- Toggle calls `toggle_agent_carrier_contract` RPC (server-validated)
+- Shows writing numbers from existing contracts
+- Only visible for non-staff-only users (inside `!isStaffOnly` conditional)
+
+**`AddCarrierDialog`** — upline-aware carrier selection
+- Carriers where `upline_has_contract === false` are hard blocked (disabled, "Upline not contracted")
+- Even if UI is bypassed, the `enforce_upline_carrier_contract` trigger blocks the insert
+
+**`ContractingTab`** — upline context banner
+- Shows upline name and active carrier count
+- Passes upline context to `AddCarrierDialog`
 
 ---
 
-## Edge Cases Addressed
+## Security Architecture
+
+```
+UI Layer (advisory)          DB Layer (enforcement)
+─────────────────           ─────────────────────
+AddCarrierDialog             enforce_upline_carrier_contract trigger
+  disables checkbox    →       BEFORE INSERT on carrier_contract_requests
+  "Upline not contracted"     RAISE EXCEPTION if upline lacks carrier
+
+MyCarrierContractsCard       toggle_agent_carrier_contract RPC
+  toggle switch         →       validates carrier in agent's IMO
+                               only allows approved/terminated
+                               stamps dates server-side
+
+RLS on carrier_contracts     Staff: IMO-scoped ALL
+                             Agents: SELECT only (no direct writes)
+```
+
+---
+
+## Edge Cases
 
 | Case | Handling |
 |------|----------|
-| Recruit has no `upline_id` | RPC returns `upline_has_contract = TRUE` for all. UI shows "No upline — all carriers available" |
-| Upline has zero carrier contracts | All carriers disabled in AddCarrierDialog. Amber alert shown |
-| Upline contract terminated after recruit's request | Existing requests remain valid. Only blocks NEW assignments |
-| Agent self-manages contracts | RLS allows INSERT/UPDATE on own `agent_id`. Toggle in profile |
-| `carrier_contracts` has no `imo_id` column | RLS joins through `agent_id -> user_profiles.imo_id` |
-
----
-
-## Potential Issues for Review
-
-### Critical
-1. **RLS policy for agent INSERT** — Agents can insert new `carrier_contracts` rows for themselves. The `approved_date` is set client-side. A malicious agent could theoretically upsert contracts for carriers they aren't actually contracted with, which would enable their downlines to request those carriers. **Mitigation:** This is a self-attestation model; the carrier contracting process itself (writing numbers, etc.) is still managed by staff. Consider adding a `self_attested` boolean column if audit trail is needed.
-
-2. **Upsert ON CONFLICT** — The `upsertContract` method uses `.upsert()` which performs `INSERT ... ON CONFLICT DO UPDATE`. This means an agent toggling "off" doesn't DELETE the row but updates status to `terminated`. Make sure reporting queries account for terminated records.
-
-### Moderate
-3. **No validation on writing_number** — The MyCarrierContractsCard displays writing numbers but doesn't allow editing them. Writing numbers are managed elsewhere. If the self-service card should also allow editing writing numbers, that would need additional work.
-
-4. **Cache invalidation scope** — `useUpsertAgentContract` invalidates `["agent-contracts", agentId]` but does NOT invalidate `["upline-carrier-contracts", agentId]`. If an agent toggles their own contracts, their downline's ContractingTab won't see the change until TanStack Query's stale timer fires. This is acceptable for normal usage (agents don't toggle while staff are actively assigning carriers to their downlines).
-
-5. **RPC function `get_available_carriers_for_recruit`** — Now has a subquery per carrier to check upline contracts. For orgs with many carriers (50+), this could be slower. The `UNIQUE(agent_id, carrier_id)` index on `carrier_contracts` should keep this efficient, but worth monitoring.
-
-### Low
-6. **Manual type edits** — `database.types.ts` was manually edited because Supabase CLI lacks API access. The manual edits are correct but will be overwritten on next `supabase gen types` run. The CLI-generated types will include the new RPC definitions automatically, so this should self-correct.
+| Recruit has no `upline_id` | Trigger allows all. RPC returns `upline_has_contract = TRUE`. UI: "No upline — all carriers available" |
+| Upline has zero carrier contracts | Trigger blocks all inserts. UI: all carriers disabled with amber alert |
+| Upline contract terminated after recruit's request | Existing requests remain. Trigger only blocks NEW inserts |
+| Agent toggles carrier off | `approved_date` preserved in DB (audit trail) |
+| Agent tries carrier from different IMO | RPC raises "Carrier does not belong to your organization" |
+| Modified client bypasses UI disable | Trigger raises "upline does not have an approved contract" |
+| Direct API call to insert carrier_contract for agent | Blocked: agent INSERT RLS policy was removed. Must use RPC. |
 
 ---
 
 ## Files Changed
 
-| File | Action | Lines Changed |
-|------|--------|---------------|
-| `supabase/migrations/20260223115515_agent_carrier_contract_management.sql` | Created | ~180 |
-| `src/types/database.types.ts` | Edited | +12 (RPC types) |
-| `src/features/contracting/services/contractingService.ts` | Extended | +60 (3 methods) |
-| `src/features/contracting/hooks/useContracts.ts` | Extended | +30 (2 hooks) |
-| `src/services/recruiting/carrierContractRequestService.ts` | Edited | +1 (return type) |
-| `src/features/contracting/components/MyCarrierContractsCard.tsx` | Created | ~120 |
-| `src/features/settings/components/UserProfile.tsx` | Edited | +4 (import + render) |
-| `src/features/recruiting/components/contracting/AddCarrierDialog.tsx` | Rewritten | ~260 |
-| `src/features/recruiting/components/ContractingTab.tsx` | Rewritten | ~165 |
-| `src/features/recruiting/hooks/useUplineCarrierContracts.ts` | Created | ~13 |
+| File | Action |
+|------|--------|
+| `supabase/migrations/20260223115515_agent_carrier_contract_management.sql` | Created |
+| `supabase/migrations/20260223121512_harden_carrier_contract_security.sql` | Created |
+| `src/types/database.types.ts` | Edited (3 RPC type definitions) |
+| `src/features/contracting/services/contractingService.ts` | Extended (toggleContract, getContractsByAgentId, getActiveCarrierIds) |
+| `src/features/contracting/hooks/useContracts.ts` | Extended (useAgentContracts, useToggleAgentContract) |
+| `src/services/recruiting/carrierContractRequestService.ts` | Updated return type |
+| `src/features/contracting/components/MyCarrierContractsCard.tsx` | Created |
+| `src/features/settings/components/UserProfile.tsx` | Added card integration |
+| `src/features/recruiting/components/contracting/AddCarrierDialog.tsx` | Rewritten with upline awareness |
+| `src/features/recruiting/components/ContractingTab.tsx` | Rewritten with upline context |
+| `src/features/recruiting/hooks/useUplineCarrierContracts.ts` | Created |
 
 ---
 
 ## Verification
 
-- [x] Migration applied via `run-migration.sh` (tracked in schema_migrations + function_versions)
-- [x] RLS policies verified: 5 policies on carrier_contracts (3 agent, 2 staff)
+- [x] Migrations applied via `run-migration.sh`
+- [x] RLS policies verified: 3 policies on carrier_contracts (1 agent SELECT, 2 staff)
+- [x] `enforce_upline_carrier_contract` trigger confirmed on `carrier_contract_requests`
 - [x] `npm run build` — zero TypeScript errors
-- [x] `./scripts/validate-app.sh` — all checks pass (build + mock check + dev server smoke test)
+- [x] `./scripts/validate-app.sh` — all checks pass

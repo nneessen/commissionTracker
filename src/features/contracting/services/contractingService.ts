@@ -245,36 +245,16 @@ class ContractingService {
     return (data || []) as ContractWithDetails[];
   }
 
-  async upsertContract(
-    agentId: string,
-    carrierId: string,
-    status: ContractStatus,
-  ): Promise<ContractWithDetails> {
-    const updates: CarrierContractInsert = {
-      agent_id: agentId,
-      carrier_id: carrierId,
-      status,
-      approved_date:
-        status === "approved" ? new Date().toISOString().split("T")[0] : null,
-    };
-
-    const { data, error } = await supabase
-      .from("carrier_contracts")
-      .upsert(updates, { onConflict: "agent_id,carrier_id" })
-      .select(
-        `
-        *,
-        carrier:carrier_id(id, name, code)
-      `,
-      )
-      .single();
+  async toggleContract(carrierId: string, active: boolean): Promise<void> {
+    const { error } = await supabase.rpc("toggle_agent_carrier_contract", {
+      p_carrier_id: carrierId,
+      p_active: active,
+    });
 
     if (error) {
-      console.error("Error upserting contract:", error);
+      console.error("Error toggling contract:", error);
       throw error;
     }
-
-    return data as ContractWithDetails;
   }
 
   async getActiveCarrierIds(agentId: string): Promise<string[]> {

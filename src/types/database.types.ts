@@ -16525,6 +16525,17 @@ export type Database = {
           would_pass: boolean;
         }[];
       };
+      toggle_agent_carrier_contract: {
+        Args: { p_carrier_id: string; p_active: boolean };
+        Returns: {
+          agent_id: string;
+          approved_date: string | null;
+          carrier_id: string;
+          id: string;
+          status: string;
+          writing_number: string | null;
+        }[];
+      };
       toggle_alert_rule_active: {
         Args: { p_is_active: boolean; p_rule_id: string };
         Returns: {

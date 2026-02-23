@@ -6,7 +6,7 @@ import { Loader2, Briefcase } from "lucide-react";
 import { supabase } from "@/services/base/supabase";
 import {
   useAgentContracts,
-  useUpsertAgentContract,
+  useToggleAgentContract,
 } from "../hooks/useContracts";
 
 interface MyCarrierContractsCardProps {
@@ -20,7 +20,6 @@ export function MyCarrierContractsCard({
   const { data: carriers, isLoading: carriersLoading } = useQuery({
     queryKey: ["my-imo-carriers", agentId],
     queryFn: async () => {
-      // Get agent's IMO first
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("imo_id")
@@ -42,21 +41,19 @@ export function MyCarrierContractsCard({
     enabled: !!agentId,
   });
 
-  // Fetch agent's existing contracts
   const { data: contracts, isLoading: contractsLoading } =
     useAgentContracts(agentId);
 
-  const upsertContract = useUpsertAgentContract(agentId);
+  const toggleContract = useToggleAgentContract(agentId);
 
   const isLoading = carriersLoading || contractsLoading;
 
-  // Build a map of carrier_id -> contract for quick lookup
   const contractMap = new Map((contracts || []).map((c) => [c.carrier_id, c]));
 
   const handleToggle = (carrierId: string, currentlyActive: boolean) => {
-    upsertContract.mutate({
+    toggleContract.mutate({
       carrierId,
-      status: currentlyActive ? "terminated" : "approved",
+      active: !currentlyActive,
     });
   };
 
@@ -104,7 +101,7 @@ export function MyCarrierContractsCard({
                 <Switch
                   checked={isActive}
                   onCheckedChange={() => handleToggle(carrier.id, isActive)}
-                  disabled={upsertContract.isPending}
+                  disabled={toggleContract.isPending}
                   className="scale-75"
                 />
               </div>
