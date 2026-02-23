@@ -281,4 +281,23 @@ export default tseslint.config(
       ],
     },
   },
+  // Exception: Layout components may import from @/services/email barrel (the unified send gateway).
+  // Placed after the broad components rule so it takes precedence (ESLint flat config: last wins).
+  // Still blocks deep paths like @/services/email/**, only allows the barrel itself.
+  {
+    files: ['src/components/layout/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/services/email/**', 'src/services/email/**'],
+              message: 'Import from @/services/email (the barrel), not from a deep path within it.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

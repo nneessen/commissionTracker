@@ -520,8 +520,8 @@ export async function sendEmail(
       emailRecord?.id,
     );
 
-    // Update quota
-    await incrementQuota(userId);
+    // Update quota — Mailgun path
+    await incrementQuota(userId, "mailgun");
 
     return { success: true, messageId: data?.messageId || trackingId };
   } catch (err) {
@@ -582,18 +582,29 @@ export async function getEmailQuota(userId: string): Promise<EmailQuota> {
   };
 }
 
-async function incrementQuota(userId: string): Promise<void> {
+async function incrementQuota(
+  userId: string,
+  provider: "mailgun" | "gmail",
+): Promise<void> {
   const today = new Date().toISOString().split("T")[0];
-  const provider = "mailgun"; // Email provider
 
-  console.log(
-    "[incrementQuota] Incrementing quota for user:",
-    userId,
-    "date:",
-    today,
-  );
+  // Increment usage_tracking (source of truth for billing UI + plan limit enforcement)
+  const { error: rpcError } = await supabase.rpc("increment_usage", {
+    p_user_id: userId,
+    p_metric: "emails_sent",
+    p_increment: 1,
+  });
+  if (rpcError) {
+    console.error(
+      "[incrementQuota] Error incrementing usage_tracking:",
+      rpcError,
+    );
+  }
 
-  // Check if record exists for today
+  // Increment email_quota_tracking for all providers — this table drives getEmailQuota()
+  // which enforces pre-send limits on both paths. The provider column is stored accurately
+  // so getMonthlyMailgunSpend() (which filters eq("provider", "mailgun")) is not affected
+  // by Gmail sends. Writing with the correct provider value is all that's needed.
   const { data: existing, error: selectError } = await supabase
     .from("email_quota_tracking")
     .select("id, emails_sent")
@@ -609,13 +620,7 @@ async function incrementQuota(userId: string): Promise<void> {
   }
 
   if (existing) {
-    // Increment existing record
     const newCount = (existing.emails_sent || 0) + 1;
-    console.log(
-      "[incrementQuota] Updating existing record, new count:",
-      newCount,
-    );
-
     const { error: updateError } = await supabase
       .from("email_quota_tracking")
       .update({ emails_sent: newCount })
@@ -623,26 +628,14 @@ async function incrementQuota(userId: string): Promise<void> {
 
     if (updateError) {
       console.error("[incrementQuota] Error updating quota:", updateError);
-    } else {
-      console.log("[incrementQuota] Quota updated successfully to:", newCount);
     }
   } else {
-    // Insert new record
-    console.log("[incrementQuota] Creating new quota record");
-
     const { error: insertError } = await supabase
       .from("email_quota_tracking")
-      .insert({
-        user_id: userId,
-        date: today,
-        emails_sent: 1,
-        provider,
-      });
+      .insert({ user_id: userId, date: today, emails_sent: 1, provider });
 
     if (insertError) {
       console.error("[incrementQuota] Error inserting quota:", insertError);
-    } else {
-      console.log("[incrementQuota] Quota record created successfully");
     }
   }
 }
@@ -1082,8 +1075,8 @@ async function sendViaGmail(
 
     console.log("[sendViaGmail] Email record saved:", emailRecord?.id);
 
-    // Update quota
-    await incrementQuota(userId);
+    // Update quota — Gmail path (no Mailgun cost tracking)
+    await incrementQuota(userId, "gmail");
 
     return { success: true, messageId: data?.messageId || trackingId };
   } catch (err) {

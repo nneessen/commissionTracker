@@ -29,3 +29,8 @@ export {
   getUserTemplateStatus,
   getGroupedEmailTemplates,
 } from "@/features/email/services/emailTemplateService";
+
+// Re-export unified send function (Gmail-first, Mailgun fallback)
+// Use this in shared/layout code instead of importing from the feature path directly.
+export { sendEmail } from "@/features/messages/services/emailService";
+export type { SendEmailParams } from "@/features/messages/services/emailService";
