@@ -14481,6 +14481,28 @@ export type Database = {
           writing_number: string | null;
         }[];
       };
+      get_contracting_dashboard_recruits: {
+        Args: {
+          p_carrier_id?: string | null;
+          p_end_date?: string | null;
+          p_page?: number;
+          p_page_size?: number;
+          p_search_query?: string | null;
+          p_start_date?: string | null;
+          p_status?: string[] | null;
+        };
+        Returns: {
+          recruit: Json | null;
+          recruit_id: string | null;
+          request_count: number | null;
+          requested_latest: string | null;
+          requests: Json | null;
+          status_counts: Json | null;
+          total_recruit_count: number;
+          total_request_count: number;
+          writing_received_latest: string | null;
+        }[];
+      };
       get_available_carriers_for_recruit: {
         Args: { p_recruit_id: string };
         Returns: {

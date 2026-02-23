@@ -3,7 +3,6 @@
 import express from "express";
 import cors from "cors";
 import pg from "pg";
-import createServicesRouter from "./src/api/servicesRouter.js";
 
 const { Pool } = pg;
 const app = express();
@@ -26,9 +25,6 @@ pool
   .connect()
   .then(() => console.log("✅ Connected to PostgreSQL"))
   .catch((err) => console.error("❌ Database connection error:", err));
-
-// Use comprehensive services router for carriers, agents, and comp_guide
-app.use("/api/services", createServicesRouter(pool));
 
 // Generic endpoint handler with query support
 const createTableHandler = (tableName, defaultOrder = "id ASC") => {
@@ -184,7 +180,7 @@ app.get(
   ),
 );
 
-// Carriers endpoint - Delegate to services router for full CRUD
+// Carriers endpoint
 app.get("/rest/v1/carriers", createTableHandler("carriers", "name ASC"));
 
 // PUT endpoint for carriers update
@@ -263,4 +259,3 @@ app.listen(PORT, () => {
   console.log(`📊 Database: PostgreSQL on localhost:54322`);
   console.log(`🔧 pgAdmin: http://localhost:8080`);
 });
-

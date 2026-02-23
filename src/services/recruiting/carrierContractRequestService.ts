@@ -32,6 +32,65 @@ interface CarrierContractRequestWithRelations extends CarrierContractRequest {
   } | null;
 }
 
+interface ContractingDashboardRecruitRpcRow {
+  recruit_id: string | null;
+  recruit: Json | null;
+  request_count: number | null;
+  status_counts: Json | null;
+  requested_latest: string | null;
+  writing_received_latest: string | null;
+  requests: Json | null;
+  total_recruit_count: number;
+  total_request_count: number;
+}
+
+interface ContractingDashboardRecruitGroup {
+  recruitId: string;
+  recruitName: string;
+  recruitEmail: string;
+  requests: CarrierContractRequestWithRelations[];
+  statusCounts: Record<string, number>;
+  requestedLatest: string | null;
+  writingReceivedLatest: string | null;
+}
+
+function parseDashboardStatusCounts(
+  value: Json | null,
+): Record<string, number> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, count]) => [key, Number(count || 0)]),
+  );
+}
+
+function parseDashboardRequests(
+  value: Json | null,
+): CarrierContractRequestWithRelations[] {
+  if (!Array.isArray(value)) return [];
+  return value as unknown as CarrierContractRequestWithRelations[];
+}
+
+function parseDashboardRecruit(value: Json | null): {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+} {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as {
+    id?: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+  };
+}
+
 // Local row shape for the getRecruitsWithContracts joined query
 interface ContractQueryRow {
   recruit_id: string;
@@ -443,6 +502,90 @@ export const carrierContractRequestService = {
       console.error("Bulk delete failed:", error);
       throw new Error(`Bulk delete failed: ${error.message}`);
     }
+  },
+
+  /**
+   * Get contracting dashboard data grouped by recruit (agent) using RPC pagination.
+   * This prevents the dashboard from exploding into one row per carrier request.
+   */
+  async getContractingDashboardRecruits(filters: {
+    status?: string[];
+    startDate?: string;
+    endDate?: string;
+    searchQuery?: string;
+    carrierId?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    recruits: ContractingDashboardRecruitGroup[];
+    totalRecruitCount: number;
+    totalRequestCount: number;
+    hasMore: boolean;
+  }> {
+    const page = Math.max(filters.page || 1, 1);
+    const pageSize = Math.max(filters.pageSize || 50, 1);
+
+    const { data, error } = await supabase.rpc(
+      "get_contracting_dashboard_recruits",
+      {
+        p_status: filters.status?.length ? filters.status : null,
+        p_start_date: filters.startDate || null,
+        p_end_date: filters.endDate || null,
+        p_search_query: filters.searchQuery?.trim() || null,
+        p_carrier_id: filters.carrierId || null,
+        p_page: page,
+        p_page_size: pageSize,
+      },
+    );
+
+    if (error) {
+      console.error("Grouped contracting dashboard query failed:", error);
+      throw new Error(
+        `Grouped contracting dashboard query failed: ${error.message}`,
+      );
+    }
+
+    const rows = (data || []) as ContractingDashboardRecruitRpcRow[];
+    const metadataRow = rows[0];
+    const totalRecruitCount = metadataRow?.total_recruit_count || 0;
+    const totalRequestCount = metadataRow?.total_request_count || 0;
+
+    const recruits = rows
+      .filter(
+        (
+          row,
+        ): row is ContractingDashboardRecruitRpcRow & { recruit_id: string } =>
+          !!row.recruit_id,
+      )
+      .map((row) => {
+        const recruitJson = parseDashboardRecruit(row.recruit);
+        const requests = parseDashboardRequests(row.requests);
+        const firstName =
+          recruitJson.first_name ?? requests[0]?.recruit?.first_name ?? null;
+        const lastName =
+          recruitJson.last_name ?? requests[0]?.recruit?.last_name ?? null;
+        const recruitName =
+          `${firstName || ""} ${lastName || ""}`.trim() || "Unknown Recruit";
+        const recruitEmail =
+          recruitJson.email ?? requests[0]?.recruit?.email ?? "-";
+
+        return {
+          recruitId: row.recruit_id,
+          recruitName,
+          recruitEmail,
+          requests,
+          statusCounts: parseDashboardStatusCounts(row.status_counts),
+          requestedLatest: row.requested_latest,
+          writingReceivedLatest: row.writing_received_latest,
+        };
+      });
+
+    return {
+      recruits,
+      totalRecruitCount,
+      totalRequestCount,
+      hasMore: totalRecruitCount > page * pageSize,
+    };
   },
 
   /**
