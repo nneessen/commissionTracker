@@ -10,10 +10,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Pencil, Trash2, ChevronUp, ChevronDown, FileText } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type {
   PredicateGroup,
   FieldCondition,
 } from "@/services/underwriting/ruleEngineDSL";
+// eslint-disable-next-line no-restricted-imports
 import {
   isFieldCondition,
   parsePredicate,

@@ -1,6 +1,6 @@
 // src/features/email/services/sanitizationService.ts
 
-import DOMPurify from 'dompurify'
+import DOMPurify from "dompurify";
 
 /**
  * Sanitization service using DOMPurify to prevent XSS attacks
@@ -19,7 +19,7 @@ import DOMPurify from 'dompurify'
 // SECURITY: Strict allowlist approach - only these protocols are permitted.
 // This blocks javascript:, data:, vbscript:, and any obfuscated variants.
 // Relative URLs starting with / or # are allowed for internal links.
-const SAFE_URL_PATTERN = /^(?:https?:|mailto:|tel:|#|\/(?!\/)|$)/i
+const SAFE_URL_PATTERN = /^(?:https?:|mailto:|tel:|#|\/(?!\/)|$)/i;
 
 // =============================================================================
 // DANGEROUS ATTRIBUTES
@@ -27,72 +27,159 @@ const SAFE_URL_PATTERN = /^(?:https?:|mailto:|tel:|#|\/(?!\/)|$)/i
 // Comprehensive list of event handler attributes that could execute scripts
 const DANGEROUS_EVENT_HANDLERS = [
   // Mouse events
-  'onclick', 'ondblclick', 'onmousedown', 'onmouseup', 'onmouseover',
-  'onmousemove', 'onmouseout', 'onmouseenter', 'onmouseleave', 'oncontextmenu',
+  "onclick",
+  "ondblclick",
+  "onmousedown",
+  "onmouseup",
+  "onmouseover",
+  "onmousemove",
+  "onmouseout",
+  "onmouseenter",
+  "onmouseleave",
+  "oncontextmenu",
   // Keyboard events
-  'onkeydown', 'onkeypress', 'onkeyup',
+  "onkeydown",
+  "onkeypress",
+  "onkeyup",
   // Focus events
-  'onfocus', 'onblur', 'onfocusin', 'onfocusout',
+  "onfocus",
+  "onblur",
+  "onfocusin",
+  "onfocusout",
   // Form events
-  'onchange', 'onsubmit', 'onreset', 'onselect', 'oninput', 'oninvalid',
+  "onchange",
+  "onsubmit",
+  "onreset",
+  "onselect",
+  "oninput",
+  "oninvalid",
   // Drag events
-  'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop',
+  "ondrag",
+  "ondragend",
+  "ondragenter",
+  "ondragleave",
+  "ondragover",
+  "ondragstart",
+  "ondrop",
   // Clipboard events
-  'oncopy', 'oncut', 'onpaste',
+  "oncopy",
+  "oncut",
+  "onpaste",
   // Media events
-  'onplay', 'onpause', 'onended', 'onvolumechange', 'onseeking', 'onseeked',
-  'ontimeupdate', 'onloadeddata', 'onloadedmetadata', 'oncanplay', 'oncanplaythrough',
+  "onplay",
+  "onpause",
+  "onended",
+  "onvolumechange",
+  "onseeking",
+  "onseeked",
+  "ontimeupdate",
+  "onloadeddata",
+  "onloadedmetadata",
+  "oncanplay",
+  "oncanplaythrough",
   // Load/error events
-  'onload', 'onerror', 'onabort', 'onloadstart', 'onprogress',
+  "onload",
+  "onerror",
+  "onabort",
+  "onloadstart",
+  "onprogress",
   // Scroll/resize events
-  'onscroll', 'onresize',
+  "onscroll",
+  "onresize",
   // Touch events
-  'ontouchstart', 'ontouchmove', 'ontouchend', 'ontouchcancel',
+  "ontouchstart",
+  "ontouchmove",
+  "ontouchend",
+  "ontouchcancel",
   // Pointer events
-  'onpointerdown', 'onpointerup', 'onpointermove', 'onpointerenter',
-  'onpointerleave', 'onpointerover', 'onpointerout', 'onpointercancel',
+  "onpointerdown",
+  "onpointerup",
+  "onpointermove",
+  "onpointerenter",
+  "onpointerleave",
+  "onpointerover",
+  "onpointerout",
+  "onpointercancel",
   // Animation/transition events
-  'onanimationstart', 'onanimationend', 'onanimationiteration', 'ontransitionend',
+  "onanimationstart",
+  "onanimationend",
+  "onanimationiteration",
+  "ontransitionend",
   // Window/document events
-  'onbeforeunload', 'onunload', 'onhashchange', 'onpopstate', 'onstorage', 'onmessage',
+  "onbeforeunload",
+  "onunload",
+  "onhashchange",
+  "onpopstate",
+  "onstorage",
+  "onmessage",
   // Misc
-  'onwheel', 'onshow', 'ontoggle',
-] as const
+  "onwheel",
+  "onshow",
+  "ontoggle",
+] as const;
 
 // URL-bearing attributes that could load external resources or execute code
 const DANGEROUS_URL_ATTRIBUTES = [
-  'formaction',   // Form submission URL (can be javascript:)
-  'xlink:href',   // SVG links (can be javascript:)
-  'action',       // Form action URL
-  'background',   // Legacy background image URL
-  'dynsrc',       // Legacy IE video source
-  'lowsrc',       // Legacy low-res image source
-  'poster',       // Video poster (less dangerous but unnecessary)
-] as const
+  "formaction", // Form submission URL (can be javascript:)
+  "xlink:href", // SVG links (can be javascript:)
+  "action", // Form action URL
+  "background", // Legacy background image URL
+  "dynsrc", // Legacy IE video source
+  "lowsrc", // Legacy low-res image source
+  "poster", // Video poster (less dangerous but unnecessary)
+] as const;
 
 // Combined list for FORBID_ATTR
-const ALL_DANGEROUS_ATTRIBUTES = [...DANGEROUS_EVENT_HANDLERS, ...DANGEROUS_URL_ATTRIBUTES]
+const ALL_DANGEROUS_ATTRIBUTES = [
+  ...DANGEROUS_EVENT_HANDLERS,
+  ...DANGEROUS_URL_ATTRIBUTES,
+];
 
 // =============================================================================
 // DANGEROUS TAGS
 // =============================================================================
 const DANGEROUS_TAGS_STANDARD = [
-  'script', 'style', 'iframe', 'object', 'embed', 'form', 'input',
-  'base', 'meta', 'link', 'template', 'math', 'svg',
-] as const
+  "script",
+  "style",
+  "iframe",
+  "object",
+  "embed",
+  "form",
+  "input",
+  "base",
+  "meta",
+  "link",
+  "template",
+  "math",
+  "svg",
+] as const;
 
 const DANGEROUS_TAGS_EMAIL = [
   ...DANGEROUS_TAGS_STANDARD,
-  'button', 'textarea', 'select', 'option',
-  'h4', 'h5', 'h6', 'code', 'pre', 'hr',
-  'noscript', 'audio', 'video', 'source', 'track', 'canvas',
-] as const
+  "button",
+  "textarea",
+  "select",
+  "option",
+  "h4",
+  "h5",
+  "h6",
+  "code",
+  "pre",
+  "hr",
+  "noscript",
+  "audio",
+  "video",
+  "source",
+  "track",
+  "canvas",
+] as const;
 
 // =============================================================================
 // DANGEROUS URL PATTERN FOR STYLE ATTRIBUTES
 // =============================================================================
 // Matches javascript:, vbscript:, data: in CSS url() values
-const DANGEROUS_STYLE_PATTERN = /url\s*\(\s*["']?\s*(javascript|vbscript|data):/gi
+const DANGEROUS_STYLE_PATTERN =
+  /url\s*\(\s*["']?\s*(javascript|vbscript|data):/gi;
 
 // =============================================================================
 // SANITIZATION FUNCTIONS
@@ -105,19 +192,54 @@ const DANGEROUS_STYLE_PATTERN = /url\s*\(\s*["']?\s*(javascript|vbscript|data):/
 export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
-      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'a',
-      'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'blockquote', 'code', 'pre', 'hr',
-      'img', 'span', 'div',
-      'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+      "p",
+      "br",
+      "strong",
+      "b",
+      "em",
+      "i",
+      "u",
+      "a",
+      "ul",
+      "ol",
+      "li",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "blockquote",
+      "code",
+      "pre",
+      "hr",
+      "img",
+      "span",
+      "div",
+      "table",
+      "thead",
+      "tbody",
+      "tfoot",
+      "tr",
+      "th",
+      "td",
+      "caption",
     ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'class', 'style'],
+    ALLOWED_ATTR: [
+      "href",
+      "target",
+      "rel",
+      "src",
+      "alt",
+      "title",
+      "class",
+      "style",
+    ],
     ALLOW_DATA_ATTR: false,
     ALLOWED_URI_REGEXP: SAFE_URL_PATTERN,
     FORBID_ATTR: [...ALL_DANGEROUS_ATTRIBUTES],
     FORBID_TAGS: [...DANGEROUS_TAGS_STANDARD],
-  })
+  });
 }
 
 /**
@@ -125,7 +247,7 @@ export function sanitizeHtml(html: string): string {
  * SECURITY: Blocks javascript:, vbscript:, data: in CSS url() values
  */
 function sanitizeStyleAttribute(style: string): string {
-  return style.replace(DANGEROUS_STYLE_PATTERN, 'url(about:blank')
+  return style.replace(DANGEROUS_STYLE_PATTERN, "url(about:blank");
 }
 
 /**
@@ -134,65 +256,66 @@ function sanitizeStyleAttribute(style: string): string {
  */
 function postProcessForEmail(html: string): string {
   // Handle empty input
-  if (!html || html.trim() === '') {
-    return ''
+  if (!html || html.trim() === "") {
+    return "";
   }
 
   // Use DOMParser to safely process the HTML
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html')
-  const container = doc.body.firstChild as Element
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const container = doc.body.firstChild as Element;
 
   if (!container) {
-    return html
+    return html;
   }
 
   // Process all anchor tags
-  const links = container.querySelectorAll('a')
+  const links = container.querySelectorAll("a");
   links.forEach((link) => {
     // Add target and rel attributes
-    link.setAttribute('target', '_blank')
-    link.setAttribute('rel', 'noopener noreferrer')
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer");
 
     // Double-check href for dangerous protocols (catches obfuscation)
-    const href = (link.getAttribute('href') || '').trim()
-    const normalizedHref = href.toLowerCase().replace(/[\x00-\x20]+/g, '')
-    const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:']
+    const href = (link.getAttribute("href") || "").trim();
+    // eslint-disable-next-line no-control-regex
+    const normalizedHref = href.toLowerCase().replace(/[\x00-\x20]+/g, "");
+    const dangerousProtocols = ["javascript:", "data:", "vbscript:", "file:"];
 
-    if (dangerousProtocols.some(p => normalizedHref.startsWith(p))) {
-      link.removeAttribute('href')
+    if (dangerousProtocols.some((p) => normalizedHref.startsWith(p))) {
+      link.removeAttribute("href");
     }
-  })
+  });
 
   // Process all elements for remaining event handlers and dangerous styles
-  const allElements = container.querySelectorAll('*')
+  const allElements = container.querySelectorAll("*");
   allElements.forEach((el) => {
     // Remove any remaining on* event handlers
-    const attrs = Array.from(el.attributes)
+    const attrs = Array.from(el.attributes);
     attrs.forEach((attr) => {
-      const attrName = attr.name.toLowerCase()
+      const attrName = attr.name.toLowerCase();
 
       // Remove event handlers
-      if (attrName.startsWith('on')) {
-        el.removeAttribute(attr.name)
+      if (attrName.startsWith("on")) {
+        el.removeAttribute(attr.name);
       }
 
       // Sanitize style attributes containing javascript: URLs
-      if (attrName === 'style' && attr.value) {
-        const sanitizedStyle = sanitizeStyleAttribute(attr.value)
+      if (attrName === "style" && attr.value) {
+        const sanitizedStyle = sanitizeStyleAttribute(attr.value);
         if (sanitizedStyle !== attr.value) {
-          el.setAttribute('style', sanitizedStyle)
+          el.setAttribute("style", sanitizedStyle);
         }
       }
 
       // Remove any attribute value containing javascript:
-      if (attr.value && attr.value.toLowerCase().includes('javascript:')) {
-        el.removeAttribute(attr.name)
+      if (attr.value && attr.value.toLowerCase().includes("javascript:")) {
+        el.removeAttribute(attr.name);
       }
-    })
-  })
+    });
+  });
 
-  return container.innerHTML
+  return container.innerHTML;
 }
 
 /**
@@ -205,27 +328,41 @@ function postProcessForEmail(html: string): string {
  */
 export function sanitizeForEmail(html: string): string {
   // Handle empty input
-  if (!html || html.trim() === '') {
-    return ''
+  if (!html || html.trim() === "") {
+    return "";
   }
 
   // First pass: DOMPurify sanitization
   const sanitized = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
-      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'a',
-      'ul', 'ol', 'li',
-      'h1', 'h2', 'h3',
-      'blockquote', 'img', 'span', 'div',
+      "p",
+      "br",
+      "strong",
+      "b",
+      "em",
+      "i",
+      "u",
+      "a",
+      "ul",
+      "ol",
+      "li",
+      "h1",
+      "h2",
+      "h3",
+      "blockquote",
+      "img",
+      "span",
+      "div",
     ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'style'],
+    ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "title", "style"],
     ALLOW_DATA_ATTR: false,
     ALLOWED_URI_REGEXP: SAFE_URL_PATTERN,
-    FORBID_ATTR: [...ALL_DANGEROUS_ATTRIBUTES, 'class', 'id', 'name'],
+    FORBID_ATTR: [...ALL_DANGEROUS_ATTRIBUTES, "class", "id", "name"],
     FORBID_TAGS: [...DANGEROUS_TAGS_EMAIL],
-  })
+  });
 
   // Second pass: Post-processing for email-specific transformations
-  return postProcessForEmail(sanitized)
+  return postProcessForEmail(sanitized);
 }
 
 /**
@@ -237,7 +374,7 @@ export function stripHtml(html: string): string {
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: [],
     KEEP_CONTENT: true,
-  })
+  });
 }
 
 /**
@@ -245,6 +382,6 @@ export function stripHtml(html: string): string {
  * Returns true if sanitization removed anything
  */
 export function containsDangerousContent(html: string): boolean {
-  const sanitized = sanitizeHtml(html)
-  return sanitized !== html
+  const sanitized = sanitizeHtml(html);
+  return sanitized !== html;
 }

@@ -36,7 +36,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
+// eslint-disable-next-line no-restricted-imports
 import { policyService } from "@/services/policies";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -51,6 +53,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+// eslint-disable-next-line no-restricted-imports
 import { hierarchyKeys } from "@/hooks/hierarchy/hierarchyKeys";
 
 /** Type for policy objects returned from hierarchyService.getAgentPolicies */

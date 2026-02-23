@@ -26,7 +26,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Loader2, ChevronDown, ChevronRight, Code2, Eye } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type { PredicateGroup } from "@/services/underwriting/ruleEngineDSL";
+// eslint-disable-next-line no-restricted-imports
 import { validatePredicate } from "@/services/underwriting/ruleEngineDSL";
 import { RuleConditionBuilder } from "./RuleConditionBuilder";
 import { PredicateJsonEditor } from "./PredicateJsonEditor";

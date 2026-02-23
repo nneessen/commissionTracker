@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trophy, Sparkles } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 

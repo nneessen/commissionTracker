@@ -20,6 +20,7 @@ import {
 import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+// eslint-disable-next-line no-restricted-imports
 import { emailService, type SendEmailRequest } from "@/services/email";
 import type { UserProfile } from "@/types/hierarchy.types";
 

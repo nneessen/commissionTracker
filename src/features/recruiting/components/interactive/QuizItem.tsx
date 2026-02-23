@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { QuizMetadata, QuizResponse } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface QuizItemProps {

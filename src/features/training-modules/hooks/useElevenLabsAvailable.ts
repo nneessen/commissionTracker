@@ -1,6 +1,6 @@
 // src/features/training-modules/hooks/useElevenLabsAvailable.ts
 import { useQuery } from "@tanstack/react-query";
-// eslint-disable-next-line no-restricted-imports
+
 import { supabase } from "@/services/base/supabase";
 import { useImo } from "@/contexts/ImoContext";
 

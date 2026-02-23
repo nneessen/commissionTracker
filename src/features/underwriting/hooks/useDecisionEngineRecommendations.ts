@@ -2,14 +2,14 @@
 // Hook for integrating the decision engine with the underwriting wizard
 
 import { useMutation } from "@tanstack/react-query";
-// eslint-disable-next-line no-restricted-imports
+
 import {
   getRecommendations,
   type DecisionEngineInput,
   type DecisionEngineResult,
   type GenderType,
 } from "@/services/underwriting/decisionEngine";
-// eslint-disable-next-line no-restricted-imports
+
 import { transformConditionResponses } from "@/services/underwriting/conditionResponseTransformer";
 import type {
   ClientInfo,

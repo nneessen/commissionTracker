@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "@tanstack/react-router";
 import { Loader2, AlertCircle } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import { leadsService } from "@/services/leads";
 import type { PublicRecruiterInfo } from "@/types/leads.types";
 import type { RecruitingPageTheme } from "@/types/recruiting-theme.types";

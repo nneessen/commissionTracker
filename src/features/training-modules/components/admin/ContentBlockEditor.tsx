@@ -1,13 +1,29 @@
 // src/features/training-modules/components/admin/ContentBlockEditor.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ExternalLink, Video, FileText, MessageSquare, Type, Presentation, Upload, X, Loader2 } from "lucide-react";
+import {
+  ExternalLink,
+  Video,
+  FileText,
+  MessageSquare,
+  Type,
+  Presentation,
+  Upload,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useUpdateContentBlock } from "../../hooks/useTrainingLessons";
-import type { TrainingLessonContent, VideoPlatform } from "../../types/training-module.types";
+import type {
+  TrainingLessonContent,
+  VideoPlatform,
+} from "../../types/training-module.types";
+// eslint-disable-next-line no-restricted-imports
 import { TipTapEditor } from "@/features/email/components/TipTapEditor";
 import { useDebouncedField } from "../../hooks/useDebouncedField";
+// eslint-disable-next-line no-restricted-imports
 import { trainingDocumentService } from "@/features/training-hub/services/trainingDocumentService";
+// eslint-disable-next-line no-restricted-imports
 import { useTrainingDocument } from "@/features/training-hub/hooks/useTrainingDocuments";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -27,7 +43,10 @@ function detectVideoPlatform(url: string): VideoPlatform | null {
   return null;
 }
 
-export function ContentBlockEditor({ block, lessonId }: ContentBlockEditorProps) {
+export function ContentBlockEditor({
+  block,
+  lessonId,
+}: ContentBlockEditorProps) {
   const updateBlock = useUpdateContentBlock();
 
   const update = useCallback(
@@ -149,7 +168,9 @@ function PdfBlock({
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const { data: existingDoc } = useTrainingDocument(block.document_id || undefined);
+  const { data: existingDoc } = useTrainingDocument(
+    block.document_id || undefined,
+  );
 
   const handleUpload = useCallback(
     async (file: File) => {
@@ -165,7 +186,9 @@ function PdfBlock({
         onUpdate({ document_id: doc.id });
         toast.success("PDF uploaded");
       } catch (err) {
-        toast.error(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+        toast.error(
+          `Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        );
       } finally {
         setUploading(false);
       }
@@ -193,7 +216,12 @@ function PdfBlock({
               {((existingDoc.fileSize || 0) / 1024).toFixed(0)} KB
             </p>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleRemove}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleRemove}
+          >
             <X className="h-3 w-3" />
           </Button>
         </div>
@@ -241,7 +269,9 @@ function SlidesBlock({
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const { data: existingDoc } = useTrainingDocument(block.document_id || undefined);
+  const { data: existingDoc } = useTrainingDocument(
+    block.document_id || undefined,
+  );
 
   const handleUpload = useCallback(
     async (file: File) => {
@@ -257,7 +287,9 @@ function SlidesBlock({
         onUpdate({ document_id: doc.id });
         toast.success("Slides uploaded");
       } catch (err) {
-        toast.error(`Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+        toast.error(
+          `Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        );
       } finally {
         setUploading(false);
       }
@@ -285,7 +317,12 @@ function SlidesBlock({
               {((existingDoc.fileSize || 0) / 1024).toFixed(0)} KB
             </p>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleRemove}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleRemove}
+          >
             <X className="h-3 w-3" />
           </Button>
         </div>
@@ -338,8 +375,14 @@ function ExternalLinkBlock({
     (v: string) => onUpdate({ external_url_label: v || null }),
     [onUpdate],
   );
-  const [localUrl, setLocalUrl] = useDebouncedField(block.external_url || "", saveUrl);
-  const [localLabel, setLocalLabel] = useDebouncedField(block.external_url_label || "", saveLabel);
+  const [localUrl, setLocalUrl] = useDebouncedField(
+    block.external_url || "",
+    saveUrl,
+  );
+  const [localLabel, setLocalLabel] = useDebouncedField(
+    block.external_url_label || "",
+    saveLabel,
+  );
 
   return (
     <div className="space-y-2">

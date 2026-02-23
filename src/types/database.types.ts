@@ -13953,6 +13953,20 @@ export type Database = {
         };
         Returns: string;
       };
+      create_lead_purchase_with_expense: {
+        Args: {
+          p_commission_earned?: number;
+          p_lead_count: number;
+          p_lead_freshness?: Database["public"]["Enums"]["lead_freshness"];
+          p_notes?: string;
+          p_policies_sold?: number;
+          p_purchase_date: string;
+          p_purchase_name?: string;
+          p_total_cost: number;
+          p_vendor_id: string;
+        };
+        Returns: string;
+      };
       create_notification: {
         Args: {
           p_expires_at?: string;
@@ -14037,6 +14051,10 @@ export type Database = {
         Returns: string;
       };
       delete_alert_rule: { Args: { p_rule_id: string }; Returns: boolean };
+      delete_lead_purchase_with_expense: {
+        Args: { p_purchase_id: string };
+        Returns: Json;
+      };
       delete_orphan_identity: { Args: { del_email: string }; Returns: Json };
       delete_recruit: { Args: { target_recruit_id: string }; Returns: Json };
       duplicate_training_lesson: {
@@ -16598,6 +16616,21 @@ export type Database = {
           p_scheduled_at: string;
         };
         Returns: Json;
+      };
+      update_lead_purchase_with_expense: {
+        Args: {
+          p_commission_earned?: number;
+          p_lead_count: number;
+          p_lead_freshness?: Database["public"]["Enums"]["lead_freshness"];
+          p_notes?: string;
+          p_policies_sold?: number;
+          p_purchase_date: string;
+          p_purchase_id: string;
+          p_purchase_name?: string;
+          p_total_cost: number;
+          p_vendor_id: string;
+        };
+        Returns: string;
       };
       update_my_notification_preferences: {
         Args: {

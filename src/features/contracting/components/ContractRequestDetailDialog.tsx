@@ -1,18 +1,24 @@
 // src/features/contracting/components/ContractRequestDetailDialog.tsx
 // Full detail modal for contract request with tabs for details, contract level, and documents
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { ContractLevelDisplay } from './ContractLevelDisplay';
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { carrierContractRequestService } from '@/services/recruiting/carrierContractRequestService';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { ContractLevelDisplay } from "./ContractLevelDisplay";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
+import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface ContractRequestDetailDialogProps {
   open: boolean;
@@ -27,8 +33,8 @@ export function ContractRequestDetailDialog({
 }: ContractRequestDetailDialogProps) {
   const [formData, setFormData] = useState({
     status: request.status,
-    writing_number: request.writing_number || '',
-    notes: request.notes || '',
+    writing_number: request.writing_number || "",
+    notes: request.notes || "",
   });
 
   const queryClient = useQueryClient();
@@ -37,13 +43,17 @@ export function ContractRequestDetailDialog({
     mutationFn: () =>
       carrierContractRequestService.updateContractRequest(request.id, formData),
     onSuccess: () => {
-      toast.success('Contract request updated');
-      queryClient.invalidateQueries({ queryKey: ['contract-requests-filtered'] });
-      queryClient.invalidateQueries({ queryKey: ['recruit-carrier-contracts'] });
+      toast.success("Contract request updated");
+      queryClient.invalidateQueries({
+        queryKey: ["contract-requests-filtered"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["recruit-carrier-contracts"],
+      });
       onOpenChange(false);
     },
     onError: () => {
-      toast.error('Failed to update');
+      toast.error("Failed to update");
     },
   });
 
@@ -56,7 +66,10 @@ export function ContractRequestDetailDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs
+          defaultValue="details"
+          className="flex-1 flex flex-col overflow-hidden"
+        >
           <TabsList className="px-6 border-b rounded-none justify-start">
             <TabsTrigger value="details" className="text-xs">
               Details
@@ -70,17 +83,20 @@ export function ContractRequestDetailDialog({
           </TabsList>
 
           {/* Details Tab */}
-          <TabsContent value="details" className="flex-1 overflow-auto px-6 py-4 space-y-4">
+          <TabsContent
+            value="details"
+            className="flex-1 overflow-auto px-6 py-4 space-y-4"
+          >
             {/* Recruit Info */}
             <div className="space-y-2">
               <h3 className="text-xs font-semibold">Recruit Information</h3>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Name:</span>{' '}
+                  <span className="text-muted-foreground">Name:</span>{" "}
                   {request.recruit?.first_name} {request.recruit?.last_name}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Email:</span>{' '}
+                  <span className="text-muted-foreground">Email:</span>{" "}
                   {request.recruit?.email}
                 </div>
               </div>
@@ -98,7 +114,9 @@ export function ContractRequestDetailDialog({
                 <Label className="text-xs">Status</Label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
                   className="w-full h-8 text-xs border border-input rounded-md px-2 bg-background"
                 >
                   <option value="requested">Requested</option>
@@ -114,7 +132,9 @@ export function ContractRequestDetailDialog({
                 <Label className="text-xs">Writing Number</Label>
                 <Input
                   value={formData.writing_number}
-                  onChange={(e) => setFormData({ ...formData, writing_number: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, writing_number: e.target.value })
+                  }
                   className="h-8 text-xs"
                   placeholder="Enter writing number"
                 />
@@ -124,7 +144,9 @@ export function ContractRequestDetailDialog({
                 <Label className="text-xs">Notes</Label>
                 <Textarea
                   value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                   className="text-xs"
                   rows={4}
                   placeholder="Add internal notes..."
@@ -137,34 +159,54 @@ export function ContractRequestDetailDialog({
               <h3 className="text-xs font-semibold">Dates</h3>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Requested:</span>{' '}
-                  {request.requested_date ? format(new Date(request.requested_date), 'MMM d, yyyy') : '-'}
+                  <span className="text-muted-foreground">Requested:</span>{" "}
+                  {request.requested_date
+                    ? format(new Date(request.requested_date), "MMM d, yyyy")
+                    : "-"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">In Progress:</span>{' '}
-                  {request.in_progress_date ? format(new Date(request.in_progress_date), 'MMM d, yyyy') : '-'}
+                  <span className="text-muted-foreground">In Progress:</span>{" "}
+                  {request.in_progress_date
+                    ? format(new Date(request.in_progress_date), "MMM d, yyyy")
+                    : "-"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Writing Received:</span>{' '}
+                  <span className="text-muted-foreground">
+                    Writing Received:
+                  </span>{" "}
                   {request.writing_received_date
-                    ? format(new Date(request.writing_received_date), 'MMM d, yyyy')
-                    : '-'}
+                    ? format(
+                        new Date(request.writing_received_date),
+                        "MMM d, yyyy",
+                      )
+                    : "-"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Completed:</span>{' '}
-                  {request.completed_date ? format(new Date(request.completed_date), 'MMM d, yyyy') : '-'}
+                  <span className="text-muted-foreground">Completed:</span>{" "}
+                  {request.completed_date
+                    ? format(new Date(request.completed_date), "MMM d, yyyy")
+                    : "-"}
                 </div>
               </div>
             </div>
           </TabsContent>
 
           {/* Contract Level Tab */}
-          <TabsContent value="contract-level" className="flex-1 overflow-auto px-6 py-4">
-            <ContractLevelDisplay recruitId={request.recruit_id} carrierId={request.carrier_id} />
+          <TabsContent
+            value="contract-level"
+            className="flex-1 overflow-auto px-6 py-4"
+          >
+            <ContractLevelDisplay
+              recruitId={request.recruit_id}
+              carrierId={request.carrier_id}
+            />
           </TabsContent>
 
           {/* Documents Tab */}
-          <TabsContent value="documents" className="flex-1 overflow-auto px-6 py-4">
+          <TabsContent
+            value="documents"
+            className="flex-1 overflow-auto px-6 py-4"
+          >
             <div className="text-xs text-muted-foreground">
               Document management coming soon...
             </div>
@@ -176,8 +218,12 @@ export function ContractRequestDetailDialog({
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button size="sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+          <Button
+            size="sm"
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </DialogContent>

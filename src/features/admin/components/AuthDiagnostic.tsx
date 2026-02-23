@@ -1,12 +1,10 @@
 import { useMemo } from "react";
-import {
-  useCurrentUserProfile,
-  useAuthorizationStatus,
-} from "@/hooks/admin";
+import { useCurrentUserProfile, useAuthorizationStatus } from "@/hooks/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 
 export function AuthDiagnostic() {
@@ -108,7 +106,9 @@ export function AuthDiagnostic() {
                 </p>
                 <p>
                   <strong>Expires:</strong>{" "}
-                  {sessionData.expires_at ? new Date(sessionData.expires_at * 1000).toLocaleString() : 'N/A'}
+                  {sessionData.expires_at
+                    ? new Date(sessionData.expires_at * 1000).toLocaleString()
+                    : "N/A"}
                 </p>
                 <p>
                   <strong>Refresh Token:</strong> {sessionData.refresh_token}

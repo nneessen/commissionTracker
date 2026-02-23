@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

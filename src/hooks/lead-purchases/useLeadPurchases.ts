@@ -391,7 +391,12 @@ export function usePackHeatScores() {
     return calculateVendorHeatScoresV2(packMetrics);
   }, [packMetrics]);
 
-  return { packScores, vendorScores, packMetrics: packMetrics ?? [], isLoading };
+  return {
+    packScores,
+    vendorScores,
+    packMetrics: packMetrics ?? [],
+    isLoading,
+  };
 }
 
 /**
@@ -410,6 +415,30 @@ export function useCreateLeadPurchase() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
+    },
+  });
+}
+
+/**
+ * Create a lead purchase and mirrored expense (Expense page > Lead Purchases tab).
+ * Kept separate from useCreateLeadPurchase so other flows (e.g. policy lead-source)
+ * do not auto-create expense records.
+ */
+export function useCreateLeadPurchaseWithExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateLeadPurchaseData) => {
+      const result = await leadPurchaseService.createWithExpense(data);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data as LeadPurchase;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-metrics"] });
     },
   });
 }
@@ -437,6 +466,37 @@ export function useUpdateLeadPurchase() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
       queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.detail(id) });
+    },
+  });
+}
+
+/**
+ * Update a lead purchase and its mirrored expense via atomic RPC.
+ * Scoped for the Expense page's Lead Purchases tab.
+ */
+export function useUpdateLeadPurchaseWithExpenseSync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: CreateLeadPurchaseData;
+    }) => {
+      const leadResult = await leadPurchaseService.updateWithExpense(id, data);
+      if (!leadResult.success) {
+        throw leadResult.error;
+      }
+
+      return leadResult.data as LeadPurchase;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
+      queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-metrics"] });
     },
   });
 }
@@ -488,6 +548,29 @@ export function useDeleteLeadPurchase() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
+    },
+  });
+}
+
+/**
+ * Delete a lead purchase and its mirrored expense via atomic RPC.
+ * Scoped for the Expense page's Lead Purchases tab.
+ */
+export function useDeleteLeadPurchaseWithExpenseSync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (purchaseId: string) => {
+      const leadResult =
+        await leadPurchaseService.deleteWithExpense(purchaseId);
+      if (!leadResult.success) {
+        throw leadResult.error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: leadPurchaseKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-metrics"] });
     },
   });
 }

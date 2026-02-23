@@ -1,17 +1,36 @@
 // src/features/analytics/components/IncomeGoalTracker.tsx
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {CircularProgressGauge} from '../visualizations/CircularProgressGauge';
-import {useUserTargets, useCommissions} from '@/hooks';
-import {calculateGoalTracking, getGoalStatusLabel, getGoalStatusBadgeColor} from '@/services/analytics/goalTrackingService';
-import {formatCurrency} from '@/utils/formatters';
-import {TrendingUp, TrendingDown, Target, Calendar, DollarSign, Activity} from 'lucide-react';
-import {cn} from '@/lib/utils';
-import {Link} from '@tanstack/react-router';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CircularProgressGauge } from "../visualizations/CircularProgressGauge";
+import { useUserTargets, useCommissions } from "@/hooks";
+// eslint-disable-next-line no-restricted-imports
+import {
+  calculateGoalTracking,
+  getGoalStatusLabel,
+  getGoalStatusBadgeColor,
+} from "@/services/analytics/goalTrackingService";
+import { formatCurrency } from "@/utils/formatters";
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Calendar,
+  DollarSign,
+  Activity,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 export function IncomeGoalTracker() {
   const { data: userTargets, isLoading: targetsLoading } = useUserTargets();
-  const { data: commissions = [], isLoading: commissionsLoading } = useCommissions();
+  const { data: commissions = [], isLoading: commissionsLoading } =
+    useCommissions();
 
   const isLoading = targetsLoading || commissionsLoading;
 
@@ -25,7 +44,11 @@ export function IncomeGoalTracker() {
   });
 
   // Determine gauge color based on status
-  const gaugeColor = goalData.isAhead ? 'green' : goalData.isBehind ? 'red' : 'yellow';
+  const gaugeColor = goalData.isAhead
+    ? "green"
+    : goalData.isBehind
+      ? "red"
+      : "yellow";
 
   if (isLoading) {
     return (
@@ -35,7 +58,9 @@ export function IncomeGoalTracker() {
           <CardDescription>Loading your goal progress...</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-12">
-          <div className="animate-pulse text-muted-foreground">Calculating...</div>
+          <div className="animate-pulse text-muted-foreground">
+            Calculating...
+          </div>
         </CardContent>
       </Card>
     );
@@ -72,14 +97,27 @@ export function IncomeGoalTracker() {
           />
 
           <div className="text-center space-y-1">
-            <div className={cn('inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium', getGoalStatusBadgeColor(goalData))}>
-              {goalData.isAhead ? <TrendingUp className="h-4 w-4" /> : goalData.isBehind ? <TrendingDown className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+            <div
+              className={cn(
+                "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium",
+                getGoalStatusBadgeColor(goalData),
+              )}
+            >
+              {goalData.isAhead ? (
+                <TrendingUp className="h-4 w-4" />
+              ) : goalData.isBehind ? (
+                <TrendingDown className="h-4 w-4" />
+              ) : (
+                <Activity className="h-4 w-4" />
+              )}
               {getGoalStatusLabel(goalData)}
             </div>
 
             {goalData.aheadBehindAmount !== 0 && (
               <p className="text-sm text-muted-foreground">
-                {goalData.isAhead ? '+' : ''}{formatCurrency(goalData.aheadBehindAmount)} {goalData.isAhead ? 'ahead' : 'behind'} pace
+                {goalData.isAhead ? "+" : ""}
+                {formatCurrency(goalData.aheadBehindAmount)}{" "}
+                {goalData.isAhead ? "ahead" : "behind"} pace
               </p>
             )}
           </div>
@@ -131,23 +169,31 @@ export function IncomeGoalTracker() {
 
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1">Per Month</div>
+              <div className="text-xs text-muted-foreground mb-1">
+                Per Month
+              </div>
               <div className="text-lg font-semibold">
-                {formatCurrency(goalData.neededPerMonth, { maximumFractionDigits: 0 })}
+                {formatCurrency(goalData.neededPerMonth, {
+                  maximumFractionDigits: 0,
+                })}
               </div>
             </div>
 
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="text-xs text-muted-foreground mb-1">Per Week</div>
               <div className="text-lg font-semibold">
-                {formatCurrency(goalData.neededPerWeek, { maximumFractionDigits: 0 })}
+                {formatCurrency(goalData.neededPerWeek, {
+                  maximumFractionDigits: 0,
+                })}
               </div>
             </div>
 
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="text-xs text-muted-foreground mb-1">Per Day</div>
               <div className="text-lg font-semibold">
-                {formatCurrency(goalData.neededPerDay, { maximumFractionDigits: 0 })}
+                {formatCurrency(goalData.neededPerDay, {
+                  maximumFractionDigits: 0,
+                })}
               </div>
             </div>
           </div>
@@ -160,7 +206,8 @@ export function IncomeGoalTracker() {
             Time Remaining
           </div>
           <div className="font-medium">
-            {goalData.monthsRemaining} months, {goalData.weeksRemaining % 4} weeks ({goalData.daysRemaining} days)
+            {goalData.monthsRemaining} months, {goalData.weeksRemaining % 4}{" "}
+            weeks ({goalData.daysRemaining} days)
           </div>
         </div>
 

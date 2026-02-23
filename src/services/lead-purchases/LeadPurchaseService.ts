@@ -90,6 +90,30 @@ export class LeadPurchaseService extends BaseService<
     ];
   }
 
+  private async emitLeadPackPurchasedEvent(
+    purchase: LeadPurchase,
+  ): Promise<void> {
+    // Look up vendor name for context
+    try {
+      const vendorName = purchase.vendor?.name || "Unknown Vendor";
+      await workflowEventEmitter.emit(WORKFLOW_EVENTS.LEAD_PACK_PURCHASED, {
+        vendorName,
+        agentName: "", // Resolved by workflow at runtime
+        leadCount: purchase.leadCount,
+        totalCost: purchase.totalCost,
+        leadFreshness: purchase.leadFreshness,
+        costPerLead: purchase.costPerLead,
+        purchaseName: purchase.purchaseName || "Unnamed Pack",
+        purchaseId: purchase.id,
+      });
+    } catch (err) {
+      console.warn(
+        "[LeadPurchaseService] Failed to emit pack_purchased event:",
+        err,
+      );
+    }
+  }
+
   /**
    * Get all purchases with optional filters
    */
@@ -298,6 +322,97 @@ export class LeadPurchaseService extends BaseService<
     });
   }
 
+  /**
+   * Create a lead purchase and mirrored expense record in a single DB transaction.
+   * Scoped for the Expense page's Lead Purchases tab.
+   */
+  async createWithExpense(
+    data: CreateLeadPurchaseData,
+  ): Promise<ServiceResponse<LeadPurchase>> {
+    try {
+      if (data.expenseId) {
+        return {
+          success: false,
+          error: new Error(
+            "createWithExpense does not accept expenseId. Use linkToExpense for existing expenses.",
+          ),
+        };
+      }
+
+      const errors = this.validate(data as unknown as Record<string, unknown>);
+      if (errors.length > 0) {
+        return {
+          success: false,
+          error: new Error(errors.map((e) => e.message).join(", ")),
+        };
+      }
+
+      const purchase = await this.repository.createWithMirroredExpense(data);
+      await this.emitLeadPackPurchasedEvent(purchase);
+
+      return { success: true, data: purchase };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Update a lead purchase and mirrored expense record in a single DB transaction.
+   * Expects a full payload (same shape as create) from the Lead Purchases management dialog.
+   */
+  async updateWithExpense(
+    id: string,
+    data: CreateLeadPurchaseData,
+  ): Promise<ServiceResponse<LeadPurchase>> {
+    try {
+      if (data.expenseId) {
+        return {
+          success: false,
+          error: new Error(
+            "updateWithExpense does not accept expenseId in payload. The existing link is managed server-side.",
+          ),
+        };
+      }
+
+      const errors = this.validate(data as unknown as Record<string, unknown>);
+      if (errors.length > 0) {
+        return {
+          success: false,
+          error: new Error(errors.map((e) => e.message).join(", ")),
+        };
+      }
+
+      const purchase = await this.repository.updateWithMirroredExpense(
+        id,
+        data,
+      );
+      return { success: true, data: purchase };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Delete a lead purchase and mirrored expense record in a single DB transaction.
+   */
+  async deleteWithExpense(id: string): Promise<ServiceResponse<void>> {
+    try {
+      await this.repository.deleteWithMirroredExpense(id);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
   async getVendorPolicyTimeline(
     vendorId: string,
     userId?: string,
@@ -329,26 +444,7 @@ export class LeadPurchaseService extends BaseService<
     const result = await super.create(data);
 
     if (result.success && result.data) {
-      const purchase = result.data;
-      // Look up vendor name for context
-      try {
-        const vendorName = purchase.vendor?.name || "Unknown Vendor";
-        await workflowEventEmitter.emit(
-          WORKFLOW_EVENTS.LEAD_PACK_PURCHASED,
-          {
-            vendorName,
-            agentName: "", // Resolved by workflow at runtime
-            leadCount: purchase.leadCount,
-            totalCost: purchase.totalCost,
-            leadFreshness: purchase.leadFreshness,
-            costPerLead: purchase.costPerLead,
-            purchaseName: purchase.purchaseName || "Unnamed Pack",
-            purchaseId: purchase.id,
-          },
-        );
-      } catch (err) {
-        console.warn("[LeadPurchaseService] Failed to emit pack_purchased event:", err);
-      }
+      await this.emitLeadPackPurchasedEvent(result.data);
     }
 
     return result;
@@ -363,7 +459,11 @@ export class LeadPurchaseService extends BaseService<
     endDate?: string,
   ): Promise<ServiceResponse<LeadPackRow[]>> {
     try {
-      const data = await this.repository.getLeadPackList(freshness, startDate, endDate);
+      const data = await this.repository.getLeadPackList(
+        freshness,
+        startDate,
+        endDate,
+      );
       return { success: true, data };
     } catch (error) {
       return {

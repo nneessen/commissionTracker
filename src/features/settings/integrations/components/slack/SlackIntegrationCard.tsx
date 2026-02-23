@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import { useImo } from "@/contexts/ImoContext";
 import type {

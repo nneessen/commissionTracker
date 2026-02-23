@@ -3,12 +3,26 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, X, Paperclip, Trash2, FileText, Library } from "lucide-react";
+import {
+  Send,
+  Loader2,
+  X,
+  Paperclip,
+  Trash2,
+  FileText,
+  Library,
+} from "lucide-react";
 import { TipTapEditor } from "./TipTapEditor";
 import { sanitizeForEmail } from "../services/sanitizationService";
 import { convertHtmlToText } from "../services/htmlToTextService";
-import type { SendEmailRequest, TrainingDocumentAttachment } from "@/services/email";
+// eslint-disable-next-line no-restricted-imports
+import type {
+  SendEmailRequest,
+  TrainingDocumentAttachment,
+} from "@/services/email";
+// eslint-disable-next-line no-restricted-imports
 import { DocumentBrowserSheet } from "@/features/training-hub/components/DocumentBrowserSheet";
+// eslint-disable-next-line no-restricted-imports
 import type { TrainingDocument } from "@/features/training-hub/types/training-document.types";
 
 interface Attachment {
@@ -63,7 +77,9 @@ export function EmailComposer({
   const [toInput, setToInput] = useState("");
   const [ccInput, setCcInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [trainingDocAttachments, setTrainingDocAttachments] = useState<TrainingDocument[]>([]);
+  const [trainingDocAttachments, setTrainingDocAttachments] = useState<
+    TrainingDocument[]
+  >([]);
   const [showDocBrowser, setShowDocBrowser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -129,14 +145,15 @@ export function EmailComposer({
       }),
     );
 
-    const trainingDocuments: TrainingDocumentAttachment[] = trainingDocAttachments.map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-      fileName: doc.fileName,
-      fileType: doc.fileType,
-      fileSize: doc.fileSize,
-      storagePath: doc.storagePath,
-    }));
+    const trainingDocuments: TrainingDocumentAttachment[] =
+      trainingDocAttachments.map((doc) => ({
+        id: doc.id,
+        name: doc.name,
+        fileName: doc.fileName,
+        fileType: doc.fileType,
+        fileSize: doc.fileSize,
+        storagePath: doc.storagePath,
+      }));
 
     const emailRequest: SendEmailRequest = {
       to,
@@ -150,12 +167,15 @@ export function EmailComposer({
       ...(trainingDocuments.length > 0 ? { trainingDocuments } : {}),
     };
 
-    console.log('[EmailComposer] Sending email with:', {
+    console.log("[EmailComposer] Sending email with:", {
       to,
       subject,
       attachmentCount: fileAttachments.length,
       trainingDocCount: trainingDocuments.length,
-      attachments: fileAttachments.map(a => ({ filename: a.filename, size: a.content.length }))
+      attachments: fileAttachments.map((a) => ({
+        filename: a.filename,
+        size: a.content.length,
+      })),
     });
 
     await onSend?.(emailRequest);
@@ -237,77 +257,14 @@ export function EmailComposer({
 
   return (
     <>
-    <div className="flex flex-col h-full">
-      {/* Header Section - To, CC, Subject */}
-      <div className="shrink-0 space-y-3 pb-3 border-b">
-        {/* To Field - Compact inline */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium w-16 shrink-0">To:</span>
-          <div className="flex-1 flex flex-wrap items-center gap-1">
-            {to.map((email) => (
-              <span
-                key={email}
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-secondary rounded"
-              >
-                {email}
-                <button
-                  type="button"
-                  onClick={() => removeRecipient("to", email)}
-                  className="hover:bg-secondary-foreground/20 rounded-sm"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-            <Input
-              type="email"
-              placeholder="Add recipient..."
-              value={toInput}
-              onChange={(e) => setToInput(e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, "to")}
-              onBlur={() => addRecipient("to")}
-              disabled={isSending}
-              className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
-            />
-          </div>
-          <div className="flex items-center gap-1">
-            {!showCc && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCc(true)}
-                className="text-xs h-6"
-              >
-                Cc
-              </Button>
-            )}
-            {uplineEmail && !cc.includes(uplineEmail) && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (!cc.includes(uplineEmail)) {
-                    setCc([...cc, uplineEmail]);
-                    setShowCc(true);
-                  }
-                }}
-                className="text-xs h-6"
-                title={uplineName ? `CC ${uplineName}` : "CC Upline"}
-              >
-                CC Upline
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* CC Field */}
-        {showCc && (
+      <div className="flex flex-col h-full">
+        {/* Header Section - To, CC, Subject */}
+        <div className="shrink-0 space-y-3 pb-3 border-b">
+          {/* To Field - Compact inline */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium w-16 shrink-0">Cc:</span>
+            <span className="text-sm font-medium w-16 shrink-0">To:</span>
             <div className="flex-1 flex flex-wrap items-center gap-1">
-              {cc.map((email) => (
+              {to.map((email) => (
                 <span
                   key={email}
                   className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-secondary rounded"
@@ -315,7 +272,7 @@ export function EmailComposer({
                   {email}
                   <button
                     type="button"
-                    onClick={() => removeRecipient("cc", email)}
+                    onClick={() => removeRecipient("to", email)}
                     className="hover:bg-secondary-foreground/20 rounded-sm"
                   >
                     <X className="h-3 w-3" />
@@ -324,175 +281,238 @@ export function EmailComposer({
               ))}
               <Input
                 type="email"
-                placeholder="Add Cc..."
-                value={ccInput}
-                onChange={(e) => setCcInput(e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, "cc")}
-                onBlur={() => addRecipient("cc")}
+                placeholder="Add recipient..."
+                value={toInput}
+                onChange={(e) => setToInput(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, "to")}
+                onBlur={() => addRecipient("to")}
                 disabled={isSending}
                 className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
               />
             </div>
+            <div className="flex items-center gap-1">
+              {!showCc && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCc(true)}
+                  className="text-xs h-6"
+                >
+                  Cc
+                </Button>
+              )}
+              {uplineEmail && !cc.includes(uplineEmail) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!cc.includes(uplineEmail)) {
+                      setCc([...cc, uplineEmail]);
+                      setShowCc(true);
+                    }
+                  }}
+                  className="text-xs h-6"
+                  title={uplineName ? `CC ${uplineName}` : "CC Upline"}
+                >
+                  CC Upline
+                </Button>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* Subject Field */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium w-16 shrink-0">Subject:</span>
-          <Input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Enter subject..."
-            disabled={isSending}
-            className="flex-1 h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
+          {/* CC Field */}
+          {showCc && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium w-16 shrink-0">Cc:</span>
+              <div className="flex-1 flex flex-wrap items-center gap-1">
+                {cc.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-secondary rounded"
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={() => removeRecipient("cc", email)}
+                      className="hover:bg-secondary-foreground/20 rounded-sm"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                <Input
+                  type="email"
+                  placeholder="Add Cc..."
+                  value={ccInput}
+                  onChange={(e) => setCcInput(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, "cc")}
+                  onBlur={() => addRecipient("cc")}
+                  disabled={isSending}
+                  className="flex-1 min-w-[150px] h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Subject Field */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium w-16 shrink-0">Subject:</span>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Enter subject..."
+              disabled={isSending}
+              className="flex-1 h-7 text-sm border-0 shadow-none focus-visible:ring-0 px-1 bg-white dark:bg-zinc-900"
+            />
+          </div>
+        </div>
+
+        {/* Body Section - Grows to fill space */}
+        <div className="flex-1 min-h-0 py-3 overflow-hidden">
+          <TipTapEditor
+            content={bodyHtml}
+            onChange={setBodyHtml}
+            placeholder="Write your message..."
+            editable={!isSending}
+            showMenuBar={true}
+            minHeight="100%"
+            className="h-full [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-y-auto"
           />
         </div>
-      </div>
 
-      {/* Body Section - Grows to fill space */}
-      <div className="flex-1 min-h-0 py-3 overflow-hidden">
-        <TipTapEditor
-          content={bodyHtml}
-          onChange={setBodyHtml}
-          placeholder="Write your message..."
-          editable={!isSending}
-          showMenuBar={true}
-          minHeight="100%"
-          className="h-full [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-y-auto"
-        />
-      </div>
-
-      {/* Footer Section - Attachments + Actions */}
-      <div className="shrink-0 pt-3 border-t space-y-3">
-        {/* File attachments */}
-        {(attachments.length > 0 || trainingDocAttachments.length > 0) && (
-          <div className="flex flex-wrap gap-2">
-            {attachments.map((att) => (
-              <div
-                key={att.id}
-                className="inline-flex items-center gap-2 px-2 py-1 text-xs bg-muted rounded border"
-              >
-                <FileText className="h-3 w-3" />
-                <span className="max-w-[150px] truncate">{att.name}</span>
-                <span className="text-muted-foreground">
-                  ({formatFileSize(att.size)})
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(att.id)}
-                  className="hover:text-destructive"
+        {/* Footer Section - Attachments + Actions */}
+        <div className="shrink-0 pt-3 border-t space-y-3">
+          {/* File attachments */}
+          {(attachments.length > 0 || trainingDocAttachments.length > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((att) => (
+                <div
+                  key={att.id}
+                  className="inline-flex items-center gap-2 px-2 py-1 text-xs bg-muted rounded border"
                 >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-            {trainingDocAttachments.map((doc) => (
-              <div
-                key={doc.id}
-                className="inline-flex items-center gap-2 px-2 py-1 text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800"
-              >
-                <Library className="h-3 w-3" />
-                <span className="max-w-[150px] truncate">{doc.name}</span>
-                {doc.fileSize !== null && (
-                  <span className="text-blue-500">
-                    ({formatFileSize(doc.fileSize)})
+                  <FileText className="h-3 w-3" />
+                  <span className="max-w-[150px] truncate">{att.name}</span>
+                  <span className="text-muted-foreground">
+                    ({formatFileSize(att.size)})
                   </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTrainingDocAttachments((prev) =>
-                      prev.filter((d) => d.id !== doc.id),
-                    )
-                  }
-                  className="hover:text-destructive"
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(att.id)}
+                    className="hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {trainingDocAttachments.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="inline-flex items-center gap-2 px-2 py-1 text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-            {attachments.length > 0 && (
-              <span className="text-xs text-muted-foreground self-center">
-                Files: {formatFileSize(totalAttachmentSize)} / 25 MB
-              </span>
-            )}
-          </div>
-        )}
+                  <Library className="h-3 w-3" />
+                  <span className="max-w-[150px] truncate">{doc.name}</span>
+                  {doc.fileSize !== null && (
+                    <span className="text-blue-500">
+                      ({formatFileSize(doc.fileSize)})
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTrainingDocAttachments((prev) =>
+                        prev.filter((d) => d.id !== doc.id),
+                      )
+                    }
+                    className="hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {attachments.length > 0 && (
+                <span className="text-xs text-muted-foreground self-center">
+                  Files: {formatFileSize(totalAttachmentSize)} / 25 MB
+                </span>
+              )}
+            </div>
+          )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-              disabled={isSending}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSending}
-            >
-              <Paperclip className="h-4 w-4 mr-2" />
-              Attach
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDocBrowser(true)}
-              disabled={isSending}
-            >
-              <Library className="h-4 w-4 mr-2" />
-              From Library
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {onCancel && (
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isSending}
+              />
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancel}
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
                 disabled={isSending}
               >
-                Cancel
+                <Paperclip className="h-4 w-4 mr-2" />
+                Attach
               </Button>
-            )}
-            <Button onClick={handleSend} disabled={!canSend()}>
-              {isSending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send
-                </>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDocBrowser(true)}
+                disabled={isSending}
+              >
+                <Library className="h-4 w-4 mr-2" />
+                From Library
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isSending}
+                >
+                  Cancel
+                </Button>
               )}
-            </Button>
+              <Button onClick={handleSend} disabled={!canSend()}>
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <DocumentBrowserSheet
-      open={showDocBrowser}
-      onOpenChange={setShowDocBrowser}
-      selectedDocuments={trainingDocAttachments}
-      onSelectDocuments={(docs: TrainingDocument[]) => {
-        setTrainingDocAttachments((prev) => {
-          const existingIds = new Set(prev.map((d) => d.id));
-          const newDocs = docs.filter((d) => !existingIds.has(d.id));
-          return [...prev, ...newDocs];
-        });
-        setShowDocBrowser(false);
-      }}
-    />
+      <DocumentBrowserSheet
+        open={showDocBrowser}
+        onOpenChange={setShowDocBrowser}
+        selectedDocuments={trainingDocAttachments}
+        onSelectDocuments={(docs: TrainingDocument[]) => {
+          setTrainingDocAttachments((prev) => {
+            const existingIds = new Set(prev.map((d) => d.id));
+            const newDocs = docs.filter((d) => !existingIds.has(d.id));
+            return [...prev, ...newDocs];
+          });
+          setShowDocBrowser(false);
+        }}
+      />
     </>
   );
 }

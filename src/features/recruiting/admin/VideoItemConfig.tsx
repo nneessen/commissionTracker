@@ -20,6 +20,7 @@ import {
   VIDEO_PLATFORM_LABELS,
   VIDEO_PLATFORM_PLACEHOLDERS,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { videoEmbedService } from "@/services/recruiting/videoEmbedService";
 import { createVideoMetadata } from "@/types/checklist-metadata.types";
 

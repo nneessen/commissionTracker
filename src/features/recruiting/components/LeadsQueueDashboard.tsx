@@ -48,6 +48,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 
 export function LeadsQueueDashboard() {

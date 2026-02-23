@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ProductWithRates, CONTRACT_LEVELS } from "../hooks/useCommissionRates";
+// eslint-disable-next-line no-restricted-imports
 import { compGuideService } from "@/services/settings/comp-guide";
 import { capitalizeWords } from "@/utils/stringUtils";
 

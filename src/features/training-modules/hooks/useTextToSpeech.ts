@@ -1,6 +1,6 @@
 // src/features/training-modules/hooks/useTextToSpeech.ts
 import { useState, useRef, useCallback, useEffect } from "react";
-// eslint-disable-next-line no-restricted-imports
+
 import { supabase } from "@/services/base/supabase";
 
 type TtsState = "idle" | "loading" | "playing" | "paused";
@@ -81,7 +81,10 @@ export function useTextToSpeech(text: string) {
         blob = new Blob([data], { type: "audio/mpeg" });
       } else {
         // If the function returned an error object
-        const errorMsg = typeof data === "object" && data?.error ? data.error : "Unexpected response";
+        const errorMsg =
+          typeof data === "object" && data?.error
+            ? data.error
+            : "Unexpected response";
         throw new Error(errorMsg);
       }
 

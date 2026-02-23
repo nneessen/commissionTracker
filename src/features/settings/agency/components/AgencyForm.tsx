@@ -25,8 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Crown, AlertTriangle, Users } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
-import type { Agency, CreateAgencyData, UpdateAgencyData } from "@/types/imo.types";
+import type {
+  Agency,
+  CreateAgencyData,
+  UpdateAgencyData,
+} from "@/types/imo.types";
 
 interface AgencyFormProps {
   open: boolean;
@@ -35,7 +40,7 @@ interface AgencyFormProps {
   imoId: string;
   onSubmit: (
     data: CreateAgencyData | UpdateAgencyData,
-    options?: { cascadeDownlines?: boolean }
+    options?: { cascadeDownlines?: boolean },
   ) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -123,7 +128,7 @@ export function AgencyForm({
     usePreviewCascadeAssignment(
       !isEditing && watchedOwnerId && watchedOwnerId !== "none"
         ? watchedOwnerId
-        : undefined
+        : undefined,
     );
 
   // Reset form when agency changes
@@ -232,7 +237,9 @@ export function AgencyForm({
                   placeholder="e.g., Dallas Regional Agency"
                 />
                 {errors.name && (
-                  <p className="text-[10px] text-red-500">{errors.name.message}</p>
+                  <p className="text-[10px] text-red-500">
+                    {errors.name.message}
+                  </p>
                 )}
               </div>
 
@@ -254,7 +261,9 @@ export function AgencyForm({
                   placeholder="e.g., DFW-001"
                 />
                 {errors.code && (
-                  <p className="text-[10px] text-red-500">{errors.code.message}</p>
+                  <p className="text-[10px] text-red-500">
+                    {errors.code.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -279,7 +288,9 @@ export function AgencyForm({
               </Label>
               <Select
                 value={watch("owner_id") || "none"}
-                onValueChange={(value) => setValue("owner_id", value === "none" ? "" : value)}
+                onValueChange={(value) =>
+                  setValue("owner_id", value === "none" ? "" : value)
+                }
               >
                 <SelectTrigger className="h-7 text-[11px]">
                   <SelectValue placeholder="Select an owner (optional)" />
@@ -289,7 +300,11 @@ export function AgencyForm({
                     No owner assigned
                   </SelectItem>
                   {potentialOwners.map((user) => (
-                    <SelectItem key={user.id} value={user.id} className="text-[11px]">
+                    <SelectItem
+                      key={user.id}
+                      value={user.id}
+                      className="text-[11px]"
+                    >
                       {user.first_name && user.last_name
                         ? `${user.first_name} ${user.last_name}`
                         : user.email}
@@ -303,44 +318,49 @@ export function AgencyForm({
             </div>
 
             {/* Cascade Downlines Toggle - Only for new agencies with owner that has downlines */}
-            {!isEditing && cascadePreview && cascadePreview.downlineCount > 0 && (
-              <div className="mt-2 space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                      Assign owner's team to this agency
-                    </p>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      {isLoadingPreview ? (
-                        "Checking team size..."
-                      ) : (
-                        <>
-                          <Users className="inline h-3 w-3 mr-1" />
-                          {cascadePreview.ownerName} has{" "}
-                          <span className="font-medium">{cascadePreview.downlineCount}</span>{" "}
-                          downline{cascadePreview.downlineCount === 1 ? "" : "s"}
-                        </>
-                      )}
-                    </p>
+            {!isEditing &&
+              cascadePreview &&
+              cascadePreview.downlineCount > 0 && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                        Assign owner's team to this agency
+                      </p>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                        {isLoadingPreview ? (
+                          "Checking team size..."
+                        ) : (
+                          <>
+                            <Users className="inline h-3 w-3 mr-1" />
+                            {cascadePreview.ownerName} has{" "}
+                            <span className="font-medium">
+                              {cascadePreview.downlineCount}
+                            </span>{" "}
+                            downline
+                            {cascadePreview.downlineCount === 1 ? "" : "s"}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={cascadeDownlines}
+                      onCheckedChange={setCascadeDownlines}
+                      disabled={isLoadingPreview}
+                    />
                   </div>
-                  <Switch
-                    checked={cascadeDownlines}
-                    onCheckedChange={setCascadeDownlines}
-                    disabled={isLoadingPreview}
-                  />
+                  {cascadeDownlines && (
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                      <span>
+                        {cascadePreview.totalCount} user
+                        {cascadePreview.totalCount === 1 ? "" : "s"} will be
+                        moved to this agency
+                      </span>
+                    </p>
+                  )}
                 </div>
-                {cascadeDownlines && (
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-                    <span>
-                      {cascadePreview.totalCount} user
-                      {cascadePreview.totalCount === 1 ? "" : "s"} will be moved to
-                      this agency
-                    </span>
-                  </p>
-                )}
-              </div>
-            )}
+              )}
           </div>
 
           {/* Contact Info */}
@@ -488,7 +508,9 @@ export function AgencyForm({
               className="h-7 text-[11px]"
               disabled={isSubmitting}
             >
-              {isSubmitting && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              )}
               {isEditing ? "Save Changes" : "Create Agency"}
             </Button>
           </div>

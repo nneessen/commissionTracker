@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, FileText } from "lucide-react";
 import { UserDocument } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { recruitingService } from "@/services/recruiting";
 
 interface DocumentViewerDialogProps {

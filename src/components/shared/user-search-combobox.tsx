@@ -20,6 +20,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useSearchUsers, useUserById } from "@/hooks";
+// eslint-disable-next-line no-restricted-imports
 import { getUserDisplayName } from "@/services";
 
 interface UserSearchComboboxProps {

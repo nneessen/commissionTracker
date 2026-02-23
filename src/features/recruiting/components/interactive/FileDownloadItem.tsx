@@ -9,6 +9,7 @@ import type {
   FileDownloadMetadata,
   FileDownloadResponse,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface FileDownloadItemProps {
@@ -24,8 +25,12 @@ export function FileDownloadItem({
   existingResponse,
   onComplete,
 }: FileDownloadItemProps) {
-  const [hasDownloaded, setHasDownloaded] = useState(existingResponse?.downloaded ?? false);
-  const [acknowledged, setAcknowledged] = useState(existingResponse?.acknowledged ?? false);
+  const [hasDownloaded, setHasDownloaded] = useState(
+    existingResponse?.downloaded ?? false,
+  );
+  const [acknowledged, setAcknowledged] = useState(
+    existingResponse?.acknowledged ?? false,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDownload = useCallback(async () => {
@@ -59,7 +64,8 @@ export function FileDownloadItem({
 
     setIsSubmitting(true);
     try {
-      const result = await checklistResponseService.acknowledgeFileDownload(progressId);
+      const result =
+        await checklistResponseService.acknowledgeFileDownload(progressId);
       if (!result.success) {
         toast.error(result.error || "Failed to complete");
         return;
@@ -72,7 +78,13 @@ export function FileDownloadItem({
     } finally {
       setIsSubmitting(false);
     }
-  }, [progressId, hasDownloaded, acknowledged, metadata?.acknowledgment_text, onComplete]);
+  }, [
+    progressId,
+    hasDownloaded,
+    acknowledged,
+    metadata?.acknowledgment_text,
+    onComplete,
+  ]);
 
   // Completed state
   if (existingResponse?.acknowledged) {
@@ -103,8 +115,10 @@ export function FileDownloadItem({
 
   const fileInfo = [
     metadata.file_type?.toUpperCase(),
-    metadata.file_size_bytes && formatFileSize(metadata.file_size_bytes)
-  ].filter(Boolean).join(" • ");
+    metadata.file_size_bytes && formatFileSize(metadata.file_size_bytes),
+  ]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <div className="flex items-start gap-2 flex-wrap">

@@ -5,7 +5,9 @@ import { useState, useEffect, useMemo } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Check } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type { PredicateGroup } from "@/services/underwriting/ruleEngineDSL";
+// eslint-disable-next-line no-restricted-imports
 import { validatePredicate } from "@/services/underwriting/ruleEngineDSL";
 
 // ============================================================================

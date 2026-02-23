@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Mail, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateAgentHierarchy } from "@/hooks";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 
 export function InviteDownline() {

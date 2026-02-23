@@ -2,9 +2,8 @@
 // Service for sending and managing emails
 // Supports dual provider: Gmail (if connected) or Mailgun (fallback)
 
-// eslint-disable-next-line no-restricted-imports -- Services within features need infrastructure access
 import { supabase } from "@/services/base/supabase";
-// eslint-disable-next-line no-restricted-imports -- Gmail service needed for dual-provider routing
+
 import { gmailService } from "@/services/gmail";
 
 // Email source types for domain selection
@@ -122,7 +121,9 @@ async function getMonthlyMailgunSpend(userId: string): Promise<number> {
 
   // Sum up the total cost (emails_sent * cost_cents for each day)
   return (data || []).reduce(
-    (sum, d) => sum + (d.emails_sent || 0) * (d.cost_cents || MAILGUN_COST_PER_EMAIL_CENTS),
+    (sum, d) =>
+      sum +
+      (d.emails_sent || 0) * (d.cost_cents || MAILGUN_COST_PER_EMAIL_CENTS),
     0,
   );
 }
@@ -151,7 +152,12 @@ export async function sendEmail(
 
   try {
     // Check if user has Gmail connected - route through Gmail API if so
-    console.log("[sendEmail] Provider check - userId:", userId, "fromOverride:", fromOverride);
+    console.log(
+      "[sendEmail] Provider check - userId:",
+      userId,
+      "fromOverride:",
+      fromOverride,
+    );
     const hasGmail = await gmailService.hasActiveIntegration(userId);
     console.log("[sendEmail] hasGmailIntegration:", hasGmail);
 
@@ -185,14 +191,23 @@ export async function sendEmail(
     // Check quota first (daily and monthly limits)
     const quota = await getEmailQuota(userId);
     if (quota.dailyUsed >= quota.dailyLimit) {
-      return { success: false, error: "Daily email limit reached. Limit resets at midnight." };
+      return {
+        success: false,
+        error: "Daily email limit reached. Limit resets at midnight.",
+      };
     }
     if (quota.monthlyUsed >= quota.monthlyLimit) {
-      return { success: false, error: "Monthly email limit reached. Limit resets on the 1st of next month." };
+      return {
+        success: false,
+        error:
+          "Monthly email limit reached. Limit resets on the 1st of next month.",
+      };
     }
 
     // Check Mailgun cost budget (if configured)
-    const budgetSetting = await getSystemSetting("mailgun_monthly_budget_cents");
+    const budgetSetting = await getSystemSetting(
+      "mailgun_monthly_budget_cents",
+    );
     const budgetCents = budgetSetting ? parseInt(budgetSetting, 10) : 0;
 
     if (budgetCents > 0) {
@@ -546,7 +561,10 @@ export async function getEmailQuota(userId: string): Promise<EmailQuota> {
     .gte("date", monthStart);
 
   if (monthlyError) {
-    console.error("[getEmailQuota] Error fetching monthly quota:", monthlyError);
+    console.error(
+      "[getEmailQuota] Error fetching monthly quota:",
+      monthlyError,
+    );
   }
 
   const dailyUsed = dailyData?.emails_sent || 0;

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmailComposer, TemplatePicker, blocksToHtml } from "@/features/email";
 import { useSendEmail } from "../hooks/useRecruitEmails";
+// eslint-disable-next-line no-restricted-imports
 import type { SendEmailRequest } from "@/services/email";
 import type { EmailTemplate } from "@/types/email.types";
 import { toast } from "sonner";
@@ -85,7 +86,8 @@ export function ComposeEmailDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to send email:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to send email";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to send email";
       toast.error("Failed to send email", {
         description: errorMessage,
         duration: 5000,

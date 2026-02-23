@@ -21,11 +21,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  subscriptionKeys,
-  useSubscriptionPlans,
-} from "@/hooks/subscription";
+import { subscriptionKeys, useSubscriptionPlans } from "@/hooks/subscription";
 import { FEATURE_REGISTRY } from "@/constants/features";
+// eslint-disable-next-line no-restricted-imports
 import {
   subscriptionService,
   type SubscriptionPlan,
@@ -70,9 +68,8 @@ export function CheckoutSuccessDialog({
 
   // Look up plan from hint
   const hintedPlan: SubscriptionPlan | null =
-    plans.find(
-      (p) => p.name.toLowerCase() === planNameHint?.toLowerCase(),
-    ) ?? null;
+    plans.find((p) => p.name.toLowerCase() === planNameHint?.toLowerCase()) ??
+    null;
 
   // Check if subscription matches purchased plan
   const subscriptionMatchesPlan =
@@ -80,8 +77,9 @@ export function CheckoutSuccessDialog({
     subscription.plan?.name?.toLowerCase() === planNameHint?.toLowerCase();
 
   // Determine confirmed plan from subscription (once active)
-  const confirmedPlan: SubscriptionPlan | null =
-    subscriptionMatchesPlan ? (subscription?.plan ?? null) : null;
+  const confirmedPlan: SubscriptionPlan | null = subscriptionMatchesPlan
+    ? (subscription?.plan ?? null)
+    : null;
 
   // Use confirmed plan when available, fall back to hinted plan
   const displayPlan = confirmedPlan ?? hintedPlan;
@@ -221,15 +219,16 @@ export function CheckoutSuccessDialog({
               </div>
             )}
           </div>
-          {activationStatus === "active" && subscription?.current_period_end && (
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1.5">
-              Next renewal:{" "}
-              {new Date(subscription.current_period_end).toLocaleDateString(
-                "en-US",
-                { month: "long", day: "numeric", year: "numeric" },
-              )}
-            </p>
-          )}
+          {activationStatus === "active" &&
+            subscription?.current_period_end && (
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1.5">
+                Next renewal:{" "}
+                {new Date(subscription.current_period_end).toLocaleDateString(
+                  "en-US",
+                  { month: "long", day: "numeric", year: "numeric" },
+                )}
+              </p>
+            )}
         </div>
 
         {/* What's Included */}

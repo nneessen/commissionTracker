@@ -1,12 +1,19 @@
 // src/features/recruiting/components/contracting/AddCarrierDialog.tsx
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useQuery } from '@tanstack/react-query';
-import { carrierContractRequestService } from '@/services/recruiting/carrierContractRequestService';
-import { AlertCircle, Plus, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
+import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
+import { AlertCircle, Plus, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddCarrierDialogProps {
   recruitId: string;
@@ -15,22 +22,32 @@ interface AddCarrierDialogProps {
   onAdd: (carrierId: string) => Promise<void>;
 }
 
-export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrierDialogProps) {
+export function AddCarrierDialog({
+  recruitId,
+  open,
+  onClose,
+  onAdd,
+}: AddCarrierDialogProps) {
   const [selectedCarrierIds, setSelectedCarrierIds] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: availableCarriers, isLoading, error: queryError } = useQuery({
-    queryKey: ['available-carriers', recruitId],
-    queryFn: () => carrierContractRequestService.getAvailableCarriers(recruitId),
+  const {
+    data: availableCarriers,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["available-carriers", recruitId],
+    queryFn: () =>
+      carrierContractRequestService.getAvailableCarriers(recruitId),
     enabled: open,
   });
 
   const handleToggleCarrier = (carrierId: string) => {
-    setSelectedCarrierIds(prev =>
+    setSelectedCarrierIds((prev) =>
       prev.includes(carrierId)
-        ? prev.filter(id => id !== carrierId)
-        : [...prev, carrierId]
+        ? prev.filter((id) => id !== carrierId)
+        : [...prev, carrierId],
     );
   };
 
@@ -49,8 +66,12 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
       onClose();
       setSelectedCarrierIds([]);
     } catch (err) {
-      console.error('Failed to add carriers:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add carriers. Please try again.');
+      console.error("Failed to add carriers:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to add carriers. Please try again.",
+      );
     } finally {
       setIsAdding(false);
     }
@@ -64,13 +85,17 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
     }
   };
 
-  const sortedCarriers = (availableCarriers || []).sort((a, b) => a.name.localeCompare(b.name));
+  const sortedCarriers = (availableCarriers || []).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-2xl p-0 gap-0">
         <DialogHeader className="px-5 py-3.5 border-b">
-          <DialogTitle className="text-base font-semibold">Add Carrier Contracts</DialogTitle>
+          <DialogTitle className="text-base font-semibold">
+            Add Carrier Contracts
+          </DialogTitle>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
             Select carriers to request contracts for this recruit
           </p>
@@ -103,7 +128,9 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
           {isLoading && (
             <div className="py-12 text-center">
               <Loader2 className="h-6 w-6 animate-spin text-zinc-400 mx-auto mb-2" />
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading carriers...</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Loading carriers...
+              </p>
             </div>
           )}
 
@@ -116,20 +143,25 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
                     key={carrier.id}
                     className={`
                       flex items-center gap-3 px-3 py-2.5 rounded border-2 cursor-pointer transition-all
-                      ${isSelected
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30'
-                        : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900'
+                      ${
+                        isSelected
+                          ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
+                          : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900"
                       }
-                      ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}
+                      ${isAdding ? "opacity-50 cursor-not-allowed" : ""}
                     `}
                   >
                     <Checkbox
                       checked={isSelected}
                       disabled={isAdding}
-                      onCheckedChange={() => !isAdding && handleToggleCarrier(carrier.id)}
+                      onCheckedChange={() =>
+                        !isAdding && handleToggleCarrier(carrier.id)
+                      }
                       className="flex-shrink-0"
                     />
-                    <span className={`text-sm font-medium flex-1 ${isSelected ? 'text-emerald-900 dark:text-emerald-100' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                    <span
+                      className={`text-sm font-medium flex-1 ${isSelected ? "text-emerald-900 dark:text-emerald-100" : "text-zinc-900 dark:text-zinc-100"}`}
+                    >
                       {carrier.name}
                     </span>
                   </label>
@@ -147,7 +179,8 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
                 All Carriers Requested
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                This recruit has already requested contracts for all available carriers
+                This recruit has already requested contracts for all available
+                carriers
               </p>
             </div>
           )}
@@ -159,7 +192,8 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
             <div className="flex items-center justify-between w-full gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  {selectedCarrierIds.length} carrier{selectedCarrierIds.length !== 1 ? 's' : ''} selected
+                  {selectedCarrierIds.length} carrier
+                  {selectedCarrierIds.length !== 1 ? "s" : ""} selected
                 </span>
                 {selectedCarrierIds.length > 0 && (
                   <button
@@ -195,7 +229,10 @@ export function AddCarrierDialog({ recruitId, open, onClose, onAdd }: AddCarrier
                   ) : (
                     <>
                       <Plus className="h-3.5 w-3.5 mr-1.5" />
-                      Add {selectedCarrierIds.length > 0 ? `(${selectedCarrierIds.length})` : ''}
+                      Add{" "}
+                      {selectedCarrierIds.length > 0
+                        ? `(${selectedCarrierIds.length})`
+                        : ""}
                     </>
                   )}
                 </Button>

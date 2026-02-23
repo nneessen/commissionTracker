@@ -1,6 +1,6 @@
 // src/features/underwriting/components/QuickQuote/QuoteComparisonGrid.tsx
 
-import { Fragment, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+// eslint-disable-next-line no-restricted-imports
 import type {
   QuickQuoteResult,
   QuickQuoteProductType,
@@ -277,9 +278,7 @@ function QuoteRow({
     <div
       className={cn(
         "grid grid-cols-[1fr_repeat(3,minmax(100px,140px))] items-center border-t border-zinc-100 dark:border-zinc-800 transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/20",
-        isEven
-          ? "bg-white dark:bg-zinc-950"
-          : "bg-zinc-50 dark:bg-zinc-900/50",
+        isEven ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/50",
       )}
     >
       {/* Carrier / Product */}

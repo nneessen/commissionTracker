@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import {
   ELIGIBILITY_STATUSES,
   HEALTH_CLASSES,

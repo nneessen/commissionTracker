@@ -4,7 +4,9 @@ import {
   DOCUMENT_TYPE_LABELS,
   type InsuranceDocumentType,
 } from "@/types/documents.types";
+// eslint-disable-next-line no-restricted-imports
 import { documentExpirationService } from "@/services/documents/DocumentExpirationService";
+// eslint-disable-next-line no-restricted-imports
 import type { UserDocumentEntity } from "@/services/documents/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

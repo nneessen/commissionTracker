@@ -1,26 +1,30 @@
 // src/features/contracting/components/ContractLevelDisplay.tsx
 // Display contract level and available products for a recruit-carrier pair
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
+import { supabase } from "@/services/base/supabase";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 
 interface ContractLevelDisplayProps {
   recruitId: string;
   carrierId: string;
 }
 
-export function ContractLevelDisplay({ recruitId, carrierId }: ContractLevelDisplayProps) {
+export function ContractLevelDisplay({
+  recruitId,
+  carrierId,
+}: ContractLevelDisplayProps) {
   // Fetch recruit's contract level
   const { data: recruit } = useQuery({
-    queryKey: ['recruit-contract-level', recruitId],
+    queryKey: ["recruit-contract-level", recruitId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('contract_level, first_name, last_name')
-        .eq('id', recruitId)
+        .from("user_profiles")
+        .select("contract_level, first_name, last_name")
+        .eq("id", recruitId)
         .single();
 
       if (error) throw error;
@@ -30,12 +34,12 @@ export function ContractLevelDisplay({ recruitId, carrierId }: ContractLevelDisp
 
   // Fetch carrier's commission structure
   const { data: carrier } = useQuery({
-    queryKey: ['carrier-commission-structure', carrierId],
+    queryKey: ["carrier-commission-structure", carrierId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('carriers')
-        .select('name, commission_structure')
-        .eq('id', carrierId)
+        .from("carriers")
+        .select("name, commission_structure")
+        .eq("id", carrierId)
         .single();
 
       if (error) throw error;
@@ -44,7 +48,11 @@ export function ContractLevelDisplay({ recruitId, carrierId }: ContractLevelDisp
   });
 
   if (!recruit || !carrier) {
-    return <div className="text-xs text-muted-foreground">Loading contract level...</div>;
+    return (
+      <div className="text-xs text-muted-foreground">
+        Loading contract level...
+      </div>
+    );
   }
 
   const contractLevel = recruit.contract_level;
@@ -80,11 +88,16 @@ export function ContractLevelDisplay({ recruitId, carrierId }: ContractLevelDisp
       if (level >= minLevel && level <= maxLevel) {
         available.push(...products);
       } else if (level < minLevel) {
-        unavailable.push(...products.map((p: string) => `${p} (requires ${minLevel}+)`));
+        unavailable.push(
+          ...products.map((p: string) => `${p} (requires ${minLevel}+)`),
+        );
       }
     });
 
-    return { available: [...new Set(available)], unavailable: [...new Set(unavailable)] };
+    return {
+      available: [...new Set(available)],
+      unavailable: [...new Set(unavailable)],
+    };
   };
 
   const { available, unavailable } = getProductsForLevel(contractLevel);

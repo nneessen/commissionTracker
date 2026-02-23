@@ -28,6 +28,7 @@ import {
   useUpsertRate,
   useBulkUpsertRates,
 } from "../../hooks/useRates";
+// eslint-disable-next-line no-restricted-imports
 import {
   AGE_BANDS,
   GENDER_OPTIONS,

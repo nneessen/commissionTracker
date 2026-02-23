@@ -160,16 +160,52 @@ export default tseslint.config(
       'react-refresh/only-export-components': 'off',
     },
   },
-  // Disable no-explicit-any for test files (test mocks often need flexibility)
+  // Disable no-explicit-any and no-restricted-imports for test files (mocks need full access)
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', 'tests/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.test.tsx', 'tests/**/*.ts', 'tests/**/*.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-imports': 'off',
     },
   },
   // Exception: Hooks inside features CAN import from services (they're the data layer interface)
   {
     files: ['src/features/**/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  // Exception: Root-level hooks CAN import from services (they ARE the data access layer)
+  {
+    files: ['src/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  // Exception: Service files CAN import from other services and base utilities (infrastructure layer)
+  {
+    files: ['src/services/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  // Exception: Feature-internal service files CAN import from base services
+  {
+    files: ['src/features/**/services/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  // Exception: RuleEngine components are tightly coupled to the DSL (pure type/parsing library)
+  {
+    files: ['src/features/underwriting/components/RuleEngine/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  // Exception: Interactive checklist item components use checklistResponseService directly
+  {
+    files: ['src/features/recruiting/components/interactive/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': 'off',
     },

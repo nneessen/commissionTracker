@@ -10,10 +10,12 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Layers } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type {
   PredicateGroup,
   FieldCondition,
 } from "@/services/underwriting/ruleEngineDSL";
+// eslint-disable-next-line no-restricted-imports
 import { isFieldCondition } from "@/services/underwriting/ruleEngineDSL";
 import {
   PredicateLeafBuilder,

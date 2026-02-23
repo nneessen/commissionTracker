@@ -13,7 +13,6 @@ import type {
   LeadPackRow,
   HeatScoreV2,
   HeatLevel,
-  PackHeatMetrics,
 } from "@/types/lead-purchase.types";
 import { IntelligenceCommandBar } from "./IntelligenceCommandBar";
 import { LeadKpiTabs } from "./LeadKpiTabs";
@@ -50,8 +49,20 @@ const DEFAULT_FILTERS: IntelligenceFilterState = {
 // Computed data types
 // ---------------------------------------------------------------------------
 export interface FreshAgedAggregates {
-  fresh: { spend: number; convRate: number; roi: number; cpl: number; count: number };
-  aged: { spend: number; convRate: number; roi: number; cpl: number; count: number };
+  fresh: {
+    spend: number;
+    convRate: number;
+    roi: number;
+    cpl: number;
+    count: number;
+  };
+  aged: {
+    spend: number;
+    convRate: number;
+    roi: number;
+    cpl: number;
+    count: number;
+  };
 }
 
 /** Vendor-level row for the main intelligence table */
@@ -81,8 +92,11 @@ export interface VendorIntelligenceRow {
 // Component
 // ---------------------------------------------------------------------------
 export function LeadIntelligenceDashboard() {
-  const [filters, setFilters] = useState<IntelligenceFilterState>(DEFAULT_FILTERS);
-  const [viewMode, setViewMode] = useState<"vendor" | "purchases" | "policies">("vendor");
+  const [filters, setFilters] =
+    useState<IntelligenceFilterState>(DEFAULT_FILTERS);
+  const [viewMode, setViewMode] = useState<"vendor" | "purchases" | "policies">(
+    "vendor",
+  );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -93,16 +107,23 @@ export function LeadIntelligenceDashboard() {
     filters.endDate || undefined,
   );
 
-  const { vendorScores, packMetrics, isLoading: heatLoading } = usePackHeatScores();
+  const {
+    vendorScores,
+    packMetrics,
+    isLoading: heatLoading,
+  } = usePackHeatScores();
 
-  const { data: vendors, isLoading: vendorsLoading } = useLeadVendorAdminOverview(
-    filters.startDate || undefined,
-    filters.endDate || undefined,
-  );
+  const { data: vendors, isLoading: vendorsLoading } =
+    useLeadVendorAdminOverview(
+      filters.startDate || undefined,
+      filters.endDate || undefined,
+    );
 
-  const { data: recentPolicies, isLoading: policiesLoading } = useLeadRecentPolicies();
+  const { data: recentPolicies, isLoading: policiesLoading } =
+    useLeadRecentPolicies();
 
-  const isLoading = packsLoading || heatLoading || vendorsLoading || policiesLoading;
+  const isLoading =
+    packsLoading || heatLoading || vendorsLoading || policiesLoading;
 
   // ── Unique vendor / agent options for filter dropdowns ──────────────────
   const vendorOptions = useMemo(() => {
@@ -195,16 +216,29 @@ export function LeadIntelligenceDashboard() {
       .map((v): VendorIntelligenceRow => {
         const vendorPacks = packsByVendor.get(v.vendorId) ?? [];
         const uniqueAgents = new Set(vendorPacks.map((p) => p.agentId));
-        const profitablePacks = vendorPacks.filter((p) => p.roiPercentage > 0).length;
-        const freshPacks = vendorPacks.filter((p) => p.leadFreshness === "fresh").length;
+        const profitablePacks = vendorPacks.filter(
+          (p) => p.roiPercentage > 0,
+        ).length;
+        const freshPacks = vendorPacks.filter(
+          (p) => p.leadFreshness === "fresh",
+        ).length;
         const agedPacks = vendorPacks.length - freshPacks;
 
         // Compute all metrics from filtered vendorPacks so filters are respected
         const totalSpent = vendorPacks.reduce((s, p) => s + p.totalCost, 0);
         const totalLeads = vendorPacks.reduce((s, p) => s + p.leadCount, 0);
-        const totalPolicies = vendorPacks.reduce((s, p) => s + p.policiesSold, 0);
-        const totalCommission = vendorPacks.reduce((s, p) => s + p.commissionEarned, 0);
-        const totalPremium = vendorPacks.reduce((s, p) => s + p.totalPremium, 0);
+        const totalPolicies = vendorPacks.reduce(
+          (s, p) => s + p.policiesSold,
+          0,
+        );
+        const totalCommission = vendorPacks.reduce(
+          (s, p) => s + p.commissionEarned,
+          0,
+        );
+        const totalPremium = vendorPacks.reduce(
+          (s, p) => s + p.totalPremium,
+          0,
+        );
 
         return {
           vendorId: v.vendorId,
@@ -212,12 +246,18 @@ export function LeadIntelligenceDashboard() {
           heat: vendorScores.get(v.vendorId),
           totalPacks: vendorPacks.length,
           uniqueUsers: uniqueAgents.size,
-          winRate: vendorPacks.length > 0
-            ? (profitablePacks / vendorPacks.length) * 100
-            : 0,
-          conversionRate: totalLeads > 0 ? (totalPolicies / totalLeads) * 100 : 0,
-          avgRoi: totalSpent > 0 ? ((totalCommission - totalSpent) / totalSpent) * 100 : 0,
-          avgPremPerUser: uniqueAgents.size > 0 ? totalPremium / uniqueAgents.size : 0,
+          winRate:
+            vendorPacks.length > 0
+              ? (profitablePacks / vendorPacks.length) * 100
+              : 0,
+          conversionRate:
+            totalLeads > 0 ? (totalPolicies / totalLeads) * 100 : 0,
+          avgRoi:
+            totalSpent > 0
+              ? ((totalCommission - totalSpent) / totalSpent) * 100
+              : 0,
+          avgPremPerUser:
+            uniqueAgents.size > 0 ? totalPremium / uniqueAgents.size : 0,
           freshCount: freshPacks,
           agedCount: agedPacks,
           totalSpent,
@@ -299,13 +339,29 @@ export function LeadIntelligenceDashboard() {
 
   // ── Portfolio metrics for MarketPulse ────────────────────────────────────
   const portfolioMetrics = useMemo(() => {
-    const totalSpend = vendorIntelligenceRows.reduce((s, v) => s + v.totalSpent, 0);
-    const totalLeads = vendorIntelligenceRows.reduce((s, v) => s + v.totalLeads, 0);
-    const totalPolicies = vendorIntelligenceRows.reduce((s, v) => s + v.totalPolicies, 0);
-    const totalCommission = vendorIntelligenceRows.reduce((s, v) => s + v.totalCommission, 0);
-    const totalPremium = vendorIntelligenceRows.reduce((s, v) => s + v.totalPremium, 0);
+    const totalSpend = vendorIntelligenceRows.reduce(
+      (s, v) => s + v.totalSpent,
+      0,
+    );
+    const totalLeads = vendorIntelligenceRows.reduce(
+      (s, v) => s + v.totalLeads,
+      0,
+    );
+    const totalPolicies = vendorIntelligenceRows.reduce(
+      (s, v) => s + v.totalPolicies,
+      0,
+    );
+    const totalCommission = vendorIntelligenceRows.reduce(
+      (s, v) => s + v.totalCommission,
+      0,
+    );
+    const totalPremium = vendorIntelligenceRows.reduce(
+      (s, v) => s + v.totalPremium,
+      0,
+    );
     const convRate = totalLeads > 0 ? (totalPolicies / totalLeads) * 100 : 0;
-    const roi = totalSpend > 0 ? ((totalCommission - totalSpend) / totalSpend) * 100 : 0;
+    const roi =
+      totalSpend > 0 ? ((totalCommission - totalSpend) / totalSpend) * 100 : 0;
     const cpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
     return {

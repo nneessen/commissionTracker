@@ -3,12 +3,18 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import type {
   MultipleChoiceMetadata,
   MultipleChoiceResponse,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface MultipleChoiceItemProps {
@@ -135,7 +141,11 @@ export function MultipleChoiceItem({
   }
 
   // Error state - no options
-  if (!metadata?.options || !Array.isArray(metadata.options) || metadata.options.length === 0) {
+  if (
+    !metadata?.options ||
+    !Array.isArray(metadata.options) ||
+    metadata.options.length === 0
+  ) {
     return (
       <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
         <AlertCircle className="h-3.5 w-3.5" />

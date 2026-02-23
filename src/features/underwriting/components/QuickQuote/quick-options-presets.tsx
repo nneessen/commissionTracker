@@ -14,6 +14,7 @@ import {
   useQuickQuotePresets,
   useUpdatePresets,
 } from "../../hooks/useQuickQuote";
+// eslint-disable-next-line no-restricted-imports
 import type { PresetTuple } from "@/services/underwriting/quickQuotePresetsService";
 
 // =============================================================================
@@ -189,7 +190,9 @@ export function QuickOptionsPresets({
   // Resolve which presets to show
   const defaults = useMemo(() => {
     if (systemDefaults) return systemDefaults;
-    return mode === "coverage" ? DEFAULT_COVERAGE_PRESETS : DEFAULT_BUDGET_PRESETS;
+    return mode === "coverage"
+      ? DEFAULT_COVERAGE_PRESETS
+      : DEFAULT_BUDGET_PRESETS;
   }, [mode, systemDefaults]);
 
   const userPresets = useMemo((): PresetTuple[] => {

@@ -14,10 +14,7 @@ import { Edit2, Target, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatPercent } from "../../lib/format";
 import { toast } from "sonner";
-import {
-  targetsCalculationService,
-  CalculatedTargets,
-} from "../../services/targets/targetsCalculationService";
+import { targetsCalculationService } from "../../services/targets/targetsCalculationService";
 import { TargetInputDialog } from "./components/TargetInputDialog";
 import { PersistencyScenarios } from "./components/PersistencyScenarios";
 import { WelcomeTargetCard } from "./components/WelcomeTargetCard";

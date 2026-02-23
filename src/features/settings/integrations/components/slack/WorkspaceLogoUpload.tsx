@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { Upload, Trash2, Loader2, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+// eslint-disable-next-line no-restricted-imports
 import {
   useWorkspaceLogoOperations,
   WORKSPACE_LOGO_SIZE,
@@ -41,9 +42,7 @@ export function WorkspaceLogoUpload({
 
   const handleDelete = async () => {
     if (!currentLogoUrl) return;
-    if (
-      !confirm("Are you sure you want to remove the workspace logo?")
-    ) {
+    if (!confirm("Are you sure you want to remove the workspace logo?")) {
       return;
     }
     await deleteLogo({ integrationId, logoUrl: currentLogoUrl });

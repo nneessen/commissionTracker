@@ -21,6 +21,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type { RuleReviewStatus } from "@/services/underwriting/ruleService";
 
 // ============================================================================

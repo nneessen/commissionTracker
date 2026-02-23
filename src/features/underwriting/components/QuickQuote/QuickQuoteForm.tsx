@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import BudgetModeToggle from "./BudgetModeToggle";
+// eslint-disable-next-line no-restricted-imports
 import type {
   QuoteInput,
   ProductType,
 } from "@/services/underwriting/quotingService";
+// eslint-disable-next-line no-restricted-imports
 import type {
   HealthClass,
   TermYears,

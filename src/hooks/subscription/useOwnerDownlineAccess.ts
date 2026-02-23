@@ -94,11 +94,6 @@ export function useOwnerDownlineAccess(): UseOwnerDownlineAccessResult {
         return { isDirectDownline: false };
       }
 
-      console.log("[useOwnerDownlineAccess] Result:", {
-        userId,
-        isDirectDownline: data,
-      });
-
       return { isDirectDownline: !!data };
     },
     enabled: !!userId && !isOwner,

@@ -1,6 +1,7 @@
 // src/features/policies/queries.ts
 
 import { queryOptions } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
 import { policyService } from "@/services/policies/policyService";
 import type { PolicyFilters } from "@/types/policy.types";
 

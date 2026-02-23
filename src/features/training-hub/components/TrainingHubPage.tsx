@@ -21,6 +21,7 @@ import { supabase } from "@/services/base/supabase";
 import { ActivityTab } from "./ActivityTab";
 import { EmailTemplatesTab } from "./EmailTemplatesTab";
 import { DocumentsTab } from "./DocumentsTab";
+// eslint-disable-next-line no-restricted-imports
 import { ModulesManagementTab } from "@/features/training-modules/components/admin/ModulesManagementTab";
 
 type TabView = "templates" | "documents" | "modules" | "activity";

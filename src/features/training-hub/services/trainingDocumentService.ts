@@ -7,7 +7,6 @@
  * bucket and metadata is stored in the 'training_documents' table.
  */
 
-// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import type {
   TrainingDocument,

@@ -36,7 +36,11 @@ import { useCreateExpenseTemplate } from "../../../hooks/expenses/useExpenseTemp
 import { getTodayString } from "../../../lib/date";
 import { toast } from "sonner";
 import { useLeadVendors, useCreateLeadVendor } from "@/hooks/lead-purchases";
-import type { LeadFreshness, LeadVendor } from "@/types/lead-purchase.types";
+import type {
+  LeadFreshness,
+  LeadVendor,
+  LeadPurchase,
+} from "@/types/lead-purchase.types";
 import { LeadVendorDialog } from "../leads/LeadVendorDialog";
 
 // Lead purchase fields when "Life Insurance Leads" category is selected
@@ -61,6 +65,7 @@ interface ExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expense?: Expense | null;
+  linkedLeadPurchase?: LeadPurchase | null;
   onSave: (data: CreateExpenseWithLeadData) => void;
   isSubmitting: boolean;
 }
@@ -69,6 +74,7 @@ export function ExpenseDialogCompact({
   open,
   onOpenChange,
   expense,
+  linkedLeadPurchase = null,
   onSave,
   isSubmitting,
 }: ExpenseDialogProps) {
@@ -119,6 +125,24 @@ export function ExpenseDialogCompact({
         receipt_url: expense.receipt_url || "",
         notes: expense.notes || "",
       });
+
+      // Preload linked lead purchase details when editing a lead expense.
+      // This enables full edit parity from the Expense tab.
+      if (expense.category === "Life Insurance Leads" && linkedLeadPurchase) {
+        setLeadFields({
+          vendorId: linkedLeadPurchase.vendorId,
+          leadCount: String(linkedLeadPurchase.leadCount),
+          leadFreshness: linkedLeadPurchase.leadFreshness,
+          purchaseName: linkedLeadPurchase.purchaseName || "",
+        });
+      } else {
+        setLeadFields({
+          vendorId: "",
+          leadCount: "",
+          leadFreshness: "fresh",
+          purchaseName: "",
+        });
+      }
     } else {
       setFormData({
         name: "",
@@ -141,7 +165,7 @@ export function ExpenseDialogCompact({
         purchaseName: "",
       });
     }
-  }, [expense, open]);
+  }, [expense, linkedLeadPurchase, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,7 +182,12 @@ export function ExpenseDialogCompact({
     }
 
     // Validate lead fields if lead category selected
-    if (isLeadCategory) {
+    // For edits, only require lead fields when a linked lead purchase is present.
+    // (Historical unlinked lead expenses exist from earlier flows.)
+    const shouldRequireLeadFields =
+      isLeadCategory && (!expense || !!linkedLeadPurchase);
+
+    if (shouldRequireLeadFields) {
       if (!leadFields.vendorId) {
         toast.error("Please select a lead vendor");
         return;

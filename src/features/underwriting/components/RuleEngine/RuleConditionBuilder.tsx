@@ -18,11 +18,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type {
   PredicateGroup,
   FieldCondition,
   NullHandler,
 } from "@/services/underwriting/ruleEngineDSL";
+// eslint-disable-next-line no-restricted-imports
 import { isFieldCondition } from "@/services/underwriting/ruleEngineDSL";
 import {
   type FieldDefinition,

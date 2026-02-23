@@ -58,7 +58,12 @@ import {
 } from "./components/ExpenseDialogCompact";
 import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";
 import { useMetricsWithDateRange } from "@/hooks";
-import { useCreateLeadPurchase } from "@/hooks/lead-purchases";
+import {
+  useCreateLeadPurchase,
+  useLeadPurchaseByExpense,
+  useUpdateLeadPurchaseWithExpenseSync,
+  useDeleteLeadPurchaseWithExpenseSync,
+} from "@/hooks/lead-purchases";
 
 export function ExpenseDashboardCompact() {
   // State
@@ -84,7 +89,13 @@ export function ExpenseDashboardCompact() {
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
   const createLeadPurchase = useCreateLeadPurchase();
+  const updateLinkedLeadPurchase = useUpdateLeadPurchaseWithExpenseSync();
+  const deleteLinkedLeadPurchase = useDeleteLeadPurchaseWithExpenseSync();
   const deleteTemplate = useDeleteExpenseTemplate();
+  const {
+    data: selectedExpenseLeadPurchase,
+    refetch: refetchSelectedExpenseLeadPurchase,
+  } = useLeadPurchaseByExpense(selectedExpense?.id ?? null);
 
   // Get commission metrics for expense ratio calculation
   const metricsData = useMetricsWithDateRange({
@@ -205,13 +216,43 @@ export function ExpenseDashboardCompact() {
   const handleSaveExpense = async (data: CreateExpenseWithLeadData) => {
     try {
       if (selectedExpense) {
-        // Update existing expense (no lead purchase changes for now)
-        const { leadPurchase: _, ...expenseData } = data;
-        await updateExpense.mutateAsync({
-          id: selectedExpense.id,
-          updates: expenseData,
-        });
-        toast.success("Expense updated successfully!");
+        const { leadPurchase, ...expenseData } = data;
+        const linkedLeadPurchase =
+          selectedExpenseLeadPurchase ??
+          (await refetchSelectedExpenseLeadPurchase()).data ??
+          null;
+
+        if (linkedLeadPurchase) {
+          // If a lead purchase is linked, keep both records in sync atomically.
+          if (!leadPurchase) {
+            toast.error(
+              "This expense is linked to a lead purchase. Keep it in the Life Insurance Leads category, or delete/recreate it.",
+            );
+            return;
+          }
+
+          await updateLinkedLeadPurchase.mutateAsync({
+            id: linkedLeadPurchase.id,
+            data: {
+              vendorId: leadPurchase.vendorId,
+              leadCount: leadPurchase.leadCount,
+              totalCost: data.amount,
+              purchaseDate: data.date,
+              leadFreshness: leadPurchase.leadFreshness,
+              purchaseName: leadPurchase.purchaseName,
+              policiesSold: linkedLeadPurchase.policiesSold,
+              commissionEarned: linkedLeadPurchase.commissionEarned,
+              notes: data.notes || null,
+            },
+          });
+          toast.success("Expense & lead purchase updated successfully!");
+        } else {
+          await updateExpense.mutateAsync({
+            id: selectedExpense.id,
+            updates: expenseData,
+          });
+          toast.success("Expense updated successfully!");
+        }
         setIsEditDialogOpen(false);
       } else {
         // Create new expense
@@ -223,6 +264,7 @@ export function ExpenseDashboardCompact() {
           try {
             await createLeadPurchase.mutateAsync({
               vendorId: leadPurchase.vendorId,
+              expenseId: newExpense.id,
               leadCount: leadPurchase.leadCount,
               totalCost: data.amount,
               purchaseDate: data.date,
@@ -253,9 +295,19 @@ export function ExpenseDashboardCompact() {
   ) => {
     if (!selectedExpense) return;
     try {
+      const linkedLeadPurchase =
+        selectedExpenseLeadPurchase ??
+        (await refetchSelectedExpenseLeadPurchase()).data ??
+        null;
+
       if (deleteOption === "single" || !selectedExpense.recurring_group_id) {
-        await deleteExpense.mutateAsync(selectedExpense.id);
-        toast.success("Expense deleted successfully!");
+        if (linkedLeadPurchase) {
+          await deleteLinkedLeadPurchase.mutateAsync(linkedLeadPurchase.id);
+          toast.success("Expense & lead purchase deleted successfully!");
+        } else {
+          await deleteExpense.mutateAsync(selectedExpense.id);
+          toast.success("Expense deleted successfully!");
+        }
       } else if (deleteOption === "future") {
         const { recurringExpenseService } =
           await import("./../../services/expenses/recurringExpenseService");
@@ -263,11 +315,21 @@ export function ExpenseDashboardCompact() {
           selectedExpense.recurring_group_id,
           selectedExpense.date,
         );
-        await deleteExpense.mutateAsync(selectedExpense.id);
+        if (linkedLeadPurchase) {
+          await deleteLinkedLeadPurchase.mutateAsync(linkedLeadPurchase.id);
+        } else {
+          await deleteExpense.mutateAsync(selectedExpense.id);
+        }
         toast.success(
           `Deleted current expense and ${count} future occurrences!`,
         );
       } else if (deleteOption === "all") {
+        // If the selected recurring expense is linked to a lead purchase,
+        // delete the linked pair first, then remove the remaining group items.
+        if (linkedLeadPurchase) {
+          await deleteLinkedLeadPurchase.mutateAsync(linkedLeadPurchase.id);
+        }
+
         const { error } = await supabase
           .from("expenses")
           .delete()
@@ -903,21 +965,26 @@ export function ExpenseDashboardCompact() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSave={handleSaveExpense}
-        isSubmitting={createExpense.isPending}
+        isSubmitting={createExpense.isPending || createLeadPurchase.isPending}
       />
       <ExpenseDialogCompact
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         expense={selectedExpense}
+        linkedLeadPurchase={selectedExpenseLeadPurchase}
         onSave={handleSaveExpense}
-        isSubmitting={updateExpense.isPending}
+        isSubmitting={
+          updateExpense.isPending || updateLinkedLeadPurchase.isPending
+        }
       />
       <ExpenseDeleteDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         expense={selectedExpense}
         onConfirm={handleConfirmDelete}
-        isDeleting={deleteExpense.isPending}
+        isDeleting={
+          deleteExpense.isPending || deleteLinkedLeadPurchase.isPending
+        }
       />
     </>
   );

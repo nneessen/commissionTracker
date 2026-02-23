@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Loader2, Check, AlertCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
+// eslint-disable-next-line no-restricted-imports
 import { carrierContractRequestService } from "@/services/recruiting/carrierContractRequestService";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 import type {
   CarrierContractingMetadata,
@@ -276,7 +278,10 @@ export function CarrierContractingItem({
                     handleWritingNumberChange(contract.id, e.target.value)
                   }
                   onBlur={() =>
-                    handleWritingNumberSave(contract.id, contract.writing_number)
+                    handleWritingNumberSave(
+                      contract.id,
+                      contract.writing_number,
+                    )
                   }
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {

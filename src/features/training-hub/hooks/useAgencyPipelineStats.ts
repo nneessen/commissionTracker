@@ -3,7 +3,7 @@
 // Used in TrainerDashboard for agency pipeline comparison
 
 import { useQuery } from "@tanstack/react-query";
-// eslint-disable-next-line no-restricted-imports
+
 import { supabase } from "@/services/base/supabase";
 import { subDays, startOfMonth } from "date-fns";
 import { hasStaffRole } from "@/constants/roles";

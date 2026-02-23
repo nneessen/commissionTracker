@@ -10,6 +10,7 @@ import type {
   BooleanQuestionResponse,
 } from "@/types/recruiting.types";
 import { BOOLEAN_QUESTION_DEFAULT_LABELS } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface BooleanQuestionItemProps {
@@ -28,7 +29,9 @@ export function BooleanQuestionItem({
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(
     existingResponse?.answer ?? null,
   );
-  const [explanation, setExplanation] = useState(existingResponse?.explanation ?? "");
+  const [explanation, setExplanation] = useState(
+    existingResponse?.explanation ?? "",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const defaults = BOOLEAN_QUESTION_DEFAULT_LABELS[metadata.question_style];
@@ -48,12 +51,13 @@ export function BooleanQuestionItem({
 
     setIsSubmitting(true);
     try {
-      const result = await checklistResponseService.submitBooleanQuestionResponse(
-        progressId,
-        selectedAnswer,
-        explanation || undefined,
-        metadata,
-      );
+      const result =
+        await checklistResponseService.submitBooleanQuestionResponse(
+          progressId,
+          selectedAnswer,
+          explanation || undefined,
+          metadata,
+        );
 
       if (!result.success) {
         toast.error(result.error || "Failed to submit response");
@@ -74,7 +78,14 @@ export function BooleanQuestionItem({
     } finally {
       setIsSubmitting(false);
     }
-  }, [progressId, selectedAnswer, explanation, metadata, positiveLabel, onComplete]);
+  }, [
+    progressId,
+    selectedAnswer,
+    explanation,
+    metadata,
+    positiveLabel,
+    onComplete,
+  ]);
 
   // Answered state - clean inline
   if (existingResponse && selectedAnswer !== null) {
@@ -109,9 +120,7 @@ export function BooleanQuestionItem({
           variant={selectedAnswer === true ? "default" : "outline"}
           size="sm"
           className={`flex-1 h-7 text-xs ${
-            selectedAnswer === true
-              ? "bg-emerald-600 hover:bg-emerald-700"
-              : ""
+            selectedAnswer === true ? "bg-emerald-600 hover:bg-emerald-700" : ""
           }`}
           onClick={() => setSelectedAnswer(true)}
           disabled={isSubmitting}
@@ -123,9 +132,7 @@ export function BooleanQuestionItem({
           variant={selectedAnswer === false ? "default" : "outline"}
           size="sm"
           className={`flex-1 h-7 text-xs ${
-            selectedAnswer === false
-              ? "bg-zinc-600 hover:bg-zinc-700"
-              : ""
+            selectedAnswer === false ? "bg-zinc-600 hover:bg-zinc-700" : ""
           }`}
           onClick={() => setSelectedAnswer(false)}
           disabled={isSubmitting}
@@ -138,7 +145,8 @@ export function BooleanQuestionItem({
       {metadata.explanation_required && (
         <div className="space-y-1">
           <label className="text-[10px] text-zinc-600 dark:text-zinc-400">
-            {metadata.explanation_prompt || "Please explain your answer"} <span className="text-red-500">*</span>
+            {metadata.explanation_prompt || "Please explain your answer"}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <Textarea
             value={explanation}

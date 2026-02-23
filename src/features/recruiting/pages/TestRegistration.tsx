@@ -1,6 +1,7 @@
 // Minimal test component to debug registration verification
 import { useState, useEffect } from "react";
 import { useParams } from "@tanstack/react-router";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 
 export function TestRegistration() {

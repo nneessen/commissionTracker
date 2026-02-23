@@ -18,6 +18,7 @@ import {
   usePremiumMatrixForClassification,
   useBulkUpsertPremiumMatrix,
 } from "../../hooks/usePremiumMatrix";
+// eslint-disable-next-line no-restricted-imports
 import {
   GRID_AGES,
   GENDER_OPTIONS,

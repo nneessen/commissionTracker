@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Ruler, AlertCircle } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import { useBuildChartOptions } from "@/features/settings/carriers/hooks/useBuildChartOptions";
 import { BUILD_TABLE_TYPE_LABELS } from "@/features/underwriting";
 

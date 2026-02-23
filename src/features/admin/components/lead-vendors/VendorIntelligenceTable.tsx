@@ -11,11 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import {
-  formatPercent,
-  formatNumber,
-  formatCompactCurrency,
-} from "@/lib/format";
+import { formatPercent, formatCompactCurrency } from "@/lib/format";
 import { getTrendArrow } from "@/hooks/lead-purchases";
 import { SortableHead, type SortDir } from "./SortableHead";
 import { PackHeatBadge } from "./PackHeatBadge";
@@ -87,7 +83,13 @@ export function VendorIntelligenceTable({
         return sortDir === "asc" ? aScore - bScore : bScore - aScore;
       }
       if (sortField === "trend") {
-        const trendOrder = { up: 4, "up-right": 3, right: 2, "down-right": 1, down: 0 };
+        const trendOrder = {
+          up: 4,
+          "up-right": 3,
+          right: 2,
+          "down-right": 1,
+          down: 0,
+        };
         const aT = a.heat?.trend ?? "right";
         const bT = b.heat?.trend ?? "right";
         return sortDir === "asc"
@@ -208,9 +210,7 @@ export function VendorIntelligenceTable({
                 className="w-[70px] text-right"
               />
               {/* F/A ratio (not sortable) */}
-              <th className="text-[10px] font-semibold p-1.5 w-[70px]">
-                F/A
-              </th>
+              <th className="text-[10px] font-semibold p-1.5 w-[70px]">F/A</th>
               <SortableHead
                 field="trend"
                 label="Trend"
@@ -300,7 +300,11 @@ export function VendorIntelligenceTable({
                   return Math.abs(p - page) <= 1;
                 })
                 .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && arr[idx - 1] !== undefined && p - (arr[idx - 1] as number) > 1) {
+                  if (
+                    idx > 0 &&
+                    arr[idx - 1] !== undefined &&
+                    p - (arr[idx - 1] as number) > 1
+                  ) {
                     acc.push("ellipsis");
                   }
                   acc.push(p);
@@ -429,11 +433,7 @@ function VendorTableRow({
         </TableCell>
       </TableRow>
       {isExpanded && (
-        <VendorExpandedRow
-          row={row}
-          startDate={startDate}
-          endDate={endDate}
-        />
+        <VendorExpandedRow row={row} startDate={startDate} endDate={endDate} />
       )}
     </>
   );

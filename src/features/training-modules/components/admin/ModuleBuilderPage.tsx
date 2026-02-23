@@ -32,7 +32,6 @@ import {
   MODULE_CATEGORY_LABELS,
   DIFFICULTY_LEVELS,
 } from "../../types/training-module.types";
-import type { ModuleCategory, DifficultyLevel } from "../../types/training-module.types";
 import { LessonEditor } from "./LessonEditor";
 import { useDebouncedField } from "../../hooks/useDebouncedField";
 import {
@@ -58,9 +57,12 @@ interface ModuleBuilderPageProps {
   moduleId: string;
 }
 
-export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) {
+export default function ModuleBuilderPage({
+  moduleId,
+}: ModuleBuilderPageProps) {
   const navigate = useNavigate();
-  const { data: module, isLoading: moduleLoading } = useTrainingModule(moduleId);
+  const { data: module, isLoading: moduleLoading } =
+    useTrainingModule(moduleId);
   const { data: lessons = [] } = useTrainingLessons(moduleId);
   const updateModule = useUpdateTrainingModule();
   const publishModule = usePublishTrainingModule();
@@ -84,7 +86,9 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleDragEnd = useCallback(
@@ -179,16 +183,33 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
             placeholder="Module title"
           />
         </div>
-        <Badge variant={module.is_published ? "default" : "secondary"} className="text-[10px]">
+        <Badge
+          variant={module.is_published ? "default" : "secondary"}
+          className="text-[10px]"
+        >
           {module.is_published ? "Published" : "Draft"}
         </Badge>
-        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleSave}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={handleSave}
+        >
           <Save className="h-3 w-3 mr-1" />
           Save
         </Button>
         {!module.is_published && (
-          <Button size="sm" className="h-7 text-xs" onClick={handlePublish} disabled={publishModule.isPending}>
-            {publishModule.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Eye className="h-3 w-3 mr-1" />}
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={handlePublish}
+            disabled={publishModule.isPending}
+          >
+            {publishModule.isPending ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Eye className="h-3 w-3 mr-1" />
+            )}
             Publish
           </Button>
         )}
@@ -199,13 +220,18 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
         {/* Left: Lesson list */}
         <div className="w-60 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col">
           <div className="flex items-center justify-between px-2 py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-            <span className="text-[11px] font-medium text-zinc-500">Lessons ({lessons.length})</span>
+            <span className="text-[11px] font-medium text-zinc-500">
+              Lessons ({lessons.length})
+            </span>
             <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={() => { setSelectedLessonId(null); setShowSettings(true); }}
+                onClick={() => {
+                  setSelectedLessonId(null);
+                  setShowSettings(true);
+                }}
                 title="Module settings"
               >
                 <Settings className="h-3 w-3" />
@@ -218,20 +244,34 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
                 disabled={createLesson.isPending}
                 title="Add lesson"
               >
-                {createLesson.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                {createLesson.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Plus className="h-3 w-3" />
+                )}
               </Button>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-1.5">
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={lessons.map((l) => l.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 {lessons.map((lesson) => (
                   <SortableLessonItem
                     key={lesson.id}
                     lesson={lesson}
                     isSelected={lesson.id === selectedLessonId}
-                    onSelect={() => { setSelectedLessonId(lesson.id); setShowSettings(false); }}
+                    onSelect={() => {
+                      setSelectedLessonId(lesson.id);
+                      setShowSettings(false);
+                    }}
                     onDelete={() => handleDeleteLesson(lesson.id)}
                     onDuplicate={() => handleDuplicateLesson(lesson.id)}
                   />
@@ -256,7 +296,8 @@ export default function ModuleBuilderPage({ moduleId }: ModuleBuilderPageProps) 
             <LessonEditor lesson={selectedLesson} />
           ) : (
             <div className="h-full flex items-center justify-center text-xs text-zinc-400">
-              Select a lesson to edit, or click the gear icon for module settings.
+              Select a lesson to edit, or click the gear icon for module
+              settings.
             </div>
           )}
         </div>
@@ -273,13 +314,25 @@ function SortableLessonItem({
   onDelete,
   onDuplicate,
 }: {
-  lesson: { id: string; title: string; lesson_type: string; sort_order: number };
+  lesson: {
+    id: string;
+    title: string;
+    lesson_type: string;
+    sort_order: number;
+  };
   isSelected: boolean;
   onSelect: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: lesson.id,
   });
 
@@ -289,7 +342,12 @@ function SortableLessonItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const typeIcon = lesson.lesson_type === "quiz" ? "Q" : lesson.lesson_type === "practice" ? "P" : "C";
+  const typeIcon =
+    lesson.lesson_type === "quiz"
+      ? "Q"
+      : lesson.lesson_type === "practice"
+        ? "P"
+        : "C";
 
   return (
     <div
@@ -302,7 +360,11 @@ function SortableLessonItem({
       }`}
       onClick={onSelect}
     >
-      <span {...attributes} {...listeners} className="cursor-grab flex-shrink-0">
+      <span
+        {...attributes}
+        {...listeners}
+        className="cursor-grab flex-shrink-0"
+      >
         <GripVertical className="h-3 w-3 text-zinc-300" />
       </span>
       <span className="h-4 w-4 rounded bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
@@ -311,14 +373,20 @@ function SortableLessonItem({
       <span className="truncate flex-1">{lesson.title}</span>
       <button
         className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDuplicate();
+        }}
         title="Duplicate lesson"
       >
         <Copy className="h-3 w-3 text-zinc-400 hover:text-blue-500" />
       </button>
       <button
         className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
         title="Delete lesson"
       >
         <Trash2 className="h-3 w-3 text-zinc-400 hover:text-red-500" />
@@ -332,7 +400,16 @@ function ModuleSettings({
   module,
   onUpdate,
 }: {
-  module: { id: string; title: string; description: string | null; category: string; difficulty_level: string; estimated_duration_minutes: number | null; xp_reward: number; tags: string[] };
+  module: {
+    id: string;
+    title: string;
+    description: string | null;
+    category: string;
+    difficulty_level: string;
+    estimated_duration_minutes: number | null;
+    xp_reward: number;
+    tags: string[];
+  };
   onUpdate: (args: { id: string; input: Record<string, unknown> }) => void;
 }) {
   const [tagInput, setTagInput] = useState("");
@@ -346,7 +423,10 @@ function ModuleSettings({
 
   // Debounced text/number fields
   const saveTitle = useCallback((v: string) => update("title", v), [update]);
-  const saveDesc = useCallback((v: string) => update("description", v), [update]);
+  const saveDesc = useCallback(
+    (v: string) => update("description", v),
+    [update],
+  );
   const saveDuration = useCallback(
     (v: string) => update("estimated_duration_minutes", v ? Number(v) : null),
     [update],
@@ -356,8 +436,14 @@ function ModuleSettings({
     [update],
   );
 
-  const [localTitle, setLocalTitle] = useDebouncedField(module.title, saveTitle);
-  const [localDesc, setLocalDesc] = useDebouncedField(module.description || "", saveDesc);
+  const [localTitle, setLocalTitle] = useDebouncedField(
+    module.title,
+    saveTitle,
+  );
+  const [localDesc, setLocalDesc] = useDebouncedField(
+    module.description || "",
+    saveDesc,
+  );
   const [localDuration, setLocalDuration] = useDebouncedField(
     module.estimated_duration_minutes?.toString() ?? "",
     saveDuration,
@@ -376,12 +462,17 @@ function ModuleSettings({
   };
 
   const removeTag = (tag: string) => {
-    update("tags", module.tags.filter((t) => t !== tag));
+    update(
+      "tags",
+      module.tags.filter((t) => t !== tag),
+    );
   };
 
   return (
     <div className="max-w-lg space-y-3">
-      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Module Settings</h2>
+      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        Module Settings
+      </h2>
 
       <div className="space-y-2">
         <label className="text-[11px] font-medium text-zinc-500">Title</label>
@@ -393,7 +484,9 @@ function ModuleSettings({
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] font-medium text-zinc-500">Description</label>
+        <label className="text-[11px] font-medium text-zinc-500">
+          Description
+        </label>
         <textarea
           value={localDesc}
           onChange={(e) => setLocalDesc(e.target.value)}
@@ -404,26 +497,34 @@ function ModuleSettings({
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-zinc-500">Category</label>
+          <label className="text-[11px] font-medium text-zinc-500">
+            Category
+          </label>
           <select
             value={module.category}
             onChange={(e) => update("category", e.target.value)}
             className="w-full h-7 text-xs border border-zinc-200 dark:border-zinc-700 rounded-md px-2 bg-white dark:bg-zinc-900"
           >
             {MODULE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{MODULE_CATEGORY_LABELS[cat]}</option>
+              <option key={cat} value={cat}>
+                {MODULE_CATEGORY_LABELS[cat]}
+              </option>
             ))}
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-zinc-500">Difficulty</label>
+          <label className="text-[11px] font-medium text-zinc-500">
+            Difficulty
+          </label>
           <select
             value={module.difficulty_level}
             onChange={(e) => update("difficulty_level", e.target.value)}
             className="w-full h-7 text-xs border border-zinc-200 dark:border-zinc-700 rounded-md px-2 bg-white dark:bg-zinc-900"
           >
             {DIFFICULTY_LEVELS.map((level) => (
-              <option key={level} value={level}>{level.charAt(0).toUpperCase() + level.slice(1)}</option>
+              <option key={level} value={level}>
+                {level.charAt(0).toUpperCase() + level.slice(1)}
+              </option>
             ))}
           </select>
         </div>
@@ -431,7 +532,9 @@ function ModuleSettings({
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-zinc-500">Duration (min)</label>
+          <label className="text-[11px] font-medium text-zinc-500">
+            Duration (min)
+          </label>
           <Input
             type="number"
             value={localDuration}
@@ -441,7 +544,9 @@ function ModuleSettings({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-zinc-500">XP Reward</label>
+          <label className="text-[11px] font-medium text-zinc-500">
+            XP Reward
+          </label>
           <Input
             type="number"
             value={localXp}
@@ -457,7 +562,9 @@ function ModuleSettings({
           {module.tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-[10px] px-1.5">
               {tag}
-              <button className="ml-1" onClick={() => removeTag(tag)}>&times;</button>
+              <button className="ml-1" onClick={() => removeTag(tag)}>
+                &times;
+              </button>
             </Badge>
           ))}
         </div>
@@ -465,11 +572,18 @@ function ModuleSettings({
           <Input
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+            onKeyDown={(e) =>
+              e.key === "Enter" && (e.preventDefault(), addTag())
+            }
             className="h-7 text-xs flex-1"
             placeholder="Add tag..."
           />
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={addTag}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={addTag}
+          >
             Add
           </Button>
         </div>

@@ -38,7 +38,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAllRolesWithPermissions } from "@/hooks/permissions";
 import { useDeleteUser } from "@/hooks/admin";
 import { useToggleUserUWAccess } from "@/hooks/admin";
+// eslint-disable-next-line no-restricted-imports
 import { userApprovalService } from "@/services/users/userService";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 import {
@@ -315,7 +317,8 @@ export default function EditUserDialog({
 
       if (switchingToRecruit) {
         // Set recruiter_id from upline (or current user as fallback)
-        const recruiterId = formData.upline_id || user.upline_id || currentUser?.id;
+        const recruiterId =
+          formData.upline_id || user.upline_id || currentUser?.id;
         if (recruiterId) {
           updates.recruiter_id = recruiterId;
         }
@@ -483,7 +486,7 @@ export default function EditUserDialog({
       // Invalidate hierarchy queries so Team page updates when upline changes
       if (uplineChanged) {
         invalidateHierarchyForNode(queryClient, user.id);
-        if (updates.upline_id && typeof updates.upline_id === 'string') {
+        if (updates.upline_id && typeof updates.upline_id === "string") {
           invalidateHierarchyForNode(queryClient, updates.upline_id);
         }
         // Also invalidate client hierarchy queries

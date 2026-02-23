@@ -30,7 +30,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCarriersWithProducts } from "../../hooks/useCarriersWithProducts";
+// eslint-disable-next-line no-restricted-imports
 import { bulkUpsertPremiumMatrix } from "@/services/underwriting/premiumMatrixService";
+// eslint-disable-next-line no-restricted-imports
 import type {
   GenderType,
   TobaccoClass,

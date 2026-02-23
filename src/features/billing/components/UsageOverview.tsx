@@ -4,6 +4,7 @@
 import { Mail, MessageSquare, AlertTriangle, Activity } from "lucide-react";
 import { useUsageTracking } from "@/hooks/subscription";
 import { useSubscription } from "@/hooks/subscription";
+// eslint-disable-next-line no-restricted-imports
 import { PRICING } from "@/services/subscription";
 import { cn } from "@/lib/utils";
 

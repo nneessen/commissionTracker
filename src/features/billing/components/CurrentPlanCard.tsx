@@ -43,7 +43,7 @@ export function CurrentPlanCard() {
     setIsLoadingPortal(true);
     try {
       const portalUrl = await subscriptionService.createPortalSession(user.id);
-      if (portalUrl) window.open(portalUrl, "_blank");
+      if (portalUrl) window.location.href = portalUrl;
     } finally {
       setIsLoadingPortal(false);
     }

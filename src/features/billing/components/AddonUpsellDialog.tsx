@@ -2,13 +2,7 @@
 // Dialog shown when user selects a paid plan, offering premium add-ons before checkout
 
 import { useState } from "react";
-import {
-  Wand2,
-  Zap,
-  ExternalLink,
-  Loader2,
-  ArrowRight,
-} from "lucide-react";
+import { Wand2, Zap, ExternalLink, Loader2, ArrowRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +20,9 @@ import {
   type AddonTierConfig,
   type SubscriptionAddon,
 } from "@/hooks/admin";
+// eslint-disable-next-line no-restricted-imports
 import { subscriptionService } from "@/services/subscription";
+// eslint-disable-next-line no-restricted-imports
 import type { SubscriptionPlan } from "@/services/subscription";
 
 interface AddonUpsellDialogProps {

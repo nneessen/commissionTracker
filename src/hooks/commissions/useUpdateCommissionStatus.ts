@@ -29,7 +29,7 @@ export const useUpdateCommissionStatus = () => {
     mutationFn: async ({
       commissionId,
       status,
-      policyId,
+      policyId: _policyId,
     }: UpdateCommissionStatusParams) => {
       // First, get the commission record to access advance_months
       // Use select without .single() to handle potential RLS issues

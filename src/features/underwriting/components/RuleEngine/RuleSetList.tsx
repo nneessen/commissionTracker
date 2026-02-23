@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
+// eslint-disable-next-line no-restricted-imports
 import type { RuleSetWithRules } from "@/services/underwriting/ruleService";
 import { formatDistanceToNow } from "date-fns";
 

@@ -11,7 +11,6 @@ import type {
   AgencyUpdate,
   CreateAgencyWithCascadeOptions,
   CreateAgencyWithCascadeResult,
-  CascadePreview,
 } from "../../types/imo.types";
 import type { ReportDateRange } from "../../types/team-reports.schemas";
 
@@ -366,7 +365,10 @@ export function useCreateAgencyWithCascade() {
       queryClient.invalidateQueries({ queryKey: imoKeys.all });
 
       // If cascade occurred, also invalidate user-related queries
-      if (result.cascadeResult?.success && result.cascadeResult.totalUpdated > 0) {
+      if (
+        result.cascadeResult?.success &&
+        result.cascadeResult.totalUpdated > 0
+      ) {
         // Invalidate user profiles cache
         queryClient.invalidateQueries({ queryKey: ["userProfiles"] });
         queryClient.invalidateQueries({ queryKey: ["users"] });

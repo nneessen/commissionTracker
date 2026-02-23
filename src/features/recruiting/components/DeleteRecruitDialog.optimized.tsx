@@ -14,7 +14,9 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Loader2, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
+// eslint-disable-next-line no-restricted-imports
 import { enhancedRecruitingService } from "@/services/recruiting/recruitingService.enhanced";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

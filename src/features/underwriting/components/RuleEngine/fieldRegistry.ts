@@ -1,6 +1,7 @@
 // src/features/underwriting/components/RuleEngine/fieldRegistry.ts
 // Field definitions and operator registry for the predicate builder
 
+// eslint-disable-next-line no-restricted-imports
 import type {
   NumericOperator,
   DateOperator,

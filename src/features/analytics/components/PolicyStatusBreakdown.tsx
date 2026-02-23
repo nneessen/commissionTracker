@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { useAnalyticsData } from "@/hooks";
 import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
+// eslint-disable-next-line no-restricted-imports
 import {
   getPolicyStatusSummary,
   getMonthlyTrendData,

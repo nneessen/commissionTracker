@@ -30,9 +30,7 @@ import type {
   Recommendation as DecisionEngineRecommendation,
 } from "@/services/underwriting/decisionEngine";
 // eslint-disable-next-line no-restricted-imports
-import {
-  formatCurrency as formatDECurrency,
-} from "@/services/underwriting/decisionEngine";
+import { formatCurrency as formatDECurrency } from "@/services/underwriting/decisionEngine";
 import {
   useProductConstraints,
   useHealthConditions,
@@ -572,7 +570,6 @@ export default function RecommendationsStep({
   );
 }
 
-
 // Sub-component for weight guidance message
 interface WeightGuidanceMessageProps {
   heightFeet: number;
@@ -581,7 +578,7 @@ interface WeightGuidanceMessageProps {
   buildTable?: BuildTableData;
 }
 
-function WeightGuidanceMessage({
+function _WeightGuidanceMessage({
   heightFeet,
   heightInches,
   weight,

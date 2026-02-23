@@ -27,6 +27,7 @@ import {
   useDeleteDocument,
   useUpdateDocumentStatus,
 } from "../hooks/useRecruitDocuments";
+// eslint-disable-next-line no-restricted-imports
 import { recruitingService } from "@/services/recruiting";
 import { UploadDocumentDialog } from "./UploadDocumentDialog";
 import { DocumentViewerDialog } from "./DocumentViewerDialog";
@@ -192,15 +193,21 @@ export function DocumentManager({
                       <span className="capitalize">
                         {doc.document_type.replace(/_/g, " ")}
                       </span>
-                      <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                      <span className="text-zinc-300 dark:text-zinc-600">
+                        •
+                      </span>
                       <span>{formatFileSize(doc.file_size || 0)}</span>
-                      <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                      <span className="text-zinc-300 dark:text-zinc-600">
+                        •
+                      </span>
                       <span>
                         {new Date(doc.uploaded_at).toLocaleDateString()}
                       </span>
                       {doc.expires_at && (
                         <>
-                          <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                          <span className="text-zinc-300 dark:text-zinc-600">
+                            •
+                          </span>
                           <span
                             className={
                               new Date(doc.expires_at) < new Date()
@@ -231,21 +238,33 @@ export function DocumentManager({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="text-[11px]">
-                      <DropdownMenuItem onClick={() => handleView(doc)} className="text-[11px]">
+                      <DropdownMenuItem
+                        onClick={() => handleView(doc)}
+                        className="text-[11px]"
+                      >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownload(doc)} className="text-[11px]">
+                      <DropdownMenuItem
+                        onClick={() => handleDownload(doc)}
+                        className="text-[11px]"
+                      >
                         <Download className="h-3.5 w-3.5 mr-1.5" />
                         Download
                       </DropdownMenuItem>
                       {isUpline && doc.status === "pending" && (
                         <>
-                          <DropdownMenuItem onClick={() => handleApprove(doc)} className="text-[11px]">
+                          <DropdownMenuItem
+                            onClick={() => handleApprove(doc)}
+                            className="text-[11px]"
+                          >
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
                             Approve
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleReject(doc)} className="text-[11px]">
+                          <DropdownMenuItem
+                            onClick={() => handleReject(doc)}
+                            className="text-[11px]"
+                          >
                             <XCircle className="h-3.5 w-3.5 mr-1.5 text-red-600" />
                             Reject
                           </DropdownMenuItem>

@@ -10,6 +10,7 @@ import type {
   AcknowledgmentMetadata,
   AcknowledgmentResponse,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface AcknowledgmentItemProps {
@@ -104,7 +105,8 @@ export function AcknowledgmentItem({
     );
   }
 
-  const canComplete = acknowledged && (!metadata.require_scroll || scrollCompleted);
+  const canComplete =
+    acknowledged && (!metadata.require_scroll || scrollCompleted);
 
   return (
     <div className="space-y-2">

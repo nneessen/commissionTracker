@@ -9,6 +9,7 @@ import type {
   TextResponseMetadata,
   TextResponseData,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface TextResponseItemProps {
@@ -109,9 +110,10 @@ export function TextResponseItem({
                 {minLength - characterCount} more required
               </span>
             )}
-            {metadata.required_keywords && metadata.required_keywords.length > 0 && (
-              <span>Include: {metadata.required_keywords.join(", ")}</span>
-            )}
+            {metadata.required_keywords &&
+              metadata.required_keywords.length > 0 && (
+                <span>Include: {metadata.required_keywords.join(", ")}</span>
+              )}
           </span>
           <span>
             {characterCount}

@@ -66,7 +66,10 @@ export function useSubscription(): UseSubscriptionResult {
     isActive,
     isGrandfathered,
     grandfatherDaysRemaining,
-    tierName: subscription?.plan?.display_name || "Free",
+    tierName:
+      isActive || isGrandfathered
+        ? subscription?.plan?.display_name || "Free"
+        : "Free",
     refetch,
   };
 }

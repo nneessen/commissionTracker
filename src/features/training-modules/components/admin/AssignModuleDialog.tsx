@@ -19,16 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateTrainingAssignment, useTrainingAssignments } from "../../hooks/useTrainingAssignments";
+import {
+  useCreateTrainingAssignment,
+  useTrainingAssignments,
+} from "../../hooks/useTrainingAssignments";
 import { useImo } from "@/contexts/ImoContext";
 // eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
-import { ASSIGNMENT_TYPES, PRIORITY_LEVELS } from "../../types/training-module.types";
+import {
+  ASSIGNMENT_TYPES,
+  PRIORITY_LEVELS,
+} from "../../types/training-module.types";
 import type {
   TrainingModule,
   AssignmentType,
   PriorityLevel,
 } from "../../types/training-module.types";
+// eslint-disable-next-line no-restricted-imports
 import type { UserSearchResult } from "@/services/users/userSearchService";
 import { toast } from "sonner";
 
@@ -47,7 +54,8 @@ export function AssignModuleDialog({
   const createAssignment = useCreateTrainingAssignment();
   const { data: existingAssignments = [] } = useTrainingAssignments(module.id);
 
-  const [assignmentType, setAssignmentType] = useState<AssignmentType>("individual");
+  const [assignmentType, setAssignmentType] =
+    useState<AssignmentType>("individual");
   const [selectedUsers, setSelectedUsers] = useState<UserSearchResult[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -89,8 +97,9 @@ export function AssignModuleDialog({
     const term = searchTerm.toLowerCase();
     return unassigned.filter(
       (u) =>
-        `${u.first_name ?? ""} ${u.last_name ?? ""}`.toLowerCase().includes(term) ||
-        u.email.toLowerCase().includes(term),
+        `${u.first_name ?? ""} ${u.last_name ?? ""}`
+          .toLowerCase()
+          .includes(term) || u.email.toLowerCase().includes(term),
     );
   }, [allAgents, alreadyAssignedIds, searchTerm]);
 
@@ -142,7 +151,9 @@ export function AssignModuleDialog({
         );
 
         const failed = results.filter((r) => r.status === "rejected").length;
-        const succeeded = results.filter((r) => r.status === "fulfilled").length;
+        const succeeded = results.filter(
+          (r) => r.status === "fulfilled",
+        ).length;
 
         if (failed > 0) {
           toast.warning(
@@ -167,18 +178,21 @@ export function AssignModuleDialog({
   };
 
   const canSubmit =
-    !isSubmitting &&
-    (assignmentType === "agency" || selectedUsers.length > 0);
+    !isSubmitting && (assignmentType === "agency" || selectedUsers.length > 0);
 
   const unassignedCount = allAgents.length - alreadyAssignedIds.size;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) resetAndClose(); else onOpenChange(true); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) resetAndClose();
+        else onOpenChange(true);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-sm">
-            Assign: {module.title}
-          </DialogTitle>
+          <DialogTitle className="text-sm">Assign: {module.title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
@@ -200,7 +214,9 @@ export function AssignModuleDialog({
               <SelectContent>
                 {ASSIGNMENT_TYPES.map((type) => (
                   <SelectItem key={type} value={type} className="text-xs">
-                    {type === "individual" ? "Individual Users" : "Entire Agency"}
+                    {type === "individual"
+                      ? "Individual Users"
+                      : "Entire Agency"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -233,7 +249,8 @@ export function AssignModuleDialog({
                       variant="secondary"
                       className="text-[10px] h-5 pl-1.5 pr-1 gap-1"
                     >
-                      {`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email}
+                      {`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+                        user.email}
                       <button
                         type="button"
                         onClick={() => toggleUser(user)}
@@ -269,11 +286,13 @@ export function AssignModuleDialog({
                     All agents have been assigned this module
                   </div>
                 )}
-                {!agentsLoading && unassignedCount > 0 && visibleAgents.length === 0 && (
-                  <div className="py-6 text-center text-[11px] text-zinc-500">
-                    No agents match your search
-                  </div>
-                )}
+                {!agentsLoading &&
+                  unassignedCount > 0 &&
+                  visibleAgents.length === 0 && (
+                    <div className="py-6 text-center text-[11px] text-zinc-500">
+                      No agents match your search
+                    </div>
+                  )}
                 {!agentsLoading && visibleAgents.length > 0 && (
                   <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {visibleAgents.map((user) => {
@@ -296,11 +315,14 @@ export function AssignModuleDialog({
                                 : "border-zinc-300 dark:border-zinc-600"
                             }`}
                           >
-                            {selected && <Check className="h-2.5 w-2.5 text-white" />}
+                            {selected && (
+                              <Check className="h-2.5 w-2.5 text-white" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <div className="text-[11px] font-medium truncate">
-                              {`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email}
+                              {`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+                                user.email}
                             </div>
                             <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                               {user.email}

@@ -22,6 +22,7 @@ import {
   formatCurrency,
   formatDate,
 } from "@/lib/format";
+// eslint-disable-next-line no-restricted-imports
 import { useLocalStorage } from "@/hooks/base/useLocalStorage";
 import { SortableHead, type SortDir } from "./SortableHead";
 import type { LeadPackRow, PackHeatMetrics } from "@/types/lead-purchase.types";
@@ -121,9 +122,7 @@ function ThresholdInput({
           }}
           className="w-14 px-1 py-0.5 text-[10px] text-right tabular-nums border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         />
-        {suffix && (
-          <span className="text-[9px] text-zinc-400">{suffix}</span>
-        )}
+        {suffix && <span className="text-[9px] text-zinc-400">{suffix}</span>}
       </div>
     </div>
   );
@@ -287,7 +286,10 @@ export function PackPurchaseTable({
         } else {
           switch (filters.activity) {
             case "active":
-              if (metrics.daysSinceLastSale < 0 || metrics.daysSinceLastSale > thresholds.activeDaysWindow)
+              if (
+                metrics.daysSinceLastSale < 0 ||
+                metrics.daysSinceLastSale > thresholds.activeDaysWindow
+              )
                 return false;
               break;
             case "stale":
@@ -383,8 +385,14 @@ export function PackPurchaseTable({
             label="Activity"
             options={[
               { value: "all", label: "All" },
-              { value: "active", label: `Active (${thresholds.activeDaysWindow}d)` },
-              { value: "stale", label: `Stale (${thresholds.staleDaysWindow}d)` },
+              {
+                value: "active",
+                label: `Active (${thresholds.activeDaysWindow}d)`,
+              },
+              {
+                value: "stale",
+                label: `Stale (${thresholds.staleDaysWindow}d)`,
+              },
               { value: "dead", label: "Dead" },
             ]}
             value={filters.activity}
@@ -493,19 +501,107 @@ export function PackPurchaseTable({
       <Table className="min-w-[1050px]">
         <TableHeader>
           <TableRow className="bg-zinc-50 dark:bg-zinc-800/50">
-            <SortableHead field="purchaseDate" label="Date" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[68px]" />
-            <SortableHead field="purchaseName" label="Name" handleSort={handleSort} sortField={sortField} sortDir={sortDir} />
-            <SortableHead field="vendorName" label="Vendor" handleSort={handleSort} sortField={sortField} sortDir={sortDir} />
-            <SortableHead field="agentName" label="Agent" handleSort={handleSort} sortField={sortField} sortDir={sortDir} />
-            <SortableHead field="leadFreshness" label="F/A" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[36px] text-center" />
-            <SortableHead field="leadCount" label="#" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[36px] text-right" />
-            <SortableHead field="totalCost" label="Cost" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[52px] text-right" />
-            <SortableHead field="costPerLead" label="CPL" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[44px] text-right" />
-            <SortableHead field="policiesSold" label="Pol" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[36px] text-right" />
-            <SortableHead field="conversionRate" label="Conv" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[44px] text-right" />
-            <SortableHead field="commissionEarned" label="Comm" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[52px] text-right" />
-            <SortableHead field="totalPremium" label="Prem" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[52px] text-right" />
-            <SortableHead field="roiPercentage" label="ROI" handleSort={handleSort} sortField={sortField} sortDir={sortDir} className="w-[44px] text-right" />
+            <SortableHead
+              field="purchaseDate"
+              label="Date"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[68px]"
+            />
+            <SortableHead
+              field="purchaseName"
+              label="Name"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+            />
+            <SortableHead
+              field="vendorName"
+              label="Vendor"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+            />
+            <SortableHead
+              field="agentName"
+              label="Agent"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+            />
+            <SortableHead
+              field="leadFreshness"
+              label="F/A"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[36px] text-center"
+            />
+            <SortableHead
+              field="leadCount"
+              label="#"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[36px] text-right"
+            />
+            <SortableHead
+              field="totalCost"
+              label="Cost"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[52px] text-right"
+            />
+            <SortableHead
+              field="costPerLead"
+              label="CPL"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[44px] text-right"
+            />
+            <SortableHead
+              field="policiesSold"
+              label="Pol"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[36px] text-right"
+            />
+            <SortableHead
+              field="conversionRate"
+              label="Conv"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[44px] text-right"
+            />
+            <SortableHead
+              field="commissionEarned"
+              label="Comm"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[52px] text-right"
+            />
+            <SortableHead
+              field="totalPremium"
+              label="Prem"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[52px] text-right"
+            />
+            <SortableHead
+              field="roiPercentage"
+              label="ROI"
+              handleSort={handleSort}
+              sortField={sortField}
+              sortDir={sortDir}
+              className="w-[44px] text-right"
+            />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -522,24 +618,39 @@ export function PackPurchaseTable({
             paginated.map((pack) => (
               <TableRow key={pack.packId}>
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-500 whitespace-nowrap">
-                  {formatDate(pack.purchaseDate, { month: "numeric", day: "numeric", year: "2-digit" })}
+                  {formatDate(pack.purchaseDate, {
+                    month: "numeric",
+                    day: "numeric",
+                    year: "2-digit",
+                  })}
                 </TableCell>
-                <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]" title={pack.purchaseName || undefined}>
+                <TableCell
+                  className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]"
+                  title={pack.purchaseName || undefined}
+                >
                   {pack.purchaseName || "\u2014"}
                 </TableCell>
-                <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[110px]" title={pack.vendorName}>
+                <TableCell
+                  className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[110px]"
+                  title={pack.vendorName}
+                >
                   {pack.vendorName}
                 </TableCell>
-                <TableCell className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[110px]" title={pack.agentName}>
+                <TableCell
+                  className="text-[10px] px-1.5 py-0.5 text-zinc-700 dark:text-zinc-300 truncate max-w-[110px]"
+                  title={pack.agentName}
+                >
                   {pack.agentName}
                 </TableCell>
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-center">
-                  <span className={cn(
-                    "font-semibold",
-                    pack.leadFreshness === "fresh"
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-amber-600 dark:text-amber-400",
-                  )}>
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      pack.leadFreshness === "fresh"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-amber-600 dark:text-amber-400",
+                    )}
+                  >
                     {pack.leadFreshness === "fresh" ? "F" : "A"}
                   </span>
                 </TableCell>
@@ -564,10 +675,12 @@ export function PackPurchaseTable({
                 <TableCell className="text-[10px] px-1.5 py-0.5 text-right tabular-nums">
                   {formatCompactCurrency(pack.totalPremium)}
                 </TableCell>
-                <TableCell className={cn(
-                  "text-[10px] px-1.5 py-0.5 text-right tabular-nums font-medium",
-                  roiColor(pack.roiPercentage),
-                )}>
+                <TableCell
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 text-right tabular-nums font-medium",
+                    roiColor(pack.roiPercentage),
+                  )}
+                >
                   {formatPercent(pack.roiPercentage)}
                 </TableCell>
               </TableRow>
@@ -580,7 +693,8 @@ export function PackPurchaseTable({
       {filtered.length > 0 && (
         <div className="px-2 py-1 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <span className="text-[10px] text-zinc-500">
-            {(page - 1) * pageSize + 1}&ndash;{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+            {(page - 1) * pageSize + 1}&ndash;
+            {Math.min(page * pageSize, filtered.length)} of {filtered.length}
           </span>
 
           <div className="flex items-center gap-2">
@@ -617,7 +731,11 @@ export function PackPurchaseTable({
                   return Math.abs(p - page) <= 1;
                 })
                 .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && arr[idx - 1] !== undefined && p - (arr[idx - 1] as number) > 1) {
+                  if (
+                    idx > 0 &&
+                    arr[idx - 1] !== undefined &&
+                    p - (arr[idx - 1] as number) > 1
+                  ) {
                     acc.push("ellipsis");
                   }
                   acc.push(p);

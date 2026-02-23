@@ -156,9 +156,11 @@ fi
 
 echo -e "${BLUE}[2/5] Scanning migration for function definitions...${NC}"
 
-# Extract function names from CREATE [OR REPLACE] FUNCTION statements
-FUNCTIONS_IN_MIGRATION=$(grep -oiE 'CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+[a-zA-Z_][a-zA-Z0-9_]*' "$MIGRATION_FILE" | \
+# Extract function names from CREATE [OR REPLACE] FUNCTION statements.
+# Supports schema-qualified names like public.my_function and stores only the function name.
+FUNCTIONS_IN_MIGRATION=$(grep -oiE 'CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+([a-zA-Z_][a-zA-Z0-9_]*\.)?[a-zA-Z_][a-zA-Z0-9_]*' "$MIGRATION_FILE" | \
     sed -E 's/CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+//i' | \
+    sed -E 's/^[^.]+\.//' | \
     tr '[:upper:]' '[:lower:]' | \
     sort -u || true)
 

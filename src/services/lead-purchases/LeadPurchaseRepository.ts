@@ -86,6 +86,121 @@ export class LeadPurchaseRepository extends BaseRepository<
   }
 
   /**
+   * Atomically create a lead purchase and mirrored expense via RPC.
+   * This is used by the Expense page's Lead Purchases tab so spend appears in both tabs.
+   */
+  async createWithMirroredExpense(
+    data: CreateLeadPurchaseData,
+  ): Promise<LeadPurchase> {
+    const { data: rpcData, error } = await this.client.rpc(
+      "create_lead_purchase_with_expense",
+      {
+        p_vendor_id: data.vendorId,
+        p_lead_count: data.leadCount,
+        p_total_cost: data.totalCost,
+        p_purchase_date: data.purchaseDate,
+        p_purchase_name: data.purchaseName ?? null,
+        p_lead_freshness: data.leadFreshness ?? "fresh",
+        p_policies_sold: data.policiesSold ?? 0,
+        p_commission_earned: data.commissionEarned ?? 0,
+        p_notes: data.notes ?? null,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "createWithMirroredExpense");
+    }
+
+    const purchaseId =
+      typeof rpcData === "string"
+        ? rpcData
+        : Array.isArray(rpcData) && typeof rpcData[0] === "string"
+          ? rpcData[0]
+          : null;
+
+    if (!purchaseId) {
+      throw new Error(
+        "lead_purchases.createWithMirroredExpense failed: RPC returned no purchase id",
+      );
+    }
+
+    const purchase = await this.findByIdWithVendor(purchaseId);
+    if (!purchase) {
+      throw new Error(
+        "lead_purchases.createWithMirroredExpense failed: created purchase could not be loaded",
+      );
+    }
+
+    return purchase;
+  }
+
+  /**
+   * Atomically update a lead purchase and mirrored expense via RPC.
+   */
+  async updateWithMirroredExpense(
+    id: string,
+    data: CreateLeadPurchaseData,
+  ): Promise<LeadPurchase> {
+    const { data: rpcData, error } = await this.client.rpc(
+      "update_lead_purchase_with_expense",
+      {
+        p_purchase_id: id,
+        p_vendor_id: data.vendorId,
+        p_lead_count: data.leadCount,
+        p_total_cost: data.totalCost,
+        p_purchase_date: data.purchaseDate,
+        p_purchase_name: data.purchaseName ?? null,
+        p_lead_freshness: data.leadFreshness ?? "fresh",
+        p_policies_sold: data.policiesSold ?? 0,
+        p_commission_earned: data.commissionEarned ?? 0,
+        p_notes: data.notes ?? null,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "updateWithMirroredExpense");
+    }
+
+    const purchaseId =
+      typeof rpcData === "string"
+        ? rpcData
+        : Array.isArray(rpcData) && typeof rpcData[0] === "string"
+          ? rpcData[0]
+          : null;
+
+    if (!purchaseId) {
+      throw new Error(
+        "lead_purchases.updateWithMirroredExpense failed: RPC returned no purchase id",
+      );
+    }
+
+    const purchase = await this.findByIdWithVendor(purchaseId);
+    if (!purchase) {
+      throw new Error(
+        "lead_purchases.updateWithMirroredExpense failed: updated purchase could not be loaded",
+      );
+    }
+
+    return purchase;
+  }
+
+  /**
+   * Atomically delete a lead purchase and mirrored expense via RPC.
+   */
+  async deleteWithMirroredExpense(id: string): Promise<void> {
+    const { error } = await this.client.rpc(
+      "delete_lead_purchase_with_expense",
+      {
+        p_purchase_id: id,
+      },
+    );
+
+    if (error) {
+      throw this.handleError(error, "deleteWithMirroredExpense");
+    }
+  }
+
+  /**
    * Find all purchases for the current user with optional filters
    * Always filters by current user's user_id for data isolation
    */

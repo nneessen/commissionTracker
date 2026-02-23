@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import type {
   EmailTemplate,
@@ -123,8 +122,10 @@ export async function updateEmailTemplate(
     updateData.body_html = html;
     updateData.body_text = convertHtmlToText(html);
   } else {
-    if (updates.body_html !== undefined) updateData.body_html = updates.body_html;
-    if (updates.body_text !== undefined) updateData.body_text = updates.body_text;
+    if (updates.body_html !== undefined)
+      updateData.body_html = updates.body_html;
+    if (updates.body_text !== undefined)
+      updateData.body_text = updates.body_text;
   }
 
   const { data, error } = await supabase
@@ -147,7 +148,9 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 
   if (error) throw error;
   if (!data || data.length === 0) {
-    throw new Error("Template not found or you don't have permission to delete it");
+    throw new Error(
+      "Template not found or you don't have permission to delete it",
+    );
   }
 }
 

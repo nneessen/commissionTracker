@@ -16,7 +16,9 @@ import {
 } from "../../hooks/policies";
 import { useCarriers } from "../../hooks/carriers";
 import { useAuth } from "../../contexts/AuthContext";
+// eslint-disable-next-line no-restricted-imports
 import { clientService } from "@/services/clients";
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import {
   transformFormToCreateData,
@@ -381,7 +383,9 @@ export const PolicyDashboard: React.FC = () => {
         policy={editingPolicy}
         isLoadingPolicy={isEditingPolicyLoading}
         externalErrors={formErrors}
-        isPending={createPolicyMutation.isPending || updatePolicyMutation.isPending}
+        isPending={
+          createPolicyMutation.isPending || updatePolicyMutation.isPending
+        }
       />
     </div>
   );

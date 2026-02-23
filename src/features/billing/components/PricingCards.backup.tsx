@@ -143,34 +143,29 @@ export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
   const visiblePlans = plans;
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-      {/* Hero header */}
-      <div className="px-5 py-4 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="p-4">
+        {/* Header + Billing Toggle */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-base font-bold text-white tracking-tight">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Choose Your Plan
             </h2>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
-              Pick the plan that fits your agency size and goals.
-            </p>
             {isGrandfathered && (
-              <p className="text-[10px] text-amber-400 mt-1 font-medium">
-                ⚠ Subscribe before your free access expires to keep your
-                features.
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                Subscribe before your free access expires to keep your features.
               </p>
             )}
           </div>
 
-          {/* Billing toggle — white-on-dark styling */}
-          <div className="flex items-center gap-1 bg-zinc-700/60 rounded-md p-0.5 self-start sm:self-center flex-shrink-0">
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5">
             <button
               onClick={() => setBillingInterval("monthly")}
               className={cn(
-                "px-3 py-1.5 text-[11px] font-medium rounded transition-colors",
+                "px-2.5 py-1 text-[10px] font-medium rounded transition-colors",
                 billingInterval === "monthly"
-                  ? "bg-white text-zinc-900 shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-200",
+                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
               )}
             >
               Monthly
@@ -178,30 +173,20 @@ export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
             <button
               onClick={() => setBillingInterval("annual")}
               className={cn(
-                "px-3 py-1.5 text-[11px] font-medium rounded transition-colors",
+                "px-2.5 py-1 text-[10px] font-medium rounded transition-colors",
                 billingInterval === "annual"
-                  ? "bg-white text-zinc-900 shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-200",
+                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
               )}
             >
               Annual{" "}
-              <span
-                className={cn(
-                  "font-semibold",
-                  billingInterval === "annual"
-                    ? "text-emerald-600"
-                    : "text-emerald-400",
-                )}
-              >
+              <span className="text-emerald-600 dark:text-emerald-400">
                 Save 17%
               </span>
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Cards section */}
-      <div className="bg-white dark:bg-zinc-900 p-4">
         {/* Plan Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {visiblePlans.map((plan) => {
@@ -349,7 +334,6 @@ export function PricingCards({ onPlanSelect }: PricingCardsProps = {}) {
           </div>
         )}
       </div>
-      {/* end cards section */}
     </div>
   );
 }

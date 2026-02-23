@@ -8,6 +8,7 @@ import type {
   ExternalLinkMetadata,
   ExternalLinkResponse,
 } from "@/types/recruiting.types";
+// eslint-disable-next-line no-restricted-imports
 import { checklistResponseService } from "@/services/recruiting/checklistResponseService";
 
 interface ExternalLinkItemProps {
@@ -23,7 +24,9 @@ export function ExternalLinkItem({
   existingResponse,
   onComplete,
 }: ExternalLinkItemProps) {
-  const [hasClicked, setHasClicked] = useState(existingResponse?.clicked ?? false);
+  const [hasClicked, setHasClicked] = useState(
+    existingResponse?.clicked ?? false,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOpenLink = useCallback(async () => {
@@ -45,7 +48,8 @@ export function ExternalLinkItem({
 
     if (metadata?.completion_method === "return_url") {
       try {
-        const result = await checklistResponseService.completeExternalLink(progressId);
+        const result =
+          await checklistResponseService.completeExternalLink(progressId);
         if (result.success) {
           toast.success("Task completed!");
           onComplete?.();
@@ -54,7 +58,13 @@ export function ExternalLinkItem({
         console.error("Failed to auto-complete:", error);
       }
     }
-  }, [progressId, metadata?.url, metadata?.completion_method, hasClicked, onComplete]);
+  }, [
+    progressId,
+    metadata?.url,
+    metadata?.completion_method,
+    hasClicked,
+    onComplete,
+  ]);
 
   const handleMarkComplete = useCallback(async () => {
     if (!hasClicked) {
@@ -64,7 +74,8 @@ export function ExternalLinkItem({
 
     setIsSubmitting(true);
     try {
-      const result = await checklistResponseService.completeExternalLink(progressId);
+      const result =
+        await checklistResponseService.completeExternalLink(progressId);
       if (!result.success) {
         toast.error(result.error || "Failed to complete");
         return;

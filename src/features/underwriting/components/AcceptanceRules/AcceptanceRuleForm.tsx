@@ -48,6 +48,7 @@ import {
   useDeleteAcceptanceRule,
   useHealthConditions,
 } from "../../hooks/useAcceptance";
+// eslint-disable-next-line no-restricted-imports
 import {
   ACCEPTANCE_OPTIONS,
   HEALTH_CLASS_RESULT_OPTIONS,

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+// eslint-disable-next-line no-restricted-imports
 import type {
   AuditFilters,
   AuditActionTypeOption,

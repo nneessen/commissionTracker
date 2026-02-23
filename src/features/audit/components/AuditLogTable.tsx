@@ -4,7 +4,14 @@
  * Paginated table displaying audit log entries
  */
 
-import { Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,12 +19,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import type { AuditLogListItem, AuditAction } from '@/services/audit';
-import { ACTION_COLORS } from '@/services/audit';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+// eslint-disable-next-line no-restricted-imports
+import type { AuditLogListItem, AuditAction } from "@/services/audit";
+// eslint-disable-next-line no-restricted-imports
+import { ACTION_COLORS } from "@/services/audit";
 import {
   formatActionType,
   formatTableName,
@@ -25,7 +34,7 @@ import {
   formatRelativeTime,
   formatChangedFields,
   formatPerformer,
-} from '../utils/auditFormatters';
+} from "../utils/auditFormatters";
 
 interface AuditLogTableProps {
   data: AuditLogListItem[];
@@ -41,13 +50,13 @@ interface AuditLogTableProps {
  * Get icon component for action type
  */
 function ActionIcon({ action }: { action: AuditAction }) {
-  const iconClass = 'h-3.5 w-3.5';
+  const iconClass = "h-3.5 w-3.5";
   switch (action) {
-    case 'INSERT':
+    case "INSERT":
       return <Plus className={iconClass} />;
-    case 'UPDATE':
+    case "UPDATE":
       return <Pencil className={iconClass} />;
-    case 'DELETE':
+    case "DELETE":
       return <Trash2 className={iconClass} />;
     default:
       return null;
@@ -109,12 +118,24 @@ export function AuditLogTable({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[100px] text-[11px] font-medium">Time</TableHead>
-              <TableHead className="w-[100px] text-[11px] font-medium">Table</TableHead>
-              <TableHead className="w-[100px] text-[11px] font-medium">Action</TableHead>
-              <TableHead className="text-[11px] font-medium">Action Type</TableHead>
-              <TableHead className="text-[11px] font-medium">Changed Fields</TableHead>
-              <TableHead className="text-[11px] font-medium">Performed By</TableHead>
+              <TableHead className="w-[100px] text-[11px] font-medium">
+                Time
+              </TableHead>
+              <TableHead className="w-[100px] text-[11px] font-medium">
+                Table
+              </TableHead>
+              <TableHead className="w-[100px] text-[11px] font-medium">
+                Action
+              </TableHead>
+              <TableHead className="text-[11px] font-medium">
+                Action Type
+              </TableHead>
+              <TableHead className="text-[11px] font-medium">
+                Changed Fields
+              </TableHead>
+              <TableHead className="text-[11px] font-medium">
+                Performed By
+              </TableHead>
               <TableHead className="w-[40px] text-[11px] font-medium"></TableHead>
             </TableRow>
           </TableHeader>
@@ -124,7 +145,9 @@ export function AuditLogTable({
             ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">No audit logs found</p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    No audit logs found
+                  </p>
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                     Try adjusting your filters
                   </p>

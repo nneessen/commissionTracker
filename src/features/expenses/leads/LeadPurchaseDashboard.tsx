@@ -54,9 +54,9 @@ import {
   useLeadPurchases,
   useLeadPurchaseStats,
   useLeadStatsByVendorAggregate,
-  useCreateLeadPurchase,
-  useUpdateLeadPurchase,
-  useDeleteLeadPurchase,
+  useCreateLeadPurchaseWithExpense,
+  useUpdateLeadPurchaseWithExpenseSync,
+  useDeleteLeadPurchaseWithExpenseSync,
   useLeadVendors,
 } from "@/hooks/lead-purchases";
 import { ManageLeadPurchaseDialog } from "./ManageLeadPurchaseDialog";
@@ -123,9 +123,9 @@ export function LeadPurchaseDashboard() {
   const { data: vendorStats = [] } = useLeadStatsByVendorAggregate();
   const { data: vendors = [] } = useLeadVendors();
 
-  const createPurchase = useCreateLeadPurchase();
-  const updatePurchase = useUpdateLeadPurchase();
-  const deletePurchase = useDeleteLeadPurchase();
+  const createPurchaseWithExpense = useCreateLeadPurchaseWithExpense();
+  const updatePurchase = useUpdateLeadPurchaseWithExpenseSync();
+  const deletePurchase = useDeleteLeadPurchaseWithExpenseSync();
   const createVendor = useCreateLeadVendor();
 
   // Handle search with debounce
@@ -239,10 +239,14 @@ export function LeadPurchaseDashboard() {
     try {
       if (selectedPurchase) {
         await updatePurchase.mutateAsync({ id: selectedPurchase.id, data });
-        toast.success("Lead purchase updated!");
+        toast.success(
+          selectedPurchase.expenseId
+            ? "Lead purchase + expense updated!"
+            : "Lead purchase updated!",
+        );
       } else {
-        await createPurchase.mutateAsync(data);
-        toast.success("Lead purchase added!");
+        await createPurchaseWithExpense.mutateAsync(data);
+        toast.success("Lead purchase + expense added!");
       }
       setIsDialogOpen(false);
       setSelectedPurchase(null);
@@ -257,7 +261,11 @@ export function LeadPurchaseDashboard() {
     if (confirm("Delete this lead purchase?")) {
       try {
         await deletePurchase.mutateAsync(purchase.id);
-        toast.success("Lead purchase deleted!");
+        toast.success(
+          purchase.expenseId
+            ? "Lead purchase + expense deleted!"
+            : "Lead purchase deleted!",
+        );
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to delete",
@@ -965,7 +973,9 @@ export function LeadPurchaseDashboard() {
         }}
         purchase={selectedPurchase}
         onSave={handleSave}
-        isLoading={createPurchase.isPending || updatePurchase.isPending}
+        isLoading={
+          createPurchaseWithExpense.isPending || updatePurchase.isPending
+        }
       />
 
       <LeadVendorDialog

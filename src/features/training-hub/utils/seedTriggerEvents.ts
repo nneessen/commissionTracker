@@ -1,6 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/features/training-hub/utils/seedTriggerEvents.ts
 
-import {supabase} from "@/services/base/supabase";
+// eslint-disable-next-line no-restricted-imports
+import { supabase } from "@/services/base/supabase";
 
 const triggerEventTypes = [
   // Recruiting events
@@ -337,4 +338,3 @@ export async function seedTriggerEventTypes() {
     throw error;
   }
 }
-
