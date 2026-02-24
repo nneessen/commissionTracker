@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5";
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       agencies: {
@@ -14301,6 +14326,16 @@ export type Database = {
           week_start: string;
         }[];
       };
+      get_agent_carrier_contracts: {
+        Args: { p_agent_id: string };
+        Returns: {
+          approved_date: string;
+          carrier_id: string;
+          carrier_name: string;
+          status: string;
+          writing_number: string;
+        }[];
+      };
       get_agent_contract_summary: {
         Args: { p_agent_id: string };
         Returns: {
@@ -14469,38 +14504,6 @@ export type Database = {
         Returns: {
           count: number;
           table_name: string;
-        }[];
-      };
-      get_agent_carrier_contracts: {
-        Args: { p_agent_id: string };
-        Returns: {
-          approved_date: string | null;
-          carrier_id: string;
-          carrier_name: string;
-          status: string;
-          writing_number: string | null;
-        }[];
-      };
-      get_contracting_dashboard_recruits: {
-        Args: {
-          p_carrier_id?: string | null;
-          p_end_date?: string | null;
-          p_page?: number;
-          p_page_size?: number;
-          p_search_query?: string | null;
-          p_start_date?: string | null;
-          p_status?: string[] | null;
-        };
-        Returns: {
-          recruit: Json | null;
-          recruit_id: string | null;
-          request_count: number | null;
-          requested_latest: string | null;
-          requests: Json | null;
-          status_counts: Json | null;
-          total_recruit_count: number;
-          total_request_count: number;
-          writing_received_latest: string | null;
         }[];
       };
       get_available_carriers_for_recruit: {
@@ -16548,14 +16551,14 @@ export type Database = {
         }[];
       };
       toggle_agent_carrier_contract: {
-        Args: { p_carrier_id: string; p_active: boolean };
+        Args: { p_active: boolean; p_carrier_id: string };
         Returns: {
-          agent_id: string;
-          approved_date: string | null;
-          carrier_id: string;
-          id: string;
-          status: string;
-          writing_number: string | null;
+          out_agent_id: string;
+          out_approved_date: string;
+          out_carrier_id: string;
+          out_id: string;
+          out_status: string;
+          out_writing_number: string;
         }[];
       };
       toggle_alert_rule_active: {
@@ -17129,6 +17132,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       agent_status: ["unlicensed", "licensed", "not_applicable"],
