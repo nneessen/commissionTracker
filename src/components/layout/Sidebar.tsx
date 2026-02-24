@@ -56,6 +56,7 @@ import { toast } from "sonner";
 import { useImo } from "@/contexts/ImoContext";
 import { useTemporaryAccessCheck } from "@/hooks/subscription";
 import { useUnderwritingFeatureFlag } from "@/features/underwriting";
+import { useLicensingWorkspaceAccess } from "@/features/the-standard-team";
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -140,6 +141,7 @@ export default function Sidebar({
     useUnderwritingFeatureFlag();
   const { shouldGrantTemporaryAccess, isLoading: tempAccessLoading } =
     useTemporaryAccessCheck();
+  const licensingWorkspaceAccess = useLicensingWorkspaceAccess();
   const location = useLocation();
 
   // Section collapse state persisted to localStorage
@@ -270,10 +272,9 @@ export default function Sidebar({
         },
         {
           icon: Users,
-          label: "Licenses/Writing #'s",
+          label: "Licensing/Writing #'s",
           href: "/the-standard-team",
           public: true,
-          allowedAgencyId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
         },
       ],
     },
@@ -469,6 +470,13 @@ export default function Sidebar({
       return false;
     if (itemAsNav.allowedEmails && !isEmailAllowed(itemAsNav.allowedEmails))
       return false;
+
+    // Licensing/Writing workspace is premium after a 7-day free trial,
+    // but the free carrier contract toggles remain in Settings > Profile.
+    if ("href" in item && item.href === "/the-standard-team") {
+      if (licensingWorkspaceAccess.isLoading) return true;
+      if (!licensingWorkspaceAccess.hasAccess) return false;
+    }
 
     // Pending users see remaining items (rendered as locked)
     if (isPending) return true;

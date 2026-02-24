@@ -15,7 +15,11 @@ export interface AgentStateLicense {
 export const agentStateLicensesQueryKeys = {
   all: ["agent-state-licenses"] as const,
   byAgents: (agentIds: string[]) =>
-    [...agentStateLicensesQueryKeys.all, "by-agents", ...agentIds] as const,
+    [
+      ...agentStateLicensesQueryKeys.all,
+      "by-agents",
+      ...[...agentIds].sort(),
+    ] as const,
 };
 
 /**
@@ -26,9 +30,14 @@ export function useAgentStateLicenses(
   options?: {
     enabled?: boolean;
     staleTime?: number;
+    gcTime?: number;
   },
 ) {
-  const { enabled = true, staleTime = 5 * 60 * 1000 } = options || {};
+  const {
+    enabled = true,
+    staleTime = 5 * 60 * 1000,
+    gcTime = 20 * 60 * 1000,
+  } = options || {};
 
   return useQuery({
     queryKey: agentStateLicensesQueryKeys.byAgents(agentIds),
@@ -48,6 +57,7 @@ export function useAgentStateLicenses(
     },
     enabled: enabled && agentIds.length > 0,
     staleTime,
+    gcTime,
   });
 }
 

@@ -1,10 +1,8 @@
 // src/features/the-standard-team/hooks/useTheStandardAgents.ts
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
-
-// The Standard agency ID
-export const THE_STANDARD_AGENCY_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+import { useMemo } from "react";
+import { useCurrentUserProfile } from "@/hooks/admin";
+import { useMyDownlines } from "@/hooks/hierarchy";
 
 export interface TheStandardAgent {
   id: string;
@@ -12,42 +10,98 @@ export interface TheStandardAgent {
   last_name: string | null;
   email: string;
   agency_id: string | null;
+  upline_id?: string | null;
+  hierarchy_depth?: number | null;
 }
 
+export type LicensingWorkspaceAgent = TheStandardAgent;
+
 export const theStandardAgentsQueryKeys = {
-  all: ["the-standard-agents"] as const,
-  list: () => [...theStandardAgentsQueryKeys.all, "list"] as const,
+  all: ["licensing-workspace-agents"] as const,
+  list: () => [...theStandardAgentsQueryKeys.all, "hierarchy-scope"] as const,
 };
 
 /**
- * Fetches all agents belonging to The Standard agency
- * Uses RLS policy "agency_members_can_view_same_agency" for access
+ * Returns the current agent + all approved downlines (hierarchy-scoped).
+ * Kept under the original export name to avoid broad refactors.
  */
-export function useTheStandardAgents(options?: {
-  enabled?: boolean;
-  staleTime?: number;
-}) {
-  const { enabled = true, staleTime = 5 * 60 * 1000 } = options || {};
+export function useTheStandardAgents(options?: { enabled?: boolean }) {
+  const { enabled = true } = options || {};
 
-  return useQuery({
-    queryKey: theStandardAgentsQueryKeys.list(),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("id, first_name, last_name, email, agency_id")
-        .eq("agency_id", THE_STANDARD_AGENCY_ID)
-        .eq("approval_status", "approved")
-        .is("archived_at", null)
-        .order("last_name", { ascending: true })
-        .order("first_name", { ascending: true });
+  const currentProfileQuery = useCurrentUserProfile();
+  const downlinesQuery = useMyDownlines({
+    enabled,
+    staleTime: 60_000,
+    gcTime: 20 * 60_000,
+  });
 
-      if (error) {
-        throw new Error(error.message);
+  const currentUserId = currentProfileQuery.data?.id;
+
+  const data = useMemo(() => {
+    const byId = new Map<string, TheStandardAgent>();
+
+    const currentProfile = currentProfileQuery.data;
+    if (currentProfile) {
+      byId.set(currentProfile.id, {
+        id: currentProfile.id,
+        first_name: currentProfile.first_name,
+        last_name: currentProfile.last_name,
+        email: currentProfile.email,
+        agency_id: currentProfile.agency_id,
+        upline_id: currentProfile.upline_id,
+        hierarchy_depth: currentProfile.hierarchy_depth,
+      });
+    }
+
+    for (const downline of downlinesQuery.data || []) {
+      byId.set(downline.id, {
+        id: downline.id,
+        first_name: downline.first_name,
+        last_name: downline.last_name,
+        email: downline.email,
+        agency_id: downline.agency_id,
+        upline_id: downline.upline_id,
+        hierarchy_depth: downline.hierarchy_depth,
+      });
+    }
+
+    return Array.from(byId.values()).sort((a, b) => {
+      if (currentUserId) {
+        if (a.id === currentUserId) return -1;
+        if (b.id === currentUserId) return 1;
       }
 
-      return (data || []) as TheStandardAgent[];
+      const depthDiff = (a.hierarchy_depth ?? 999) - (b.hierarchy_depth ?? 999);
+      if (depthDiff !== 0) return depthDiff;
+
+      const lastNameCompare = (a.last_name || "").localeCompare(
+        b.last_name || "",
+      );
+      if (lastNameCompare !== 0) return lastNameCompare;
+
+      return (a.first_name || "").localeCompare(b.first_name || "");
+    });
+  }, [currentProfileQuery.data, currentUserId, downlinesQuery.data]);
+
+  const error = (currentProfileQuery.error || downlinesQuery.error) as
+    | Error
+    | null
+    | undefined;
+
+  return {
+    data,
+    isLoading:
+      enabled && (currentProfileQuery.isLoading || downlinesQuery.isLoading),
+    isFetching:
+      currentProfileQuery.isFetching || downlinesQuery.isFetching || false,
+    error,
+    refetch: async () => {
+      await Promise.all([
+        currentProfileQuery.refetch(),
+        downlinesQuery.refetch(),
+      ]);
     },
-    enabled,
-    staleTime,
-  });
+  };
 }
+
+export const useLicensingWorkspaceAgents = useTheStandardAgents;

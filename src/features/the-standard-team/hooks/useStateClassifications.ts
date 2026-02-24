@@ -24,17 +24,24 @@ export const stateClassificationsQueryKeys = {
  * Fetches state classifications for an agency
  */
 export function useStateClassifications(
-  agencyId: string,
+  agencyId: string | undefined,
   options?: {
     enabled?: boolean;
     staleTime?: number;
+    gcTime?: number;
   },
 ) {
-  const { enabled = true, staleTime = 5 * 60 * 1000 } = options || {};
+  const {
+    enabled = true,
+    staleTime = 5 * 60 * 1000,
+    gcTime = 20 * 60 * 1000,
+  } = options || {};
 
   return useQuery({
-    queryKey: stateClassificationsQueryKeys.byAgency(agencyId),
+    queryKey: stateClassificationsQueryKeys.byAgency(agencyId || "none"),
     queryFn: async () => {
+      if (!agencyId) return [];
+
       const { data, error } = await supabase
         .from("state_classifications")
         .select("*")
@@ -48,6 +55,7 @@ export function useStateClassifications(
     },
     enabled: enabled && !!agencyId,
     staleTime,
+    gcTime,
   });
 }
 
@@ -101,9 +109,12 @@ export function useUpdateStateClassification() {
         return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: stateClassificationsQueryKeys.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: stateClassificationsQueryKeys.byAgency(variables.agencyId),
       });
     },
   });

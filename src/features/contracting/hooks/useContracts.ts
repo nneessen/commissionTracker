@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   contractingService,
   type ContractFilters,
+  type AgentContractToggleCarrier,
+  type VisibleAgentCarrierContract,
 } from "../services/contractingService";
 import type { Database } from "@/types/database.types";
 import { toast } from "sonner";
@@ -13,6 +15,14 @@ type CarrierContractInsert =
   Database["public"]["Tables"]["carrier_contracts"]["Insert"];
 type CarrierContractUpdate =
   Database["public"]["Tables"]["carrier_contracts"]["Update"];
+
+export const agentContractPanelKeys = {
+  all: ["agent-contract-panel"] as const,
+  carriers: (agentId: string) =>
+    [...agentContractPanelKeys.all, "carriers", agentId] as const,
+  contracts: (agentId: string) =>
+    [...agentContractPanelKeys.all, "contracts", agentId] as const,
+};
 
 export function useContracts(filters?: ContractFilters, page = 1, limit = 50) {
   return useQuery({
@@ -103,6 +113,30 @@ export function useAgentContracts(agentId: string | undefined) {
   });
 }
 
+export function useAgentContractToggleCarriers(agentId: string | undefined) {
+  return useQuery<AgentContractToggleCarrier[]>({
+    queryKey: agentId
+      ? agentContractPanelKeys.carriers(agentId)
+      : ["agent-contract-panel", "carriers", "none"],
+    queryFn: () => contractingService.getActiveCarriersForAgent(agentId!),
+    enabled: !!agentId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
+  });
+}
+
+export function useVisibleAgentContracts(agentId: string | undefined) {
+  return useQuery<VisibleAgentCarrierContract[]>({
+    queryKey: agentId
+      ? agentContractPanelKeys.contracts(agentId)
+      : ["agent-contract-panel", "contracts", "none"],
+    queryFn: () => contractingService.getVisibleAgentContracts(agentId!),
+    enabled: !!agentId,
+    staleTime: 60 * 1000,
+    gcTime: 20 * 60 * 1000,
+  });
+}
+
 export function useToggleAgentContract(agentId: string | undefined) {
   const queryClient = useQueryClient();
 
@@ -123,6 +157,43 @@ export function useToggleAgentContract(agentId: string | undefined) {
     },
     onError: (error) => {
       console.error("Error toggling contract:", error);
+      toast.error("Failed to update carrier contract");
+    },
+  });
+}
+
+export function useToggleVisibleAgentContract(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      carrierId,
+      active,
+    }: {
+      carrierId: string;
+      active: boolean;
+    }) =>
+      contractingService.toggleVisibleAgentContract(
+        agentId!,
+        carrierId,
+        active,
+      ),
+    onSuccess: () => {
+      if (!agentId) return;
+
+      queryClient.invalidateQueries({
+        queryKey: agentContractPanelKeys.contracts(agentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["agent-contracts", agentId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["upline-carrier-contracts", agentId],
+      });
+      toast.success("Carrier contract updated");
+    },
+    onError: (error) => {
+      console.error("Error toggling visible agent contract:", error);
       toast.error("Failed to update carrier contract");
     },
   });

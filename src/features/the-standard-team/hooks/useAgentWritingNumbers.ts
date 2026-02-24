@@ -10,7 +10,11 @@ type AgentWritingNumber =
 export const agentWritingNumbersQueryKeys = {
   all: ["agent-writing-numbers"] as const,
   byAgents: (agentIds: string[]) =>
-    [...agentWritingNumbersQueryKeys.all, "by-agents", ...agentIds] as const,
+    [
+      ...agentWritingNumbersQueryKeys.all,
+      "by-agents",
+      ...[...agentIds].sort(),
+    ] as const,
 };
 
 /**
@@ -21,9 +25,14 @@ export function useAgentWritingNumbers(
   options?: {
     enabled?: boolean;
     staleTime?: number;
+    gcTime?: number;
   },
 ) {
-  const { enabled = true, staleTime = 5 * 60 * 1000 } = options || {};
+  const {
+    enabled = true,
+    staleTime = 5 * 60 * 1000,
+    gcTime = 20 * 60 * 1000,
+  } = options || {};
 
   return useQuery({
     queryKey: agentWritingNumbersQueryKeys.byAgents(agentIds),
@@ -44,6 +53,7 @@ export function useAgentWritingNumbers(
     },
     enabled: enabled && agentIds.length > 0,
     staleTime,
+    gcTime,
   });
 }
 

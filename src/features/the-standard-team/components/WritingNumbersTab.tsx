@@ -1,23 +1,707 @@
 // src/features/the-standard-team/components/WritingNumbersTab.tsx
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { WritingNumbersTable } from "./WritingNumbersTable";
-import { useTheStandardAgents } from "../hooks/useTheStandardAgents";
 import {
   useAgentWritingNumbers,
+  useDeleteWritingNumber,
   useUpsertWritingNumber,
 } from "../hooks/useAgentWritingNumbers";
 import { useActiveCarriers } from "@/hooks/carriers";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, FileText, Search, Save, Eraser } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { TheStandardAgent } from "../hooks/useTheStandardAgents";
+import type { Carrier } from "@/types/carrier.types";
+import type { Database } from "@/types/database.types";
 
-export function WritingNumbersTab() {
-  const {
-    data: agents = [],
-    isLoading: agentsLoading,
-    error: agentsError,
-  } = useTheStandardAgents();
+interface WritingNumbersTabProps {
+  agents: TheStandardAgent[];
+  selectedAgentId?: string;
+}
+
+type AgentWritingNumber =
+  Database["public"]["Tables"]["agent_writing_numbers"]["Row"];
+
+interface AgentWritingNumbersPanelProps {
+  agent: TheStandardAgent;
+  carriers: Carrier[];
+  writingNumbers: AgentWritingNumber[];
+  isSaving: boolean;
+  onUpsertWritingNumber: (params: {
+    agentId: string;
+    carrierId: string;
+    writingNumber: string;
+    existingId?: string;
+  }) => void;
+  onDeleteWritingNumber: (id: string) => void;
+}
+
+type AgentWritingNumbersFilter = "all" | "missing" | "saved" | "edited";
+
+interface TeamWritingNumbersBoardProps {
+  agents: TheStandardAgent[];
+  selectedAgent: TheStandardAgent;
+  carriers: Carrier[];
+  writingNumbers: AgentWritingNumber[];
+  isSaving: boolean;
+  onUpsertWritingNumber: (params: {
+    agentId: string;
+    carrierId: string;
+    writingNumber: string;
+    existingId?: string;
+  }) => void;
+  onDeleteWritingNumber: (id: string) => void;
+}
+
+function AgentWritingNumbersPanel({
+  agent,
+  carriers,
+  writingNumbers,
+  isSaving,
+  onUpsertWritingNumber,
+  onDeleteWritingNumber,
+}: AgentWritingNumbersPanelProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [filterMode, setFilterMode] =
+    useState<AgentWritingNumbersFilter>("all");
+
+  const writingNumberMap = useMemo(() => {
+    const map = new Map<string, AgentWritingNumber>();
+    for (const row of writingNumbers) {
+      map.set(row.carrier_id, row);
+    }
+    return map;
+  }, [writingNumbers]);
+
+  const rows = useMemo(() => {
+    return carriers
+      .map((carrier) => {
+        const existing = writingNumberMap.get(carrier.id);
+        const currentValue =
+          drafts[carrier.id] ?? existing?.writing_number ?? "";
+        const normalizedCurrent = currentValue.trim();
+        const normalizedExisting = (existing?.writing_number || "").trim();
+
+        return {
+          carrier,
+          existing,
+          currentValue,
+          normalizedCurrent,
+          normalizedExisting,
+          isDirty: normalizedCurrent !== normalizedExisting,
+          hasSavedValue: Boolean(normalizedExisting),
+        };
+      })
+      .sort((a, b) => {
+        if (a.hasSavedValue !== b.hasSavedValue) {
+          return a.hasSavedValue ? 1 : -1;
+        }
+        return a.carrier.name.localeCompare(b.carrier.name);
+      });
+  }, [carriers, drafts, writingNumberMap]);
+
+  const filteredRows = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return rows.filter((row) => {
+      // Keep rows in their persisted bucket while editing so they don't jump
+      // between "Missing" and "Saved" sections on each keystroke.
+      if (filterMode === "missing" && row.hasSavedValue) return false;
+      if (filterMode === "saved" && !row.hasSavedValue) return false;
+      if (filterMode === "edited" && !row.isDirty) return false;
+
+      if (!query) return true;
+      return row.carrier.name.toLowerCase().includes(query);
+    });
+  }, [filterMode, rows, searchQuery]);
+
+  const assignedCount = carriers.filter((carrier) =>
+    Boolean(
+      (
+        drafts[carrier.id] ??
+        writingNumberMap.get(carrier.id)?.writing_number ??
+        ""
+      ).trim(),
+    ),
+  ).length;
+  const editedCount = rows.filter((row) => row.isDirty).length;
+  const filteredMissingRows = filteredRows.filter((row) => !row.hasSavedValue);
+  const filteredSavedRows = filteredRows.filter((row) => row.hasSavedValue);
+  const coveragePercent =
+    carriers.length > 0
+      ? Math.round((assignedCount / carriers.length) * 100)
+      : 0;
+
+  const handleDraftChange = (carrierId: string, value: string) => {
+    setDrafts((prev) => ({ ...prev, [carrierId]: value }));
+  };
+
+  const getCurrentValue = (carrierId: string) =>
+    drafts[carrierId] ?? writingNumberMap.get(carrierId)?.writing_number ?? "";
+
+  const handleSave = (carrierId: string) => {
+    const existing = writingNumberMap.get(carrierId);
+    const nextValue = getCurrentValue(carrierId).trim();
+
+    if (!nextValue) {
+      if (existing?.id) {
+        onDeleteWritingNumber(existing.id);
+      }
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[carrierId];
+        return next;
+      });
+      return;
+    }
+
+    onUpsertWritingNumber({
+      agentId: agent.id,
+      carrierId,
+      writingNumber: nextValue,
+      existingId: existing?.id,
+    });
+
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[carrierId];
+      return next;
+    });
+  };
+
+  const handleReset = (carrierId: string) => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[carrierId];
+      return next;
+    });
+  };
+
+  const handleClear = (carrierId: string) => {
+    const existing = writingNumberMap.get(carrierId);
+    if (!existing?.id) return;
+
+    onDeleteWritingNumber(existing.id);
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[carrierId];
+      return next;
+    });
+  };
+
+  const renderCarrierRow = (row: (typeof rows)[number]) => {
+    const isDirty = row.isDirty;
+    const hasSavedValue = row.hasSavedValue;
+
+    return (
+      <div
+        key={row.carrier.id}
+        className={cn(
+          "rounded-lg border p-2.5",
+          hasSavedValue
+            ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/20"
+            : "border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/10",
+        )}
+      >
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="min-w-0">
+            <p
+              className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate"
+              title={row.carrier.name}
+            >
+              {row.carrier.name}
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              {hasSavedValue
+                ? `Saved: #${row.normalizedExisting}`
+                : "No writing number saved"}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {isDirty && (
+              <Badge variant="warning" size="sm">
+                Unsaved
+              </Badge>
+            )}
+            <Badge variant={hasSavedValue ? "success" : "outline"} size="sm">
+              {hasSavedValue ? "Saved" : "Missing"}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-2 items-start">
+          <Input
+            value={row.currentValue}
+            onChange={(e) => handleDraftChange(row.carrier.id, e.target.value)}
+            placeholder={hasSavedValue ? "Update writing #" : "Enter writing #"}
+            className="h-8 text-xs min-w-0"
+          />
+          <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+            <Button
+              type="button"
+              size="xs"
+              onClick={() => handleSave(row.carrier.id)}
+              disabled={isSaving || !isDirty}
+            >
+              <Save className="h-3 w-3" />
+              Save
+            </Button>
+            <Button
+              type="button"
+              size="xs"
+              variant="ghost"
+              onClick={() => handleReset(row.carrier.id)}
+              disabled={!isDirty}
+            >
+              <Eraser className="h-3 w-3" />
+              Reset
+            </Button>
+            {hasSavedValue && (
+              <Button
+                type="button"
+                size="xs"
+                variant="ghost"
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                onClick={() => handleClear(row.carrier.id)}
+                disabled={isSaving}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-full min-h-0 min-w-0 flex flex-col">
+      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div>
+            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+              {[agent.first_name, agent.last_name].filter(Boolean).join(" ") ||
+                agent.email}
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Writing # Focus Workspace
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="info" size="sm">
+            {assignedCount} assigned
+          </Badge>
+          <Badge variant="outline" size="sm">
+            {Math.max(0, carriers.length - assignedCount)} missing
+          </Badge>
+          <Badge variant={editedCount > 0 ? "warning" : "outline"} size="sm">
+            {editedCount} edited
+          </Badge>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-auto">
+        <div className="p-3 space-y-3">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/20 p-3 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-200">
+                  Filters And Coverage
+                </p>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  Search carriers, filter the list, and track completion while
+                  you edit.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="outline" size="sm">
+                  {coveragePercent}% covered
+                </Badge>
+                <Badge variant="outline" size="sm">
+                  {assignedCount}/{carriers.length} saved
+                </Badge>
+                <Badge
+                  variant={editedCount > 0 ? "warning" : "outline"}
+                  size="sm"
+                >
+                  {editedCount} unsaved
+                </Badge>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_auto] gap-2 items-start">
+              <div className="relative min-w-0">
+                <Search className="h-3.5 w-3.5 text-zinc-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search carriers"
+                  className="h-8 pl-7 text-xs"
+                />
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={filterMode === "all" ? "default" : "ghost"}
+                  onClick={() => setFilterMode("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={filterMode === "missing" ? "default" : "ghost"}
+                  onClick={() => setFilterMode("missing")}
+                >
+                  Missing
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={filterMode === "saved" ? "default" : "ghost"}
+                  onClick={() => setFilterMode("saved")}
+                >
+                  Saved
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={filterMode === "edited" ? "default" : "ghost"}
+                  onClick={() => setFilterMode("edited")}
+                >
+                  Edited
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all",
+                    coveragePercent >= 80
+                      ? "bg-emerald-500"
+                      : coveragePercent >= 40
+                        ? "bg-amber-500"
+                        : "bg-red-500",
+                  )}
+                  style={{ width: `${coveragePercent}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                `Clear` removes the saved writing number for a carrier.
+              </p>
+            </div>
+          </div>
+
+          <div className="min-w-0 space-y-2">
+            {filteredRows.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 py-12 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
+                No carriers match the current filters
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 items-start">
+                {filteredMissingRows.length > 0 && (
+                  <section className="min-w-0 space-y-2 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/10 p-2.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                        Missing Writing Numbers
+                      </p>
+                      <Badge variant="outline" size="sm">
+                        {filteredMissingRows.length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {filteredMissingRows.map(renderCarrierRow)}
+                    </div>
+                  </section>
+                )}
+
+                {filteredSavedRows.length > 0 && (
+                  <section className="min-w-0 space-y-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-900/20 p-2.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">
+                        Saved Writing Numbers
+                      </p>
+                      <Badge variant="outline" size="sm">
+                        {filteredSavedRows.length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {filteredSavedRows.map(renderCarrierRow)}
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TeamWritingNumbersBoard({
+  agents,
+  selectedAgent,
+  carriers,
+  writingNumbers,
+  isSaving,
+  onUpsertWritingNumber,
+  onDeleteWritingNumber,
+}: TeamWritingNumbersBoardProps) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+  const writingNumberLookup = useMemo(() => {
+    const map = new Map<string, AgentWritingNumber>();
+    for (const row of writingNumbers) {
+      map.set(`${row.agent_id}-${row.carrier_id}`, row);
+    }
+    return map;
+  }, [writingNumbers]);
+
+  const selectedAgentLabel =
+    [selectedAgent.first_name, selectedAgent.last_name]
+      .filter(Boolean)
+      .join(" ") || selectedAgent.email;
+
+  const getSelectedRow = (carrierId: string) =>
+    writingNumberLookup.get(`${selectedAgent.id}-${carrierId}`);
+
+  const getCurrentValue = (carrierId: string) =>
+    drafts[carrierId] ?? getSelectedRow(carrierId)?.writing_number ?? "";
+
+  const handleDraftChange = (carrierId: string, value: string) => {
+    setDrafts((prev) => ({ ...prev, [carrierId]: value }));
+  };
+
+  const handleSave = (carrierId: string) => {
+    const existing = getSelectedRow(carrierId);
+    const nextValue = getCurrentValue(carrierId).trim();
+
+    if (!nextValue) {
+      if (existing?.id) {
+        onDeleteWritingNumber(existing.id);
+      }
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[carrierId];
+        return next;
+      });
+      return;
+    }
+
+    onUpsertWritingNumber({
+      agentId: selectedAgent.id,
+      carrierId,
+      writingNumber: nextValue,
+      existingId: existing?.id,
+    });
+
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[carrierId];
+      return next;
+    });
+  };
+
+  const handleReset = (carrierId: string) => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[carrierId];
+      return next;
+    });
+  };
+
+  const totalAgentCount = agents.length;
+
+  return (
+    <div className="h-full min-h-0 min-w-0 flex flex-col">
+      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+            Coverage Board
+          </p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Edit the selected agent quickly while seeing team coverage and
+            missing carriers at a glance.
+          </p>
+        </div>
+        <Badge variant="info" size="sm">
+          Editing: {selectedAgentLabel}
+        </Badge>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="p-3 grid grid-cols-1 2xl:grid-cols-2 gap-2.5">
+          {carriers.map((carrier) => {
+            const perAgent = agents.map((agent) => {
+              const row = writingNumberLookup.get(`${agent.id}-${carrier.id}`);
+              return {
+                agent,
+                row,
+                value: row?.writing_number?.trim() || "",
+              };
+            });
+
+            const assigned = perAgent.filter((entry) => entry.value);
+            const missing = perAgent.filter((entry) => !entry.value);
+            const coveragePercent =
+              totalAgentCount > 0
+                ? Math.round((assigned.length / totalAgentCount) * 100)
+                : 0;
+
+            const selectedExisting = getSelectedRow(carrier.id);
+            const currentValue = getCurrentValue(carrier.id);
+            const normalizedCurrent = currentValue.trim();
+            const normalizedExisting = (
+              selectedExisting?.writing_number || ""
+            ).trim();
+            const isDirty = normalizedCurrent !== normalizedExisting;
+
+            const missingPreview = missing
+              .slice(0, 3)
+              .map(
+                (entry) =>
+                  [entry.agent.first_name, entry.agent.last_name]
+                    .filter(Boolean)
+                    .join(" ") || entry.agent.email,
+              );
+
+            return (
+              <div
+                key={carrier.id}
+                className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-3 space-y-2.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p
+                      className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate"
+                      title={carrier.name}
+                    >
+                      {carrier.name}
+                    </p>
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      {assigned.length}/{totalAgentCount} agents have a writing
+                      #
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <Badge variant="outline" size="sm">
+                      {coveragePercent}% covered
+                    </Badge>
+                    <Badge
+                      variant={normalizedExisting ? "success" : "outline"}
+                      size="sm"
+                    >
+                      {normalizedExisting
+                        ? "Selected Saved"
+                        : "Selected Missing"}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full transition-all",
+                      coveragePercent >= 80
+                        ? "bg-emerald-500"
+                        : coveragePercent >= 40
+                          ? "bg-amber-500"
+                          : "bg-red-500",
+                    )}
+                    style={{ width: `${coveragePercent}%` }}
+                  />
+                </div>
+
+                <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/30 p-2">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <p className="text-[10px] font-medium text-zinc-700 dark:text-zinc-200 truncate">
+                      Selected Agent Quick Edit
+                    </p>
+                    <p className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {selectedAgentLabel}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Input
+                      value={currentValue}
+                      onChange={(e) =>
+                        handleDraftChange(carrier.id, e.target.value)
+                      }
+                      placeholder="Enter writing #"
+                      className="h-8 text-xs min-w-0"
+                    />
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
+                      <Button
+                        type="button"
+                        size="xs"
+                        onClick={() => handleSave(carrier.id)}
+                        disabled={isSaving || !isDirty}
+                      >
+                        <Save className="h-3 w-3" />
+                        Save
+                      </Button>
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => handleReset(carrier.id)}
+                        disabled={!isDirty}
+                      >
+                        <Eraser className="h-3 w-3" />
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  {missing.length === 0 ? (
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      All visible agents have a writing # for this carrier.
+                    </span>
+                  ) : (
+                    <>
+                      Missing ({missing.length}): {missingPreview.join(", ")}
+                      {missing.length > missingPreview.length &&
+                        ` +${missing.length - missingPreview.length} more`}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function WritingNumbersTab({
+  agents,
+  selectedAgentId,
+}: WritingNumbersTabProps) {
+  const [carrierSearch, setCarrierSearch] = useState("");
+  const [showOnlyMissingForSelected, setShowOnlyMissingForSelected] =
+    useState(false);
+  const [teamViewMode, setTeamViewMode] = useState<"coverage-board" | "matrix">(
+    "coverage-board",
+  );
+  const [teamLayout, setTeamLayout] = useState<"carriers-rows" | "agents-rows">(
+    "carriers-rows",
+  );
+  const agentsLoading = false;
+  const agentsError = null;
 
   const {
     data: carriers = [],
@@ -34,6 +718,36 @@ export function WritingNumbersTab() {
   } = useAgentWritingNumbers(agentIds);
 
   const upsertMutation = useUpsertWritingNumber();
+  const deleteMutation = useDeleteWritingNumber();
+
+  const writingNumberLookup = useMemo(() => {
+    const map = new Map<string, AgentWritingNumber>();
+    for (const row of writingNumbers) {
+      map.set(`${row.agent_id}-${row.carrier_id}`, row);
+    }
+    return map;
+  }, [writingNumbers]);
+
+  const filteredCarriers = useMemo(() => {
+    const query = carrierSearch.trim().toLowerCase();
+
+    return carriers.filter((carrier) => {
+      if (showOnlyMissingForSelected && selectedAgentId) {
+        const key = `${selectedAgentId}-${carrier.id}`;
+        const existing = writingNumberLookup.get(key);
+        if (existing?.writing_number?.trim()) return false;
+      }
+
+      if (!query) return true;
+      return carrier.name.toLowerCase().includes(query);
+    });
+  }, [
+    carriers,
+    carrierSearch,
+    selectedAgentId,
+    showOnlyMissingForSelected,
+    writingNumberLookup,
+  ]);
 
   const handleUpsertWritingNumber = (params: {
     agentId: string;
@@ -47,6 +761,17 @@ export function WritingNumbersTab() {
       },
       onError: (error) => {
         toast.error(`Failed to save: ${error.message}`);
+      },
+    });
+  };
+
+  const handleDeleteWritingNumber = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Writing number cleared");
+      },
+      onError: (error) => {
+        toast.error(`Failed to clear: ${error.message}`);
       },
     });
   };
@@ -82,7 +807,7 @@ export function WritingNumbersTab() {
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <FileText className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
         <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-          No agents found in The Standard agency
+          No agents found in your hierarchy
         </p>
       </div>
     );
@@ -99,23 +824,143 @@ export function WritingNumbersTab() {
     );
   }
 
+  const isAgentFocus = agents.length === 1;
+  const selectedAgent =
+    agents.find((a) => a.id === selectedAgentId) || agents[0];
+
+  if (isAgentFocus && selectedAgent) {
+    const singleAgentRows = writingNumbers.filter(
+      (row) => row.agent_id === selectedAgent.id,
+    );
+
+    return (
+      <AgentWritingNumbersPanel
+        agent={selectedAgent}
+        carriers={carriers}
+        writingNumbers={singleAgentRows}
+        isSaving={upsertMutation.isPending || deleteMutation.isPending}
+        onUpsertWritingNumber={handleUpsertWritingNumber}
+        onDeleteWritingNumber={handleDeleteWritingNumber}
+      />
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-full">
-      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
-        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-          Click any cell to add or edit a writing number. Press Enter to save,
-          Escape to cancel.
-        </p>
+    <div className="h-full min-h-0 min-w-0 flex flex-col">
+      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0 space-y-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 min-w-0">
+            Coverage Board is the default view for quick selected-agent edits
+            and team coverage gaps. Switch to Matrix for bulk grid editing.
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant="info" size="sm">
+              {agents.length} agents
+            </Badge>
+            <Badge variant="outline" size="sm">
+              {filteredCarriers.length}/{carriers.length} carriers
+            </Badge>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 min-w-0 xl:flex-row xl:items-center">
+          <div className="relative flex-1 min-w-0">
+            <Search className="h-3.5 w-3.5 text-zinc-400 absolute left-2 top-1/2 -translate-y-1/2" />
+            <Input
+              value={carrierSearch}
+              onChange={(e) => setCarrierSearch(e.target.value)}
+              placeholder="Filter carriers in matrix"
+              className="h-8 pl-7 text-xs"
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <Button
+              type="button"
+              size="xs"
+              variant={showOnlyMissingForSelected ? "default" : "ghost"}
+              onClick={() => setShowOnlyMissingForSelected((prev) => !prev)}
+              disabled={!selectedAgentId}
+              title={
+                selectedAgentId
+                  ? "Show carriers missing a writing number for the selected agent"
+                  : "Select an agent first"
+              }
+            >
+              Missing for Selected
+            </Button>
+            <div className="flex items-center gap-1 flex-wrap">
+              <Button
+                type="button"
+                size="xs"
+                variant={
+                  teamViewMode === "coverage-board" ? "default" : "ghost"
+                }
+                onClick={() => setTeamViewMode("coverage-board")}
+              >
+                Coverage Board
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant={teamViewMode === "matrix" ? "default" : "ghost"}
+                onClick={() => setTeamViewMode("matrix")}
+              >
+                Matrix
+              </Button>
+            </div>
+            {teamViewMode === "matrix" && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={teamLayout === "carriers-rows" ? "default" : "ghost"}
+                  onClick={() => setTeamLayout("carriers-rows")}
+                  title="Carrier rows (recommended to reduce horizontal scroll)"
+                >
+                  Carrier Rows
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={teamLayout === "agents-rows" ? "default" : "ghost"}
+                  onClick={() => setTeamLayout("agents-rows")}
+                  title="Classic agent rows"
+                >
+                  Agent Rows
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto">
-        <WritingNumbersTable
+      {teamViewMode === "coverage-board" && selectedAgent ? (
+        <TeamWritingNumbersBoard
           agents={agents}
-          carriers={carriers}
+          selectedAgent={selectedAgent}
+          carriers={filteredCarriers}
           writingNumbers={writingNumbers}
-          isLoading={upsertMutation.isPending}
+          isSaving={upsertMutation.isPending || deleteMutation.isPending}
           onUpsertWritingNumber={handleUpsertWritingNumber}
+          onDeleteWritingNumber={handleDeleteWritingNumber}
         />
-      </div>
+      ) : (
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+          <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400">
+            Matrix mode supports horizontal scrolling. Use trackpad/touchpad
+            horizontal scroll or Shift + mouse wheel.
+          </div>
+          <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+            <WritingNumbersTable
+              agents={agents}
+              selectedAgentId={selectedAgentId}
+              carriers={filteredCarriers}
+              writingNumbers={writingNumbers}
+              layout={teamLayout}
+              isLoading={upsertMutation.isPending || deleteMutation.isPending}
+              onUpsertWritingNumber={handleUpsertWritingNumber}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

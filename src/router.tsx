@@ -57,7 +57,7 @@ import { LeaderboardNamingPage } from "./features/messages/components/slack/Lead
 import { TermsPage, PrivacyPage } from "./features/legal";
 import { WorkflowAdminPage } from "./features/workflows";
 import { LeaderboardPage } from "./features/leaderboard";
-import { TheStandardTeamPage } from "./features/the-standard-team";
+import { TheStandardTeamRoutePage } from "./features/the-standard-team";
 import { BillingPage } from "./features/billing/BillingPage";
 import { LeadIntelligenceDashboard } from "./features/admin/components/lead-vendors";
 
@@ -751,7 +751,7 @@ const leadVendorsRoute = createRoute({
   ),
 });
 
-// The Standard Team route - restricted to The Standard agency only
+// Licensing/Writing route (legacy path kept for backwards compatibility)
 // Supports tab search param: ?tab=writing-numbers or ?tab=state-licenses
 const theStandardTeamRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -765,12 +765,8 @@ const theStandardTeamRoute = createRoute({
 function TheStandardTeamRouteComponent() {
   const { tab } = theStandardTeamRoute.useSearch();
   return (
-    <RouteGuard
-      noRecruits
-      noStaffRoles
-      allowedAgencyId="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    >
-      <TheStandardTeamPage initialTab={tab} />
+    <RouteGuard noRecruits noStaffRoles>
+      <TheStandardTeamRoutePage initialTab={tab} />
     </RouteGuard>
   );
 }

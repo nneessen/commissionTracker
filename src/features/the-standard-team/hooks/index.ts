@@ -4,3 +4,4 @@ export * from "./useTheStandardAgents";
 export * from "./useAgentWritingNumbers";
 export * from "./useAgentStateLicenses";
 export * from "./useStateClassifications";
+export * from "./useLicensingWorkspaceAccess";

@@ -2,6 +2,7 @@
 // Redesigned with zinc palette and compact design patterns
 
 import React, { useState, useEffect } from "react";
+import { Link as RouterLink } from "@tanstack/react-router";
 import {
   User,
   Save,
@@ -13,8 +14,10 @@ import {
   Check,
   Mail,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useUpdateUserProfile } from "../../../hooks/settings/useUpdateUserProfile";
@@ -392,6 +395,45 @@ export function UserProfile() {
 
   return (
     <div className="space-y-2">
+      <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="text-[10px] font-semibold uppercase tracking-wide">
+                  New Workspace
+                </span>
+              </div>
+              <Badge variant="outline" size="sm">
+                7-Day Free Trial
+              </Badge>
+              <Badge variant="outline" size="sm">
+                Pro / Team
+              </Badge>
+            </div>
+            <p className="mt-1 text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+              Licensing/Writing #&apos;s team workspace includes a 7-day free
+              trial, then requires Pro or Team.
+            </p>
+            <p className="mt-1 text-[10px] text-zinc-600 dark:text-zinc-300">
+              Use your trial to play around with the workspace, manage your
+              entire team&apos;s writing numbers, see which agents have which
+              carrier contracts, compare which states agents are licensed in,
+              and more. Free plan users can still use the carrier contract
+              toggles below in Profile after the trial.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <RouterLink to="/billing">
+              <Button type="button" size="sm" className="h-7 px-2 text-[10px]">
+                View Pro/Team Plans
+              </Button>
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+
       {/* User Information Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">

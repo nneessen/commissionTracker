@@ -1,56 +1,54 @@
 // src/features/contracting/components/MyCarrierContractsCard.tsx
-import { useQuery } from "@tanstack/react-query";
+
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Briefcase } from "lucide-react";
-// eslint-disable-next-line no-restricted-imports
-import { supabase } from "@/services/base/supabase";
+import { Loader2, Briefcase, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
-  useAgentContracts,
-  useToggleAgentContract,
+  useAgentContractToggleCarriers,
+  useVisibleAgentContracts,
+  useToggleVisibleAgentContract,
 } from "../hooks/useContracts";
+
+interface AgentCarrierContractsCardProps {
+  agentId: string;
+  title?: string;
+  description?: string;
+  className?: string;
+  disableToggle?: boolean;
+}
 
 interface MyCarrierContractsCardProps {
   agentId: string;
 }
 
-export function MyCarrierContractsCard({
+export function AgentCarrierContractsCard({
   agentId,
-}: MyCarrierContractsCardProps) {
-  // Fetch all active carriers for the agent's IMO
-  const { data: carriers, isLoading: carriersLoading } = useQuery({
-    queryKey: ["my-imo-carriers", agentId],
-    queryFn: async () => {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("imo_id")
-        .eq("id", agentId)
-        .single();
+  title = "Carrier Contracts",
+  description = "Toggle carriers that are actively contracted for this agent.",
+  className,
+  disableToggle = false,
+}: AgentCarrierContractsCardProps) {
+  const {
+    data: carriers,
+    isLoading: carriersLoading,
+    error: carriersError,
+  } = useAgentContractToggleCarriers(agentId);
 
-      if (!profile?.imo_id) return [];
+  const {
+    data: contracts,
+    isLoading: contractsLoading,
+    error: contractsError,
+  } = useVisibleAgentContracts(agentId);
 
-      const { data, error } = await supabase
-        .from("carriers")
-        .select("id, name")
-        .eq("imo_id", profile.imo_id)
-        .eq("is_active", true)
-        .order("name");
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!agentId,
-  });
-
-  const { data: contracts, isLoading: contractsLoading } =
-    useAgentContracts(agentId);
-
-  const toggleContract = useToggleAgentContract(agentId);
+  const toggleContract = useToggleVisibleAgentContract(agentId);
 
   const isLoading = carriersLoading || contractsLoading;
-
+  const error = carriersError || contractsError;
   const contractMap = new Map((contracts || []).map((c) => [c.carrier_id, c]));
 
   const handleToggle = (carrierId: string, currentlyActive: boolean) => {
+    if (disableToggle) return;
+
     toggleContract.mutate({
       carrierId,
       active: !currentlyActive,
@@ -58,11 +56,16 @@ export function MyCarrierContractsCard({
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+    <div
+      className={cn(
+        "bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800",
+        className,
+      )}
+    >
       <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
         <Briefcase className="h-3.5 w-3.5 text-zinc-400" />
         <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
-          My Carrier Contracts
+          {title}
         </h3>
       </div>
 
@@ -70,10 +73,15 @@ export function MyCarrierContractsCard({
         <div className="p-4 text-center">
           <Loader2 className="h-4 w-4 animate-spin text-zinc-400 mx-auto" />
         </div>
+      ) : error ? (
+        <div className="p-3 flex items-center gap-2 text-red-500">
+          <AlertCircle className="h-3.5 w-3.5" />
+          <p className="text-[10px]">Failed to load carrier contracts</p>
+        </div>
       ) : !carriers || carriers.length === 0 ? (
         <div className="p-3 text-center">
           <p className="text-[10px] text-zinc-500">
-            No carriers configured for your organization
+            No carriers configured for this agent&apos;s organization
           </p>
         </div>
       ) : (
@@ -101,7 +109,7 @@ export function MyCarrierContractsCard({
                 <Switch
                   checked={isActive}
                   onCheckedChange={() => handleToggle(carrier.id, isActive)}
-                  disabled={toggleContract.isPending}
+                  disabled={disableToggle || toggleContract.isPending}
                   className="scale-75"
                 />
               </div>
@@ -111,11 +119,20 @@ export function MyCarrierContractsCard({
       )}
 
       <div className="px-3 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
-        <p className="text-[9px] text-zinc-400">
-          Toggle carriers you are actively contracted with. This helps your
-          downline see which carriers are available.
-        </p>
+        <p className="text-[9px] text-zinc-400">{description}</p>
       </div>
     </div>
+  );
+}
+
+export function MyCarrierContractsCard({
+  agentId,
+}: MyCarrierContractsCardProps) {
+  return (
+    <AgentCarrierContractsCard
+      agentId={agentId}
+      title="My Carrier Contracts"
+      description="Toggle carriers you are actively contracted with. This helps your downline see which carriers are available."
+    />
   );
 }

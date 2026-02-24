@@ -13,8 +13,10 @@ type AgentWritingNumber =
 
 interface WritingNumbersTableProps {
   agents: TheStandardAgent[];
+  selectedAgentId?: string;
   carriers: Carrier[];
   writingNumbers: AgentWritingNumber[];
+  layout?: "carriers-rows" | "agents-rows";
   isLoading?: boolean;
   onUpsertWritingNumber: (params: {
     agentId: string;
@@ -26,8 +28,10 @@ interface WritingNumbersTableProps {
 
 export function WritingNumbersTable({
   agents,
+  selectedAgentId,
   carriers,
   writingNumbers,
+  layout = "carriers-rows",
   onUpsertWritingNumber,
 }: WritingNumbersTableProps) {
   const [editingCell, setEditingCell] = useState<{
@@ -93,102 +97,197 @@ export function WritingNumbersTable({
     }
   };
 
-  return (
-    <div className="min-w-max">
-      <table className="w-full border-collapse">
-        <thead className="sticky top-0 z-10">
-          <tr className="bg-zinc-100 dark:bg-zinc-800">
-            <th className="sticky left-0 z-20 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-left px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[160px]">
-              Agent
-            </th>
-            {carriers.map((carrier) => (
-              <th
-                key={carrier.id}
-                className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-center px-2 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[100px]"
-              >
-                {carrier.name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {agents.map((agent, idx) => (
-            <tr
-              key={agent.id}
-              className={cn(
-                "hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
-                idx % 2 === 0
-                  ? "bg-white dark:bg-zinc-900"
-                  : "bg-zinc-50/50 dark:bg-zinc-900/50",
-              )}
-            >
-              <td className="sticky left-0 z-10 bg-inherit text-[11px] font-medium text-zinc-900 dark:text-zinc-100 px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-                {agent.first_name} {agent.last_name}
-              </td>
-              {carriers.map((carrier) => {
-                const isEditing =
-                  editingCell?.agentId === agent.id &&
-                  editingCell?.carrierId === carrier.id;
-                const writingNumber = getWritingNumber(agent.id, carrier.id);
+  const carriersRowsTableWidth = 180 + agents.length * 92;
+  const agentsRowsTableWidth = 160 + carriers.length * 110;
 
-                return (
-                  <td
+  const renderEditingCell = (
+    agentId: string,
+    carrierId: string,
+    widthClass: string,
+  ) => {
+    const isEditing =
+      editingCell?.agentId === agentId && editingCell?.carrierId === carrierId;
+    const writingNumber = getWritingNumber(agentId, carrierId);
+
+    return (
+      <td
+        key={`${agentId}-${carrierId}`}
+        className={cn(
+          "text-[11px] text-center px-1 py-1 border-b border-zinc-100 dark:border-zinc-800 align-top",
+          widthClass,
+          !isEditing &&
+            "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700/50",
+          agentId === selectedAgentId && "bg-blue-50/70 dark:bg-blue-950/15",
+        )}
+        onClick={() => !isEditing && handleCellClick(agentId, carrierId)}
+      >
+        {isEditing ? (
+          <div className="flex items-center gap-1 px-1">
+            <Input
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="h-6 text-[11px] w-full min-w-[60px]"
+              autoFocus
+            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSave();
+              }}
+              className="p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+            >
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCancel();
+              }}
+              className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/50"
+            >
+              <X className="h-3.5 w-3.5 text-red-600" />
+            </button>
+          </div>
+        ) : (
+          <span
+            className={cn(
+              writingNumber?.writing_number
+                ? "text-zinc-900 dark:text-zinc-100"
+                : "text-zinc-300 dark:text-zinc-600",
+            )}
+          >
+            {writingNumber?.writing_number || "—"}
+          </span>
+        )}
+      </td>
+    );
+  };
+
+  if (layout === "agents-rows") {
+    return (
+      <div className="h-full w-full min-w-0 overflow-auto overscroll-x-contain">
+        <div className="inline-block min-w-full align-top">
+          <table
+            className="w-max min-w-full border-collapse"
+            style={{
+              width: `${Math.max(agentsRowsTableWidth, 0)}px`,
+              minWidth: "100%",
+            }}
+          >
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-zinc-100 dark:bg-zinc-800">
+                <th className="sticky left-0 z-20 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-left px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[160px] w-[160px]">
+                  Agent
+                </th>
+                {carriers.map((carrier) => (
+                  <th
                     key={carrier.id}
-                    className={cn(
-                      "text-[11px] text-center px-1 py-1 border-b border-zinc-100 dark:border-zinc-800",
-                      !isEditing &&
-                        "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700/50",
-                    )}
-                    onClick={() =>
-                      !isEditing && handleCellClick(agent.id, carrier.id)
-                    }
+                    className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-center px-2 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[100px] w-[100px] whitespace-nowrap"
                   >
-                    {isEditing ? (
-                      <div className="flex items-center gap-1 px-1">
-                        <Input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          className="h-6 text-[11px] w-full min-w-[60px]"
-                          autoFocus
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSave();
-                          }}
-                          className="p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
-                        >
-                          <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCancel();
-                          }}
-                          className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/50"
-                        >
-                          <X className="h-3.5 w-3.5 text-red-600" />
-                        </button>
-                      </div>
-                    ) : (
-                      <span
-                        className={cn(
-                          writingNumber?.writing_number
-                            ? "text-zinc-900 dark:text-zinc-100"
-                            : "text-zinc-300 dark:text-zinc-600",
-                        )}
-                      >
-                        {writingNumber?.writing_number || "—"}
-                      </span>
+                    {carrier.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {agents.map((agent, idx) => (
+                <tr
+                  key={agent.id}
+                  className={cn(
+                    "hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                    idx % 2 === 0
+                      ? "bg-white dark:bg-zinc-900"
+                      : "bg-zinc-50/50 dark:bg-zinc-900/50",
+                    agent.id === selectedAgentId &&
+                      "bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100/70 dark:hover:bg-blue-950/30",
+                  )}
+                >
+                  <td
+                    className={cn(
+                      "sticky left-0 z-10 bg-inherit text-[11px] font-medium text-zinc-900 dark:text-zinc-100 px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800",
+                      agent.id === selectedAgentId &&
+                        "text-blue-700 dark:text-blue-300",
                     )}
+                  >
+                    {agent.first_name} {agent.last_name}
                   </td>
-                );
-              })}
+                  {carriers.map((carrier) =>
+                    renderEditingCell(
+                      agent.id,
+                      carrier.id,
+                      "min-w-[110px] w-[110px]",
+                    ),
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full w-full min-w-0 overflow-auto overscroll-x-contain">
+      <div className="inline-block min-w-full align-top">
+        <table
+          className="w-max min-w-full border-collapse"
+          style={{
+            width: `${Math.max(carriersRowsTableWidth, 0)}px`,
+            minWidth: "100%",
+          }}
+        >
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-zinc-100 dark:bg-zinc-800">
+              <th className="sticky left-0 z-20 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-left px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[180px] w-[180px]">
+                Carrier
+              </th>
+              {agents.map((agent) => (
+                <th
+                  key={agent.id}
+                  className={cn(
+                    "text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide text-center px-2 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-[92px] w-[92px] whitespace-nowrap",
+                    agent.id === selectedAgentId &&
+                      "bg-blue-100/70 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
+                  )}
+                  title={`${agent.first_name} ${agent.last_name}`}
+                >
+                  <div className="truncate max-w-[86px]">
+                    {agent.first_name?.[0]}. {agent.last_name}
+                  </div>
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {carriers.map((carrier, idx) => (
+              <tr
+                key={carrier.id}
+                className={cn(
+                  "hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                  idx % 2 === 0
+                    ? "bg-white dark:bg-zinc-900"
+                    : "bg-zinc-50/50 dark:bg-zinc-900/50",
+                )}
+              >
+                <td className="sticky left-0 z-10 bg-inherit text-[11px] font-medium text-zinc-900 dark:text-zinc-100 px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800">
+                  <div className="truncate max-w-[170px]" title={carrier.name}>
+                    {carrier.name}
+                  </div>
+                </td>
+                {agents.map((agent) =>
+                  renderEditingCell(
+                    agent.id,
+                    carrier.id,
+                    "min-w-[92px] w-[92px]",
+                  ),
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
