@@ -1,8 +1,10 @@
 // src/features/recruiting/components/RecruitDetailHeader.tsx
+import { useState, useRef } from "react";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Mail, Phone, IdCard, Check, Loader2 } from "lucide-react";
 import { TERMINAL_STATUS_COLORS } from "@/types/recruiting.types";
 import { cn } from "@/lib/utils";
 
@@ -10,13 +12,39 @@ interface RecruitDetailHeaderProps {
   recruit: UserProfile;
   displayName: string;
   initials: string;
+  onUpdateNpn?: (npn: string) => Promise<void>;
+  isUpdatingNpn?: boolean;
 }
 
 export function RecruitDetailHeader({
   recruit,
   displayName,
   initials,
+  onUpdateNpn,
+  isUpdatingNpn,
 }: RecruitDetailHeaderProps) {
+  const [editingNpn, setEditingNpn] = useState(false);
+  const [npnValue, setNpnValue] = useState(recruit.npn || "");
+  const savingRef = useRef(false);
+
+  const handleNpnSave = async () => {
+    if (savingRef.current) return;
+    const trimmed = npnValue.trim();
+    if (trimmed === (recruit.npn || "")) {
+      setEditingNpn(false);
+      return;
+    }
+    savingRef.current = true;
+    try {
+      if (onUpdateNpn) {
+        await onUpdateNpn(trimmed);
+      }
+      setEditingNpn(false);
+    } finally {
+      savingRef.current = false;
+    }
+  };
+
   return (
     <div className="flex items-center gap-2.5">
       <Avatar className="h-9 w-9 shrink-0">
@@ -61,6 +89,61 @@ export function RecruitDetailHeader({
               <Phone className="h-3 w-3" />
               {recruit.phone}
             </a>
+          )}
+          {onUpdateNpn && (
+            <>
+              <span className="text-zinc-300 dark:text-zinc-600">|</span>
+              {editingNpn ? (
+                <div className="flex items-center gap-1">
+                  <IdCard className="h-3 w-3 text-zinc-400" />
+                  <Input
+                    value={npnValue}
+                    onChange={(e) => setNpnValue(e.target.value)}
+                    onBlur={handleNpnSave}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleNpnSave();
+                      if (e.key === "Escape") {
+                        setNpnValue(recruit.npn || "");
+                        setEditingNpn(false);
+                      }
+                    }}
+                    placeholder="NPN #"
+                    autoFocus
+                    className="h-4 w-24 text-[11px] px-1 py-0 border-zinc-300"
+                  />
+                  {isUpdatingNpn && (
+                    <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNpnValue(recruit.npn || "");
+                    setEditingNpn(true);
+                  }}
+                  className={cn(
+                    "flex items-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-300",
+                    recruit.npn
+                      ? "text-zinc-500 dark:text-zinc-400"
+                      : "text-amber-500 dark:text-amber-400",
+                  )}
+                  title={recruit.npn ? "Edit NPN" : "Set NPN"}
+                >
+                  {recruit.npn ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-500" />
+                      NPN: {recruit.npn}
+                    </>
+                  ) : (
+                    <>
+                      <IdCard className="h-3 w-3" />
+                      Set NPN
+                    </>
+                  )}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

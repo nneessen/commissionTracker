@@ -3,7 +3,12 @@
 
 import { supabase } from "@/services/base/supabase";
 import { slackService } from "./slackService";
-import type { SlackIntegration, SlackChannel, SlackBlock, SlackNotificationType } from "@/types/slack.types";
+import type {
+  SlackIntegration,
+  SlackChannel,
+  SlackBlock,
+  SlackNotificationType,
+} from "@/types/slack.types";
 
 const SELF_MADE_WORKSPACE_PATTERN = /self made/i;
 const RECRUIT_CHANNEL_NAME = "new-agent-testing-odette";
@@ -31,9 +36,8 @@ export function findRecruitChannel(
   channels: SlackChannel[],
 ): SlackChannel | null {
   return (
-    channels.find(
-      (c) => c.name === RECRUIT_CHANNEL_NAME && !c.is_archived,
-    ) ?? null
+    channels.find((c) => c.name === RECRUIT_CHANNEL_NAME && !c.is_archived) ??
+    null
   );
 }
 
@@ -47,7 +51,9 @@ export function buildNewRecruitMessage(recruit: {
   resident_state?: string | null;
   upline_name?: string | null;
 }): { text: string; blocks: SlackBlock[] } {
-  const fullName = `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() || "Unknown";
+  const fullName =
+    `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() ||
+    "Unknown";
   const text = `New Recruit: ${fullName}`;
 
   const detailLines = [
@@ -83,9 +89,12 @@ export function buildNpnReceivedMessage(recruit: {
   last_name?: string | null;
   email?: string | null;
   npn?: string | null;
+  resident_state?: string | null;
   upline_name?: string | null;
 }): { text: string; blocks: SlackBlock[] } {
-  const fullName = `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() || "Unknown";
+  const fullName =
+    `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() ||
+    "Unknown";
   const text = `NPN Received: ${fullName}`;
 
   const detailLines = [
@@ -93,6 +102,9 @@ export function buildNpnReceivedMessage(recruit: {
     `*Email:*  ${recruit.email || "N/A"}`,
     `*NPN:*  ${recruit.npn || "N/A"}`,
   ];
+  if (recruit.resident_state) {
+    detailLines.push(`*State:*  ${recruit.resident_state}`);
+  }
   if (recruit.upline_name) {
     detailLines.push(`*Upline:*  ${recruit.upline_name}`);
   }
@@ -128,7 +140,10 @@ export async function checkNotificationSent(
     .limit(1);
 
   if (error) {
-    console.error("[recruitNotificationService] checkNotificationSent error:", error);
+    console.error(
+      "[recruitNotificationService] checkNotificationSent error:",
+      error,
+    );
     return false;
   }
 
@@ -147,18 +162,21 @@ export async function sendRecruitNotification(params: {
   recruitId: string;
   imoId: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const { data, error } = await supabase.functions.invoke("slack-send-message", {
-    body: {
-      integrationId: params.integrationId,
-      channelId: params.channelId,
-      text: params.text,
-      blocks: params.blocks,
-      notificationType: params.notificationType,
-      relatedEntityType: "recruit",
-      relatedEntityId: params.recruitId,
-      imoId: params.imoId,
+  const { data, error } = await supabase.functions.invoke(
+    "slack-send-message",
+    {
+      body: {
+        integrationId: params.integrationId,
+        channelId: params.channelId,
+        text: params.text,
+        blocks: params.blocks,
+        notificationType: params.notificationType,
+        relatedEntityType: "recruit",
+        relatedEntityId: params.recruitId,
+        imoId: params.imoId,
+      },
     },
-  });
+  );
 
   if (error) {
     return { ok: false, error: error.message };
@@ -189,14 +207,21 @@ export async function autoPostRecruitNotification(
     const integrations = await slackService.getIntegrations(imoId);
     const selfMade = findSelfMadeIntegration(integrations);
     if (!selfMade) {
-      console.log("[recruitNotificationService] No Self Made integration found, skipping auto-post");
+      console.log(
+        "[recruitNotificationService] No Self Made integration found, skipping auto-post",
+      );
       return;
     }
 
     // Check duplicate
-    const alreadySent = await checkNotificationSent(recruit.id, notificationType);
+    const alreadySent = await checkNotificationSent(
+      recruit.id,
+      notificationType,
+    );
     if (alreadySent) {
-      console.log(`[recruitNotificationService] ${notificationType} already sent for recruit ${recruit.id}, skipping`);
+      console.log(
+        `[recruitNotificationService] ${notificationType} already sent for recruit ${recruit.id}, skipping`,
+      );
       return;
     }
 
@@ -220,7 +245,10 @@ export async function autoPostRecruitNotification(
     });
 
     if (!result.ok) {
-      console.error("[recruitNotificationService] Auto-post failed:", result.error);
+      console.error(
+        "[recruitNotificationService] Auto-post failed:",
+        result.error,
+      );
     }
   } catch (err) {
     console.error("[recruitNotificationService] Auto-post error:", err);

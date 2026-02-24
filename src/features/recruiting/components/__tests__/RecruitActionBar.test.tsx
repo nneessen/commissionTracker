@@ -390,7 +390,7 @@ describe("Slack buttons", () => {
     expect(screen.queryByText(/Slack: New Recruit/i)).toBeNull();
   });
 
-  it("hides NPN button when recruit has no npn", () => {
+  it("shows NPN button even when recruit has no npn (guard on click)", () => {
     const noNpnRecruit = { ...baseRecruit, npn: null } as UserProfile;
     render(
       <RecruitActionBar
@@ -405,7 +405,7 @@ describe("Slack buttons", () => {
         loading={noLoadingStates}
       />,
     );
-    expect(screen.queryByText(/Slack: NPN/i)).toBeNull();
+    expect(screen.getByText(/Slack: NPN/i)).toBeInTheDocument();
   });
 
   it("renders without hardcoded channel name (channelLabel uses recruitChannel.name)", () => {

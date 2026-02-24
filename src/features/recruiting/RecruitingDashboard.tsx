@@ -182,6 +182,14 @@ function RecruitingDashboardContent() {
     }
   }, [recruitId, recruits, selectedRecruit]);
 
+  // Sync selectedRecruit with latest query data after mutations (e.g. NPN update)
+
+  useEffect(() => {
+    if (!selectedRecruit) return;
+    const fresh = recruits.find((r) => r.id === selectedRecruit.id);
+    if (fresh && fresh !== selectedRecruit) setSelectedRecruit(fresh);
+  }, [recruits]);
+
   // Calculate stats from recruits data directly
   // Active phases come from the pipeline_phases table, normalized to status keys
   const activePhaseStatuses = pipelinePhases.map((phase) =>
@@ -531,6 +539,14 @@ function FreeUplineRecruitingView() {
       }
     }
   }, [recruitId, recruits, selectedRecruit]);
+
+  // Sync selectedRecruit with latest query data after mutations (e.g. NPN update)
+
+  useEffect(() => {
+    if (!selectedRecruit) return;
+    const fresh = recruits.find((r) => r.id === selectedRecruit.id);
+    if (fresh && fresh !== selectedRecruit) setSelectedRecruit(fresh);
+  }, [recruits]);
 
   // Calculate stats
   const activePhaseStatuses = pipelinePhases.map((phase) =>

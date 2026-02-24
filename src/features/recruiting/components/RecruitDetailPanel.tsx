@@ -65,6 +65,7 @@ type PhaseWithChecklist = PipelinePhase & {
   checklist_items: PhaseChecklistItem[];
 };
 import { useCancelInvitation } from "../hooks/useRecruitInvitations";
+import { useUpdateRecruit } from "../hooks/useRecruitMutations";
 import { useResendInvite } from "../hooks/useAuthUser";
 import { toast } from "sonner";
 import { STAFF_ONLY_ROLES } from "@/constants/roles";
@@ -195,6 +196,7 @@ export function RecruitDetailPanel({
   const unenrollPipeline = useUnenrollFromPipeline();
   const cancelInvitation = useCancelInvitation();
   const resendInvite = useResendInvite();
+  const updateRecruit = useUpdateRecruit();
 
   // ─── Slack ────────────────────────────────────────────────────────
   const { data: slackIntegrations = [] } = useSlackIntegrations();
@@ -316,10 +318,19 @@ export function RecruitDetailPanel({
     // Guard: missing integration context — silent no-op (policy already hides the button)
     if (!selfMadeIntegration || !recruitChannel || !currentUserProfile?.imo_id)
       return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- upline joined by RecruitRepository
+    const upline = (recruit as any).upline as
+      | { first_name?: string; last_name?: string; email?: string }
+      | undefined;
+    const uplineName =
+      upline?.first_name && upline?.last_name
+        ? `${upline.first_name} ${upline.last_name}`
+        : upline?.email || null;
+    const recruitWithUpline = { ...recruit, upline_name: uplineName };
     const msg =
       notificationType === "new_recruit"
-        ? buildNewRecruitMessage(recruit)
-        : buildNpnReceivedMessage(recruit);
+        ? buildNewRecruitMessage(recruitWithUpline)
+        : buildNpnReceivedMessage(recruitWithUpline);
     // mutateAsync rejects on error; hook's onError fires the toast
     await sendSlackNotification.mutateAsync({
       integrationId: selfMadeIntegration.id,
@@ -408,6 +419,17 @@ export function RecruitDetailPanel({
           recruit={recruit}
           displayName={displayName || ""}
           initials={initials}
+          onUpdateNpn={
+            !isInvitation
+              ? async (npn) => {
+                  await updateRecruit.mutateAsync({
+                    id: recruit.id,
+                    updates: { npn: npn || null },
+                  });
+                }
+              : undefined
+          }
+          isUpdatingNpn={updateRecruit.isPending}
         />
         <RecruitActionBar
           entity={entity}

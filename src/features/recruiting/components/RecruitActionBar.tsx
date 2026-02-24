@@ -36,6 +36,7 @@ import {
   Hash,
 } from "lucide-react";
 import { INVITATION_STATUS_LABELS } from "@/types/recruiting.types";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type {
   RecruitEntity,
@@ -268,6 +269,7 @@ interface SlackActionBarProps {
   policy: RecruitActionPolicy;
   loading: RecruitActionLoading;
   slack: RecruitSlackContext;
+  recruit: UserProfile;
   sendingType: "new_recruit" | "npn_received" | null;
   onSendNew: () => void;
   onSendNpn: () => void;
@@ -277,6 +279,7 @@ function SlackActionBar({
   policy,
   loading,
   slack,
+  recruit,
   sendingType,
   onSendNew,
   onSendNpn,
@@ -332,7 +335,13 @@ function SlackActionBar({
                 size="sm"
                 variant="outline"
                 disabled={policy.npnSlackDisabled}
-                onClick={onSendNpn}
+                onClick={() => {
+                  if (!recruit.npn) {
+                    toast.error("Set the recruit's NPN first, then post.");
+                    return;
+                  }
+                  onSendNpn();
+                }}
                 className={cn(
                   "h-6 text-[10px] px-2 flex-shrink-0",
                   slack.notificationStatus?.npnReceivedSent &&
@@ -429,60 +438,65 @@ export function RecruitActionBar({
 
   return (
     <>
-      <div className="flex items-center gap-1 mt-2 overflow-x-auto pb-2 -mb-2 scrollbar-thin">
-        {isInvitation ? (
-          <InvitationActionBar
-            entity={entity}
-            policy={policy}
-            loading={loading}
-            onResendInvite={actions.onResendInvite}
-            onCancelClick={() => setCancelInviteDialogOpen(true)}
-          />
-        ) : (
-          <PipelineActionBar
-            policy={policy}
-            loading={loading}
-            permissions={permissions}
-            onAdvanceClick={() => setAdvanceDialogOpen(true)}
-            onRevertClick={() => setRevertDialogOpen(true)}
-            onBlockClick={() => setBlockDialogOpen(true)}
-            onUnblockClick={() => setUnblockDialogOpen(true)}
-            onUnenroll={actions.onUnenroll}
-            onInitialize={actions.onInitialize}
-            onResendInvite={actions.onResendInvite}
-            onDeleteOpen={actions.onDeleteOpen}
-            hasPipelineProgress={hasPipelineProgress}
-          />
-        )}
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="flex items-center gap-1 flex-wrap">
+          {isInvitation ? (
+            <InvitationActionBar
+              entity={entity}
+              policy={policy}
+              loading={loading}
+              onResendInvite={actions.onResendInvite}
+              onCancelClick={() => setCancelInviteDialogOpen(true)}
+            />
+          ) : (
+            <PipelineActionBar
+              policy={policy}
+              loading={loading}
+              permissions={permissions}
+              onAdvanceClick={() => setAdvanceDialogOpen(true)}
+              onRevertClick={() => setRevertDialogOpen(true)}
+              onBlockClick={() => setBlockDialogOpen(true)}
+              onUnblockClick={() => setUnblockDialogOpen(true)}
+              onUnenroll={actions.onUnenroll}
+              onInitialize={actions.onInitialize}
+              onResendInvite={actions.onResendInvite}
+              onDeleteOpen={actions.onDeleteOpen}
+              hasPipelineProgress={hasPipelineProgress}
+            />
+          )}
+        </div>
 
         {/* Slack notification buttons — registered recruits only */}
         {!isInvitation && (
-          <SlackActionBar
-            policy={policy}
-            loading={loading}
-            slack={slack}
-            sendingType={sendingNotificationType}
-            onSendNew={async () => {
-              setSendingNotificationType("new_recruit");
-              try {
-                await actions.onSendSlackNotification("new_recruit");
-              } catch {
-                // hook's onError fires toast; spinner resets via finally
-              } finally {
-                setSendingNotificationType(null);
-              }
-            }}
-            onSendNpn={async () => {
-              setSendingNotificationType("npn_received");
-              try {
-                await actions.onSendSlackNotification("npn_received");
-              } catch {
-                // hook's onError fires toast; spinner resets via finally
-              } finally {
-                setSendingNotificationType(null);
-              }
-            }}
-          />
+          <div className="flex items-center gap-1">
+            <SlackActionBar
+              policy={policy}
+              loading={loading}
+              slack={slack}
+              recruit={recruit}
+              sendingType={sendingNotificationType}
+              onSendNew={async () => {
+                setSendingNotificationType("new_recruit");
+                try {
+                  await actions.onSendSlackNotification("new_recruit");
+                } catch {
+                  // hook's onError fires toast; spinner resets via finally
+                } finally {
+                  setSendingNotificationType(null);
+                }
+              }}
+              onSendNpn={async () => {
+                setSendingNotificationType("npn_received");
+                try {
+                  await actions.onSendSlackNotification("npn_received");
+                } catch {
+                  // hook's onError fires toast; spinner resets via finally
+                } finally {
+                  setSendingNotificationType(null);
+                }
+              }}
+            />
+          </div>
         )}
       </div>
 

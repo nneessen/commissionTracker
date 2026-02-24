@@ -2,7 +2,7 @@
 // Full pipeline management for trainers and contracting admins
 // Uses same RecruitDetailPanel as RecruitingDashboard for consistency
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { UserPlus, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAllUsers } from "@/hooks/admin";
 import { useAuth } from "@/contexts/AuthContext";
@@ -143,6 +143,14 @@ export function RecruitingTab({ searchQuery }: RecruitingTabProps) {
     dropped: allRecruits.filter((r) => r.onboarding_status === "dropped")
       .length,
   };
+
+  // Sync selectedRecruit with latest query data after mutations (e.g. NPN update)
+
+  useEffect(() => {
+    if (!selectedRecruit) return;
+    const fresh = allRecruits.find((r) => r.id === selectedRecruit.id);
+    if (fresh && fresh !== selectedRecruit) setSelectedRecruit(fresh);
+  }, [allRecruits]);
 
   const handleSelectRecruit = (recruit: UserProfile) => {
     setSelectedRecruit(recruit);

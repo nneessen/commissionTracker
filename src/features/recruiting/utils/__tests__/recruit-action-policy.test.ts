@@ -242,16 +242,37 @@ describe("showNewRecruitSlack", () => {
 });
 
 describe("showNpnSlack", () => {
-  it("is false when npn is null", () => {
+  it("is true even when npn is null (button always visible, guard on click)", () => {
     const result = getRecruitActionPolicy(
       buildInput({ recruit: { ...baseRecruit, npn: null } as UserProfile }),
     );
-    expect(result.showNpnSlack).toBe(false);
+    expect(result.showNpnSlack).toBe(true);
   });
 
   it("is true when npn exists and integration is present", () => {
     const result = getRecruitActionPolicy(buildInput());
     expect(result.showNpnSlack).toBe(true);
+  });
+
+  it("is false when selfMadeIntegration is null", () => {
+    const result = getRecruitActionPolicy(
+      buildInput({ slack: { ...baseSlack, selfMadeIntegration: null } }),
+    );
+    expect(result.showNpnSlack).toBe(false);
+  });
+
+  it("is false for invitation entities", () => {
+    const result = getRecruitActionPolicy(
+      buildInput({
+        entity: {
+          kind: "invitation",
+          recruit: baseRecruit as UserProfile,
+          invitationId: "inv-1",
+          invitationStatus: "pending",
+        },
+      }),
+    );
+    expect(result.showNpnSlack).toBe(false);
   });
 });
 

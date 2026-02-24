@@ -399,7 +399,7 @@ export interface UpdateRecruitInput {
   date_of_birth?: string;
   resident_state?: string;
   license_number?: string;
-  npn?: string;
+  npn?: string | null;
   license_expiration?: string;
   onboarding_status?: string; // Dynamic - phase name from pipeline_phases
   agent_status?: AgentStatus;

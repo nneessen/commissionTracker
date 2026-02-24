@@ -173,6 +173,14 @@ export function BasicRecruitingView({ className }: BasicRecruitingViewProps) {
     }
   }, [recruitId, recruits, selectedRecruit]);
 
+  // Sync selectedRecruit with latest query data after mutations (e.g. NPN update)
+
+  useEffect(() => {
+    if (!selectedRecruit) return;
+    const fresh = recruits.find((r) => r.id === selectedRecruit.id);
+    if (fresh && fresh !== selectedRecruit) setSelectedRecruit(fresh);
+  }, [recruits]);
+
   const handleSelectRecruit = (recruit: UserProfile) => {
     setSelectedRecruit(recruit);
     setDetailSheetOpen(true);
@@ -731,7 +739,6 @@ interface RecruitSlackActionsProps {
 }
 
 function RecruitSlackActions({ recruit, imoId }: RecruitSlackActionsProps) {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: notificationStatus } = useRecruitNotificationStatus(recruit.id);
   const [sendingType, setSendingType] = useState<
@@ -759,8 +766,14 @@ function RecruitSlackActions({ recruit, imoId }: RecruitSlackActionsProps) {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- upline joined by RecruitRepository
+      const upline = (recruit as any).upline as
+        | { first_name?: string; last_name?: string; email?: string }
+        | undefined;
       const uplineName =
-        `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || null;
+        upline?.first_name && upline?.last_name
+          ? `${upline.first_name} ${upline.last_name}`
+          : upline?.email || null;
       await autoPostRecruitNotification(
         { ...recruit, upline_name: uplineName },
         type,

@@ -52,7 +52,7 @@ export function getRecruitActionPolicy(
       !!entity.invitationId &&
       !loading.isCancellingInvitation,
     showNewRecruitSlack: slackVisible && recruit.agent_status === "unlicensed",
-    showNpnSlack: slackVisible && !!recruit.npn,
+    showNpnSlack: slackVisible,
     newRecruitSlackDisabled:
       !!slack.notificationStatus?.newRecruitSent || loading.isSendingSlack,
     npnSlackDisabled:
