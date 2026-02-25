@@ -377,12 +377,17 @@ serve(async (req) => {
 
         let hasDeletedEvent = false;
         if (subAlreadyCleared) {
-          // Only query the audit log if the subscription looks cleared
+          // Only query the audit log if the subscription looks cleared.
+          // IMPORTANT: Match by the SAME stripe subscription ID to avoid
+          // blocking legitimate re-subscribe flows with a new subscription.
           const { data: deletedEvt } = await supabase
             .from("subscription_events")
             .select("id")
             .eq("user_id", userId)
             .eq("event_name", "customer.subscription.deleted")
+            .contains("event_data", {
+              data: { object: { id: subscription.id } },
+            })
             .limit(1)
             .maybeSingle();
           hasDeletedEvent = !!deletedEvt;
