@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
-  };
   graphql_public: {
     Tables: {
       [_ in never]: never;
@@ -5202,6 +5197,7 @@ export type Database = {
             | Database["public"]["Enums"]["automation_communication_type"]
             | null;
           created_at: string | null;
+          created_by: string | null;
           delay_days: number | null;
           email_body_html: string | null;
           email_subject: string | null;
@@ -5226,6 +5222,7 @@ export type Database = {
             | Database["public"]["Enums"]["automation_communication_type"]
             | null;
           created_at?: string | null;
+          created_by?: string | null;
           delay_days?: number | null;
           email_body_html?: string | null;
           email_subject?: string | null;
@@ -5250,6 +5247,7 @@ export type Database = {
             | Database["public"]["Enums"]["automation_communication_type"]
             | null;
           created_at?: string | null;
+          created_by?: string | null;
           delay_days?: number | null;
           email_body_html?: string | null;
           email_subject?: string | null;
@@ -13856,7 +13854,7 @@ export type Database = {
       cleanup_expired_evaluation_logs: { Args: never; Returns: number };
       cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_instagram_jobs: {
-        Args: { p_older_than?: unknown };
+        Args: { p_older_than?: string };
         Returns: number;
       };
       cleanup_old_audit_logs: {
@@ -16593,6 +16591,21 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      toggle_visible_agent_carrier_contract: {
+        Args: {
+          p_active: boolean;
+          p_carrier_id: string;
+          p_target_agent_id: string;
+        };
+        Returns: {
+          out_agent_id: string;
+          out_approved_date: string;
+          out_carrier_id: string;
+          out_id: string;
+          out_status: string;
+          out_writing_number: string;
+        }[];
       };
       trigger_workflows_for_event: {
         Args: { context_data: Json; event_name_param: string };

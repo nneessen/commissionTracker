@@ -19,8 +19,10 @@ import type {
   UpdateAutomationInput,
 } from "@/types/recruiting.types";
 import { emailService } from "@/services/email";
+import { sendEmail as sendEmailGmailAware } from "@/features/messages/services/emailService";
 import { notificationService } from "@/services/notifications/notification/NotificationService";
 import { smsService, isValidPhoneNumber } from "@/services/sms";
+import { gmailService } from "@/services/gmail";
 import { supabase } from "@/services/base/supabase";
 import { processEmojiShortcodes } from "@/lib/emoji";
 import { replaceTemplateVariables } from "@/lib/templateVariables";
@@ -335,22 +337,63 @@ export const pipelineAutomationService = {
 
         if (recipients.emails.length > 0 && emailSubject) {
           const resolvedBody = this.substituteVariables(emailBody, context);
-          const resolvedSubject = this.substituteVariables(emailSubject, context);
+          const resolvedSubject = this.substituteVariables(
+            emailSubject,
+            context,
+          );
 
-          // Resolve sender
-          const fromAddress = this.resolveSender(automation, context);
+          // Resolve sender identity (async — may look up user profile)
+          const { fromAddress, senderUserId } = await this.resolveSender(
+            automation,
+            context,
+          );
 
-          await emailService.sendEmail({
-            to: recipients.emails,
-            subject: resolvedSubject,
-            html: resolvedBody,
-            from: fromAddress,
-            recruitId,
-            metadata: {
-              automationId: automation.id,
-              trigger: automation.triggerType,
-            },
-          });
+          // Check if sender has Gmail connected — route through Gmail if so
+          let sentViaGmail = false;
+          if (senderUserId) {
+            try {
+              const hasGmail =
+                await gmailService.hasActiveIntegration(senderUserId);
+              if (hasGmail) {
+                const result = await sendEmailGmailAware({
+                  userId: senderUserId,
+                  to: recipients.emails,
+                  subject: resolvedSubject,
+                  bodyHtml: resolvedBody,
+                  trackOpens: false,
+                  trackClicks: false,
+                  source: "workflow",
+                });
+                if (!result.success) {
+                  console.warn(
+                    `[pipelineAutomation] Gmail send failed for sender ${senderUserId}: ${result.error}, falling back to Mailgun`,
+                  );
+                } else {
+                  sentViaGmail = true;
+                }
+              }
+            } catch (gmailErr) {
+              console.warn(
+                "[pipelineAutomation] Gmail check/send error, falling back to Mailgun:",
+                gmailErr,
+              );
+            }
+          }
+
+          // Fallback: send via Mailgun (system email service)
+          if (!sentViaGmail) {
+            await emailService.sendEmail({
+              to: recipients.emails,
+              subject: resolvedSubject,
+              html: resolvedBody,
+              from: fromAddress,
+              recruitId,
+              metadata: {
+                automationId: automation.id,
+                trigger: automation.triggerType,
+              },
+            });
+          }
         }
       }
 
@@ -674,10 +717,9 @@ export const pipelineAutomationService = {
     // Determine which user IDs we need to fetch
     const recipientTypes = new Set(recipients.map((r) => r.type));
 
-    // Get recruit info (note: key_contacts column doesn't exist yet, trainer/contracting_manager not supported)
     const { data: recruit, error: recruitError } = await supabase
       .from("user_profiles")
-      .select("id, email, phone, upline_id")
+      .select("id, email, phone, upline_id, imo_id")
       .eq("id", recruitId)
       .single();
 
@@ -696,17 +738,26 @@ export const pipelineAutomationService = {
       userIdsToFetch.push(recruit.upline_id);
     }
 
-    // Note: trainer and contracting_manager recipients are not yet supported
-    // The key_contacts column doesn't exist in user_profiles
-    if (recipientTypes.has("trainer")) {
-      console.warn(
-        "[pipelineAutomation] trainer recipient type not yet supported (key_contacts column missing)",
-      );
-    }
-    if (recipientTypes.has("contracting_manager")) {
-      console.warn(
-        "[pipelineAutomation] contracting_manager recipient type not yet supported (key_contacts column missing)",
-      );
+    // Resolve trainer/contracting_manager recipients from the recruit's IMO
+    const staffRolesToFetch: string[] = [];
+    if (recipientTypes.has("trainer")) staffRolesToFetch.push("trainer");
+    if (recipientTypes.has("contracting_manager"))
+      staffRolesToFetch.push("contracting_manager");
+
+    let staffUsers: {
+      id: string;
+      email: string;
+      phone: string | null;
+      roles: string[];
+    }[] = [];
+    if (staffRolesToFetch.length > 0 && recruit.imo_id) {
+      const { data: imoStaff } = await supabase
+        .from("user_profiles")
+        .select("id, email, phone, roles")
+        .eq("imo_id", recruit.imo_id)
+        .or(staffRolesToFetch.map((r) => `roles.cs.{${r}}`).join(","));
+
+      staffUsers = imoStaff || [];
     }
 
     // Batch fetch all needed users in single query (include phone for SMS)
@@ -782,15 +833,41 @@ export const pipelineAutomationService = {
           }
           break;
 
-        case "trainer":
-          // Not yet supported - key_contacts column doesn't exist
-          // Warning logged above
+        case "trainer": {
+          const trainers = staffUsers.filter((u) =>
+            u.roles?.includes("trainer"),
+          );
+          if (trainers.length === 0) {
+            console.warn(
+              `[pipelineAutomation] No trainers found in recruit's IMO ${recruit.imo_id}`,
+            );
+          }
+          for (const t of trainers) {
+            if (t.email && this.isValidEmail(t.email)) emails.push(t.email);
+            if (t.phone && isValidPhoneNumber(t.phone))
+              phoneNumbers.push(t.phone);
+            userIds.push(t.id);
+          }
           break;
+        }
 
-        case "contracting_manager":
-          // Not yet supported - key_contacts column doesn't exist
-          // Warning logged above
+        case "contracting_manager": {
+          const managers = staffUsers.filter((u) =>
+            u.roles?.includes("contracting_manager"),
+          );
+          if (managers.length === 0) {
+            console.warn(
+              `[pipelineAutomation] No contracting managers found in recruit's IMO ${recruit.imo_id}`,
+            );
+          }
+          for (const m of managers) {
+            if (m.email && this.isValidEmail(m.email)) emails.push(m.email);
+            if (m.phone && isValidPhoneNumber(m.phone))
+              phoneNumbers.push(m.phone);
+            userIds.push(m.id);
+          }
           break;
+        }
 
         case "custom_email":
           if (recipient.emails && recipient.emails.length > 0) {
@@ -818,47 +895,86 @@ export const pipelineAutomationService = {
   },
 
   /**
-   * Resolve the sender "from" address based on automation sender config
+   * Resolve the sender identity based on automation sender config.
+   * Returns both the "from" address string and the sender's userId
+   * (used for Gmail routing when the sender has a connected account).
    */
-  resolveSender(
+  async resolveSender(
     automation: PipelineAutomationEntity,
     context: AutomationContext,
-  ): string {
+  ): Promise<{ fromAddress: string; senderUserId: string | null }> {
     const defaultFrom = "The Standard HQ <noreply@updates.thestandardhq.com>";
     const senderType = automation.senderType || "system";
 
     switch (senderType) {
       case "system":
-        return defaultFrom;
+        return { fromAddress: defaultFrom, senderUserId: null };
 
       case "custom": {
         const email = automation.senderEmail;
         const name = automation.senderName;
         if (email) {
-          return name ? `${name} <${email}>` : email;
+          return {
+            fromAddress: name ? `${name} <${email}>` : email,
+            senderUserId: null,
+          };
         }
-        return defaultFrom;
+        return { fromAddress: defaultFrom, senderUserId: null };
       }
 
       case "upline": {
         const email = context.uplineEmail;
         const name = automation.senderName || context.uplineName;
         if (email) {
-          return name ? `${name} <${email}>` : email;
+          // Look up upline's user ID for Gmail routing
+          const { data: upline } = await supabase
+            .from("user_profiles")
+            .select("id")
+            .eq("email", email)
+            .maybeSingle();
+          return {
+            fromAddress: name ? `${name} <${email}>` : email,
+            senderUserId: upline?.id || null,
+          };
         }
-        return defaultFrom;
+        return { fromAddress: defaultFrom, senderUserId: null };
       }
 
       case "trainer":
-      case "contracting_manager":
-        // Not yet supported — key_contacts column doesn't exist
-        console.warn(
-          `[pipelineAutomation] sender_type '${senderType}' not yet supported, using system default`,
-        );
-        return defaultFrom;
+      case "contracting_manager": {
+        // Use the automation creator's profile as the sender
+        const creatorId = automation.createdBy;
+        if (!creatorId) {
+          console.warn(
+            `[pipelineAutomation] sender_type '${senderType}' but no created_by, using system default`,
+          );
+          return { fromAddress: defaultFrom, senderUserId: null };
+        }
+
+        const { data: creator } = await supabase
+          .from("user_profiles")
+          .select("id, email, first_name, last_name")
+          .eq("id", creatorId)
+          .single();
+
+        if (!creator?.email) {
+          console.warn(
+            `[pipelineAutomation] Creator ${creatorId} not found, using system default`,
+          );
+          return { fromAddress: defaultFrom, senderUserId: null };
+        }
+
+        const name =
+          automation.senderName ||
+          `${creator.first_name} ${creator.last_name}`.trim();
+        return {
+          fromAddress: name ? `${name} <${creator.email}>` : creator.email,
+          senderUserId: creator.id,
+        };
+      }
 
       default:
-        return defaultFrom;
+        return { fromAddress: defaultFrom, senderUserId: null };
     }
   },
 

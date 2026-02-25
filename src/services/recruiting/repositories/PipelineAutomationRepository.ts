@@ -27,6 +27,7 @@ export interface PipelineAutomationEntity {
   senderType: AutomationSenderType | null;
   senderEmail: string | null;
   senderName: string | null;
+  createdBy: string | null;
   isActive: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -263,6 +264,7 @@ export class PipelineAutomationRepository extends BaseRepository<
         (dbRecord.sender_type as AutomationSenderType | null) || "system",
       senderEmail: dbRecord.sender_email as string | null,
       senderName: dbRecord.sender_name as string | null,
+      createdBy: dbRecord.created_by as string | null,
       isActive: (dbRecord.is_active as boolean) ?? true,
       createdAt: dbRecord.created_at as string | null,
       updatedAt: dbRecord.updated_at as string | null,

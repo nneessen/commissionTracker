@@ -668,11 +668,13 @@ export function AutomationDialog({
         toast.success("Automation created");
       }
       onOpenChange(false);
-    } catch (_error) {
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      console.error("[AutomationDialog] Save failed:", msg, error);
       toast.error(
         isEditing
-          ? "Failed to update automation"
-          : "Failed to create automation",
+          ? `Failed to update automation: ${msg}`
+          : `Failed to create automation: ${msg}`,
       );
     }
   };
