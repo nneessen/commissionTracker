@@ -184,20 +184,24 @@ serve(async (req) => {
       });
     }
 
-    // Verify webhook signature
+    // Verify webhook signature (must use async variant in Deno/Edge Functions)
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(
+      event = await stripe.webhooks.constructEventAsync(
         rawBody,
         signature,
         STRIPE_WEBHOOK_SECRET,
       );
     } catch (err) {
-      console.error("Invalid webhook signature:", err);
-      return new Response(JSON.stringify({ error: "Invalid signature" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Invalid webhook signature:", errMsg);
+      return new Response(
+        JSON.stringify({ error: "Invalid signature", detail: errMsg }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     console.log(`[stripe-webhook] Received event: ${event.type}`, {

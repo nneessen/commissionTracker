@@ -639,6 +639,35 @@ class SubscriptionService {
       return { success: false, error: msg };
     }
   }
+  /**
+   * Reconciliation fallback: syncs subscription state from Stripe to DB.
+   * Called after checkout when webhook delivery may be delayed.
+   */
+  async syncSubscriptionFromStripe(): Promise<{
+    synced: boolean;
+    plan?: string;
+    reason?: string;
+  }> {
+    try {
+      const { data, error } = await this.repository.invokeEdgeFunction(
+        "sync-subscription",
+        {},
+      );
+
+      if (error) {
+        return { synced: false, reason: error };
+      }
+
+      return {
+        synced: !!data?.synced,
+        plan: (data?.plan as string) || undefined,
+        reason: (data?.reason as string) || undefined,
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return { synced: false, reason: msg };
+    }
+  }
 }
 
 export interface TeamUWWizardSeat {

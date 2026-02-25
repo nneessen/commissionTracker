@@ -1,7 +1,8 @@
 // src/features/billing/components/CheckoutSuccessDialog.tsx
 // Checkout success confirmation dialog with plan details and activation polling
+// Includes Stripe sync fallback when webhook delivery is delayed.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   CheckCircle2,
@@ -19,7 +20,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscriptionKeys, useSubscriptionPlans } from "@/hooks/subscription";
 import { FEATURE_REGISTRY } from "@/constants/features";
@@ -39,7 +40,8 @@ interface CheckoutSuccessDialogProps {
 type ActivationStatus = "polling" | "active" | "timeout";
 
 const POLL_INTERVAL_MS = 2000;
-const POLL_TIMEOUT_MS = 15000;
+const POLL_TIMEOUT_MS = 20000;
+const SYNC_DELAY_MS = 4000; // Try sync after 4s if webhook hasn't fired
 
 export function CheckoutSuccessDialog({
   planNameHint,
@@ -49,9 +51,11 @@ export function CheckoutSuccessDialog({
   const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user?.id;
+  const queryClient = useQueryClient();
   const { plans } = useSubscriptionPlans();
   const [activationStatus, setActivationStatus] =
     useState<ActivationStatus>("polling");
+  const syncAttempted = useRef(false);
 
   // Use a dedicated polling query with short refetchInterval
   const { data: subscription } = useQuery({
@@ -104,8 +108,37 @@ export function CheckoutSuccessDialog({
   useEffect(() => {
     if (subscriptionMatchesPlan && activationStatus === "polling") {
       setActivationStatus("active");
+      // Invalidate main subscription cache so the rest of the app picks up the change
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
     }
-  }, [subscriptionMatchesPlan, activationStatus]);
+  }, [subscriptionMatchesPlan, activationStatus, queryClient]);
+
+  // Stripe sync fallback: if webhook hasn't delivered after SYNC_DELAY_MS,
+  // call the sync-subscription edge function to pull state from Stripe directly
+  useEffect(() => {
+    if (activationStatus !== "polling" || !userId) return;
+
+    const timer = setTimeout(async () => {
+      if (syncAttempted.current) return;
+      syncAttempted.current = true;
+
+      console.log("[checkout] Webhook slow — attempting Stripe sync fallback");
+      const result = await subscriptionService.syncSubscriptionFromStripe();
+
+      if (result.synced) {
+        console.log("[checkout] Sync succeeded, plan:", result.plan);
+        // Invalidate to trigger re-poll with fresh DB data
+        queryClient.invalidateQueries({
+          queryKey: [...subscriptionKeys.user(userId), "checkout-poll"],
+        });
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+      } else {
+        console.warn("[checkout] Sync fallback failed:", result.reason);
+      }
+    }, SYNC_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [activationStatus, userId, queryClient]);
 
   // Timeout after POLL_TIMEOUT_MS
   useEffect(() => {
@@ -127,7 +160,13 @@ export function CheckoutSuccessDialog({
     onClose();
   };
 
-  const handleManualRefresh = () => {
+  const handleManualRefresh = async () => {
+    // Try sync again on manual retry
+    syncAttempted.current = false;
+    const result = await subscriptionService.syncSubscriptionFromStripe();
+    if (result.synced) {
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+    }
     setActivationStatus("polling");
   };
 
