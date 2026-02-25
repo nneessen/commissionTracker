@@ -22,7 +22,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Plus, Star, Edit2, Trash2, Inbox, Copy } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Star,
+  Edit2,
+  Trash2,
+  Inbox,
+  Copy,
+  AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   useTemplates,
@@ -55,6 +64,7 @@ export function PipelineTemplatesList({
   const duplicateTemplate = useDuplicateTemplate();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [consultationWarningOpen, setConsultationWarningOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [duplicateTemplateId, setDuplicateTemplateId] = useState<string | null>(
     null,
@@ -66,11 +76,16 @@ export function PipelineTemplatesList({
     is_active: true,
   });
 
+  // Whether the user is a regular agent (not admin or staff) — needs consultation before creating
+  const isRegularUser = !isAdmin && !isStaffRole;
+
   // Helper: Check if user can modify a template (admin, owner, or staff on DEFAULT templates)
+  // Regular users (agents) cannot modify any existing templates
   const canModifyTemplate = (
     templateCreatedBy: string | undefined | null,
     templateName?: string,
   ) => {
+    if (isRegularUser) return false;
     if (isAdmin) return true;
     if (currentUserId && templateCreatedBy === currentUserId) return true;
     if (isStaffRole && templateName?.toUpperCase().includes("DEFAULT"))
@@ -90,10 +105,16 @@ export function PipelineTemplatesList({
         description: newTemplate.description || undefined,
         is_active: newTemplate.is_active,
       });
-      toast.success("Template created");
+      toast.success(
+        isRegularUser
+          ? "Template created. Contact an admin to configure phases and checklists."
+          : "Template created",
+      );
       setCreateDialogOpen(false);
       setNewTemplate({ name: "", description: "", is_active: true });
-      onSelectTemplate(created.id);
+      if (!isRegularUser) {
+        onSelectTemplate(created.id);
+      }
     } catch (_error) {
       toast.error("Failed to create template");
     }
@@ -159,7 +180,11 @@ export function PipelineTemplatesList({
         <Button
           size="sm"
           className="h-7 px-3 text-[11px]"
-          onClick={() => setCreateDialogOpen(true)}
+          onClick={() =>
+            isRegularUser
+              ? setConsultationWarningOpen(true)
+              : setCreateDialogOpen(true)
+          }
         >
           <Plus className="h-3 w-3 mr-1.5" />
           New Template
@@ -268,8 +293,16 @@ export function PipelineTemplatesList({
                         setDuplicateName(`${template.name} (Copy)`);
                         setDuplicateTemplateId(template.id);
                       }}
+                      disabled={isRegularUser}
+                      title={
+                        isRegularUser
+                          ? "Only admins and staff can duplicate templates"
+                          : undefined
+                      }
                     >
-                      <Copy className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
+                      <Copy
+                        className={`h-3 w-3 ${isRegularUser ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-600 dark:text-zinc-400"}`}
+                      />
                     </Button>
                     <Button
                       variant="ghost"
@@ -410,6 +443,52 @@ export function PipelineTemplatesList({
                 <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Consultation Warning Dialog (regular users only) */}
+      <Dialog
+        open={consultationWarningOpen}
+        onOpenChange={setConsultationWarningOpen}
+      >
+        <DialogContent className="max-w-md p-4 bg-white dark:bg-zinc-900">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Before You Create a Pipeline
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mb-2">
+              Pipelines are powerful tools with many configuration options that
+              directly affect your recruiting workflow.
+            </p>
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-medium">
+              You must consult with Teagan Keyser or Nick Neessen before
+              creating a new pipeline to ensure it&apos;s set up correctly for
+              your needs.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setConsultationWarningOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => {
+                setConsultationWarningOpen(false);
+                setCreateDialogOpen(true);
+              }}
+            >
+              I&apos;ve Consulted — Proceed
             </Button>
           </DialogFooter>
         </DialogContent>

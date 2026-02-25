@@ -1,6 +1,7 @@
 // src/features/underwriting/components/UnderwritingWizard.tsx
 
 import { useState, useCallback, Suspense } from "react";
+import { UWWizardDisclaimerGate } from "./UWWizardDisclaimerGate";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -141,6 +142,9 @@ export default function UnderwritingWizardPage() {
  */
 function UnderwritingWizardInner() {
   const navigate = useNavigate();
+  const [acknowledged, setAcknowledged] = useState(
+    () => sessionStorage.getItem("uw-wizard-acknowledged") === "true",
+  );
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>({
     client: initialClientInfo,
@@ -614,6 +618,17 @@ function UnderwritingWizardInner() {
     analysisMutation.isPending || decisionEngineMutation.isPending;
   const isSaving = saveSessionMutation.isPending;
 
+  if (!acknowledged) {
+    return (
+      <UWWizardDisclaimerGate
+        onAcknowledge={() => {
+          sessionStorage.setItem("uw-wizard-acknowledged", "true");
+          setAcknowledged(true);
+        }}
+      />
+    );
+  }
+
   return (
     <Suspense
       fallback={
@@ -673,12 +688,6 @@ function UnderwritingWizardInner() {
             <h3 className="text-base font-semibold text-foreground">
               {currentStep.label}
             </h3>
-
-            {currentStep.id === "results" && (
-              <span className="text-xs text-red-500 ml-auto">
-                BETA - Do not use for actual recommendations
-              </span>
-            )}
           </div>
 
           {/* Error display */}

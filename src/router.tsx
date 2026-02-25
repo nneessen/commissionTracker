@@ -459,7 +459,7 @@ const recruitingAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting/admin/pipelines",
   component: () => (
-    <RouteGuard staffOnly noRecruits subscriptionFeature="recruiting">
+    <RouteGuard noRecruits subscriptionFeature="recruiting">
       <PipelineAdminPage />
     </RouteGuard>
   ),

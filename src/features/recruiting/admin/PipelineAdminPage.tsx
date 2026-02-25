@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Settings2, ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
+import { Settings2, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { PipelineTemplatesList } from "./PipelineTemplatesList";
 import { PipelineTemplateEditor } from "./PipelineTemplateEditor";
@@ -27,9 +27,6 @@ export function PipelineAdminPage() {
       STAFF_ONLY_ROLES.includes(role as (typeof STAFF_ONLY_ROLES)[number]),
     ) ?? false;
 
-  // Can access if admin OR staff role
-  const canAccess = isAdmin || isStaffRole;
-
   // Loading state
   if (isAdminLoading || rolesLoading) {
     return (
@@ -39,32 +36,6 @@ export function PipelineAdminPage() {
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
             Checking permissions...
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Access denied state
-  if (!canAccess) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="p-6 max-w-sm text-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <ShieldAlert className="h-10 w-10 text-red-500 mx-auto mb-3" />
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
-            Access Denied
-          </h2>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-4">
-            Pipeline administration requires admin or trainer privileges.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px]"
-            onClick={() => navigate({ to: "/recruiting" })}
-          >
-            <ArrowLeft className="h-3 w-3 mr-1.5" />
-            Back to Recruiting
-          </Button>
         </div>
       </div>
     );
