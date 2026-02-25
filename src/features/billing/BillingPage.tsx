@@ -24,7 +24,8 @@ import { CurrentPlanCard } from "./components/CurrentPlanCard";
 import { PricingCards } from "./components/PricingCards";
 import { UsageOverview } from "./components/UsageOverview";
 import { PlanComparisonTable } from "./components/PlanComparisonTable";
-import { PremiumAddonsSection } from "./components/PremiumAddonsSection";
+// UW Wizard addon section hidden until Stripe integration is ready
+// import { PremiumAddonsSection } from "./components/PremiumAddonsSection";
 import { AddonUpsellDialog } from "./components/AddonUpsellDialog";
 import { CheckoutSuccessDialog } from "./components/CheckoutSuccessDialog";
 import { AdminBillingPanel } from "./components/admin/AdminBillingPanel";
@@ -254,8 +255,8 @@ export function BillingPage() {
           </div>
         </div>
 
-        {/* Premium Add-ons */}
-        <PremiumAddonsSection />
+        {/* Premium Add-ons — hidden until UW Wizard Stripe integration is ready */}
+        {/* <PremiumAddonsSection /> */}
 
         {/* Usage Overview */}
         <UsageOverview />
