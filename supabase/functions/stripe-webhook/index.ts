@@ -358,6 +358,54 @@ serve(async (req) => {
         const priceId = planItem?.price?.id || null;
         const priceInterval = planItem?.price?.recurring?.interval;
 
+        // Guard: skip if this subscription was already deleted (out-of-order event)
+        // A delayed created/updated event for an already-cancelled subscription must not
+        // overwrite the free plan that the deleted handler set.
+        // We check two conditions:
+        // 1. The user's current subscription has stripe_subscription_id = NULL (cleared by deleted handler)
+        // 2. A customer.subscription.deleted event exists for this user in the audit log
+        const { data: currentSub } = await supabase
+          .from("user_subscriptions")
+          .select("stripe_subscription_id, cancelled_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const subAlreadyCleared =
+          currentSub &&
+          currentSub.stripe_subscription_id === null &&
+          currentSub.cancelled_at !== null;
+
+        let hasDeletedEvent = false;
+        if (subAlreadyCleared) {
+          // Only query the audit log if the subscription looks cleared
+          const { data: deletedEvt } = await supabase
+            .from("subscription_events")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("event_name", "customer.subscription.deleted")
+            .limit(1)
+            .maybeSingle();
+          hasDeletedEvent = !!deletedEvt;
+        }
+
+        if (subAlreadyCleared && hasDeletedEvent) {
+          console.log(
+            `[stripe-webhook] Skipping stale ${event.type} for already-deleted subscription ${subscription.id}`,
+          );
+
+          // Still log the event for audit, but mark it as skipped
+          await supabase.from("subscription_events").insert({
+            user_id: userId,
+            event_type: "subscription",
+            event_name: event.type,
+            stripe_event_id: event.id,
+            event_data: event,
+            processed_at: new Date().toISOString(),
+            error_message: `Skipped: subscription ${subscription.id} was already deleted`,
+          });
+          break;
+        }
+
         const { data: eventId, error: eventError } = await supabase.rpc(
           "process_stripe_subscription_event",
           {
