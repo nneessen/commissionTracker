@@ -74,7 +74,9 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
   const updateConfig = useUpdateBotConfig();
 
   const handleCalendlyConnect = () => {
-    getCalendlyAuth.mutate(window.location.href, {
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.set("tab", "setup");
+    getCalendlyAuth.mutate(returnUrl.toString(), {
       onSuccess: (data) => {
         window.location.href = data.url;
       },

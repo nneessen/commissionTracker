@@ -1,7 +1,7 @@
 // src/features/chat-bot/ChatBotPage.tsx
 // Main page with tab layout for AI Chat Bot management
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Bot,
   Settings,
@@ -9,6 +9,8 @@ import {
   Calendar,
   Activity,
   Loader2,
+  CreditCard,
+  Lock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -21,14 +23,27 @@ import { ConversationsTab } from "./components/ConversationsTab";
 import { AppointmentsTab } from "./components/AppointmentsTab";
 import { UsageTab } from "./components/UsageTab";
 
-type TabId = "setup" | "conversations" | "appointments" | "usage";
+type TabId = "overview" | "setup" | "conversations" | "appointments" | "usage";
 
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "setup", label: "Setup", icon: Settings },
-  { id: "conversations", label: "Conversations", icon: MessageSquare },
-  { id: "appointments", label: "Appointments", icon: Calendar },
-  { id: "usage", label: "Usage", icon: Activity },
-];
+// Read initial tab from URL search params (e.g., after Calendly OAuth redirect with ?tab=setup)
+function getInitialTab(): TabId {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  if (
+    tab === "setup" ||
+    tab === "conversations" ||
+    tab === "appointments" ||
+    tab === "usage"
+  ) {
+    // Clean the URL params without triggering a reload
+    const url = new URL(window.location.href);
+    url.searchParams.delete("tab");
+    url.searchParams.delete("calendar");
+    window.history.replaceState({}, "", url.pathname + (url.search || ""));
+    return tab;
+  }
+  return "overview";
+}
 
 function isSetupComplete(agent: ChatBotAgent): boolean {
   const closeConnected = agent.connections?.close?.connected || false;
@@ -45,12 +60,26 @@ function getWizardDoneKey(agentId: string): string {
 }
 
 export function ChatBotPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("setup");
+  const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
   const { activeAddons, isLoading: addonsLoading } = useUserActiveAddons();
-  const hasAddon = activeAddons.some((a) => a.addon?.name === "ai_chat_bot");
+  const chatBotAddon = activeAddons.find(
+    (a) => a.addon?.name === "ai_chat_bot",
+  );
+  const hasAddon = !!chatBotAddon;
+  const currentTierId = chatBotAddon?.tier_id || null;
   const { data: agent, isLoading: agentLoading } = useChatBotAgent(hasAddon);
 
   const isLoading = addonsLoading || (hasAddon && agentLoading);
+
+  // Track previous hasAddon to detect when user just subscribed
+  const prevHasAddon = useRef(hasAddon);
+  useEffect(() => {
+    if (!prevHasAddon.current && hasAddon && agent) {
+      // User just subscribed — switch to setup tab
+      setActiveTab("setup");
+    }
+    prevHasAddon.current = hasAddon;
+  }, [hasAddon, agent]);
 
   // Check if wizard was completed (persisted in localStorage)
   const wizardDone = agent
@@ -62,10 +91,60 @@ export function ChatBotPage() {
   const handleWizardComplete = useCallback(() => {
     if (agent) {
       localStorage.setItem(getWizardDoneKey(agent.id), "true");
-      // Force re-render by setting state
       window.location.reload();
     }
   }, [agent]);
+
+  // Callback for when user purchases a plan — switch to setup tab
+  const handlePlanActivated = useCallback(() => {
+    setActiveTab("setup");
+  }, []);
+
+  // Build visible tabs based on state
+  const tabs: {
+    id: TabId;
+    label: string;
+    icon: React.ElementType;
+    locked?: boolean;
+  }[] = [
+    { id: "overview", label: "Subscription", icon: CreditCard },
+    {
+      id: "setup",
+      label: "Bot Configuration",
+      icon: Settings,
+      locked: !hasAddon,
+    },
+  ];
+
+  // Only show dashboard tabs when setup is complete
+  if (hasAddon && agent && (setupComplete || wizardDone)) {
+    tabs.push(
+      { id: "conversations", label: "Conversations", icon: MessageSquare },
+      { id: "appointments", label: "Appointments", icon: Calendar },
+      { id: "usage", label: "Usage", icon: Activity },
+    );
+  }
+
+  // Status badge
+  const statusBadge = !hasAddon ? null : !agent ? null : setupComplete ||
+    wizardDone ? (
+    agent.botEnabled ? (
+      <Badge className="text-[9px] h-4 px-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+        Active
+      </Badge>
+    ) : (
+      <Badge
+        variant="secondary"
+        className="text-[9px] h-4 px-1.5 bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+      >
+        Inactive
+      </Badge>
+    )
+  ) : (
+    <Badge className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+      Setup Required
+    </Badge>
+  );
 
   // Loading state
   if (isLoading) {
@@ -78,50 +157,6 @@ export function ChatBotPage() {
     );
   }
 
-  // State 1: No addon — show landing page
-  if (!hasAddon || !agent) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 bg-zinc-50 dark:bg-zinc-950">
-        {/* Header */}
-        <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-2.5">
-          <Bot className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
-          <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            AI Chat Bot
-          </h1>
-        </div>
-
-        {/* Landing content */}
-        <div className="flex-1 overflow-y-auto">
-          <ChatBotLanding />
-        </div>
-      </div>
-    );
-  }
-
-  // State 2: Addon active but setup not complete and wizard not done — show wizard
-  if (!setupComplete && !wizardDone) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 bg-zinc-50 dark:bg-zinc-950">
-        {/* Header */}
-        <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-2.5">
-          <Bot className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
-          <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            AI Chat Bot
-          </h1>
-          <Badge className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-            Setup Required
-          </Badge>
-        </div>
-
-        {/* Wizard */}
-        <div className="flex-1 overflow-y-auto">
-          <SetupWizard agent={agent} onComplete={handleWizardComplete} />
-        </div>
-      </div>
-    );
-  }
-
-  // State 3: Addon active + setup complete (or wizard done) — show tabbed dashboard
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
       {/* Header */}
@@ -131,35 +166,33 @@ export function ChatBotPage() {
           <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             AI Chat Bot
           </h1>
-          {agent.botEnabled ? (
-            <Badge className="text-[9px] h-4 px-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-              Active
-            </Badge>
-          ) : (
-            <Badge
-              variant="secondary"
-              className="text-[9px] h-4 px-1.5 bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-            >
-              Inactive
-            </Badge>
-          )}
+          {statusBadge}
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              if (!tab.locked) setActiveTab(tab.id);
+            }}
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
-              activeTab === tab.id
-                ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+              tab.locked
+                ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
+                : activeTab === tab.id
+                  ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
             )}
+            title={tab.locked ? "Choose a plan first" : undefined}
           >
-            <tab.icon className="h-3 w-3" />
+            {tab.locked ? (
+              <Lock className="h-3 w-3" />
+            ) : (
+              <tab.icon className="h-3 w-3" />
+            )}
             <span>{tab.label}</span>
           </button>
         ))}
@@ -167,7 +200,46 @@ export function ChatBotPage() {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "setup" && <SetupTab />}
+        {/* Overview tab — plan selection + info */}
+        {activeTab === "overview" && (
+          <ChatBotLanding
+            currentTierId={currentTierId}
+            onPlanActivated={handlePlanActivated}
+          />
+        )}
+
+        {/* Setup tab — locked, wizard, or full config */}
+        {activeTab === "setup" &&
+          (!hasAddon || !agent ? (
+            /* Locked state */
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3">
+                <Lock className="h-5 w-5 text-zinc-400" />
+              </div>
+              <h3 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                Choose a Plan First
+              </h3>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center max-w-xs mb-4">
+                Select a plan on the "Subscription" tab to unlock bot
+                configuration. You can start with the free plan — no credit card
+                required.
+              </p>
+              <button
+                onClick={() => setActiveTab("overview")}
+                className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Go to Subscription
+              </button>
+            </div>
+          ) : !(setupComplete || wizardDone) ? (
+            /* Wizard — step-by-step configuration */
+            <SetupWizard agent={agent} onComplete={handleWizardComplete} />
+          ) : (
+            /* Full config dashboard */
+            <SetupTab />
+          ))}
+
+        {/* Dashboard tabs — only rendered when visible */}
         {activeTab === "conversations" && <ConversationsTab />}
         {activeTab === "appointments" && <AppointmentsTab />}
         {activeTab === "usage" && <UsageTab />}

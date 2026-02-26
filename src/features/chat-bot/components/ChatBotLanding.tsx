@@ -125,10 +125,22 @@ function CalendlyLogo({ className }: { className?: string }) {
 
 // ─── Component ──────────────────────────────────────────────────
 
-export function ChatBotLanding() {
+interface ChatBotLandingProps {
+  /** The user's current active tier ID (e.g. "free", "starter"), if any */
+  currentTierId?: string | null;
+  /** Called after a plan is successfully activated — used to switch to configuration tab */
+  onPlanActivated?: () => void;
+}
+
+export function ChatBotLanding({
+  currentTierId,
+  onPlanActivated,
+}: ChatBotLandingProps = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedTierId, setSelectedTierId] = useState<string>("free");
+  const [selectedTierId, setSelectedTierId] = useState<string>(
+    currentTierId || "free",
+  );
   const [purchaseLoading, setPurchaseLoading] = useState(false);
 
   const { data: allAddons, isLoading: addonsLoading } =
@@ -157,8 +169,8 @@ export function ChatBotLanding() {
     !!selectedTier?.stripe_price_id_monthly ||
     !!selectedTier?.stripe_price_id_annual;
 
-  // All tiers can be purchased — paid tiers without a base subscription will go through Stripe Checkout
-  const canPurchase = true;
+  const isCurrentTier = !!currentTierId && selectedTierId === currentTierId;
+  const canPurchase = !isCurrentTier;
 
   const handlePurchase = async () => {
     if (!user?.id || !chatBotAddon || !selectedTier || purchaseLoading) return;
@@ -179,15 +191,17 @@ export function ChatBotLanding() {
           return;
         }
 
-        toast.success("AI Chat Bot activated! Setting up your bot...");
+        toast.success("AI Chat Bot activated! Let's configure your bot.");
         queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
         if (user?.id) {
           queryClient.invalidateQueries({
             queryKey: userAddonKeys.activeAddons(user.id),
           });
         }
-        // Re-fetch agent status to transition to the dashboard
+        // Re-fetch agent status
         queryClient.invalidateQueries({ queryKey: ["chat-bot"] });
+        // Switch to configuration tab
+        onPlanActivated?.();
       } else {
         toast.error(result.error || "Failed to activate addon.");
       }
@@ -254,6 +268,7 @@ export function ChatBotLanding() {
                   const isSelected = selectedTierId === tier.id;
                   const isFree = tier.price_monthly === 0;
                   const isPopular = tier.id === "growth";
+                  const isCurrent = currentTierId === tier.id;
                   return (
                     <button
                       key={tier.id}
@@ -267,8 +282,18 @@ export function ChatBotLanding() {
                             : "border-zinc-200 dark:border-zinc-700",
                       )}
                     >
+                      {/* Current plan badge — takes priority */}
+                      {isCurrent && (
+                        <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                          <span className="inline-flex items-center gap-0.5 bg-blue-600 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full">
+                            <Check className="h-2.5 w-2.5" />
+                            Current
+                          </span>
+                        </div>
+                      )}
+
                       {/* Popular badge */}
-                      {isPopular && !isSelected && (
+                      {isPopular && !isSelected && !isCurrent && (
                         <div className="absolute -top-2 left-1/2 -translate-x-1/2">
                           <span className="inline-flex items-center gap-0.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[9px] font-semibold px-2 py-0.5 rounded-full">
                             <Zap className="h-2.5 w-2.5" />
@@ -278,7 +303,7 @@ export function ChatBotLanding() {
                       )}
 
                       {/* Selected badge */}
-                      {isSelected && (
+                      {isSelected && !isCurrent && (
                         <div className="absolute -top-2 left-1/2 -translate-x-1/2">
                           <span className="inline-flex items-center gap-0.5 bg-emerald-500 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full">
                             <Check className="h-2.5 w-2.5" />
@@ -288,7 +313,7 @@ export function ChatBotLanding() {
                       )}
 
                       {/* Free test badge */}
-                      {isFree && !isSelected && (
+                      {isFree && !isSelected && !isCurrent && (
                         <div className="absolute -top-2 left-1/2 -translate-x-1/2">
                           <span className="inline-flex items-center gap-0.5 bg-amber-500 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full">
                             Test
@@ -363,7 +388,12 @@ export function ChatBotLanding() {
                       bot will engage with.
                     </p>
                   </div>
-                  {hasPriceConfigured ? (
+                  {isCurrentTier ? (
+                    <Badge className="text-[9px] h-7 px-4 flex-shrink-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                      <Check className="h-3 w-3 mr-1" />
+                      Current Plan
+                    </Badge>
+                  ) : hasPriceConfigured ? (
                     <Button
                       size="sm"
                       className={cn(
@@ -376,9 +406,13 @@ export function ChatBotLanding() {
                       {purchaseLoading ? (
                         <Loader2 className="h-3 w-3 animate-spin mr-1" />
                       ) : null}
-                      {isFreeSelected
-                        ? "Start Free"
-                        : `Activate ${selectedTier?.name || ""} Plan`}
+                      {currentTierId
+                        ? isFreeSelected
+                          ? "Downgrade to Free"
+                          : `Upgrade to ${selectedTier?.name || ""}`
+                        : isFreeSelected
+                          ? "Start Free"
+                          : `Activate ${selectedTier?.name || ""} Plan`}
                     </Button>
                   ) : (
                     <Badge

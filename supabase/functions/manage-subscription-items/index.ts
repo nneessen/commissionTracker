@@ -161,17 +161,59 @@ serve(async (req) => {
         // Check for existing active addon (before any Stripe or DB writes)
         const { data: existingAddon } = await supabase
           .from("user_subscription_addons")
-          .select("id, status")
+          .select("id, status, tier_id, stripe_subscription_item_id")
           .eq("user_id", user.id)
           .eq("addon_id", addonId)
           .in("status", ["active", "manual_grant"])
           .maybeSingle();
 
         if (existingAddon) {
-          return jsonResponse(
-            { error: "You already have this addon active" },
-            400,
+          // Same tier — already active, nothing to do
+          if (existingAddon.tier_id === resolvedTierId) {
+            return jsonResponse(
+              { error: "You already have this addon active" },
+              400,
+            );
+          }
+
+          // Different tier — handle tier change (upgrade/downgrade)
+          console.log(
+            `[manage-subscription-items] Tier change: ${existingAddon.tier_id} → ${resolvedTierId}, user=${user.id}`,
           );
+
+          // Remove the old Stripe line item if the previous tier was paid
+          if (existingAddon.stripe_subscription_item_id && stripeSubId) {
+            try {
+              await stripe.subscriptions.update(stripeSubId, {
+                items: [
+                  {
+                    id: existingAddon.stripe_subscription_item_id,
+                    deleted: true,
+                  },
+                ],
+                proration_behavior: "create_prorations",
+              });
+              console.log(
+                `[manage-subscription-items] Removed old Stripe item ${existingAddon.stripe_subscription_item_id}`,
+              );
+            } catch (removeErr) {
+              console.error(
+                "[manage-subscription-items] Failed to remove old Stripe item:",
+                removeErr,
+              );
+              // Continue — the old item may already be gone
+            }
+          }
+
+          // Cancel the existing DB record so the new tier can be added below
+          await supabase
+            .from("user_subscription_addons")
+            .update({
+              status: "cancelled",
+              cancelled_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingAddon.id);
         }
 
         // Resolve the tier's price (0 for free tiers)
@@ -217,7 +259,8 @@ serve(async (req) => {
             `[manage-subscription-items] Free addon added: addon=${addonId}, tier=${resolvedTierId}, user=${user.id}`,
           );
 
-          // Trigger agent provisioning (same as stripe-webhook would for paid tiers)
+          // Trigger agent provisioning or tier update
+          const provisionAction = existingAddon ? "update_tier" : "provision";
           try {
             const provisionRes = await fetch(
               `${SUPABASE_URL}/functions/v1/chat-bot-provision`,
@@ -228,7 +271,7 @@ serve(async (req) => {
                   Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
                 },
                 body: JSON.stringify({
-                  action: "provision",
+                  action: provisionAction,
                   userId: user.id,
                   tierId: resolvedTierId,
                 }),
@@ -236,13 +279,13 @@ serve(async (req) => {
             );
             const provisionData = await provisionRes.json().catch(() => ({}));
             console.log(
-              `[manage-subscription-items] Provision result for free tier:`,
+              `[manage-subscription-items] ${provisionAction} result for free tier:`,
               provisionData,
             );
           } catch (provisionErr) {
             // Non-fatal — user can retry from the setup wizard
             console.error(
-              "[manage-subscription-items] Failed to trigger provisioning for free tier:",
+              `[manage-subscription-items] Failed to trigger ${provisionAction} for free tier:`,
               provisionErr,
             );
           }
@@ -379,6 +422,37 @@ serve(async (req) => {
         console.log(
           `[manage-subscription-items] Addon added: addon=${addonId}, tier=${resolvedTierId}, item=${newItem.id}, user=${user.id}`,
         );
+
+        // If this was a tier change, update the lead limit on the external agent
+        if (existingAddon) {
+          try {
+            const updateRes = await fetch(
+              `${SUPABASE_URL}/functions/v1/chat-bot-provision`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  action: "update_tier",
+                  userId: user.id,
+                  tierId: resolvedTierId,
+                }),
+              },
+            );
+            const updateData = await updateRes.json().catch(() => ({}));
+            console.log(
+              `[manage-subscription-items] update_tier result for paid tier change:`,
+              updateData,
+            );
+          } catch (updateErr) {
+            console.error(
+              "[manage-subscription-items] Failed to trigger update_tier for paid tier change:",
+              updateErr,
+            );
+          }
+        }
 
         return jsonResponse({ success: true });
       }
