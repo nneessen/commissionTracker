@@ -19,6 +19,8 @@ export const chatBotKeys = {
   usage: () => [...chatBotKeys.all, "usage"] as const,
   closeStatus: () => [...chatBotKeys.all, "close-status"] as const,
   calendlyStatus: () => [...chatBotKeys.all, "calendly-status"] as const,
+  calendlyEventTypes: () =>
+    [...chatBotKeys.all, "calendly-event-types"] as const,
 };
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -32,10 +34,19 @@ export interface ChatBotAgent {
   createdAt: string;
   autoOutreachLeadSources?: string[];
   allowedLeadStatuses?: string[];
+  calendlyEventTypeSlug?: string | null;
   connections?: {
     close?: { connected: boolean; orgName?: string };
     calendly?: { connected: boolean; eventType?: string };
   };
+}
+
+export interface CalendlyEventType {
+  uri: string;
+  name: string;
+  slug: string;
+  duration: number;
+  active: boolean;
 }
 
 export interface ChatBotConversation {
@@ -264,6 +275,16 @@ export function useChatBotCalendlyStatus() {
   });
 }
 
+export function useChatBotCalendlyEventTypes(enabled = true) {
+  return useQuery<CalendlyEventType[], Error>({
+    queryKey: chatBotKeys.calendlyEventTypes(),
+    queryFn: () => chatBotApi<CalendlyEventType[]>("get_calendly_event_types"),
+    enabled,
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
 // ─── Mutations ──────────────────────────────────────────────────
 
 export function useConnectClose() {
@@ -332,6 +353,7 @@ export function useUpdateBotConfig() {
       timezone?: string;
       autoOutreachLeadSources?: string[];
       allowedLeadStatuses?: string[];
+      calendlyEventTypeSlug?: string | null;
     }) => chatBotApi<{ success: boolean }>("update_config", config),
     onSuccess: () => {
       toast.success("Bot configuration updated.");

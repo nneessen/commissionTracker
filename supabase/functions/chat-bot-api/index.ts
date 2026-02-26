@@ -174,6 +174,7 @@ serve(async (req) => {
           createdAt: agentData.createdAt,
           autoOutreachLeadSources: agentData.autoOutreachLeadSources || [],
           allowedLeadStatuses: agentData.allowedLeadStatuses || [],
+          calendlyEventTypeSlug: agentData.calendlyEventTypeSlug || null,
           connections: {
             close: closeConn
               ? { connected: true, orgName: closeConn.orgId || undefined }
@@ -393,6 +394,18 @@ serve(async (req) => {
           periodEnd: payload?.periodEnd ?? null,
           tierName: payload?.planName || "Free",
         });
+      }
+
+      case "get_calendly_event_types": {
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/agents/${agentId}/calendly/event-types`,
+        );
+        const { payload, status, errorMessage } = unwrap(res);
+        if (errorMessage) {
+          return jsonResponse({ error: errorMessage }, status);
+        }
+        return jsonResponse(Array.isArray(payload) ? payload : []);
       }
 
       default:

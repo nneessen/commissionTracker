@@ -29,8 +29,8 @@ import {
   Wallet,
   Store,
   LifeBuoy,
-  Bot,
 } from "lucide-react";
+import { CloseCrmIcon } from "@/components/icons/CloseCrmIcon";
 import { SupportDialog } from "./SupportDialog";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -343,7 +343,7 @@ export default function Sidebar({
         },
         // Chat Bot — page handles upsell internally
         {
-          icon: Bot,
+          icon: CloseCrmIcon,
           label: "Chat Bot",
           href: "/chat-bot",
           public: true,

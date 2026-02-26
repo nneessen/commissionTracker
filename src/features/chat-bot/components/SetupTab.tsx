@@ -2,7 +2,15 @@
 // Bot configuration + Close CRM / Calendly connection management + lead source/status config
 
 import { useState } from "react";
-import { Globe, Power, Tag, ListChecks, Check, Loader2 } from "lucide-react";
+import {
+  Globe,
+  Power,
+  Tag,
+  ListChecks,
+  Check,
+  Loader2,
+  Calendar,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,6 +29,7 @@ import {
   useChatBotAgent,
   useChatBotCloseStatus,
   useChatBotCalendlyStatus,
+  useChatBotCalendlyEventTypes,
   useConnectClose,
   useDisconnectClose,
   useGetCalendlyAuthUrl,
@@ -45,6 +54,8 @@ export function SetupTab() {
     useChatBotCloseStatus();
   const { data: calendlyStatus, isLoading: calendlyLoading } =
     useChatBotCalendlyStatus();
+  const { data: eventTypes, isLoading: eventTypesLoading } =
+    useChatBotCalendlyEventTypes(calendlyStatus?.connected || false);
 
   const connectClose = useConnectClose();
   const disconnectClose = useDisconnectClose();
@@ -57,6 +68,10 @@ export function SetupTab() {
   const [leadStatuses, setLeadStatuses] = useState<string[] | null>(null);
   const [sourcesDirty, setSourcesDirty] = useState(false);
   const [statusesDirty, setStatusesDirty] = useState(false);
+  const [eventTypeDirty, setEventTypeDirty] = useState(false);
+  const [selectedEventTypeSlug, setSelectedEventTypeSlug] = useState<
+    string | null | undefined
+  >(undefined);
 
   // Resolve displayed values: local edits override agent data
   const displayedSources = leadSources ?? agent?.autoOutreachLeadSources ?? [];
@@ -105,6 +120,23 @@ export function SetupTab() {
       {
         onSuccess: () => {
           setStatusesDirty(false);
+        },
+      },
+    );
+  };
+
+  const displayedEventTypeSlug =
+    selectedEventTypeSlug !== undefined
+      ? selectedEventTypeSlug
+      : (agent?.calendlyEventTypeSlug ?? null);
+
+  const handleSaveEventType = () => {
+    updateConfig.mutate(
+      { calendlyEventTypeSlug: displayedEventTypeSlug },
+      {
+        onSuccess: () => {
+          setEventTypeDirty(false);
+          setSelectedEventTypeSlug(undefined);
         },
       },
     );
@@ -229,6 +261,75 @@ export function SetupTab() {
         onDisconnect={() => disconnectCalendly.mutate()}
         disconnectLoading={disconnectCalendly.isPending}
       />
+
+      {/* Calendly Event Type */}
+      {calendlyStatus?.connected && (
+        <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Calendar className="h-3 w-3 text-zinc-400" />
+            <h2 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Calendly Event Type
+            </h2>
+          </div>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
+            Select which Calendly event type to use for booking. Leave on
+            &ldquo;Auto-detect&rdquo; to choose based on lead source.
+          </p>
+
+          {eventTypesLoading ? (
+            <div className="h-7 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+          ) : eventTypes && eventTypes.length > 0 ? (
+            <Select
+              value={displayedEventTypeSlug ?? "__auto__"}
+              onValueChange={(val) => {
+                setSelectedEventTypeSlug(val === "__auto__" ? null : val);
+                setEventTypeDirty(true);
+              }}
+              disabled={updateConfig.isPending}
+            >
+              <SelectTrigger className="h-7 text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__auto__" className="text-[11px]">
+                  Auto-detect from lead source
+                </SelectItem>
+                {eventTypes.map((et) => (
+                  <SelectItem
+                    key={et.slug}
+                    value={et.slug}
+                    className="text-[11px]"
+                  >
+                    {et.name} ({et.duration} min)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              No event types found. Create an event type in Calendly first.
+            </p>
+          )}
+
+          {eventTypeDirty && (
+            <div className="flex items-center gap-2 pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800">
+              <Button
+                size="sm"
+                className="h-7 text-[10px]"
+                disabled={updateConfig.isPending}
+                onClick={handleSaveEventType}
+              >
+                {updateConfig.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Check className="h-3 w-3 mr-1" />
+                )}
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Lead Sources */}
       <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
