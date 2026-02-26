@@ -39,8 +39,8 @@ async function callChatBotApi(
       "X-API-Key": CHAT_BOT_API_KEY,
     },
   };
-  if (body && method !== "GET") {
-    options.body = JSON.stringify(body);
+  if (method !== "GET" && method !== "DELETE") {
+    options.body = JSON.stringify(body || {});
   }
 
   const res = await fetch(url, options);
@@ -173,7 +173,8 @@ serve(async (req) => {
         }
 
         const externalAgentId =
-          (result.data.agent as Record<string, unknown>)?.id || result.data.id;
+          (result.data.data as Record<string, unknown>)?.agentId ||
+          result.data.agentId;
 
         // Insert/update chat_bot_agents row
         await supabase.from("chat_bot_agents").upsert(

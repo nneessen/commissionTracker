@@ -39,8 +39,8 @@ async function callChatBotApi(
       "X-API-Key": CHAT_BOT_API_KEY,
     },
   };
-  if (body && method !== "GET" && method !== "DELETE") {
-    options.body = JSON.stringify(body);
+  if (method !== "GET" && method !== "DELETE") {
+    options.body = JSON.stringify(body || {});
   }
 
   const res = await fetch(url, options);
