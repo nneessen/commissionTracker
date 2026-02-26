@@ -264,7 +264,8 @@ class AgencyService {
       }
 
       const ownerName =
-        `${owner.first_name || ""} ${owner.last_name || ""}`.trim() || "Unknown";
+        `${owner.first_name || ""} ${owner.last_name || ""}`.trim() ||
+        "Unknown";
 
       // If owner has no hierarchy_path, just count themselves
       if (!owner.hierarchy_path) {
@@ -693,17 +694,16 @@ class AgencyService {
     dateRange?: ReportDateRange,
   ): Promise<AgencyDashboardMetrics | null> {
     try {
-      // Validate date range if provided
+      // Validate date range if provided (kept for interface compatibility)
       validateReportDateRange(dateRange);
 
-      // Build params using centralized utility (defaults to YTD)
-      const dateParams = buildDateRangeParams(dateRange);
-
+      // Note: get_agency_dashboard_metrics only accepts p_agency_id.
+      // It computes YTD internally using date_trunc('year', now()).
+      // Do NOT spread dateParams here — the DB function has no date parameters.
       const { data, error } = await supabase.rpc(
         "get_agency_dashboard_metrics",
         {
           p_agency_id: agencyId || null,
-          ...dateParams,
         },
       );
 
