@@ -15736,48 +15736,23 @@ export type Database = {
           isSetofReturn: true;
         };
       };
-      get_top_performers_report:
-        | {
-            Args: {
-              p_end_date?: string;
-              p_limit?: number;
-              p_start_date?: string;
-            };
-            Returns: {
-              agency_id: string;
-              agency_name: string;
-              agent_email: string;
-              agent_id: string;
-              agent_name: string;
-              avg_premium_per_policy: number;
-              commissions_earned: number;
-              contract_level: number;
-              new_policies: number;
-              new_premium: number;
-              rank_in_agency: number;
-              rank_in_imo: number;
-            }[];
-          }
-        | {
-            Args: {
-              p_end_date?: string;
-              p_limit?: number;
-              p_start_date?: string;
-            };
-            Returns: {
-              agency_id: string;
-              agency_name: string;
-              agent_id: string;
-              agent_name: string;
-              avg_premium_per_policy: number;
-              commissions_earned: number;
-              contract_level: number;
-              new_policies: number;
-              new_premium: number;
-              rank_in_agency: number;
-              rank_in_imo: number;
-            }[];
-          };
+      get_top_performers_report: {
+        Args: { p_end_date?: string; p_limit?: number; p_start_date?: string };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          agent_email: string;
+          agent_id: string;
+          agent_name: string;
+          avg_premium_per_policy: number;
+          commissions_earned: number;
+          contract_level: number;
+          new_policies: number;
+          new_premium: number;
+          rank_in_agency: number;
+          rank_in_imo: number;
+        }[];
+      };
       get_training_leaderboard: {
         Args: { p_agency_id: string; p_period?: string };
         Returns: Json[];
