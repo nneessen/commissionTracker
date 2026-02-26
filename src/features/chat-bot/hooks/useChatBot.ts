@@ -103,27 +103,45 @@ async function chatBotApi<T>(
   });
 
   if (error) {
-    // Supabase client wraps non-2xx responses as FunctionsHttpError.
-    // The actual error body is in `data`, the `error.message` is generic.
-    // Check `data.error` first for the real message from our edge function.
-    const bodyError = data?.error;
-    const msg =
-      typeof bodyError === "string"
-        ? bodyError
-        : typeof bodyError === "object" && bodyError?.message
-          ? bodyError.message
-          : error.message || "";
+    // For FunctionsHttpError the response body hasn't been read yet.
+    // Read it from the Response object stored in error.context.
+    let bodyError: string | undefined;
+    const status =
+      (error as { context?: Response }).context?.status ?? undefined;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx && typeof ctx.json === "function") {
+        const body = await ctx.json();
+        bodyError =
+          typeof body?.error === "string"
+            ? body.error
+            : (body?.error?.message ?? undefined);
+      }
+    } catch {
+      // body already consumed or not JSON — fall through
+    }
+
+    // Fall back to data?.error (older Supabase client behaviour) then generic message
+    if (!bodyError) {
+      const de = data?.error;
+      bodyError =
+        typeof de === "string"
+          ? de
+          : typeof de === "object" && de?.message
+            ? de.message
+            : undefined;
+    }
+
+    const msg = bodyError || error.message || "Chat bot API error";
 
     const isNotFound =
-      msg.includes("404") ||
-      msg.includes("not found") ||
+      status === 404 ||
       msg.includes("No active chat bot") ||
-      msg.includes("Function not found") ||
-      // FunctionsHttpError for 404 responses — check error name/context
-      error.message?.includes("non-2xx") ||
-      (error as { context?: { status?: number } }).context?.status === 404;
+      msg.includes("not found") ||
+      msg.includes("Function not found");
 
-    throw new ChatBotApiError(msg || "Chat bot API error", isNotFound);
+    console.error(`[chatBotApi] ${action} failed (status=${status}):`, msg);
+    throw new ChatBotApiError(msg, isNotFound);
   }
 
   if (!data || data.error) {
@@ -134,6 +152,7 @@ async function chatBotApi<T>(
         : errVal?.message || "Unknown chat bot API error";
     const isNotFound =
       msg.includes("No active chat bot") || msg.includes("not found");
+    console.error(`[chatBotApi] ${action} returned error in body:`, msg);
     throw new ChatBotApiError(msg, isNotFound);
   }
 
@@ -235,9 +254,12 @@ export function useChatBotCalendlyStatus() {
   return useQuery({
     queryKey: chatBotKeys.calendlyStatus(),
     queryFn: () =>
-      chatBotApi<{ connected: boolean; eventType?: string }>(
-        "get_calendly_status",
-      ),
+      chatBotApi<{
+        connected: boolean;
+        eventType?: string;
+        userName?: string;
+        userEmail?: string;
+      }>("get_calendly_status"),
     staleTime: 30_000,
   });
 }

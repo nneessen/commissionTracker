@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { ConnectionCard } from "./ConnectionCard";
 import { LeadSourceSelector } from "./LeadSourceSelector";
 import { LeadStatusSelector } from "./LeadStatusSelector";
@@ -73,14 +74,19 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
   const disconnectCalendly = useDisconnectCalendly();
   const updateConfig = useUpdateBotConfig();
 
-  const handleCalendlyConnect = () => {
+  const handleCalendlyConnect = async () => {
     const returnUrl = new URL(window.location.href);
     returnUrl.searchParams.set("tab", "setup");
-    getCalendlyAuth.mutate(returnUrl.toString(), {
-      onSuccess: (data) => {
-        window.location.href = data.url;
-      },
-    });
+    try {
+      const result = await getCalendlyAuth.mutateAsync(returnUrl.toString());
+      if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        toast.error("Failed to get Calendly auth URL — no URL returned.");
+      }
+    } catch (err) {
+      console.error("[Calendly] Auth URL error:", err);
+    }
   };
 
   const handleSaveSources = () => {
@@ -250,8 +256,10 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
               }
               connected={calendlyStatus?.connected || false}
               statusLabel={
-                calendlyStatus?.eventType
-                  ? `Event: ${calendlyStatus.eventType}`
+                calendlyStatus?.connected
+                  ? calendlyStatus.userName
+                    ? `${calendlyStatus.userName} (${calendlyStatus.userEmail})`
+                    : "Connected to Calendly"
                   : undefined
               }
               isLoading={calendlyLoading}
@@ -383,9 +391,7 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
                 <Check className="h-3 w-3 text-emerald-500" />
                 <span className="text-zinc-600 dark:text-zinc-400">
                   Calendly:{" "}
-                  {calendlyStatus?.connected
-                    ? calendlyStatus.eventType || "Connected"
-                    : "Not connected"}
+                  {calendlyStatus?.connected ? "Connected" : "Not connected"}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[10px]">

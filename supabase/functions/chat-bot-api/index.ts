@@ -245,14 +245,33 @@ serve(async (req) => {
       // ──────────────────────────────────────────────
       case "get_calendly_auth_url": {
         const returnUrl = params.returnUrl || "";
+        console.log(
+          "[get_calendly_auth_url] agentId:",
+          agentId,
+          "returnUrl:",
+          returnUrl,
+        );
         const res = await callChatBotApi(
           "GET",
           `/api/external/agents/${agentId}/calendly/authorize?returnUrl=${encodeURIComponent(returnUrl)}`,
         );
+        console.log(
+          "[get_calendly_auth_url] API response ok:",
+          res.ok,
+          "status:",
+          res.status,
+          "data:",
+          JSON.stringify(res.data).slice(0, 200),
+        );
         const { payload, status, errorMessage } = unwrap(res);
         if (errorMessage) {
+          console.error("[get_calendly_auth_url] error:", errorMessage);
           return jsonResponse({ error: errorMessage }, status);
         }
+        console.log(
+          "[get_calendly_auth_url] returning url:",
+          payload?.url?.slice(0, 80),
+        );
         return jsonResponse({ url: payload.url });
       }
 
@@ -275,7 +294,9 @@ serve(async (req) => {
         const { payload } = unwrap(res);
         return jsonResponse({
           connected: true,
-          eventType: payload?.calendarId || undefined,
+          eventType: payload?.calendarId ? "Connected" : undefined,
+          userName: payload?.userName || undefined,
+          userEmail: payload?.userEmail || undefined,
         });
       }
 

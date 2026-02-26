@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { ConnectionCard } from "./ConnectionCard";
 import { LeadSourceSelector } from "./LeadSourceSelector";
 import { LeadStatusSelector } from "./LeadStatusSelector";
@@ -61,14 +62,21 @@ export function SetupTab() {
   const displayedSources = leadSources ?? agent?.autoOutreachLeadSources ?? [];
   const displayedStatuses = leadStatuses ?? agent?.allowedLeadStatuses ?? [];
 
-  const handleCalendlyConnect = () => {
+  const handleCalendlyConnect = async () => {
     const returnUrl = new URL(window.location.href);
     returnUrl.searchParams.set("tab", "setup");
-    getCalendlyAuth.mutate(returnUrl.toString(), {
-      onSuccess: (data) => {
-        window.location.href = data.url;
-      },
-    });
+    try {
+      const result = await getCalendlyAuth.mutateAsync(returnUrl.toString());
+      console.log("[Calendly] Auth URL response:", result);
+      if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        console.error("[Calendly] No URL in response:", result);
+        toast.error("Failed to get Calendly auth URL — no URL returned.");
+      }
+    } catch (err) {
+      console.error("[Calendly] Auth URL error:", err);
+    }
   };
 
   const handleToggleBot = () => {
@@ -208,8 +216,10 @@ export function SetupTab() {
         }
         connected={calendlyStatus?.connected || false}
         statusLabel={
-          calendlyStatus?.eventType
-            ? `Event: ${calendlyStatus.eventType}`
+          calendlyStatus?.connected
+            ? calendlyStatus.userName
+              ? `${calendlyStatus.userName} (${calendlyStatus.userEmail})`
+              : "Connected to Calendly"
             : undefined
         }
         isLoading={calendlyLoading}

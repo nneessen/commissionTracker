@@ -11,9 +11,13 @@ import {
   Loader2,
   CreditCard,
   Lock,
+  Construction,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdminEmail } from "@/lib/temporaryAccess";
 import { useChatBotAgent, type ChatBotAgent } from "./hooks/useChatBot";
 import { useUserActiveAddons } from "@/hooks/subscription";
 import { ChatBotLanding } from "./components/ChatBotLanding";
@@ -23,9 +27,14 @@ import { ConversationsTab } from "./components/ConversationsTab";
 import { AppointmentsTab } from "./components/AppointmentsTab";
 import { UsageTab } from "./components/UsageTab";
 
+// Toggle to false when the bot is ready for production
+const UNDER_DEVELOPMENT = true;
+
 type TabId = "overview" | "setup" | "conversations" | "appointments" | "usage";
 
 // Read initial tab from URL search params (e.g., after Calendly OAuth redirect with ?tab=setup)
+// NOTE: Do NOT call history.replaceState here — it triggers TanStack Router's Transitioner
+// during render, breaking event handlers. URL cleanup is done in a useEffect instead.
 function getInitialTab(): TabId {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get("tab");
@@ -35,11 +44,6 @@ function getInitialTab(): TabId {
     tab === "appointments" ||
     tab === "usage"
   ) {
-    // Clean the URL params without triggering a reload
-    const url = new URL(window.location.href);
-    url.searchParams.delete("tab");
-    url.searchParams.delete("calendar");
-    window.history.replaceState({}, "", url.pathname + (url.search || ""));
     return tab;
   }
   return "overview";
@@ -61,6 +65,8 @@ function getWizardDoneKey(agentId: string): string {
 
 export function ChatBotPage() {
   const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
+  const { user } = useAuth();
+  const isAdmin = isSuperAdminEmail(user?.email);
   const { activeAddons, isLoading: addonsLoading } = useUserActiveAddons();
   const chatBotAddon = activeAddons.find(
     (a) => a.addon?.name === "ai_chat_bot",
@@ -70,6 +76,23 @@ export function ChatBotPage() {
   const { data: agent, isLoading: agentLoading } = useChatBotAgent(hasAddon);
 
   const isLoading = addonsLoading || (hasAddon && agentLoading);
+
+  // Clean URL params after mount and show success toasts for OAuth callbacks
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("calendar") === "connected") {
+      toast.success("Calendly connected successfully!");
+    } else if (params.get("error")) {
+      toast.error(`Calendly connection failed: ${params.get("error")}`);
+    }
+    if (params.has("tab") || params.has("calendar") || params.has("error")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tab");
+      url.searchParams.delete("calendar");
+      url.searchParams.delete("error");
+      window.history.replaceState({}, "", url.pathname + (url.search || ""));
+    }
+  }, []);
 
   // Track previous hasAddon to detect when user just subscribed
   const prevHasAddon = useRef(hasAddon);
@@ -152,6 +175,42 @@ export function ChatBotPage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
         <div className="flex items-center justify-center flex-1">
           <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (UNDER_DEVELOPMENT && !isAdmin) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+        {/* Header */}
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              AI Chat Bot
+            </h1>
+          </div>
+        </div>
+
+        {/* Development Banner */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-md text-center space-y-4 p-6">
+            <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+              <Construction className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              Under Active Development
+            </h2>
+            <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              The AI Chat Bot is currently being built and tested. Subscriptions
+              will be available once the feature is ready for production use.
+              Check back soon!
+            </p>
+            <Badge className="text-[10px] h-5 px-2 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+              Coming Soon
+            </Badge>
+          </div>
         </div>
       </div>
     );
