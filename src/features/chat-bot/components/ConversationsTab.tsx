@@ -34,8 +34,11 @@ import {
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "completed", label: "Completed" },
+  { value: "open", label: "Open" },
+  { value: "awaiting_reply", label: "Awaiting Reply" },
+  { value: "scheduling", label: "Scheduling" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "closed", label: "Closed" },
   { value: "stale", label: "Stale" },
 ];
 
@@ -65,30 +68,55 @@ export function ConversationsTab() {
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
 
-  const formatTime = (dateStr: string) => {
+  const formatTime = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60_000);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const leadLabel = (conv: ChatBotConversation) => {
+    if (conv.leadName) return conv.leadName;
+    const id = conv.closeLeadId || "";
+    return id.replace(/^lead_/, "").slice(0, 12) + "…";
   };
 
   const statusBadge = (s: string) => {
     switch (s) {
-      case "active":
+      case "open":
         return (
           <Badge className="text-[9px] h-3.5 px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-            Active
+            Open
           </Badge>
         );
-      case "completed":
+      case "awaiting_reply":
         return (
           <Badge className="text-[9px] h-3.5 px-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-            Completed
+            Awaiting Reply
+          </Badge>
+        );
+      case "scheduling":
+        return (
+          <Badge className="text-[9px] h-3.5 px-1 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+            Scheduling
+          </Badge>
+        );
+      case "scheduled":
+        return (
+          <Badge className="text-[9px] h-3.5 px-1 bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300">
+            Scheduled
+          </Badge>
+        );
+      case "closed":
+        return (
+          <Badge className="text-[9px] h-3.5 px-1 bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            Closed
           </Badge>
         );
       case "stale":
@@ -163,24 +191,21 @@ export function ConversationsTab() {
                 <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
                   Status
                 </TableHead>
-                <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                  Last Message
-                </TableHead>
                 <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
-                  Time
+                  Last Activity
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center">
+                  <TableCell colSpan={3} className="py-8 text-center">
                     <Loader2 className="h-5 w-5 animate-spin text-zinc-400 mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : conversations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center">
+                  <TableCell colSpan={3} className="py-8 text-center">
                     <MessageSquare className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
                     <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
                       No conversations yet
@@ -200,24 +225,21 @@ export function ConversationsTab() {
                     <TableCell className="py-1.5">
                       <div>
                         <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                          {conv.leadName}
+                          {leadLabel(conv)}
                         </span>
-                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                          {conv.leadPhone}
-                        </p>
+                        {(conv.leadPhone || conv.localPhone) && (
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                            {conv.leadPhone || conv.localPhone}
+                          </p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="py-1.5">
                       {statusBadge(conv.status)}
                     </TableCell>
-                    <TableCell className="py-1.5">
-                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-1 max-w-[200px]">
-                        {conv.lastMessagePreview}
-                      </span>
-                    </TableCell>
                     <TableCell className="py-1.5 text-right">
                       <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                        {formatTime(conv.lastMessageAt)}
+                        {formatTime(conv.lastEventAt || conv.updatedAt)}
                       </span>
                     </TableCell>
                   </TableRow>

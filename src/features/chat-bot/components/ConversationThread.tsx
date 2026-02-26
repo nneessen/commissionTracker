@@ -65,19 +65,26 @@ export function ConversationThread({
         <DialogHeader className="px-3 pt-3 pb-2 border-b border-zinc-100 dark:border-zinc-800">
           <DialogTitle className="text-sm font-semibold flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-zinc-400" />
-            {conversation?.leadName || "Conversation"}
+            {conversation?.closeLeadId
+              ? conversation.closeLeadId.replace(/^lead_/, "").slice(0, 16) +
+                "…"
+              : "Conversation"}
           </DialogTitle>
           {conversation && (
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                {conversation.leadPhone}
-              </span>
+              {conversation.localPhone && (
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  {conversation.localPhone}
+                </span>
+              )}
               <Badge
                 className={cn(
                   "text-[9px] h-3.5 px-1",
-                  conversation.status === "active"
+                  conversation.status === "open" ||
+                    conversation.status === "awaiting_reply"
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
-                    : conversation.status === "completed"
+                    : conversation.status === "scheduling" ||
+                        conversation.status === "scheduled"
                       ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                       : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
                 )}

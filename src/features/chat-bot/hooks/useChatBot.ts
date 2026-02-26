@@ -40,12 +40,14 @@ export interface ChatBotAgent {
 
 export interface ChatBotConversation {
   id: string;
-  leadName: string;
-  leadPhone: string;
+  closeLeadId: string;
+  localPhone: string | null;
+  leadName: string | null;
+  leadPhone: string | null;
   status: string;
-  lastMessageAt: string;
-  lastMessagePreview: string;
-  messageCount: number;
+  lastEventAt: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 
 export interface ChatBotMessage {
