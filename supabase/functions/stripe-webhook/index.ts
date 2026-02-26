@@ -138,6 +138,280 @@ function timestampToISO(ts: number | null | undefined): string | null {
   return new Date(ts * 1000).toISOString();
 }
 
+// ──────────────────────────────────────────────
+// CHAT BOT ADDON HELPERS
+// ──────────────────────────────────────────────
+
+// Helper to call standard-chat-bot external API
+async function callChatBotApi(
+  method: string,
+  path: string,
+  body?: Record<string, unknown>,
+): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
+  const CHAT_BOT_API_URL = Deno.env.get("CHAT_BOT_API_URL");
+  const CHAT_BOT_API_KEY = Deno.env.get("CHAT_BOT_API_KEY");
+
+  if (!CHAT_BOT_API_URL || !CHAT_BOT_API_KEY) {
+    console.warn(
+      "[stripe-webhook] CHAT_BOT_API_URL or CHAT_BOT_API_KEY not configured — skipping chat bot sync",
+    );
+    return { ok: false, status: 0, data: { error: "not configured" } };
+  }
+
+  const url = `${CHAT_BOT_API_URL}${path}`;
+  const options: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": CHAT_BOT_API_KEY,
+    },
+  };
+  if (body && method !== "GET") {
+    options.body = JSON.stringify(body);
+  }
+
+  const res = await fetch(url, options);
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Sync chat bot addon after subscription update: provision, deprovision, or tier change
+async function syncChatBotAddon(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  _subscription: Stripe.Subscription,
+): Promise<void> {
+  try {
+    // Look up the ai_chat_bot addon
+    const { data: chatBotAddon } = await supabase
+      .from("subscription_addons")
+      .select("id, tier_config")
+      .eq("name", "ai_chat_bot")
+      .maybeSingle();
+
+    if (!chatBotAddon) return; // addon not configured yet
+
+    // Check user's current addon subscription status
+    const { data: userAddon } = await supabase
+      .from("user_subscription_addons")
+      .select("id, status, tier_id")
+      .eq("user_id", userId)
+      .eq("addon_id", chatBotAddon.id)
+      .maybeSingle();
+
+    // Check existing chat_bot_agents row
+    const { data: existingAgent } = await supabase
+      .from("chat_bot_agents")
+      .select("id, external_agent_id, provisioning_status, tier_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const addonIsActive =
+      userAddon?.status === "active" || userAddon?.status === "manual_grant";
+    const agentIsActive = existingAgent?.provisioning_status === "active";
+
+    // PROVISION: addon active but no active agent
+    if (addonIsActive && !agentIsActive) {
+      // Get user name
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("first_name, last_name")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const agentName = profile
+        ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
+          "Chat Bot Agent"
+        : "Chat Bot Agent";
+
+      // Resolve lead limit from tier
+      const tierId = userAddon?.tier_id || "starter";
+      let leadLimit = 50;
+      if (chatBotAddon.tier_config) {
+        const tierConfig = chatBotAddon.tier_config as {
+          tiers: Array<{ id: string; leads_per_month: number }>;
+        };
+        const tier = tierConfig.tiers?.find(
+          (t: { id: string }) => t.id === tierId,
+        );
+        if (tier) leadLimit = tier.leads_per_month;
+      }
+
+      const result = await callChatBotApi("POST", "/api/external/agents", {
+        externalRef: userId,
+        name: agentName,
+        leadLimit,
+      });
+
+      if (result.ok) {
+        const externalAgentId =
+          (result.data.agent as Record<string, unknown>)?.id || result.data.id;
+
+        await supabase.from("chat_bot_agents").upsert(
+          {
+            user_id: userId,
+            external_agent_id: String(externalAgentId),
+            provisioning_status: "active",
+            tier_id: tierId,
+            error_message: null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+
+        console.log(
+          `[stripe-webhook] Chat bot provisioned for user ${userId}, agent ${externalAgentId}`,
+        );
+      } else {
+        console.error(
+          `[stripe-webhook] Failed to provision chat bot for user ${userId}:`,
+          result.data,
+        );
+
+        await supabase.from("chat_bot_agents").upsert(
+          {
+            user_id: userId,
+            external_agent_id: "",
+            provisioning_status: "failed",
+            tier_id: tierId,
+            error_message: JSON.stringify(result.data),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+      }
+      return;
+    }
+
+    // DEPROVISION: addon cancelled/expired but agent still active
+    if (!addonIsActive && agentIsActive && existingAgent?.external_agent_id) {
+      const result = await callChatBotApi(
+        "POST",
+        `/api/external/agents/${existingAgent.external_agent_id}/deprovision`,
+      );
+
+      if (result.ok || result.status === 404) {
+        await supabase
+          .from("chat_bot_agents")
+          .update({
+            provisioning_status: "deprovisioned",
+            error_message: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingAgent.id);
+
+        console.log(
+          `[stripe-webhook] Chat bot deprovisioned for user ${userId}`,
+        );
+      } else {
+        console.error(
+          `[stripe-webhook] Failed to deprovision chat bot for user ${userId}:`,
+          result.data,
+        );
+      }
+      return;
+    }
+
+    // TIER UPDATE: both active but tier changed
+    if (
+      addonIsActive &&
+      agentIsActive &&
+      userAddon?.tier_id &&
+      userAddon.tier_id !== existingAgent?.tier_id
+    ) {
+      let leadLimit = 50;
+      if (chatBotAddon.tier_config) {
+        const tierConfig = chatBotAddon.tier_config as {
+          tiers: Array<{ id: string; leads_per_month: number }>;
+        };
+        const tier = tierConfig.tiers?.find(
+          (t: { id: string }) => t.id === userAddon.tier_id,
+        );
+        if (tier) leadLimit = tier.leads_per_month;
+      }
+
+      const result = await callChatBotApi(
+        "PATCH",
+        `/api/external/agents/${existingAgent!.external_agent_id}`,
+        { leadLimit },
+      );
+
+      if (result.ok) {
+        await supabase
+          .from("chat_bot_agents")
+          .update({
+            tier_id: userAddon.tier_id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingAgent!.id);
+
+        console.log(
+          `[stripe-webhook] Chat bot tier updated to ${userAddon.tier_id} for user ${userId}`,
+        );
+      } else {
+        console.error(
+          `[stripe-webhook] Failed to update chat bot tier for user ${userId}:`,
+          result.data,
+        );
+      }
+    }
+  } catch (err) {
+    // Non-fatal — don't let chat bot sync errors break subscription processing
+    console.error(
+      `[stripe-webhook] Chat bot sync error for user ${userId}:`,
+      err,
+    );
+  }
+}
+
+// Deprovision chat bot agent when subscription is fully deleted
+async function deprovisionChatBotAgent(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<void> {
+  try {
+    const { data: agent } = await supabase
+      .from("chat_bot_agents")
+      .select("id, external_agent_id, provisioning_status")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!agent || agent.provisioning_status === "deprovisioned") return;
+
+    if (agent.external_agent_id) {
+      const result = await callChatBotApi(
+        "POST",
+        `/api/external/agents/${agent.external_agent_id}/deprovision`,
+      );
+
+      if (!result.ok && result.status !== 404) {
+        console.error(
+          `[stripe-webhook] Failed to deprovision chat bot on subscription delete for user ${userId}:`,
+          result.data,
+        );
+      }
+    }
+
+    await supabase
+      .from("chat_bot_agents")
+      .update({
+        provisioning_status: "deprovisioned",
+        error_message: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", agent.id);
+
+    console.log(
+      `[stripe-webhook] Chat bot deprovisioned (subscription deleted) for user ${userId}`,
+    );
+  } catch (err) {
+    console.error(
+      `[stripe-webhook] Chat bot deprovision error for user ${userId}:`,
+      err,
+    );
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -586,6 +860,11 @@ serve(async (req) => {
           }
         }
 
+        // ──────────────────────────────────────────────
+        // CHAT BOT ADDON LIFECYCLE (provision/deprovision/tier update)
+        // ──────────────────────────────────────────────
+        await syncChatBotAddon(supabase, userId, subscription);
+
         console.log(`[stripe-webhook] Processed ${event.type}:`, {
           eventId,
           userId,
@@ -713,6 +992,9 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
+
+        // Deprovision chat bot agent if one exists
+        await deprovisionChatBotAgent(supabase, userId);
 
         const { error: eventInsertError } = await supabase
           .from("subscription_events")

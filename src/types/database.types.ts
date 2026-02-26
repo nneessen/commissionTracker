@@ -7,30 +7,10 @@ export type Json =
   | Json[];
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5";
   };
   public: {
     Tables: {
@@ -1698,6 +1678,61 @@ export type Database = {
             columns: ["commission_id"];
             isOneToOne: false;
             referencedRelation: "commissions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_bot_agents: {
+        Row: {
+          created_at: string | null;
+          error_message: string | null;
+          external_agent_id: string;
+          id: string;
+          provisioning_status: string;
+          tier_id: string | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          error_message?: string | null;
+          external_agent_id: string;
+          id?: string;
+          provisioning_status?: string;
+          tier_id?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          error_message?: string | null;
+          external_agent_id?: string;
+          id?: string;
+          provisioning_status?: string;
+          tier_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_bot_agents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_bot_agents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_bot_agents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -13854,7 +13889,7 @@ export type Database = {
       cleanup_expired_evaluation_logs: { Args: never; Returns: number };
       cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_instagram_jobs: {
-        Args: { p_older_than?: string };
+        Args: { p_older_than?: unknown };
         Returns: number;
       };
       cleanup_old_audit_logs: {
@@ -17145,9 +17180,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       agent_status: ["unlicensed", "licensed", "not_applicable"],
