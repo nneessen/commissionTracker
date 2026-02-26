@@ -78,26 +78,16 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    // Get user's active subscription
-    const { data: userSub, error: subError } = await supabase
+    // Get user's active subscription (may be null for free-tier-only users)
+    const { data: userSub } = await supabase
       .from("user_subscriptions")
       .select("stripe_subscription_id, billing_interval, status")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
       .maybeSingle();
 
-    if (subError || !userSub?.stripe_subscription_id) {
-      return jsonResponse(
-        {
-          error:
-            "No active subscription found. Please subscribe to a plan first.",
-        },
-        400,
-      );
-    }
-
-    const stripeSubId = userSub.stripe_subscription_id;
-    const billingInterval = userSub.billing_interval || "monthly";
+    const stripeSubId = userSub?.stripe_subscription_id || null;
+    const billingInterval = userSub?.billing_interval || "monthly";
 
     switch (action) {
       // ──────────────────────────────────────────────
@@ -168,14 +158,7 @@ serve(async (req) => {
               : addon.stripe_price_id_monthly;
         }
 
-        if (!priceId) {
-          return jsonResponse(
-            { error: "No price configured for the current billing interval" },
-            400,
-          );
-        }
-
-        // Check for existing active addon
+        // Check for existing active addon (before any Stripe or DB writes)
         const { data: existingAddon } = await supabase
           .from("user_subscription_addons")
           .select("id, status")
@@ -191,7 +174,140 @@ serve(async (req) => {
           );
         }
 
-        // Add line item to existing subscription
+        // Resolve the tier's price (0 for free tiers)
+        const resolvedPriceMonthly = tierConfig?.tiers
+          ? (tierConfig.tiers.find((t) => t.id === resolvedTierId)
+              ?.price_monthly ?? null)
+          : null;
+
+        // Free tier — skip Stripe, just insert DB record directly
+        if (resolvedPriceMonthly === 0 || !priceId) {
+          const now = new Date();
+          const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+          const { error: freeAddonError } = await supabase
+            .from("user_subscription_addons")
+            .upsert(
+              {
+                user_id: user.id,
+                addon_id: addonId,
+                tier_id: resolvedTierId,
+                status: "active",
+                billing_interval: billingInterval,
+                stripe_subscription_id: stripeSubId,
+                stripe_subscription_item_id: null,
+                stripe_checkout_session_id: null,
+                cancelled_at: null,
+                current_period_start: now.toISOString(),
+                current_period_end: periodEnd.toISOString(),
+                updated_at: now.toISOString(),
+              },
+              { onConflict: "user_id,addon_id" },
+            );
+
+          if (freeAddonError) {
+            console.error(
+              "[manage-subscription-items] DB write failed for free tier addon:",
+              freeAddonError,
+            );
+            return jsonResponse({ error: "Failed to save addon record" }, 500);
+          }
+
+          console.log(
+            `[manage-subscription-items] Free addon added: addon=${addonId}, tier=${resolvedTierId}, user=${user.id}`,
+          );
+
+          // Trigger agent provisioning (same as stripe-webhook would for paid tiers)
+          try {
+            const provisionRes = await fetch(
+              `${SUPABASE_URL}/functions/v1/chat-bot-provision`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  action: "provision",
+                  userId: user.id,
+                  tierId: resolvedTierId,
+                }),
+              },
+            );
+            const provisionData = await provisionRes.json().catch(() => ({}));
+            console.log(
+              `[manage-subscription-items] Provision result for free tier:`,
+              provisionData,
+            );
+          } catch (provisionErr) {
+            // Non-fatal — user can retry from the setup wizard
+            console.error(
+              "[manage-subscription-items] Failed to trigger provisioning for free tier:",
+              provisionErr,
+            );
+          }
+
+          return jsonResponse({ success: true, tier: resolvedTierId });
+        }
+
+        // Paid tier — no Stripe subscription? Create a checkout session for standalone addon
+        if (!stripeSubId) {
+          console.log(
+            `[manage-subscription-items] No Stripe subscription found, creating checkout for addon: addon=${addonId}, tier=${resolvedTierId}, user=${user.id}`,
+          );
+
+          // Find or create Stripe customer
+          const { data: existingSub } = await supabase
+            .from("user_subscriptions")
+            .select("stripe_customer_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          const SITE_URL =
+            Deno.env.get("SITE_URL") || "https://app.commissiontracker.io";
+          const successUrl = `${SITE_URL}/tools/chat-bot?checkout=success&addon_id=${addonId}&tier_id=${resolvedTierId}`;
+          const cancelUrl = `${SITE_URL}/tools/chat-bot?checkout=cancelled`;
+
+          // deno-lint-ignore no-explicit-any
+          const sessionParams: any = {
+            mode: "subscription",
+            line_items: [{ price: priceId, quantity: 1 }],
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            metadata: {
+              user_id: user.id,
+              addon_id: addonId,
+              tier_id: resolvedTierId,
+            },
+            subscription_data: {
+              metadata: {
+                user_id: user.id,
+                addon_id: addonId,
+                tier_id: resolvedTierId,
+              },
+            },
+          };
+
+          if (existingSub?.stripe_customer_id) {
+            sessionParams.customer = existingSub.stripe_customer_id;
+          } else {
+            sessionParams.customer_email = user.email;
+          }
+
+          const session = await stripe.checkout.sessions.create(sessionParams);
+
+          console.log(
+            `[manage-subscription-items] Created checkout session: ${session.id}, url=${session.url}`,
+          );
+
+          return jsonResponse({
+            success: true,
+            requiresCheckout: true,
+            checkoutUrl: session.url,
+          });
+        }
+
+        // Add line item to existing Stripe subscription
         const updatedSub = await stripe.subscriptions.update(stripeSubId, {
           items: [{ price: priceId }],
           proration_behavior: "create_prorations",
@@ -277,7 +393,7 @@ serve(async (req) => {
           return jsonResponse({ error: "addonId is required" }, 400);
         }
 
-        // Look up the addon's stripe_subscription_item_id
+        // Look up the addon record
         const { data: addonRecord, error: lookupError } = await supabase
           .from("user_subscription_addons")
           .select("id, stripe_subscription_item_id")
@@ -286,20 +402,19 @@ serve(async (req) => {
           .eq("status", "active")
           .maybeSingle();
 
-        if (lookupError || !addonRecord?.stripe_subscription_item_id) {
-          return jsonResponse(
-            { error: "Active addon not found or missing item ID" },
-            404,
-          );
+        if (lookupError || !addonRecord) {
+          return jsonResponse({ error: "Active addon not found" }, 404);
         }
 
-        // Remove line item from subscription
-        await stripe.subscriptions.update(stripeSubId, {
-          items: [
-            { id: addonRecord.stripe_subscription_item_id, deleted: true },
-          ],
-          proration_behavior: "create_prorations",
-        });
+        // Remove Stripe line item (skip if free tier — no Stripe item)
+        if (addonRecord.stripe_subscription_item_id && stripeSubId) {
+          await stripe.subscriptions.update(stripeSubId, {
+            items: [
+              { id: addonRecord.stripe_subscription_item_id, deleted: true },
+            ],
+            proration_behavior: "create_prorations",
+          });
+        }
 
         // Update DB record
         await supabase
@@ -322,6 +437,9 @@ serve(async (req) => {
       // ADD SEAT PACK
       // ──────────────────────────────────────────────
       case "add_seat_pack": {
+        if (!stripeSubId) {
+          return jsonResponse({ error: "No active subscription found." }, 400);
+        }
         // Capture item count BEFORE adding, to detect if Stripe creates
         // a new item vs incrementing quantity on an existing one.
         const currentSub = await stripe.subscriptions.retrieve(stripeSubId);
@@ -426,6 +544,9 @@ serve(async (req) => {
       // REMOVE SEAT PACK
       // ──────────────────────────────────────────────
       case "remove_seat_pack": {
+        if (!stripeSubId) {
+          return jsonResponse({ error: "No active subscription found." }, 400);
+        }
         const { seatPackId } = body;
 
         if (!seatPackId) {

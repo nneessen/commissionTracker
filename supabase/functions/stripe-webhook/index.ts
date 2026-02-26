@@ -229,12 +229,12 @@ async function syncChatBotAddon(
       let leadLimit = 50;
       if (chatBotAddon.tier_config) {
         const tierConfig = chatBotAddon.tier_config as {
-          tiers: Array<{ id: string; leads_per_month: number }>;
+          tiers: Array<{ id: string; runs_per_month: number }>;
         };
         const tier = tierConfig.tiers?.find(
           (t: { id: string }) => t.id === tierId,
         );
-        if (tier) leadLimit = tier.leads_per_month;
+        if (tier) leadLimit = tier.runs_per_month;
       }
 
       const result = await callChatBotApi("POST", "/api/external/agents", {
@@ -323,12 +323,12 @@ async function syncChatBotAddon(
       let leadLimit = 50;
       if (chatBotAddon.tier_config) {
         const tierConfig = chatBotAddon.tier_config as {
-          tiers: Array<{ id: string; leads_per_month: number }>;
+          tiers: Array<{ id: string; runs_per_month: number }>;
         };
         const tier = tierConfig.tiers?.find(
           (t: { id: string }) => t.id === userAddon.tier_id,
         );
-        if (tier) leadLimit = tier.leads_per_month;
+        if (tier) leadLimit = tier.runs_per_month;
       }
 
       const result = await callChatBotApi(
@@ -560,6 +560,90 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq("user_id", userId);
+        }
+
+        // Handle addon checkout (standalone subscription for addon)
+        const addonId = session.metadata?.addon_id;
+        const tierId = session.metadata?.tier_id;
+        const stripeSubId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : (session.subscription as Stripe.Subscription | null)?.id || null;
+
+        if (addonId && tierId && stripeSubId) {
+          console.log(
+            `[stripe-webhook] Addon checkout completed: addon=${addonId}, tier=${tierId}, sub=${stripeSubId}`,
+          );
+
+          // Retrieve the subscription to get item details
+          const addonSub = await stripe.subscriptions.retrieve(stripeSubId);
+          const addonItem = addonSub.items?.data?.[0];
+
+          const { error: addonUpsertError } = await supabase
+            .from("user_subscription_addons")
+            .upsert(
+              {
+                user_id: userId,
+                addon_id: addonId,
+                tier_id: tierId,
+                status: "active",
+                stripe_subscription_id: stripeSubId,
+                stripe_subscription_item_id: addonItem?.id || null,
+                stripe_checkout_session_id: session.id,
+                billing_interval:
+                  addonItem?.price?.recurring?.interval === "year"
+                    ? "annual"
+                    : "monthly",
+                cancelled_at: null,
+                current_period_start: new Date(
+                  addonSub.current_period_start * 1000,
+                ).toISOString(),
+                current_period_end: new Date(
+                  addonSub.current_period_end * 1000,
+                ).toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,addon_id" },
+            );
+
+          if (addonUpsertError) {
+            console.error(
+              "[stripe-webhook] Failed to upsert addon record from checkout:",
+              addonUpsertError,
+            );
+          } else {
+            console.log(
+              `[stripe-webhook] Addon record created from checkout: user=${userId}, addon=${addonId}, tier=${tierId}`,
+            );
+
+            // Trigger provisioning
+            try {
+              const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+              const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+                "SUPABASE_SERVICE_ROLE_KEY",
+              )!;
+              await fetch(`${SUPABASE_URL}/functions/v1/chat-bot-provision`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
+                body: JSON.stringify({
+                  action: "provision",
+                  userId,
+                  tierId,
+                }),
+              });
+              console.log(
+                `[stripe-webhook] Triggered chat-bot-provision for user ${userId}`,
+              );
+            } catch (provisionErr) {
+              console.error(
+                "[stripe-webhook] Failed to trigger chat-bot-provision:",
+                provisionErr,
+              );
+            }
+          }
         }
 
         console.log(`[stripe-webhook] Checkout completed for user: ${userId}`);

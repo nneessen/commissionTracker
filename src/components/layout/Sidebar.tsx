@@ -29,6 +29,7 @@ import {
   Wallet,
   Store,
   LifeBuoy,
+  Bot,
 } from "lucide-react";
 import { SupportDialog } from "./SupportDialog";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -338,6 +339,13 @@ export default function Sidebar({
           icon: Calculator,
           label: "Quick Quote",
           href: "/underwriting/quick-quote",
+          public: true,
+        },
+        // Chat Bot — page handles upsell internally
+        {
+          icon: Bot,
+          label: "Chat Bot",
+          href: "/chat-bot",
           public: true,
         },
       ] as NavItem[],

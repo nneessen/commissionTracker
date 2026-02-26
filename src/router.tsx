@@ -60,6 +60,7 @@ import { LeaderboardPage } from "./features/leaderboard";
 import { TheStandardTeamRoutePage } from "./features/the-standard-team";
 import { BillingPage } from "./features/billing/BillingPage";
 import { LeadIntelligenceDashboard } from "./features/admin/components/lead-vendors";
+import { ChatBotPage } from "./features/chat-bot";
 
 // Lazy-loaded underwriting pages
 const UnderwritingWizardPage = lazy(
@@ -527,6 +528,17 @@ const quickQuoteRoute = createRoute({
   component: () => <QuickQuotePage />,
 });
 
+// Chat Bot route - AI Chat Bot management dashboard, accessible to all authenticated users
+const chatBotRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "chat-bot",
+  component: () => (
+    <RouteGuard noRecruits noStaffRoles>
+      <ChatBotPage />
+    </RouteGuard>
+  ),
+});
+
 // Alternative join route - catches /join-* pattern using catch-all
 // This handles URLs like /join-the-standard without redirect
 // Uses stable wrapper component (not inline function) so React Query works correctly
@@ -825,6 +837,7 @@ const routeTree = rootRoute.addChildren([
   leadVendorsRoute,
   underwritingWizardRoute,
   quickQuoteRoute,
+  chatBotRoute,
   publicJoinAltRoute, // Catch-all for /join-* pattern - must be last
 ]);
 

@@ -323,7 +323,7 @@ class SubscriptionService {
   async addSubscriptionAddon(
     addonId: string,
     tierId?: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  ): Promise<{ success: boolean; error?: string; checkoutUrl?: string }> {
     try {
       const { data, error } = await this.repository.invokeEdgeFunction(
         "manage-subscription-items",
@@ -336,6 +336,14 @@ class SubscriptionService {
 
       if (error) {
         return { success: false, error };
+      }
+
+      // If the server returns a checkout URL, the client should redirect
+      if (data?.requiresCheckout && data?.checkoutUrl) {
+        return {
+          success: true,
+          checkoutUrl: data.checkoutUrl as string,
+        };
       }
 
       return {

@@ -128,14 +128,14 @@ serve(async (req) => {
             const tierConfig = addon.tier_config as {
               tiers: Array<{
                 id: string;
-                leads_per_month: number;
+                runs_per_month: number;
               }>;
             };
             const tier = tierConfig.tiers?.find(
               (t: { id: string }) => t.id === tierId,
             );
             if (tier) {
-              leadLimit = tier.leads_per_month;
+              leadLimit = tier.runs_per_month;
             }
           }
         }
@@ -301,13 +301,13 @@ serve(async (req) => {
         let leadLimit = 50;
         if (addon?.tier_config) {
           const tierConfig = addon.tier_config as {
-            tiers: Array<{ id: string; leads_per_month: number }>;
+            tiers: Array<{ id: string; runs_per_month: number }>;
           };
           const tier = tierConfig.tiers?.find(
             (t: { id: string }) => t.id === tierId,
           );
           if (tier) {
-            leadLimit = tier.leads_per_month;
+            leadLimit = tier.runs_per_month;
           }
         }
 
