@@ -254,6 +254,7 @@ serve(async (req) => {
       .from("subscription_addons")
       .update({
         tier_config: updatedConfig,
+        is_active: true,
         updated_at: new Date().toISOString(),
       })
       .eq("id", addon.id);
