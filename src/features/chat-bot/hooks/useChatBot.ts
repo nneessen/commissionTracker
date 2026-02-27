@@ -35,6 +35,7 @@ export interface ChatBotAgent {
   autoOutreachLeadSources?: string[];
   allowedLeadStatuses?: string[];
   calendlyEventTypeSlug?: string | null;
+  leadSourceEventTypeMappings?: { leadSource: string; eventTypeSlug: string }[];
   connections?: {
     close?: { connected: boolean; orgName?: string };
     calendly?: { connected: boolean; eventType?: string };
@@ -354,6 +355,10 @@ export function useUpdateBotConfig() {
       autoOutreachLeadSources?: string[];
       allowedLeadStatuses?: string[];
       calendlyEventTypeSlug?: string | null;
+      leadSourceEventTypeMappings?: {
+        leadSource: string;
+        eventTypeSlug: string;
+      }[];
     }) => chatBotApi<{ success: boolean }>("update_config", config),
     onSuccess: () => {
       toast.success("Bot configuration updated.");

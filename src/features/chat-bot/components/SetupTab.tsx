@@ -68,10 +68,10 @@ export function SetupTab() {
   const [leadStatuses, setLeadStatuses] = useState<string[] | null>(null);
   const [sourcesDirty, setSourcesDirty] = useState(false);
   const [statusesDirty, setStatusesDirty] = useState(false);
+  const [eventTypeMappings, setEventTypeMappings] = useState<
+    { leadSource: string; eventTypeSlug: string }[] | null
+  >(null);
   const [eventTypeDirty, setEventTypeDirty] = useState(false);
-  const [selectedEventTypeSlug, setSelectedEventTypeSlug] = useState<
-    string | null | undefined
-  >(undefined);
 
   // Resolve displayed values: local edits override agent data
   const displayedSources = leadSources ?? agent?.autoOutreachLeadSources ?? [];
@@ -125,18 +125,16 @@ export function SetupTab() {
     );
   };
 
-  const displayedEventTypeSlug =
-    selectedEventTypeSlug !== undefined
-      ? selectedEventTypeSlug
-      : (agent?.calendlyEventTypeSlug ?? null);
+  const displayedEventTypeMappings =
+    eventTypeMappings ?? agent?.leadSourceEventTypeMappings ?? [];
 
   const handleSaveEventType = () => {
     updateConfig.mutate(
-      { calendlyEventTypeSlug: displayedEventTypeSlug },
+      { leadSourceEventTypeMappings: displayedEventTypeMappings },
       {
         onSuccess: () => {
           setEventTypeDirty(false);
-          setSelectedEventTypeSlug(undefined);
+          setEventTypeMappings(null);
         },
       },
     );
@@ -262,49 +260,107 @@ export function SetupTab() {
         disconnectLoading={disconnectCalendly.isPending}
       />
 
-      {/* Calendly Event Type */}
+      {/* Lead Source → Event Type Mappings */}
       {calendlyStatus?.connected && (
         <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
           <div className="flex items-center gap-1.5 mb-2">
             <Calendar className="h-3 w-3 text-zinc-400" />
             <h2 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Calendly Event Type
+              Lead Source Event Types
             </h2>
           </div>
           <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
-            Select which Calendly event type to use for booking. Leave on
-            &ldquo;Auto-detect&rdquo; to choose based on lead source.
+            Map each lead source to a specific Calendly event type. Unmapped
+            sources fall back to auto-detection.
           </p>
 
           {eventTypesLoading ? (
             <div className="h-7 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
           ) : eventTypes && eventTypes.length > 0 ? (
-            <Select
-              value={displayedEventTypeSlug ?? "__auto__"}
-              onValueChange={(val) => {
-                setSelectedEventTypeSlug(val === "__auto__" ? null : val);
-                setEventTypeDirty(true);
-              }}
-              disabled={updateConfig.isPending}
-            >
-              <SelectTrigger className="h-7 text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__auto__" className="text-[11px]">
-                  Auto-detect from lead source
-                </SelectItem>
-                {eventTypes.map((et) => (
-                  <SelectItem
-                    key={et.slug}
-                    value={et.slug}
-                    className="text-[11px]"
+            <div className="space-y-2">
+              {displayedEventTypeMappings.map((mapping, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={mapping.leadSource}
+                    onChange={(e) => {
+                      const updated = [...displayedEventTypeMappings];
+                      updated[index] = {
+                        ...updated[index],
+                        leadSource: e.target.value,
+                      };
+                      setEventTypeMappings(updated);
+                      setEventTypeDirty(true);
+                    }}
+                    placeholder="e.g. Sitka Life"
+                    disabled={updateConfig.isPending}
+                    className="flex-1 h-7 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 text-[11px]"
+                  />
+                  <Select
+                    value={mapping.eventTypeSlug || "__none__"}
+                    onValueChange={(val) => {
+                      const updated = [...displayedEventTypeMappings];
+                      updated[index] = {
+                        ...updated[index],
+                        eventTypeSlug: val === "__none__" ? "" : val,
+                      };
+                      setEventTypeMappings(updated);
+                      setEventTypeDirty(true);
+                    }}
+                    disabled={updateConfig.isPending}
                   >
-                    {et.name} ({et.duration} min)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    <SelectTrigger className="h-7 text-[11px] flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__" className="text-[11px]">
+                        Select event type
+                      </SelectItem>
+                      {eventTypes.map((et) => (
+                        <SelectItem
+                          key={et.slug}
+                          value={et.slug}
+                          className="text-[11px]"
+                        >
+                          {et.name} ({et.duration} min)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] text-red-500 hover:text-red-700"
+                    disabled={updateConfig.isPending}
+                    onClick={() => {
+                      const updated = displayedEventTypeMappings.filter(
+                        (_, i) => i !== index,
+                      );
+                      setEventTypeMappings(updated);
+                      setEventTypeDirty(true);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-dashed"
+                disabled={updateConfig.isPending}
+                onClick={() => {
+                  setEventTypeMappings([
+                    ...displayedEventTypeMappings,
+                    { leadSource: "", eventTypeSlug: "" },
+                  ]);
+                  setEventTypeDirty(true);
+                }}
+              >
+                + Add Mapping
+              </Button>
+            </div>
           ) : (
             <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
               No event types found. Create an event type in Calendly first.

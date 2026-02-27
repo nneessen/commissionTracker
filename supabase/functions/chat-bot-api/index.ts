@@ -175,6 +175,8 @@ serve(async (req) => {
           autoOutreachLeadSources: agentData.autoOutreachLeadSources || [],
           allowedLeadStatuses: agentData.allowedLeadStatuses || [],
           calendlyEventTypeSlug: agentData.calendlyEventTypeSlug || null,
+          leadSourceEventTypeMappings:
+            agentData.leadSourceEventTypeMappings || [],
           connections: {
             close: closeConn
               ? { connected: true, orgName: closeConn.orgId || undefined }
