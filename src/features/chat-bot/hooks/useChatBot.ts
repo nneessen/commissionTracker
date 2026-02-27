@@ -36,6 +36,15 @@ export interface ChatBotAgent {
   allowedLeadStatuses?: string[];
   calendlyEventTypeSlug?: string | null;
   leadSourceEventTypeMappings?: { leadSource: string; eventTypeSlug: string }[];
+  companyName?: string | null;
+  jobTitle?: string | null;
+  bio?: string | null;
+  yearsOfExperience?: number | null;
+  residentState?: string | null;
+  nonResidentStates?: string[] | null;
+  specialties?: string[] | null;
+  website?: string | null;
+  location?: string | null;
   connections?: {
     close?: { connected: boolean; orgName?: string };
     calendly?: { connected: boolean; eventType?: string };
@@ -359,6 +368,15 @@ export function useUpdateBotConfig() {
         leadSource: string;
         eventTypeSlug: string;
       }[];
+      companyName?: string | null;
+      jobTitle?: string | null;
+      bio?: string | null;
+      yearsOfExperience?: number | null;
+      residentState?: string | null;
+      nonResidentStates?: string[] | null;
+      specialties?: string[] | null;
+      website?: string | null;
+      location?: string | null;
     }) => chatBotApi<{ success: boolean }>("update_config", config),
     onSuccess: () => {
       toast.success("Bot configuration updated.");

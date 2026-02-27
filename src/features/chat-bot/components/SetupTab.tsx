@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ConnectionCard } from "./ConnectionCard";
+import { AgentProfileSection } from "./AgentProfileSection";
 import { LeadSourceSelector } from "./LeadSourceSelector";
 import { LeadStatusSelector } from "./LeadStatusSelector";
 import {
@@ -227,6 +228,9 @@ export function SetupTab() {
           </div>
         </div>
       </div>
+
+      {/* Agent Profile */}
+      <AgentProfileSection />
 
       {/* Close CRM Connection */}
       <ConnectionCard
