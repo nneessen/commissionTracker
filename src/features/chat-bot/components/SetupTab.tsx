@@ -128,6 +128,22 @@ export function SetupTab() {
   const displayedEventTypeMappings =
     eventTypeMappings ?? agent?.leadSourceEventTypeMappings ?? [];
 
+  // Client-side validation for event type mappings
+  const hasInvalidMappings = displayedEventTypeMappings.some(
+    (m) => !m.leadSource.trim() || !m.eventTypeSlug.trim(),
+  );
+  const hasDuplicateMappings = (() => {
+    const seen = new Set<string>();
+    for (const m of displayedEventTypeMappings) {
+      const key = m.leadSource.trim().toLowerCase();
+      if (!key) continue;
+      if (seen.has(key)) return true;
+      seen.add(key);
+    }
+    return false;
+  })();
+  const mappingsValid = !hasInvalidMappings && !hasDuplicateMappings;
+
   const handleSaveEventType = () => {
     updateConfig.mutate(
       { leadSourceEventTypeMappings: displayedEventTypeMappings },
@@ -367,12 +383,29 @@ export function SetupTab() {
             </p>
           )}
 
+          {(hasInvalidMappings || hasDuplicateMappings) &&
+            displayedEventTypeMappings.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {hasInvalidMappings && (
+                  <p className="text-[10px] text-red-500">
+                    Each mapping must have both a lead source and an event type.
+                  </p>
+                )}
+                {hasDuplicateMappings && (
+                  <p className="text-[10px] text-red-500">
+                    Duplicate lead sources detected. Each source can only be
+                    mapped once.
+                  </p>
+                )}
+              </div>
+            )}
+
           {eventTypeDirty && (
             <div className="flex items-center gap-2 pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800">
               <Button
                 size="sm"
                 className="h-7 text-[10px]"
-                disabled={updateConfig.isPending}
+                disabled={updateConfig.isPending || !mappingsValid}
                 onClick={handleSaveEventType}
               >
                 {updateConfig.isPending ? (
