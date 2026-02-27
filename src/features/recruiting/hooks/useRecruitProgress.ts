@@ -51,15 +51,22 @@ export function useInitializeRecruitProgress() {
       userId: string;
       templateId: string;
     }) => checklistService.initializeRecruitProgress(userId, templateId),
+    onMutate: async (variables) => {
+      // Cancel in-flight queries to prevent connection pool competition
+      await queryClient.cancelQueries({
+        queryKey: ["recruit-phase-progress", variables.userId],
+      });
+      await queryClient.cancelQueries({
+        queryKey: ["recruit-current-phase", variables.userId],
+      });
+    },
     onSuccess: (_, variables) => {
-      // Invalidate progress-specific queries
       queryClient.invalidateQueries({
         queryKey: ["recruit-phase-progress", variables.userId],
       });
       queryClient.invalidateQueries({
         queryKey: ["recruit-current-phase", variables.userId],
       });
-      // Invalidate recruits list to show enrollment status change
       queryClient.invalidateQueries({
         queryKey: ["recruits"],
       });
@@ -127,6 +134,15 @@ export function useAdvancePhase() {
       userId: string;
       currentPhaseId: string;
     }) => checklistService.advanceToNextPhase(userId, currentPhaseId),
+    onMutate: async (variables) => {
+      // Cancel in-flight queries to prevent connection pool competition
+      await queryClient.cancelQueries({
+        queryKey: ["recruit-phase-progress", variables.userId],
+      });
+      await queryClient.cancelQueries({
+        queryKey: ["recruit-current-phase", variables.userId],
+      });
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["recruit-phase-progress", variables.userId],
@@ -134,7 +150,6 @@ export function useAdvancePhase() {
       queryClient.invalidateQueries({
         queryKey: ["recruit-current-phase", variables.userId],
       });
-      // Invalidate all recruits queries (the key starts with 'recruits')
       queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === "recruits",
       });
@@ -179,6 +194,16 @@ export function useRevertPhase() {
   return useMutation({
     mutationFn: ({ userId, phaseId }: { userId: string; phaseId: string }) =>
       checklistService.revertPhase(userId, phaseId),
+    onMutate: async (variables) => {
+      // Cancel in-flight queries to prevent them from competing for connections
+      // during the mutation. This was a contributing factor to the 2026-02-27 lockup.
+      await queryClient.cancelQueries({
+        queryKey: ["recruit-phase-progress", variables.userId],
+      });
+      await queryClient.cancelQueries({
+        queryKey: ["recruit-current-phase", variables.userId],
+      });
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["recruit-phase-progress", variables.userId],
@@ -186,7 +211,6 @@ export function useRevertPhase() {
       queryClient.invalidateQueries({
         queryKey: ["recruit-current-phase", variables.userId],
       });
-      // Invalidate all recruits queries (status changed)
       queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === "recruits",
       });

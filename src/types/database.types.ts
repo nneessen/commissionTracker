@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5";
+  };
   public: {
     Tables: {
       agencies: {
@@ -13641,6 +13646,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      advance_recruit_phase: {
+        Args: { p_current_phase_id: string; p_user_id: string };
+        Returns: Json;
+      };
       approve_acceptance_rule: {
         Args: { p_notes?: string; p_rule_id: string };
         Returns: undefined;
@@ -13772,6 +13781,10 @@ export type Database = {
         Args: { p_agency_id: string; p_imo_id: string; p_owner_id: string };
         Returns: Json;
       };
+      check_and_auto_advance_phase: {
+        Args: { p_checklist_item_id: string; p_user_id: string };
+        Returns: Json;
+      };
       check_and_update_milestones: {
         Args: { p_log_id: string; p_policy_count: number; p_total_ap: number };
         Returns: {
@@ -13884,7 +13897,7 @@ export type Database = {
       cleanup_expired_evaluation_logs: { Args: never; Returns: number };
       cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_instagram_jobs: {
-        Args: { p_older_than?: string };
+        Args: { p_older_than?: unknown };
         Returns: number;
       };
       cleanup_old_audit_logs: {
@@ -16149,6 +16162,10 @@ export type Database = {
           success: boolean;
         }[];
       };
+      initialize_recruit_progress: {
+        Args: { p_template_id: string; p_user_id: string };
+        Returns: Json;
+      };
       invoke_slack_auto_complete_first_sale: {
         Args: never;
         Returns: undefined;
@@ -16422,6 +16439,10 @@ export type Database = {
       resolve_join_request_approver: {
         Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string };
         Returns: string;
+      };
+      revert_recruit_phase: {
+        Args: { p_phase_id: string; p_user_id: string };
+        Returns: Json;
       };
       revert_rule_set_to_draft: {
         Args: { p_rule_set_id: string };

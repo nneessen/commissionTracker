@@ -19,7 +19,6 @@ import type {
   RecruitChecklistProgress,
   UpdateChecklistItemStatusInput,
 } from "@/types/recruiting.types";
-import { normalizePhaseNameToStatus } from "@/lib/pipeline";
 
 // Fire-and-forget helper for automation triggers (don't block main flow)
 const triggerAutomationAsync = (fn: () => Promise<void>) => {
@@ -47,6 +46,11 @@ const isSyncCacheValid = (cacheKey: string): boolean => {
 const markSyncComplete = (cacheKey: string): void => {
   syncCache.set(cacheKey, Date.now());
 };
+
+// Mutation lock: prevents syncPhaseProgressWithTemplate from running during
+// phase mutations (revert/advance). Without this, background query refetches
+// can trigger sync while mutations are in-flight, competing for connections.
+let phaseMutationInProgress = false;
 
 export const checklistService = {
   // ========================================
@@ -78,6 +82,12 @@ export const checklistService = {
    */
   async syncPhaseProgressWithTemplate(userId: string) {
     const cacheKey = `phase:${userId}`;
+
+    // Skip if a phase mutation (revert/advance) is in progress to avoid
+    // competing for DB connections during multi-step operations
+    if (phaseMutationInProgress) {
+      return;
+    }
 
     // Skip if recently synced
     if (isSyncCacheValid(cacheKey)) {
@@ -161,76 +171,51 @@ export const checklistService = {
   },
 
   async initializeRecruitProgress(userId: string, templateId: string) {
-    // CRITICAL: Check if user already has pipeline progress to prevent duplicate initialization
-    const existingProgress = await phaseProgressRepository.findByUserId(userId);
-    if (existingProgress && existingProgress.length > 0) {
-      console.warn(
-        `[checklistService] User ${userId} already has pipeline progress (${existingProgress.length} phases). Skipping initialization.`,
+    // Use a single RPC call that runs as one transaction.
+    // Previously this made 6+ separate DB calls which could exhaust the connection pool.
+    phaseMutationInProgress = true;
+    try {
+      const { data, error } = await supabase.rpc(
+        "initialize_recruit_progress",
+        {
+          p_user_id: userId,
+          p_template_id: templateId,
+        },
       );
-      // Return existing progress instead of creating duplicates
-      const fullProgress =
-        await phaseProgressRepository.findByUserIdWithPhase(userId);
-      return fullProgress as unknown as RecruitPhaseProgress[];
-    }
 
-    // Get user's imo_id and agency_id for RLS policies
-    const { data: userProfile } = await supabase
-      .from("user_profiles")
-      .select("imo_id, agency_id")
-      .eq("id", userId)
-      .single();
+      if (error) throw error;
 
-    const imoId = userProfile?.imo_id ?? null;
-    const agencyId = userProfile?.agency_id ?? null;
+      const result = data as {
+        initialized: boolean;
+        first_phase_id?: string;
+        reason?: string;
+      };
 
-    // Get all phases for the template
-    const phases = await pipelinePhaseRepository.findByTemplateId(templateId);
-
-    if (!phases || phases.length === 0) {
-      throw new Error("No phases found for template");
-    }
-
-    // Create progress records for all phases (include imo_id and agency_id for RLS)
-    const progressRecords = phases.map((phase, index) => ({
-      userId,
-      phaseId: phase.id,
-      templateId,
-      status: (index === 0
-        ? "in_progress"
-        : "not_started") as PhaseProgressStatus,
-      startedAt: index === 0 ? new Date().toISOString() : null,
-      imoId,
-      agencyId,
-    }));
-
-    const data = await phaseProgressRepository.createMany(progressRecords);
-
-    // Initialize checklist progress for first phase and update user status
-    if (phases[0]) {
-      await this.initializeChecklistProgress(userId, phases[0].id);
-
-      // Update user's onboarding status and template to match first phase
-      const firstPhaseStatus = normalizePhaseNameToStatus(phases[0].phaseName);
-      await supabase
-        .from("user_profiles")
-        .update({
-          pipeline_template_id: templateId,
-          onboarding_status: firstPhaseStatus,
-          current_onboarding_phase: phases[0].phaseName,
-        })
-        .eq("id", userId);
+      if (!result.initialized) {
+        // Already enrolled — return existing progress
+        const existingProgress =
+          await phaseProgressRepository.findByUserIdWithPhase(userId);
+        return existingProgress as unknown as RecruitPhaseProgress[];
+      }
 
       // Trigger phase_enter automation for first phase (fire-and-forget)
-      triggerAutomationAsync(() =>
-        pipelineAutomationService.triggerPhaseAutomations(
-          phases[0].id,
-          "phase_enter",
-          userId,
-        ),
-      );
-    }
+      if (result.first_phase_id) {
+        triggerAutomationAsync(() =>
+          pipelineAutomationService.triggerPhaseAutomations(
+            result.first_phase_id!,
+            "phase_enter",
+            userId,
+          ),
+        );
+      }
 
-    return data as unknown as RecruitPhaseProgress[];
+      // Return the newly created progress
+      const newProgress =
+        await phaseProgressRepository.findByUserIdWithPhase(userId);
+      return newProgress as unknown as RecruitPhaseProgress[];
+    } finally {
+      phaseMutationInProgress = false;
+    }
   },
 
   async updatePhaseStatus(
@@ -281,105 +266,74 @@ export const checklistService = {
   },
 
   async advanceToNextPhase(userId: string, currentPhaseId: string) {
-    // Get current phase to find template and order
-    const { data: currentProgress, error: currentError } = await supabase
-      .from("recruit_phase_progress")
-      .select("*, phase:phase_id(*)")
-      .eq("user_id", userId)
-      .eq("phase_id", currentPhaseId)
-      .single();
+    // Use a single RPC call that runs as one transaction.
+    // Previously this made 7-9 separate DB calls which could exhaust the connection pool.
+    phaseMutationInProgress = true;
+    try {
+      const { data, error } = await supabase.rpc("advance_recruit_phase", {
+        p_user_id: userId,
+        p_current_phase_id: currentPhaseId,
+      });
 
-    if (currentError) throw currentError;
+      if (error) throw error;
 
-    // Mark current phase as completed
-    await this.updatePhaseStatus(userId, currentPhaseId, "completed");
+      const result = data as {
+        completed: boolean;
+        next_phase_id: string | null;
+        current_phase_id: string;
+        next_phase_order?: number;
+      };
 
-    // Trigger phase_complete automation for current phase (fire-and-forget)
-    triggerAutomationAsync(() =>
-      pipelineAutomationService.triggerPhaseAutomations(
-        currentPhaseId,
-        "phase_complete",
-        userId,
-      ),
-    );
+      // Trigger phase_complete automation for current phase (fire-and-forget)
+      triggerAutomationAsync(() =>
+        pipelineAutomationService.triggerPhaseAutomations(
+          currentPhaseId,
+          "phase_complete",
+          userId,
+        ),
+      );
 
-    // Get next phase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase relation type
-    const currentOrder = (currentProgress.phase as any).phase_order;
-    const nextPhase = await pipelinePhaseRepository.findNextPhase(
-      currentProgress.template_id,
-      currentOrder,
-    );
+      if (result.next_phase_id) {
+        // Check if next phase requires login access (phase 2+)
+        if (result.next_phase_order && result.next_phase_order >= 2) {
+          this.ensureRecruitHasAuthUser(userId)
+            .then((authResult) => {
+              if (authResult.created && authResult.emailSent) {
+                console.log(
+                  `[checklistService] Login instructions sent to recruit ${userId}`,
+                );
+              } else if (authResult.created && !authResult.emailSent) {
+                console.warn(
+                  `[checklistService] Auth user created for ${userId} but email not sent`,
+                );
+              }
+            })
+            .catch((error) => {
+              console.error(
+                "[checklistService] Failed to ensure auth user (non-blocking):",
+                error,
+              );
+            });
+        }
 
-    if (!nextPhase) {
-      // No next phase found - recruiting is complete!
-      await supabase
-        .from("user_profiles")
-        .update({
-          onboarding_status: "completed",
-          onboarding_completed_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-      return null;
+        // Trigger phase_enter automation for next phase (fire-and-forget)
+        triggerAutomationAsync(() =>
+          pipelineAutomationService.triggerPhaseAutomations(
+            result.next_phase_id!,
+            "phase_enter",
+            userId,
+          ),
+        );
+      }
+
+      if (result.completed) {
+        return null;
+      }
+
+      return result as unknown as RecruitPhaseProgress;
+    } finally {
+      phaseMutationInProgress = false;
     }
-
-    // Check if next phase requires login access (phase 2+)
-    // Phase 1 is for prospects without login, phase 2+ requires auth user
-    // NOTE: Auth user creation is non-blocking - we don't want checkbox operations
-    // to fail just because the invite email couldn't be sent
-    if (nextPhase.phaseOrder >= 2) {
-      // Fire-and-forget: attempt to create auth user but don't block phase advancement
-      this.ensureRecruitHasAuthUser(userId)
-        .then((authResult) => {
-          if (authResult.created && authResult.emailSent) {
-            console.log(
-              `[checklistService] Login instructions sent to recruit ${userId}`,
-            );
-          } else if (authResult.created && !authResult.emailSent) {
-            console.warn(
-              `[checklistService] Auth user created for ${userId} but email not sent - admin can use Resend Invite`,
-            );
-          }
-        })
-        .catch((error) => {
-          // Log but don't block - admin can manually resend invite later
-          console.error(
-            "[checklistService] Failed to ensure auth user on phase advance (non-blocking):",
-            error,
-          );
-        });
-    }
-
-    // Mark next phase as in_progress
-    const nextProgress = await this.updatePhaseStatus(
-      userId,
-      nextPhase.id,
-      "in_progress",
-    );
-
-    // Initialize checklist progress for next phase
-    await this.initializeChecklistProgress(userId, nextPhase.id);
-
-    // Trigger phase_enter automation for next phase (fire-and-forget)
-    triggerAutomationAsync(() =>
-      pipelineAutomationService.triggerPhaseAutomations(
-        nextPhase.id,
-        "phase_enter",
-        userId,
-      ),
-    );
-
-    // Update user_profiles with new phase and status
-    const nextPhaseStatus = normalizePhaseNameToStatus(nextPhase.phaseName);
-    await supabase
-      .from("user_profiles")
-      .update({
-        onboarding_status: nextPhaseStatus,
-        current_onboarding_phase: nextPhase.phaseName,
-      })
-      .eq("id", userId);
-
-    return nextProgress;
   },
 
   async blockPhase(userId: string, phaseId: string, reason: string) {
@@ -393,93 +347,33 @@ export const checklistService = {
   },
 
   async revertPhase(userId: string, phaseId: string) {
-    // Get current phase progress to validate it's completed
-    const currentProgress = await phaseProgressRepository.findByUserAndPhase(
-      userId,
-      phaseId,
-    );
+    // Use a single RPC call that runs as one transaction.
+    // Previously this made 4N+8 separate DB calls (N = subsequent phases),
+    // which exhausted the connection pool on 2026-02-27.
+    phaseMutationInProgress = true;
+    try {
+      const { data, error } = await supabase.rpc("revert_recruit_phase", {
+        p_user_id: userId,
+        p_phase_id: phaseId,
+      });
 
-    if (!currentProgress) {
-      throw new Error("Phase progress not found");
-    }
+      if (error) {
+        throw new Error(error.message);
+      }
 
-    if (currentProgress.status !== "completed") {
-      throw new Error("Can only revert completed phases");
-    }
-
-    // Get phase details for updating user profile
-    const phase = await pipelinePhaseRepository.findById(phaseId);
-    if (!phase) {
-      throw new Error("Phase not found");
-    }
-
-    // Get all phases for this template to find subsequent ones
-    const allPhases = await pipelinePhaseRepository.findByTemplateId(
-      phase.templateId,
-    );
-
-    // Find phases that come AFTER this one (higher phase_order)
-    const subsequentPhases = allPhases.filter(
-      (p) => p.phaseOrder > phase.phaseOrder,
-    );
-
-    // Reset all subsequent phases to "not_started"
-    for (const subsequentPhase of subsequentPhases) {
-      await this.updatePhaseStatus(
-        userId,
-        subsequentPhase.id,
-        "not_started",
-        "Reset due to phase revert",
+      // Trigger phase_enter automation for reverted phase (fire-and-forget)
+      triggerAutomationAsync(() =>
+        pipelineAutomationService.triggerPhaseAutomations(
+          phaseId,
+          "phase_enter",
+          userId,
+        ),
       );
 
-      // Also reset the started_at and completed_at timestamps
-      await supabase
-        .from("recruit_phase_progress")
-        .update({
-          started_at: null,
-          completed_at: null,
-        })
-        .eq("user_id", userId)
-        .eq("phase_id", subsequentPhase.id);
+      return data as unknown as RecruitPhaseProgress;
+    } finally {
+      phaseMutationInProgress = false;
     }
-
-    // Set the target phase back to in_progress
-    const updatedProgress = await this.updatePhaseStatus(
-      userId,
-      phaseId,
-      "in_progress",
-      "Reverted by recruiter",
-    );
-
-    // Reset completed_at for the reverted phase (keep started_at)
-    await supabase
-      .from("recruit_phase_progress")
-      .update({
-        completed_at: null,
-      })
-      .eq("user_id", userId)
-      .eq("phase_id", phaseId);
-
-    // Update user_profiles with the reverted phase's status
-    const revertedPhaseStatus = normalizePhaseNameToStatus(phase.phaseName);
-    await supabase
-      .from("user_profiles")
-      .update({
-        onboarding_status: revertedPhaseStatus,
-        current_onboarding_phase: phase.phaseName,
-      })
-      .eq("id", userId);
-
-    // Trigger phase_enter automation for reverted phase (fire-and-forget)
-    triggerAutomationAsync(() =>
-      pipelineAutomationService.triggerPhaseAutomations(
-        phaseId,
-        "phase_enter",
-        userId,
-      ),
-    );
-
-    return updatedProgress;
   },
 
   // ========================================
@@ -634,57 +528,62 @@ export const checklistService = {
   },
 
   async checkPhaseAutoAdvancement(userId: string, checklistItemId: string) {
-    // Get the phase for this checklist item
-    const { data: checklistItem, error: itemError } = await supabase
-      .from("phase_checklist_items")
-      .select("*, phase:phase_id(*)")
-      .eq("id", checklistItemId)
-      .single();
-
-    if (itemError) throw itemError;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase relation type
-    const phase = checklistItem.phase as any;
-
-    // Only auto-advance if phase allows it
-    if (!phase.auto_advance) return;
-
-    // Get all checklist items for this phase
-    const phaseChecklistItems = await checklistItemRepository.findByPhaseId(
-      phase.id,
-    );
-
-    if (!phaseChecklistItems || phaseChecklistItems.length === 0) return;
-
-    // Get all checklist progress for these items
-    const allProgress = await checklistProgressRepository.findByUserAndPhase(
-      userId,
-      phase.id,
-    );
-
-    // Create a map of item_id to progress for quick lookup
-    const progressMap = new Map(
-      allProgress?.map((p) => [p.checklist_item_id, p]) || [],
-    );
-
-    // Determine which items to check:
-    // - If there are required items, only those must be completed
-    // - If NO required items exist, ALL items must be completed
-    const requiredItems = phaseChecklistItems.filter((item) => item.isRequired);
-    const itemsToCheck =
-      requiredItems.length > 0 ? requiredItems : phaseChecklistItems;
-
-    // Check if all relevant items are approved/completed
-    const allItemsCompleted = itemsToCheck.every((item) => {
-      const progress = progressMap.get(item.id);
-      if (!progress) return false;
-
-      return progress.status === "approved" || progress.status === "completed";
+    // Use a single RPC that checks completion + auto-advances in one transaction.
+    // Previously this was a 14-call chain: checkPhaseAutoAdvancement (3) → advanceToNextPhase (9).
+    // That chain was the primary cause of the 2026-02-27 connection pool exhaustion.
+    const { data, error } = await supabase.rpc("check_and_auto_advance_phase", {
+      p_user_id: userId,
+      p_checklist_item_id: checklistItemId,
     });
 
-    if (allItemsCompleted) {
-      // Auto-advance to next phase
-      await this.advanceToNextPhase(userId, phase.id);
+    if (error) {
+      console.error("[checklistService] Auto-advance check failed:", error);
+      return;
+    }
+
+    const result = data as {
+      advanced: boolean;
+      phase_id?: string;
+      advance_result?: {
+        next_phase_id?: string;
+        next_phase_order?: number;
+        completed?: boolean;
+      };
+    };
+
+    if (result.advanced && result.phase_id) {
+      // Trigger phase_complete automation (fire-and-forget)
+      triggerAutomationAsync(() =>
+        pipelineAutomationService.triggerPhaseAutomations(
+          result.phase_id!,
+          "phase_complete",
+          userId,
+        ),
+      );
+
+      if (result.advance_result?.next_phase_id) {
+        // Trigger phase_enter automation (fire-and-forget)
+        triggerAutomationAsync(() =>
+          pipelineAutomationService.triggerPhaseAutomations(
+            result.advance_result!.next_phase_id!,
+            "phase_enter",
+            userId,
+          ),
+        );
+
+        // Ensure auth user for phase 2+ (fire-and-forget)
+        if (
+          result.advance_result.next_phase_order &&
+          result.advance_result.next_phase_order >= 2
+        ) {
+          this.ensureRecruitHasAuthUser(userId).catch((err) => {
+            console.error(
+              "[checklistService] Failed to ensure auth user:",
+              err,
+            );
+          });
+        }
+      }
     }
   },
 
