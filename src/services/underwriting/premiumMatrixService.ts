@@ -71,17 +71,17 @@ export function normalizeHealthClass(
     case "substandard":
     case "table_rated":
       return "table_rated";
-    // SI products (graded/modified/GI) use standard premium rates
-    // regardless of underwriting health class
+    // Graded/modified/GI require their own rate tables —
+    // return null so products without those rates show TBD instead of wrong rates
     case "graded":
     case "modified":
     case "guaranteed_issue":
-      return "standard";
+      return null;
     case "unknown":
-      return "standard"; // Default for unknown
+      return "standard";
     case "decline":
     case "refer":
-      return null; // Non-rateable - requires manual underwriting
+      return null;
     default:
       return "standard";
   }
