@@ -1121,6 +1121,37 @@ class AdminSubscriptionService {
       return false;
     }
   }
+
+  /**
+   * Invoke the setup-addon-stripe-products edge function to auto-create
+   * Stripe product + prices for a given addon's tiers.
+   */
+  async setupAddonStripeProducts(
+    addonName: string,
+  ): Promise<{
+    results: Array<{
+      tierId: string;
+      monthlyPriceId?: string;
+      annualPriceId?: string;
+    }>;
+  }> {
+    const { data, error } = await supabase.functions.invoke(
+      "setup-addon-stripe-products",
+      { body: { addonName } },
+    );
+
+    if (error) {
+      throw new Error(`Stripe setup failed: ${error.message}`);
+    }
+
+    return data as {
+      results: Array<{
+        tierId: string;
+        monthlyPriceId?: string;
+        annualPriceId?: string;
+      }>;
+    };
+  }
 }
 
 export const adminSubscriptionService = new AdminSubscriptionService();

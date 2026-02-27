@@ -72,6 +72,22 @@ serve(async (req) => {
       });
     }
 
+    // Validate priceId against known plan prices in the database
+    const { data: validPlan } = await supabase
+      .from("subscription_plans")
+      .select("id")
+      .or(
+        `stripe_price_id_monthly.eq.${priceId},stripe_price_id_annual.eq.${priceId}`,
+      )
+      .maybeSingle();
+
+    if (!validPlan) {
+      return new Response(JSON.stringify({ error: "Invalid price ID" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Look up existing Stripe customer ID for this user
     const { data: existingSub } = await supabase
       .from("user_subscriptions")

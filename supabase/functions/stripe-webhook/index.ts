@@ -119,6 +119,39 @@ async function sendBillingEmail(
   }
 }
 
+// Send plain-text admin notification email via Mailgun
+// Non-fatal: errors are caught silently so webhook processing is never interrupted
+async function sendAdminNotification(
+  subject: string,
+  body: string,
+): Promise<void> {
+  try {
+    const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
+    const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
+
+    if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) return;
+
+    const form = new FormData();
+    form.append("from", `CommissionTracker Alerts <alerts@${MAILGUN_DOMAIN}>`);
+    form.append("to", "nickneessen@thestandardhq.com");
+    form.append("subject", subject);
+    form.append("text", body);
+
+    const credentials = `api:${MAILGUN_API_KEY}`;
+    const encoder = new TextEncoder();
+    const credentialsBytes = encoder.encode(credentials);
+    const base64Credentials = btoa(String.fromCharCode(...credentialsBytes));
+
+    await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${base64Credentials}` },
+      body: form,
+    });
+  } catch {
+    // Silently ignore — admin notifications must never break webhook processing
+  }
+}
+
 function formatCents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -644,6 +677,21 @@ serve(async (req) => {
               );
             }
           }
+
+          // Admin notification for addon purchase
+          try {
+            const addonUserDetails = await getUserDetails(userId);
+            const addonUserName =
+              `${addonUserDetails?.first_name || ""} ${addonUserDetails?.last_name || ""}`.trim() ||
+              "Customer";
+            const addonUserEmail = addonUserDetails?.email || "unknown";
+            await sendAdminNotification(
+              `New Addon Purchase: ${addonUserName} (${tierId})`,
+              `User: ${addonUserName}\nEmail: ${addonUserEmail}\nAddon: AI Chat Bot\nTier: ${tierId}`,
+            );
+          } catch {
+            // Non-fatal
+          }
         }
 
         console.log(`[stripe-webhook] Checkout completed for user: ${userId}`);
@@ -835,6 +883,16 @@ serve(async (req) => {
                 ),
               },
             );
+
+            // Admin notification
+            try {
+              await sendAdminNotification(
+                `New Subscription: ${userName} (${productName})`,
+                `User: ${userName}\nEmail: ${userEmail}\nPlan: ${productName}\nAmount: ${formatCents(planItem?.price?.unit_amount || 0)}/${priceInterval === "year" ? "year" : "month"}`,
+              );
+            } catch {
+              // Non-fatal
+            }
           }
         }
 
@@ -1121,6 +1179,16 @@ serve(async (req) => {
               ),
             },
           );
+
+          // Admin notification
+          try {
+            await sendAdminNotification(
+              `Subscription Cancelled: ${userName}`,
+              `User: ${userName}\nEmail: ${userEmail}\nCancelled: ${formatDate(new Date().toISOString())}\nAccess Until: ${formatDate(timestampToISO(subscription.current_period_end))}`,
+            );
+          } catch {
+            // Non-fatal
+          }
         }
 
         console.log(
@@ -1423,6 +1491,16 @@ serve(async (req) => {
               update_payment_url: "",
             },
           );
+
+          // Admin notification
+          try {
+            await sendAdminNotification(
+              `Payment Failed: ${userName} - ${formatCents(invoice.amount_due || 0)}`,
+              `User: ${userName}\nEmail: ${userEmail}\nAmount: ${formatCents(invoice.amount_due || 0)}\nInvoice: ${invoice.id}`,
+            );
+          } catch {
+            // Non-fatal
+          }
         }
 
         console.log(`[stripe-webhook] Payment failed for user: ${userId}`);
