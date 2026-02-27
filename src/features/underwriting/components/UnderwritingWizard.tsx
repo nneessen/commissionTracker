@@ -1,6 +1,6 @@
 // src/features/underwriting/components/UnderwritingWizard.tsx
 
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, useRef, Suspense } from "react";
 import { UWWizardDisclaimerGate } from "./UWWizardDisclaimerGate";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useUnderwritingAnalysis,
+  UWAnalysisError,
   useSaveUnderwritingSession,
   useDecisionEngineRecommendations,
   transformWizardToDecisionEngineInput,
@@ -163,6 +164,8 @@ function UnderwritingWizardInner() {
   const [showHistorySheet, setShowHistorySheet] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
 
+  const analysisInFlightRef = useRef(false);
+
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
   const decisionEngineMutation = useDecisionEngineRecommendations();
@@ -273,6 +276,9 @@ function UnderwritingWizardInner() {
         return;
       }
 
+      if (analysisInFlightRef.current) return;
+      analysisInFlightRef.current = true;
+
       const bmi = calculateBMI(
         formData.client.heightFeet,
         formData.client.heightInches,
@@ -316,13 +322,31 @@ function UnderwritingWizardInner() {
 
       analysisMutation.mutate(aiRequest, {
         onSuccess: (result) => {
+          analysisInFlightRef.current = false;
           setAnalysisResult(result);
           refetchUsage();
         },
-        onError: () =>
-          setErrors({
-            submit: "AI analysis failed. Results may be incomplete.",
-          }),
+        onError: (error: UWAnalysisError) => {
+          analysisInFlightRef.current = false;
+          setLastAnalyzedData(null);
+
+          if (error instanceof UWAnalysisError) {
+            if (error.code === "limit_exceeded" || error.status === 429) {
+              refetchUsage();
+              setShowLimitDialog(true);
+              return;
+            }
+            if (error.code === "no_subscription" || error.status === 403) {
+              setErrors({
+                submit:
+                  "UW Wizard subscription required. Visit Billing to subscribe.",
+              });
+              return;
+            }
+          }
+
+          setErrors({ submit: "AI analysis failed. Please try again." });
+        },
       });
       decisionEngineMutation.mutate(decisionInput);
 

@@ -38,6 +38,9 @@ export const HEALTH_CLASSES = [
   "standard_plus",
   "standard",
   "substandard",
+  "graded",
+  "modified",
+  "guaranteed_issue",
   "refer",
   "decline",
   "unknown",
@@ -68,9 +71,12 @@ export const HEALTH_CLASS_RANK: Record<
   standard_plus: 3,
   standard: 4,
   substandard: 5,
-  refer: 6,
-  unknown: 7,
-  decline: 8,
+  graded: 6,
+  modified: 7,
+  guaranteed_issue: 8,
+  refer: 9,
+  unknown: 10,
+  decline: 11,
 };
 
 // Table rating to units mapping

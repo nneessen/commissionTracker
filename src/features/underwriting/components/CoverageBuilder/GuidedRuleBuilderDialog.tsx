@@ -100,6 +100,9 @@ const HEALTH_CLASS_OPTIONS: { value: HealthClass; label: string }[] = [
   { value: "standard_plus", label: "Standard Plus" },
   { value: "standard", label: "Standard" },
   { value: "substandard", label: "Substandard" },
+  { value: "graded", label: "Graded Benefit" },
+  { value: "modified", label: "Modified Benefit" },
+  { value: "guaranteed_issue", label: "Guaranteed Issue" },
 ];
 
 const TABLE_RATING_OPTIONS: { value: TableRating; label: string }[] = [
@@ -816,7 +819,7 @@ export function GuidedRuleBuilderDialog({
             {/* Health Class */}
             <div className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">
-                Best Health Class
+                Outcome / Health Class
               </Label>
               <Select
                 value={healthClass}

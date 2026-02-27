@@ -10,9 +10,17 @@ import type {
   CriteriaEvaluationResult,
 } from "../types/underwriting.types";
 
-interface AnalysisError {
-  message: string;
-  code?: string;
+export class UWAnalysisError extends Error {
+  constructor(
+    message: string,
+    public code: string | null,
+    public status: number | null,
+    public runsRemaining: number | null = null,
+    public tierId: string | null = null,
+  ) {
+    super(message);
+    this.name = "UWAnalysisError";
+  }
 }
 
 async function analyzeClient(
@@ -29,14 +37,34 @@ async function analyzeClient(
 
   if (error) {
     console.error("Underwriting analysis failed:", error);
-    throw new Error(
-      error.message || "Failed to analyze client. Please try again.",
-    );
+
+    let status: number | null = null;
+    let body: Record<string, unknown> | null = null;
+
+    try {
+      const ctx = (error as { context?: Response }).context;
+      status = ctx?.status ?? null;
+      if (ctx && typeof ctx.json === "function") {
+        body = await ctx.json();
+      }
+    } catch {
+      // body already consumed or not JSON
+    }
+
+    const code = (body?.code as string) ?? null;
+    const msg = (body?.error as string) ?? error.message ?? "Analysis failed";
+    const runsRemaining = (body?.runs_remaining as number) ?? null;
+    const tierId = (body?.tier_id as string) ?? null;
+
+    throw new UWAnalysisError(msg, code, status, runsRemaining, tierId);
   }
 
   if (!data || !data.success) {
-    throw new Error(
+    const code = (data?.code as string) ?? null;
+    throw new UWAnalysisError(
       data?.error || "Analysis failed. Please check your inputs and try again.",
+      code,
+      null,
     );
   }
 
@@ -110,7 +138,7 @@ async function analyzeClient(
  * Hook to analyze a client using the AI underwriting system
  */
 export function useUnderwritingAnalysis() {
-  return useMutation<AIAnalysisResult, AnalysisError, AIAnalysisRequest>({
+  return useMutation<AIAnalysisResult, UWAnalysisError, AIAnalysisRequest>({
     mutationFn: analyzeClient,
     onError: (error) => {
       console.error("Underwriting analysis error:", error);

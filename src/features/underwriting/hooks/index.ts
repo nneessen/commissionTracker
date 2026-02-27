@@ -12,7 +12,10 @@ export {
   useCanManageUnderwriting,
 } from "./useUnderwritingFeatureFlag";
 
-export { useUnderwritingAnalysis } from "./useUnderwritingAnalysis";
+export {
+  useUnderwritingAnalysis,
+  UWAnalysisError,
+} from "./useUnderwritingAnalysis";
 
 export {
   useUnderwritingSessions,

@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
-  };
   public: {
     Tables: {
       agencies: {
@@ -13889,7 +13884,7 @@ export type Database = {
       cleanup_expired_evaluation_logs: { Args: never; Returns: number };
       cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_instagram_jobs: {
-        Args: { p_older_than?: unknown };
+        Args: { p_older_than?: string };
         Returns: number;
       };
       cleanup_old_audit_logs: {
@@ -16895,6 +16890,9 @@ export type Database = {
         | "standard_plus"
         | "standard"
         | "substandard"
+        | "graded"
+        | "modified"
+        | "guaranteed_issue"
         | "refer"
         | "decline"
         | "unknown";
@@ -17226,6 +17224,9 @@ export const Constants = {
         "standard_plus",
         "standard",
         "substandard",
+        "graded",
+        "modified",
+        "guaranteed_issue",
         "refer",
         "decline",
         "unknown",
