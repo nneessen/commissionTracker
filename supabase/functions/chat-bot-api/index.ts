@@ -177,6 +177,15 @@ serve(async (req) => {
           calendlyEventTypeSlug: agentData.calendlyEventTypeSlug || null,
           leadSourceEventTypeMappings:
             agentData.leadSourceEventTypeMappings || [],
+          companyName: agentData.companyName || null,
+          jobTitle: agentData.jobTitle || null,
+          bio: agentData.bio || null,
+          yearsOfExperience: agentData.yearsOfExperience ?? null,
+          residentState: agentData.residentState || null,
+          nonResidentStates: agentData.nonResidentStates || null,
+          specialties: agentData.specialties || null,
+          website: agentData.website || null,
+          location: agentData.location || null,
           connections: {
             close: closeConn
               ? { connected: true, orgName: closeConn.orgId || undefined }

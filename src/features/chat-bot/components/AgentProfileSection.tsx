@@ -1,7 +1,7 @@
 // src/features/chat-bot/components/AgentProfileSection.tsx
 // Agent profile settings for personalizing chatbot identity and conversation style
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Check, Loader2, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,8 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import { US_STATES } from "@/constants/states";
 import { useChatBotAgent, useUpdateBotConfig } from "../hooks/useChatBot";
+
+type BotConfigPayload = Parameters<
+  ReturnType<typeof useUpdateBotConfig>["mutate"]
+>[0];
 
 const NONE_VALUE = "__none__";
 
@@ -53,24 +58,37 @@ export function AgentProfileSection() {
     setLocation(agent.location ?? "");
   }, [agent]);
 
-  // Dirty detection — compare local state vs agent data
-  const isDirty = useMemo(() => {
-    if (!agent) return false;
-    return (
-      companyName !== (agent.companyName ?? "") ||
-      jobTitle !== (agent.jobTitle ?? "") ||
-      bio !== (agent.bio ?? "") ||
+  // Single source of truth for changed fields — used by both isDirty and handleSave
+  const getChangedFields = useCallback((): BotConfigPayload => {
+    if (!agent) return {};
+    const changes: BotConfigPayload = {};
+    if (companyName !== (agent.companyName ?? ""))
+      changes.companyName = companyName || null;
+    if (jobTitle !== (agent.jobTitle ?? ""))
+      changes.jobTitle = jobTitle || null;
+    if (bio !== (agent.bio ?? "")) changes.bio = bio || null;
+    if (
       yearsOfExperience !==
-        (agent.yearsOfExperience != null
-          ? String(agent.yearsOfExperience)
-          : "") ||
-      residentState !== (agent.residentState ?? "") ||
+      (agent.yearsOfExperience != null ? String(agent.yearsOfExperience) : "")
+    )
+      changes.yearsOfExperience = yearsOfExperience
+        ? parseInt(yearsOfExperience, 10)
+        : null;
+    if (residentState !== (agent.residentState ?? ""))
+      changes.residentState = residentState || null;
+    if (
       JSON.stringify(nonResidentStates) !==
-        JSON.stringify(agent.nonResidentStates ?? []) ||
-      JSON.stringify(specialties) !== JSON.stringify(agent.specialties ?? []) ||
-      website !== (agent.website ?? "") ||
-      location !== (agent.location ?? "")
-    );
+      JSON.stringify(agent.nonResidentStates ?? [])
+    )
+      changes.nonResidentStates = nonResidentStates.length
+        ? nonResidentStates
+        : null;
+    if (JSON.stringify(specialties) !== JSON.stringify(agent.specialties ?? []))
+      changes.specialties = specialties.length ? specialties : null;
+    if (website !== (agent.website ?? "")) changes.website = website || null;
+    if (location !== (agent.location ?? ""))
+      changes.location = location || null;
+    return changes;
   }, [
     agent,
     companyName,
@@ -84,44 +102,23 @@ export function AgentProfileSection() {
     location,
   ]);
 
+  const isDirty = useMemo(
+    () => Object.keys(getChangedFields()).length > 0,
+    [getChangedFields],
+  );
+
   // Filter non-resident states to exclude resident state
   const availableNonResidentStates = US_STATES.filter(
     (s) => s.value !== residentState,
   );
 
   const handleSave = () => {
-    const payload: Record<string, unknown> = {};
-
-    if (companyName !== (agent?.companyName ?? ""))
-      payload.companyName = companyName || null;
-    if (jobTitle !== (agent?.jobTitle ?? ""))
-      payload.jobTitle = jobTitle || null;
-    if (bio !== (agent?.bio ?? "")) payload.bio = bio || null;
-    if (
-      yearsOfExperience !==
-      (agent?.yearsOfExperience != null ? String(agent.yearsOfExperience) : "")
-    )
-      payload.yearsOfExperience = yearsOfExperience
-        ? Number(yearsOfExperience)
-        : null;
-    if (residentState !== (agent?.residentState ?? ""))
-      payload.residentState = residentState || null;
-    if (
-      JSON.stringify(nonResidentStates) !==
-      JSON.stringify(agent?.nonResidentStates ?? [])
-    )
-      payload.nonResidentStates = nonResidentStates.length
-        ? nonResidentStates
-        : null;
-    if (
-      JSON.stringify(specialties) !== JSON.stringify(agent?.specialties ?? [])
-    )
-      payload.specialties = specialties.length ? specialties : null;
-    if (website !== (agent?.website ?? "")) payload.website = website || null;
-    if (location !== (agent?.location ?? ""))
-      payload.location = location || null;
-
-    updateConfig.mutate(payload);
+    // Validate website URL format if provided
+    if (website && !/^https?:\/\/.+/.test(website)) {
+      toast.error("Website must start with http:// or https://");
+      return;
+    }
+    updateConfig.mutate(getChangedFields());
   };
 
   const addSpecialty = () => {
@@ -248,7 +245,10 @@ export function AgentProfileSection() {
               value={yearsOfExperience}
               onChange={(e) => {
                 const val = e.target.value;
-                if (val === "" || (Number(val) >= 0 && Number(val) <= 100)) {
+                if (
+                  val === "" ||
+                  (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 100)
+                ) {
                   setYearsOfExperience(val);
                 }
               }}
