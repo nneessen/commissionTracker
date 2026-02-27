@@ -127,6 +127,10 @@ async function fetchAllAgentMetrics(
       const result = await hierarchyService.getViewerOverridesFromAgent(
         viewerId,
         otherAgentIds,
+        {
+          startDate: startStr,
+          endDate: endStr,
+        },
       );
       // Result is a Map when passed an array
       overridesByAgent = result as Map<string, number>;

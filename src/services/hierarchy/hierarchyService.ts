@@ -1182,11 +1182,13 @@ class HierarchyService {
    * Get override amount the viewer earns from agent(s) (for team table)
    * @param viewerId - The logged-in user viewing the team table
    * @param baseAgentIds - Single agent ID or array of agent IDs
+   * @param options - Optional date range (inclusive, YYYY-MM-DD or ISO)
    * @returns For single ID: { mtd: number }, for array: Map<agentId, mtdAmount>
    */
   async getViewerOverridesFromAgent(
     viewerId: string,
     baseAgentIds: string | string[],
+    options?: { startDate?: string; endDate?: string },
   ): Promise<{ mtd: number } | Map<string, number>> {
     const ids = Array.isArray(baseAgentIds) ? baseAgentIds : [baseAgentIds];
     const isBatch = Array.isArray(baseAgentIds);
@@ -1197,17 +1199,20 @@ class HierarchyService {
 
     try {
       const now = new Date();
-      const mtdStart = new Date(
+      const defaultMtdStart = new Date(
         now.getFullYear(),
         now.getMonth(),
         1,
       ).toISOString();
+      const startDate = options?.startDate ?? defaultMtdStart;
+      const endDate = options?.endDate;
 
       const overrides =
         await this.overrideRepo.findByOverrideAndBaseAgentInRange(
           viewerId,
           ids,
-          mtdStart,
+          startDate,
+          endDate,
         );
 
       // Group by base_agent_id and sum

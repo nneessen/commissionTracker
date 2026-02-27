@@ -35,6 +35,7 @@ export interface OverrideCommission {
 export interface OverrideMetricRow {
   base_agent_id: string;
   override_agent_id?: string;
+  policy_id?: string;
   override_commission_amount: number | string | null;
   status: string | null;
   created_at?: string;
@@ -389,31 +390,112 @@ export class OverrideRepository extends BaseRepository<
   /**
    * Find overrides where a specific override agent earns from base agent(s)
    * Used for team table to show "Overrides I earn from this agent"
-   * Only counts overrides with status 'earned' or 'paid' (base commission must be paid)
+   * Only counts overrides tied to paid base commissions on active policies
    * Supports both single baseAgentId and batch mode with array of baseAgentIds
    */
   async findByOverrideAndBaseAgentInRange(
     overrideAgentId: string,
     baseAgentIds: string | string[],
     startDate: string,
+    endDate?: string,
   ): Promise<OverrideMetricRow[]> {
     const ids = Array.isArray(baseAgentIds) ? baseAgentIds : [baseAgentIds];
     if (ids.length === 0) return [];
 
     try {
-      const { data, error } = await this.client
-        .from(this.tableName)
-        .select("base_agent_id, override_commission_amount")
-        .eq("override_agent_id", overrideAgentId)
-        .in("base_agent_id", ids)
-        .gte("created_at", startDate)
-        .in("status", ["earned", "paid"]); // Only count earned/paid overrides
+      // Normalize to YYYY-MM-DD so date filters are stable for DATE columns.
+      const toDateStr = (value: string): string => {
+        if (value.length === 10) return value;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+        return date.toISOString().slice(0, 10);
+      };
+      const startDateStr = toDateStr(startDate);
+      const endDateStr = endDate ? toDateStr(endDate) : undefined;
 
-      if (error) {
-        throw this.handleError(error, "findByOverrideAndBaseAgentInRange");
+      // Policy/commission eligibility:
+      // - policy must be active (issued/in-force)
+      // - base commission must be paid
+      // - commission payment_date (or created_at fallback) must be in requested range
+      const paidCommissionQuery = this.client
+        .from(TABLES.COMMISSIONS)
+        .select(
+          `
+            policy_id,
+            user_id,
+            payment_date,
+            created_at,
+            policy:policies!inner(lifecycle_status)
+          `,
+        )
+        .eq("status", "paid")
+        .eq("type", "advance")
+        .in("user_id", ids)
+        .eq("policy.lifecycle_status", "active");
+
+      const { data: paidCommissions, error: paidCommissionsError } =
+        await paidCommissionQuery;
+
+      if (paidCommissionsError) {
+        throw this.handleError(
+          paidCommissionsError,
+          "findByOverrideAndBaseAgentInRange.paidCommissions",
+        );
       }
 
-      return (data as OverrideMetricRow[]) || [];
+      const paidPolicyIdsByAgent = new Map<string, Set<string>>();
+      for (const commission of (paidCommissions || []) as Array<{
+        policy_id: string | null;
+        user_id: string | null;
+        payment_date: string | null;
+        created_at: string | null;
+      }>) {
+        if (!commission.policy_id || !commission.user_id) continue;
+        const effectiveDate = commission.payment_date || commission.created_at;
+        if (!effectiveDate) continue;
+        const effectiveDateStr = toDateStr(effectiveDate);
+        if (effectiveDateStr < startDateStr) continue;
+        if (endDateStr && effectiveDateStr > endDateStr) continue;
+
+        const policyIds = paidPolicyIdsByAgent.get(commission.user_id);
+        if (policyIds) {
+          policyIds.add(commission.policy_id);
+        } else {
+          paidPolicyIdsByAgent.set(
+            commission.user_id,
+            new Set([commission.policy_id]),
+          );
+        }
+      }
+
+      const eligiblePolicyIds = Array.from(paidPolicyIdsByAgent.values())
+        .flatMap((policyIds) => Array.from(policyIds))
+        .filter(Boolean);
+
+      if (eligiblePolicyIds.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("base_agent_id, policy_id, override_commission_amount, status")
+        .eq("override_agent_id", overrideAgentId)
+        .in("base_agent_id", ids)
+        .in("policy_id", eligiblePolicyIds);
+
+      if (error) {
+        throw this.handleError(
+          error,
+          "findByOverrideAndBaseAgentInRange.overrides",
+        );
+      }
+
+      const rows = (data || []) as OverrideMetricRow[];
+      return rows.filter((row) => {
+        if (!row.policy_id) return false;
+        const policyIds = paidPolicyIdsByAgent.get(row.base_agent_id);
+        return policyIds ? policyIds.has(row.policy_id) : false;
+      });
     } catch (error) {
       throw this.wrapError(error, "findByOverrideAndBaseAgentInRange");
     }

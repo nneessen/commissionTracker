@@ -12,6 +12,7 @@ vi.mock("../../../services/base/supabase", () => ({
     },
   },
   TABLES: {
+    COMMISSIONS: "commissions",
     OVERRIDE_COMMISSIONS: "override_commissions",
     POLICIES: "policies",
     USER_PROFILES: "user_profiles",
@@ -30,6 +31,7 @@ function createMockQueryBuilder(
     eq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     then: vi.fn((resolve) => resolve({ data, error })),
@@ -41,6 +43,22 @@ function createMockQueryBuilder(
     ) => Promise.resolve({ data, error }).then(resolve),
   });
   return builder;
+}
+
+function mockPaidOverrideFlow(
+  commissionsData: unknown[] = [],
+  overridesData: unknown[] = [],
+) {
+  const commissionsBuilder = createMockQueryBuilder(commissionsData);
+  const overridesBuilder = createMockQueryBuilder(overridesData);
+
+  (supabase.from as Mock).mockImplementation((tableName: string) => {
+    if (tableName === "commissions") return commissionsBuilder;
+    if (tableName === "override_commissions") return overridesBuilder;
+    return createMockQueryBuilder([]);
+  });
+
+  return { commissionsBuilder, overridesBuilder };
 }
 
 describe("OverrideRepository.findByOverrideAndBaseAgentInRange", () => {
@@ -65,10 +83,23 @@ describe("OverrideRepository.findByOverrideAndBaseAgentInRange", () => {
 
   it("should handle single baseAgentId (backward compatible)", async () => {
     const mockData = [
-      { base_agent_id: "agent-1", override_commission_amount: 100 },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-1",
+        override_commission_amount: 100,
+        status: "earned",
+      },
     ];
-    const mockBuilder = createMockQueryBuilder(mockData);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+    const { commissionsBuilder, overridesBuilder } = mockPaidOverrideFlow(
+      [
+        {
+          policy_id: "policy-1",
+          user_id: "agent-1",
+          payment_date: "2024-01-05",
+        },
+      ],
+      mockData,
+    );
 
     const { OverrideRepository } =
       await import("../../../services/overrides/OverrideRepository");
@@ -81,17 +112,62 @@ describe("OverrideRepository.findByOverrideAndBaseAgentInRange", () => {
     );
 
     expect(result).toEqual(mockData);
-    expect(mockBuilder.in).toHaveBeenCalledWith("base_agent_id", ["agent-1"]);
+    expect(commissionsBuilder.eq).toHaveBeenCalledWith("status", "paid");
+    expect(commissionsBuilder.eq).toHaveBeenCalledWith("type", "advance");
+    expect(commissionsBuilder.eq).toHaveBeenCalledWith(
+      "policy.lifecycle_status",
+      "active",
+    );
+    expect(overridesBuilder.eq).toHaveBeenCalledWith(
+      "override_agent_id",
+      "viewer-123",
+    );
+    expect(overridesBuilder.in).toHaveBeenCalledWith("base_agent_id", [
+      "agent-1",
+    ]);
   });
 
   it("should handle array of baseAgentIds (batch mode)", async () => {
     const mockData = [
-      { base_agent_id: "agent-1", override_commission_amount: 100 },
-      { base_agent_id: "agent-2", override_commission_amount: 200 },
-      { base_agent_id: "agent-1", override_commission_amount: 50 },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-1",
+        override_commission_amount: 100,
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-2",
+        policy_id: "policy-2",
+        override_commission_amount: 200,
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-3",
+        override_commission_amount: 50,
+        status: "earned",
+      },
     ];
-    const mockBuilder = createMockQueryBuilder(mockData);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+    const { commissionsBuilder, overridesBuilder } = mockPaidOverrideFlow(
+      [
+        {
+          policy_id: "policy-1",
+          user_id: "agent-1",
+          payment_date: "2024-01-05",
+        },
+        {
+          policy_id: "policy-2",
+          user_id: "agent-2",
+          payment_date: "2024-01-06",
+        },
+        {
+          policy_id: "policy-3",
+          user_id: "agent-1",
+          payment_date: "2024-01-07",
+        },
+      ],
+      mockData,
+    );
 
     const { OverrideRepository } =
       await import("../../../services/overrides/OverrideRepository");
@@ -104,33 +180,91 @@ describe("OverrideRepository.findByOverrideAndBaseAgentInRange", () => {
     );
 
     expect(result).toEqual(mockData);
-    expect(mockBuilder.in).toHaveBeenCalledWith("base_agent_id", [
+    expect(commissionsBuilder.in).toHaveBeenCalledWith("user_id", [
+      "agent-1",
+      "agent-2",
+      "agent-3",
+    ]);
+    expect(overridesBuilder.in).toHaveBeenCalledWith("base_agent_id", [
       "agent-1",
       "agent-2",
       "agent-3",
     ]);
   });
 
-  it("should filter by override_agent_id and date range", async () => {
-    const mockBuilder = createMockQueryBuilder([]);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+  it("should filter by paid commission date range", async () => {
+    const { overridesBuilder } = mockPaidOverrideFlow(
+      [
+        {
+          policy_id: "policy-1",
+          user_id: "agent-1",
+          payment_date: "2024-01-05",
+        },
+        {
+          policy_id: "policy-2",
+          user_id: "agent-1",
+          payment_date: "2024-02-05",
+        },
+      ],
+      [
+        {
+          base_agent_id: "agent-1",
+          policy_id: "policy-1",
+          override_commission_amount: 100,
+          status: "earned",
+        },
+        {
+          base_agent_id: "agent-1",
+          policy_id: "policy-2",
+          override_commission_amount: 200,
+          status: "earned",
+        },
+      ],
+    );
 
     const { OverrideRepository } =
       await import("../../../services/overrides/OverrideRepository");
     const repo = new OverrideRepository();
 
-    await repo.findByOverrideAndBaseAgentInRange(
+    const result = await repo.findByOverrideAndBaseAgentInRange(
+      "viewer-123",
+      ["agent-1"],
+      "2024-01-01",
+      "2024-01-31",
+    );
+
+    expect(result).toEqual([
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-1",
+        override_commission_amount: 100,
+        status: "earned",
+      },
+    ]);
+    expect(overridesBuilder.eq).toHaveBeenCalledWith(
+      "override_agent_id",
+      "viewer-123",
+    );
+  });
+
+  it("should return empty array when no paid active commissions exist", async () => {
+    const { overridesBuilder } = mockPaidOverrideFlow([], []);
+
+    const { OverrideRepository } =
+      await import("../../../services/overrides/OverrideRepository");
+    const repo = new OverrideRepository();
+
+    const result = await repo.findByOverrideAndBaseAgentInRange(
       "viewer-123",
       ["agent-1"],
       "2024-01-01",
     );
 
-    expect(mockBuilder.eq).toHaveBeenCalledWith(
+    expect(result).toEqual([]);
+    expect(overridesBuilder.eq).not.toHaveBeenCalledWith(
       "override_agent_id",
       "viewer-123",
     );
-    expect(mockBuilder.gte).toHaveBeenCalledWith("created_at", "2024-01-01");
-    expect(mockBuilder.in).toHaveBeenCalledWith("status", ["earned", "paid"]);
   });
 });
 
@@ -140,8 +274,7 @@ describe("HierarchyService.getViewerOverridesFromAgent", () => {
   });
 
   it("should return { mtd: 0 } for single ID with empty results", async () => {
-    const mockBuilder = createMockQueryBuilder([]);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+    mockPaidOverrideFlow([], []);
 
     const { HierarchyService } =
       await import("../../../services/hierarchy/hierarchyService");
@@ -157,21 +290,58 @@ describe("HierarchyService.getViewerOverridesFromAgent", () => {
 
   it("should return Map for array input", async () => {
     const mockData = [
-      { base_agent_id: "agent-1", override_commission_amount: 100 },
-      { base_agent_id: "agent-2", override_commission_amount: 200 },
-      { base_agent_id: "agent-1", override_commission_amount: 50 },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-1",
+        override_commission_amount: 100,
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-2",
+        policy_id: "policy-2",
+        override_commission_amount: 200,
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-3",
+        override_commission_amount: 50,
+        status: "earned",
+      },
     ];
-    const mockBuilder = createMockQueryBuilder(mockData);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+    mockPaidOverrideFlow(
+      [
+        {
+          policy_id: "policy-1",
+          user_id: "agent-1",
+          payment_date: "2024-01-05",
+        },
+        {
+          policy_id: "policy-2",
+          user_id: "agent-2",
+          payment_date: "2024-01-06",
+        },
+        {
+          policy_id: "policy-3",
+          user_id: "agent-1",
+          payment_date: "2024-01-07",
+        },
+      ],
+      mockData,
+    );
 
     const { HierarchyService } =
       await import("../../../services/hierarchy/hierarchyService");
     const service = new HierarchyService();
 
-    const result = await service.getViewerOverridesFromAgent("viewer-123", [
-      "agent-1",
-      "agent-2",
-    ]);
+    const result = await service.getViewerOverridesFromAgent(
+      "viewer-123",
+      ["agent-1", "agent-2"],
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+      },
+    );
 
     expect(result).toBeInstanceOf(Map);
     const map = result as Map<string, number>;
@@ -193,20 +363,58 @@ describe("HierarchyService.getViewerOverridesFromAgent", () => {
 
   it("should aggregate multiple overrides per agent correctly", async () => {
     const mockData = [
-      { base_agent_id: "agent-1", override_commission_amount: "100.50" },
-      { base_agent_id: "agent-1", override_commission_amount: "200.25" },
-      { base_agent_id: "agent-1", override_commission_amount: "50.00" },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-1",
+        override_commission_amount: "100.50",
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-2",
+        override_commission_amount: "200.25",
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-3",
+        override_commission_amount: "50.00",
+        status: "earned",
+      },
     ];
-    const mockBuilder = createMockQueryBuilder(mockData);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+    mockPaidOverrideFlow(
+      [
+        {
+          policy_id: "policy-1",
+          user_id: "agent-1",
+          payment_date: "2024-01-05",
+        },
+        {
+          policy_id: "policy-2",
+          user_id: "agent-1",
+          payment_date: "2024-01-06",
+        },
+        {
+          policy_id: "policy-3",
+          user_id: "agent-1",
+          payment_date: "2024-01-07",
+        },
+      ],
+      mockData,
+    );
 
     const { HierarchyService } =
       await import("../../../services/hierarchy/hierarchyService");
     const service = new HierarchyService();
 
-    const result = await service.getViewerOverridesFromAgent("viewer-123", [
-      "agent-1",
-    ]);
+    const result = await service.getViewerOverridesFromAgent(
+      "viewer-123",
+      ["agent-1"],
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+      },
+    );
 
     const map = result as Map<string, number>;
     expect(map.get("agent-1")).toBeCloseTo(350.75, 2);
@@ -214,20 +422,58 @@ describe("HierarchyService.getViewerOverridesFromAgent", () => {
 
   it("should handle null/undefined override amounts gracefully", async () => {
     const mockData = [
-      { base_agent_id: "agent-1", override_commission_amount: null },
-      { base_agent_id: "agent-1", override_commission_amount: undefined },
-      { base_agent_id: "agent-1", override_commission_amount: "100" },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-1",
+        override_commission_amount: null,
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-2",
+        override_commission_amount: undefined,
+        status: "earned",
+      },
+      {
+        base_agent_id: "agent-1",
+        policy_id: "policy-3",
+        override_commission_amount: "100",
+        status: "earned",
+      },
     ];
-    const mockBuilder = createMockQueryBuilder(mockData);
-    (supabase.from as Mock).mockReturnValue(mockBuilder);
+    mockPaidOverrideFlow(
+      [
+        {
+          policy_id: "policy-1",
+          user_id: "agent-1",
+          payment_date: "2024-01-05",
+        },
+        {
+          policy_id: "policy-2",
+          user_id: "agent-1",
+          payment_date: "2024-01-06",
+        },
+        {
+          policy_id: "policy-3",
+          user_id: "agent-1",
+          payment_date: "2024-01-07",
+        },
+      ],
+      mockData,
+    );
 
     const { HierarchyService } =
       await import("../../../services/hierarchy/hierarchyService");
     const service = new HierarchyService();
 
-    const result = await service.getViewerOverridesFromAgent("viewer-123", [
-      "agent-1",
-    ]);
+    const result = await service.getViewerOverridesFromAgent(
+      "viewer-123",
+      ["agent-1"],
+      {
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+      },
+    );
 
     const map = result as Map<string, number>;
     expect(map.get("agent-1")).toBe(100); // null and undefined treated as 0
@@ -282,7 +528,7 @@ describe("PolicyRepository.findMetricsByUserIds", () => {
 
     expect(result).toEqual(mockData);
     expect(mockBuilder.select).toHaveBeenCalledWith(
-      "user_id, status, annual_premium, created_at",
+      "user_id, status, lifecycle_status, annual_premium, created_at, submit_date, effective_date",
     );
     expect(mockBuilder.in).toHaveBeenCalledWith("user_id", [
       "user-1",
