@@ -13737,18 +13737,6 @@ export type Database = {
         };
         Returns: string;
       };
-      calculate_quiz_score: {
-        Args: { p_answers: Json; p_questions: Json };
-        Returns: Json;
-      };
-      calculate_unearned_amount: {
-        Args: {
-          p_advance_months: number;
-          p_amount: number;
-          p_months_paid: number;
-        };
-        Returns: number;
-      };
       can_manage_workflows: {
         Args: { user_id_param: string };
         Returns: boolean;
@@ -13815,17 +13803,6 @@ export type Database = {
         Args: { p_limit?: number; p_provider: string; p_user_id: string };
         Returns: boolean;
       };
-      check_first_seller_naming: {
-        Args: { p_user_id: string };
-        Returns: {
-          agency_id: string;
-          agency_name: string;
-          has_pending_notification: boolean;
-          log_date: string;
-          log_id: string;
-          needs_naming: boolean;
-        }[];
-      };
       check_first_seller_naming_unified: {
         Args: { p_user_id: string };
         Returns: {
@@ -13840,19 +13817,11 @@ export type Database = {
         }[];
       };
       check_is_imo_admin: { Args: never; Returns: boolean };
-      check_module_completion: {
-        Args: { p_module_id: string; p_user_id: string };
-        Returns: boolean;
-      };
       check_pending_invitation_exists: {
         Args: { p_email: string; p_inviter_id: string };
         Returns: boolean;
       };
       check_team_size_limit: { Args: { p_user_id: string }; Returns: Json };
-      check_training_badges: {
-        Args: { p_user_id: string };
-        Returns: undefined;
-      };
       check_user_template_limit: {
         Args: { user_uuid: string };
         Returns: boolean;
@@ -16489,15 +16458,6 @@ export type Database = {
           updated_count: number;
         }[];
       };
-      setup_baltimore_life_apriority_rules: {
-        Args: { p_carrier_id: string; p_imo_id: string; p_user_id: string };
-        Returns: {
-          inserted_count: number;
-          part_a_count: number;
-          part_b_count: number;
-          part_c_count: number;
-        }[];
-      };
       submit_recruit_registration: {
         Args: { p_auth_user_id?: string; p_data: Json; p_token: string };
         Returns: Json;
@@ -16565,14 +16525,6 @@ export type Database = {
       table_rating_units: {
         Args: { rating: Database["public"]["Enums"]["table_rating"] };
         Returns: number;
-      };
-      test_rls_for_user: {
-        Args: { test_user_id: string };
-        Returns: {
-          policy_number: string;
-          user_id: string;
-          would_pass: boolean;
-        }[];
       };
       toggle_agent_carrier_contract: {
         Args: { p_active: boolean; p_carrier_id: string };
