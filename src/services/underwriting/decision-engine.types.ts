@@ -42,7 +42,10 @@ export type HealthClass =
   | "preferred"
   | "standard_plus"
   | "standard"
-  | "table_rated";
+  | "table_rated"
+  | "graded"
+  | "modified"
+  | "guaranteed_issue";
 
 // =============================================================================
 // Input Types

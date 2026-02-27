@@ -21,7 +21,10 @@ export type HealthClass =
   | "preferred"
   | "standard"
   | "standard_plus"
-  | "table_rated";
+  | "table_rated"
+  | "graded"
+  | "modified"
+  | "guaranteed_issue";
 export type TermYears = 10 | 15 | 20 | 25 | 30;
 
 /**
@@ -68,15 +71,18 @@ export function normalizeHealthClass(
     case "substandard":
     case "table_rated":
       return "table_rated";
+    // SI products (graded/modified/GI) use standard premium rates
+    // regardless of underwriting health class
+    case "graded":
+    case "modified":
+    case "guaranteed_issue":
+      return "standard";
     case "unknown":
       return "standard"; // Default for unknown
     case "decline":
     case "refer":
       return null; // Non-rateable - requires manual underwriting
     default:
-      console.warn(
-        `[normalizeHealthClass] Unknown class: ${healthClass}, defaulting to standard`,
-      );
       return "standard";
   }
 }
@@ -636,10 +642,11 @@ export async function getAllPremiumMatricesForIMO(
 
   // Step 2: Single fetch for small datasets
   if (totalRows <= PAGE_SIZE) {
-    const { data, error } = await supabase.rpc(
-      "get_premium_matrices_for_imo",
-      { p_imo_id: imoId, p_limit: PAGE_SIZE, p_offset: 0 },
-    );
+    const { data, error } = await supabase.rpc("get_premium_matrices_for_imo", {
+      p_imo_id: imoId,
+      p_limit: PAGE_SIZE,
+      p_offset: 0,
+    });
 
     if (error) {
       console.error("Error fetching premium matrices via RPC:", error);

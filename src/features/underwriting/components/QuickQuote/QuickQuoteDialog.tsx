@@ -102,6 +102,9 @@ const HEALTH_CLASS_LABELS: Record<HealthClass, string> = {
   standard_plus: "Standard+",
   standard: "Standard",
   table_rated: "Table",
+  graded: "Graded",
+  modified: "Modified",
+  guaranteed_issue: "GI",
 };
 
 const TERM_OPTIONS: TermYears[] = [10, 15, 20, 25, 30];

@@ -113,6 +113,12 @@ function mapHealthClass(hc: DSLHealthClass): HealthClass {
       return "standard";
     case "substandard":
       return "table_rated";
+    case "graded":
+      return "graded";
+    case "modified":
+      return "modified";
+    case "guaranteed_issue":
+      return "guaranteed_issue";
     case "refer":
     case "decline":
     case "unknown":

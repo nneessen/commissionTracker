@@ -110,6 +110,9 @@ const HEALTH_CLASS_PRIORITY: Record<HealthClass, number> = {
   standard_plus: 2,
   standard: 3,
   table_rated: 4,
+  graded: 5,
+  modified: 6,
+  guaranteed_issue: 7,
 };
 
 // ============================================================================
