@@ -2,7 +2,7 @@
 // Panel for managing subscription add-ons (e.g., UW Wizard)
 
 import { useState, useEffect } from "react";
-import { Package, Settings, Users, Loader2, Save } from "lucide-react";
+import { Package, Settings, Users, Loader2, Save, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,10 @@ import {
   useAddonUsers,
   type SubscriptionAddon,
 } from "@/hooks/admin";
+// eslint-disable-next-line no-restricted-imports
+import { adminSubscriptionService } from "@/services/subscription";
 import { AddonTierEditor, type TierConfig } from "./AddonTierEditor";
+import { toast } from "sonner";
 
 interface AddonsManagementPanelProps {
   addons: SubscriptionAddon[];
@@ -225,6 +228,7 @@ function AddonEditorDialog({
   const [stripePriceAnnual, setStripePriceAnnual] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
+  const [isSettingUpStripe, setIsSettingUpStripe] = useState(false);
 
   const updateAddon = useUpdateAddon();
 
@@ -246,8 +250,53 @@ function AddonEditorDialog({
 
   if (!addon) return null;
 
-  // Check if this addon supports tiers (currently just UW Wizard)
-  const supportsTiers = addon.name === "uw_wizard";
+  // Check if this addon has tiers configured
+  const supportsTiers = !!tierConfig?.tiers && tierConfig.tiers.length > 0;
+
+  const handleSetupStripeProducts = async () => {
+    setIsSettingUpStripe(true);
+    try {
+      const data = await adminSubscriptionService.setupAddonStripeProducts(
+        addon.name,
+      );
+
+      toast.success("Stripe products and prices created successfully");
+
+      if (data?.results) {
+        const updatedTiers = tierConfig?.tiers.map((tier) => {
+          const result = data.results.find((r) => r.tierId === tier.id);
+          if (result) {
+            return {
+              ...tier,
+              stripe_price_id_monthly:
+                result.monthlyPriceId || tier.stripe_price_id_monthly,
+              stripe_price_id_annual:
+                result.annualPriceId || tier.stripe_price_id_annual,
+            };
+          }
+          return tier;
+        });
+        if (updatedTiers) {
+          setTierConfig({ tiers: updatedTiers });
+        }
+      }
+    } catch (err) {
+      toast.error(
+        `Stripe setup failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setIsSettingUpStripe(false);
+    }
+  };
+
+  // Check if any paid tiers are missing Stripe price IDs
+  const hasMissingPriceIds =
+    supportsTiers &&
+    tierConfig?.tiers.some(
+      (t) =>
+        (t.price_monthly > 0 || t.price_annual > 0) &&
+        (!t.stripe_price_id_monthly || !t.stripe_price_id_annual),
+    );
 
   const handleSave = async () => {
     await updateAddon.mutateAsync({
@@ -260,7 +309,7 @@ function AddonEditorDialog({
         stripePriceIdMonthly: stripePriceMonthly || null,
         stripePriceIdAnnual: stripePriceAnnual || null,
         isActive,
-        tierConfig: supportsTiers ? tierConfig : undefined,
+        tierConfig: supportsTiers ? tierConfig : (tierConfig ?? undefined),
       },
     });
     onOpenChange(false);
@@ -268,9 +317,9 @@ function AddonEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-sm">
             <Package className="h-4 w-4 text-purple-500" />
             Configure: {addon.display_name}
             <Badge variant="outline" className="text-[10px] font-mono">
@@ -279,126 +328,149 @@ function AddonEditorDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-2">
-          {/* Basic Info */}
-          <div className="space-y-2">
-            <Label htmlFor="addonDisplayName" className="text-xs">
-              Display Name
-            </Label>
-            <Input
-              id="addonDisplayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="h-8 text-sm"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="addonDescription" className="text-xs">
-              Description
-            </Label>
-            <Textarea
-              id="addonDescription"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="text-sm resize-none"
-              rows={2}
-            />
-          </div>
-
-          {/* Pricing */}
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3 mt-1">
+          {/* Top section: 2-column layout for basic fields */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+            {/* Left column */}
             <div className="space-y-2">
-              <Label htmlFor="addonPriceMonthly" className="text-xs">
-                Monthly Price (cents)
-              </Label>
-              <Input
-                id="addonPriceMonthly"
-                type="number"
-                value={priceMonthly}
-                onChange={(e) => setPriceMonthly(parseInt(e.target.value) || 0)}
-                className="h-8 text-sm"
-              />
-              <p className="text-[10px] text-zinc-500">
-                ${(priceMonthly / 100).toFixed(2)} / month
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="addonPriceAnnual" className="text-xs">
-                Annual Price (cents)
-              </Label>
-              <Input
-                id="addonPriceAnnual"
-                type="number"
-                value={priceAnnual}
-                onChange={(e) => setPriceAnnual(parseInt(e.target.value) || 0)}
-                className="h-8 text-sm"
-              />
-              <p className="text-[10px] text-zinc-500">
-                ${(priceAnnual / 100).toFixed(2)} / year
-              </p>
-            </div>
-          </div>
-
-          {/* Stripe Price IDs */}
-          <div className="border-t pt-4">
-            <h4 className="text-xs font-medium text-zinc-500 mb-3">
-              Stripe Integration
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="addonStripeMonthly" className="text-xs">
-                  Stripe Monthly Price ID
+              <div className="space-y-1">
+                <Label htmlFor="addonDisplayName" className="text-[11px]">
+                  Display Name
                 </Label>
                 <Input
-                  id="addonStripeMonthly"
-                  value={stripePriceMonthly}
-                  onChange={(e) => setStripePriceMonthly(e.target.value)}
-                  className="h-8 text-sm font-mono"
-                  placeholder="e.g., price_1Abc..."
+                  id="addonDisplayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="h-7 text-xs"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="addonStripeAnnual" className="text-xs">
-                  Stripe Annual Price ID
+              <div className="space-y-1">
+                <Label htmlFor="addonDescription" className="text-[11px]">
+                  Description
                 </Label>
-                <Input
-                  id="addonStripeAnnual"
-                  value={stripePriceAnnual}
-                  onChange={(e) => setStripePriceAnnual(e.target.value)}
-                  className="h-8 text-sm font-mono"
-                  placeholder="e.g., price_1Def..."
+                <Textarea
+                  id="addonDescription"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="text-xs resize-none h-[52px]"
+                  rows={2}
                 />
               </div>
             </div>
+
+            {/* Right column */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="addonPriceMonthly" className="text-[11px]">
+                    Monthly (cents)
+                  </Label>
+                  <Input
+                    id="addonPriceMonthly"
+                    type="number"
+                    value={priceMonthly}
+                    onChange={(e) =>
+                      setPriceMonthly(parseInt(e.target.value) || 0)
+                    }
+                    className="h-7 text-xs"
+                  />
+                  <p className="text-[9px] text-zinc-500">
+                    ${(priceMonthly / 100).toFixed(2)}/mo
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="addonPriceAnnual" className="text-[11px]">
+                    Annual (cents)
+                  </Label>
+                  <Input
+                    id="addonPriceAnnual"
+                    type="number"
+                    value={priceAnnual}
+                    onChange={(e) =>
+                      setPriceAnnual(parseInt(e.target.value) || 0)
+                    }
+                    className="h-7 text-xs"
+                  />
+                  <p className="text-[9px] text-zinc-500">
+                    ${(priceAnnual / 100).toFixed(2)}/yr
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="addonStripeMonthly" className="text-[11px]">
+                    Stripe Monthly ID
+                  </Label>
+                  <Input
+                    id="addonStripeMonthly"
+                    value={stripePriceMonthly}
+                    onChange={(e) => setStripePriceMonthly(e.target.value)}
+                    className="h-7 text-[10px] font-mono"
+                    placeholder="price_..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="addonStripeAnnual" className="text-[11px]">
+                    Stripe Annual ID
+                  </Label>
+                  <Input
+                    id="addonStripeAnnual"
+                    value={stripePriceAnnual}
+                    onChange={(e) => setStripePriceAnnual(e.target.value)}
+                    className="h-7 text-[10px] font-mono"
+                    placeholder="price_..."
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Tier Configuration (for usage-based addons like UW Wizard) */}
+          {/* Tier Configuration — full width */}
           {supportsTiers && (
-            <div className="border-t pt-4">
-              <AddonTierEditor tierConfig={tierConfig} onChange={setTierConfig} />
+            <div className="border-t pt-3">
+              <AddonTierEditor
+                tierConfig={tierConfig}
+                onChange={setTierConfig}
+              />
+
+              {hasMissingPriceIds && (
+                <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 rounded border border-amber-200 dark:border-amber-800 flex items-center gap-3">
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 flex-1">
+                    Paid tiers missing Stripe price IDs.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7 shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300"
+                    onClick={handleSetupStripeProducts}
+                    disabled={isSettingUpStripe}
+                  >
+                    {isSettingUpStripe ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <Zap className="h-3 w-3 mr-1" />
+                    )}
+                    {isSettingUpStripe
+                      ? "Creating..."
+                      : "Setup Stripe Products"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Active Toggle */}
+          {/* Footer: Active toggle + Save */}
           <div className="flex items-center justify-between pt-2 border-t">
-            <div>
-              <Label htmlFor="addonActive" className="text-xs">
-                Active
+            <div className="flex items-center gap-3">
+              <Switch
+                id="addonActive"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+              <Label htmlFor="addonActive" className="text-xs cursor-pointer">
+                {isActive ? "Active" : "Inactive"}
               </Label>
-              <p className="text-[10px] text-zinc-500">
-                Inactive add-ons cannot be purchased
-              </p>
             </div>
-            <Switch
-              id="addonActive"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end pt-2">
             <Button
               onClick={handleSave}
               disabled={updateAddon.isPending}
