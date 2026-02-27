@@ -153,13 +153,13 @@ const fetchAllRates = async () => {
   const CONFIG = {
     state: "IL",
     faceAmounts: [
-      26000, 27000, 28000, 29000, 31000, 32000, 33000, 34000, 36000, 37000,
-      38000, 39000, 41000, 42000, 43000, 44000, 46000, 47000, 48000, 49000,
+      5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000,
+      16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 25000,
     ],
     ages: [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85],
     genders: ["Male", "Female"],
     tobaccos: ["None", "Tobacco"],
-    coverageType: "Level", // "Level", "Graded/Modified", or "Guaranteed"
+    coverageType: "Graded/Modified", // "Level", "Graded/Modified", or "Guaranteed"
   };
 
   const total =

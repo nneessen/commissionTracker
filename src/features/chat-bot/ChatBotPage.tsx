@@ -11,12 +11,22 @@ import {
   Loader2,
   CreditCard,
   Lock,
+  AlertTriangle,
+  RefreshCw,
+  WifiOff,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useChatBotAgent, type ChatBotAgent } from "./hooks/useChatBot";
+import {
+  useChatBotAgent,
+  ChatBotApiError,
+  type ChatBotAgent,
+} from "./hooks/useChatBot";
 import { useUserActiveAddons } from "@/hooks/subscription";
+import { useQueryClient } from "@tanstack/react-query";
+// eslint-disable-next-line no-restricted-imports
+import { subscriptionService } from "@/services/subscription";
 import { ChatBotLanding } from "./components/ChatBotLanding";
 import { SetupWizard } from "./components/SetupWizard";
 import { SetupTab } from "./components/SetupTab";
@@ -65,9 +75,40 @@ export function ChatBotPage() {
   );
   const hasAddon = !!chatBotAddon;
   const currentTierId = chatBotAddon?.tier_id || null;
-  const { data: agent, isLoading: agentLoading } = useChatBotAgent(hasAddon);
+  const {
+    data: agent,
+    isLoading: agentLoading,
+    error: agentError,
+    refetch: refetchAgent,
+  } = useChatBotAgent(hasAddon);
+  const isServiceError =
+    agentError instanceof ChatBotApiError && agentError.isServiceError;
 
   const isLoading = addonsLoading || (hasAddon && agentLoading);
+  const queryClient = useQueryClient();
+  const [retrying, setRetrying] = useState(false);
+
+  // Retry provisioning when addon exists but agent is missing/failed
+  const handleRetryProvision = useCallback(async () => {
+    if (!chatBotAddon?.addon_id || !currentTierId || retrying) return;
+    setRetrying(true);
+    try {
+      const result = await subscriptionService.addSubscriptionAddon(
+        chatBotAddon.addon_id,
+        currentTierId,
+      );
+      if (result.success) {
+        toast.success("Bot provisioning started! Refreshing...");
+        queryClient.invalidateQueries({ queryKey: ["chat-bot"] });
+      } else {
+        toast.error(result.error || "Provisioning failed. Please try again.");
+      }
+    } catch {
+      toast.error("Provisioning failed. Please try again later.");
+    } finally {
+      setRetrying(false);
+    }
+  }, [chatBotAddon?.addon_id, currentTierId, retrying, queryClient]);
 
   // Clean URL params after mount and show success toasts for OAuth callbacks
   useEffect(() => {
@@ -225,8 +266,8 @@ export function ChatBotPage() {
 
         {/* Setup tab — locked, wizard, or full config */}
         {activeTab === "setup" &&
-          (!hasAddon || !agent ? (
-            /* Locked state */
+          (!hasAddon ? (
+            /* No addon — prompt to choose a plan */
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3">
                 <Lock className="h-5 w-5 text-zinc-400" />
@@ -235,7 +276,7 @@ export function ChatBotPage() {
                 Choose a Plan First
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center max-w-xs mb-4">
-                Select a plan on the "Subscription" tab to unlock bot
+                Select a plan on the &quot;Subscription&quot; tab to unlock bot
                 configuration. You can start with the free plan — no credit card
                 required.
               </p>
@@ -246,6 +287,60 @@ export function ChatBotPage() {
                 Go to Subscription
               </button>
             </div>
+          ) : !agent ? (
+            isServiceError ? (
+              /* External bot service is down — show service unavailable */
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center mb-3">
+                  <WifiOff className="h-5 w-5 text-red-500" />
+                </div>
+                <h3 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                  Service Temporarily Unavailable
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center max-w-xs mb-4">
+                  The bot service is experiencing issues. Your configuration is
+                  safe — please try again in a few minutes.
+                </p>
+                <button
+                  onClick={() => refetchAgent()}
+                  disabled={agentLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {agentLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  {agentLoading ? "Checking..." : "Try Again"}
+                </button>
+              </div>
+            ) : (
+              /* Addon active but agent provisioning failed — show retry */
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                </div>
+                <h3 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                  Bot Setup Incomplete
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center max-w-xs mb-4">
+                  Your plan is active but the bot couldn&apos;t be provisioned.
+                  Click below to retry.
+                </p>
+                <button
+                  onClick={handleRetryProvision}
+                  disabled={retrying}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {retrying ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  {retrying ? "Provisioning..." : "Retry Setup"}
+                </button>
+              </div>
+            )
           ) : !(setupComplete || wizardDone) ? (
             /* Wizard — step-by-step configuration */
             <SetupWizard agent={agent} onComplete={handleWizardComplete} />

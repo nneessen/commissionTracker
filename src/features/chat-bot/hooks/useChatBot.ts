@@ -105,10 +105,11 @@ interface PaginatedResponse<T> {
 
 // ─── API Helper ─────────────────────────────────────────────────
 
-class ChatBotApiError extends Error {
+export class ChatBotApiError extends Error {
   constructor(
     message: string,
     public readonly isNotProvisioned: boolean = false,
+    public readonly isServiceError: boolean = false,
   ) {
     super(message);
     this.name = "ChatBotApiError";
@@ -127,6 +128,7 @@ async function chatBotApi<T>(
     // For FunctionsHttpError the response body hasn't been read yet.
     // Read it from the Response object stored in error.context.
     let bodyError: string | undefined;
+    let bodyServiceDown = false;
     const status =
       (error as { context?: Response }).context?.status ?? undefined;
     try {
@@ -137,6 +139,7 @@ async function chatBotApi<T>(
           typeof body?.error === "string"
             ? body.error
             : (body?.error?.message ?? undefined);
+        bodyServiceDown = body?.serviceDown === true;
       }
     } catch {
       // body already consumed or not JSON — fall through
@@ -161,8 +164,11 @@ async function chatBotApi<T>(
       msg.includes("not found") ||
       msg.includes("Function not found");
 
+    const isServiceError =
+      bodyServiceDown || msg.includes("temporarily unavailable");
+
     console.error(`[chatBotApi] ${action} failed (status=${status}):`, msg);
-    throw new ChatBotApiError(msg, isNotFound);
+    throw new ChatBotApiError(msg, isNotFound, isServiceError);
   }
 
   if (!data || data.error) {
@@ -183,7 +189,7 @@ async function chatBotApi<T>(
 // ─── Queries ────────────────────────────────────────────────────
 
 export function useChatBotAgent(enabled = true) {
-  return useQuery<ChatBotAgent | null, Error>({
+  return useQuery<ChatBotAgent | null, ChatBotApiError>({
     queryKey: chatBotKeys.agent(),
     queryFn: async () => {
       try {
@@ -192,6 +198,10 @@ export function useChatBotAgent(enabled = true) {
         // 404 / not provisioned / function not deployed → treat as "no addon"
         if (err instanceof ChatBotApiError && err.isNotProvisioned) {
           return null;
+        }
+        // Service error → return null but let the error propagate via query.error
+        if (err instanceof ChatBotApiError && err.isServiceError) {
+          throw err;
         }
         throw err;
       }
@@ -202,6 +212,9 @@ export function useChatBotAgent(enabled = true) {
       // Never retry if not provisioned or function missing
       if (error instanceof ChatBotApiError && error.isNotProvisioned)
         return false;
+      // Service errors: retry once with delay
+      if (error instanceof ChatBotApiError && error.isServiceError)
+        return failureCount < 1;
       return failureCount < 1;
     },
   });

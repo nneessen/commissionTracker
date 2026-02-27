@@ -65,6 +65,7 @@ function unwrap(res: { ok: boolean; status: number; data: any }): {
   meta: any;
   status: number;
   errorMessage: string | null;
+  serviceDown: boolean;
 } {
   if (!res.ok || res.data?.success === false) {
     const errObj = res.data?.error;
@@ -72,11 +73,13 @@ function unwrap(res: { ok: boolean; status: number; data: any }): {
       typeof errObj === "string"
         ? errObj
         : errObj?.message || "Unknown API error";
+    const isServiceDown = res.status >= 500;
     return {
       payload: null,
       meta: null,
       status: safeStatus(res.status),
-      errorMessage: msg,
+      errorMessage: isServiceDown ? "Bot service temporarily unavailable" : msg,
+      serviceDown: isServiceDown,
     };
   }
   return {
@@ -84,6 +87,7 @@ function unwrap(res: { ok: boolean; status: number; data: any }): {
     meta: res.data?.meta ?? null,
     status: safeStatus(res.status),
     errorMessage: null,
+    serviceDown: false,
   };
 }
 
@@ -155,9 +159,12 @@ serve(async (req) => {
           "GET",
           `/api/external/agents/${agentId}`,
         );
-        const { payload, status, errorMessage } = unwrap(res);
+        const { payload, status, errorMessage, serviceDown } = unwrap(res);
         if (errorMessage) {
-          return jsonResponse({ error: errorMessage }, status);
+          return jsonResponse(
+            { error: errorMessage, ...(serviceDown && { serviceDown: true }) },
+            status,
+          );
         }
 
         // Transform: flatten agent + reshape connections
@@ -426,7 +433,7 @@ serve(async (req) => {
     console.error("[chat-bot-api] Unhandled error:", err);
     return jsonResponse(
       { error: "Internal server error", message: String(err) },
-      500,
+      safeStatus(500),
     );
   }
 });

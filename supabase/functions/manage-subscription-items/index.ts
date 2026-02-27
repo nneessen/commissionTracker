@@ -168,8 +168,78 @@ serve(async (req) => {
           .maybeSingle();
 
         if (existingAddon) {
-          // Same tier — already active, nothing to do
+          // Same tier — check if agent provisioning needs a retry
           if (existingAddon.tier_id === resolvedTierId) {
+            // Check if the chat bot agent needs (re-)provisioning
+            if (addon.name === "ai_chat_bot") {
+              const { data: agentRow } = await supabase
+                .from("chat_bot_agents")
+                .select("provisioning_status")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+              if (!agentRow || agentRow.provisioning_status !== "active") {
+                // Agent missing or failed — re-trigger provisioning
+                console.log(
+                  `[manage-subscription-items] Re-provisioning chat bot agent (status=${agentRow?.provisioning_status ?? "missing"}) for user=${user.id}`,
+                );
+                try {
+                  const provisionRes = await fetch(
+                    `${SUPABASE_URL}/functions/v1/chat-bot-provision`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                      },
+                      body: JSON.stringify({
+                        action: "provision",
+                        userId: user.id,
+                        tierId: resolvedTierId,
+                      }),
+                    },
+                  );
+                  const provisionData = await provisionRes
+                    .json()
+                    .catch(() => ({}));
+                  console.log(
+                    `[manage-subscription-items] Re-provision result:`,
+                    provisionData,
+                  );
+
+                  if (provisionData.error) {
+                    return jsonResponse(
+                      {
+                        error:
+                          provisionData.error ||
+                          "Failed to provision chat bot agent",
+                        provisioningFailed: true,
+                      },
+                      500,
+                    );
+                  }
+
+                  return jsonResponse({
+                    success: true,
+                    tier: resolvedTierId,
+                    reprovisioned: true,
+                  });
+                } catch (provisionErr) {
+                  console.error(
+                    `[manage-subscription-items] Re-provision failed:`,
+                    provisionErr,
+                  );
+                  return jsonResponse(
+                    {
+                      error: "Failed to provision chat bot agent",
+                      provisioningFailed: true,
+                    },
+                    500,
+                  );
+                }
+              }
+            }
+
             return jsonResponse(
               { error: "You already have this addon active" },
               400,
@@ -260,7 +330,20 @@ serve(async (req) => {
           );
 
           // Trigger agent provisioning or tier update
-          const provisionAction = existingAddon ? "update_tier" : "provision";
+          // Check if agent exists and is active — if not, provision instead of update_tier
+          let provisionAction = "provision";
+          if (existingAddon && addon.name === "ai_chat_bot") {
+            const { data: agentCheck } = await supabase
+              .from("chat_bot_agents")
+              .select("provisioning_status")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            if (agentCheck?.provisioning_status === "active") {
+              provisionAction = "update_tier";
+            }
+          } else if (existingAddon) {
+            provisionAction = "update_tier";
+          }
           try {
             const provisionRes = await fetch(
               `${SUPABASE_URL}/functions/v1/chat-bot-provision`,
