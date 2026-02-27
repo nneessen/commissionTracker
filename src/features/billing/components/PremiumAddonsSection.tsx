@@ -2,13 +2,7 @@
 // Section for purchasing premium add-ons like UW Wizard with tier selection
 
 import { useState } from "react";
-import {
-  Sparkles,
-  Check,
-  Loader2,
-  Wand2,
-  Zap,
-} from "lucide-react";
+import { Sparkles, Check, Loader2, Wand2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -58,8 +52,7 @@ export function PremiumAddonsSection() {
     subscription?.plan?.name === "team" &&
     ["active", "trialing"].includes(subscription?.status || "");
   const hasActiveSubscription =
-    subscription &&
-    ["active", "trialing"].includes(subscription?.status || "");
+    subscription && ["active", "trialing"].includes(subscription?.status || "");
 
   const formatPrice = (cents: number) => {
     if (cents === 0) return "Free";
@@ -97,6 +90,11 @@ export function PremiumAddonsSection() {
       );
 
       if (result.success) {
+        // If checkout is required (no existing Stripe subscription), redirect
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
         toast.success("Add-on activated successfully!");
         invalidateCaches();
       } else {
@@ -117,11 +115,14 @@ export function PremiumAddonsSection() {
 
     setPurchaseLoading(true);
     try {
-      const result = await subscriptionService.addSubscriptionAddon(
-        addon.id,
-      );
+      const result = await subscriptionService.addSubscriptionAddon(addon.id);
 
       if (result.success) {
+        // If checkout is required (no existing Stripe subscription), redirect
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
         toast.success("Add-on activated successfully!");
         invalidateCaches();
       } else {
