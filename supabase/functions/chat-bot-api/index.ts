@@ -426,6 +426,324 @@ serve(async (req) => {
         return jsonResponse(Array.isArray(payload) ? payload : []);
       }
 
+      // ──────────────────────────────────────────────
+      // ANALYTICS & ATTRIBUTION
+      // ──────────────────────────────────────────────
+      case "get_analytics": {
+        const qs = new URLSearchParams();
+        if (params.from) qs.set("from", String(params.from));
+        if (params.to) qs.set("to", String(params.to));
+        const queryString = qs.toString() ? `?${qs.toString()}` : "";
+        try {
+          const res = await callChatBotApi(
+            "GET",
+            `/api/external/agents/${agentId}/analytics${queryString}`,
+          );
+          const { payload, errorMessage } = unwrap(res);
+          if (errorMessage) {
+            // External API not deployed yet — return empty analytics shell
+            return jsonResponse({
+              conversations: {
+                total: 0,
+                byStatus: {},
+                byChannel: {},
+                avgMessagesPerConvo: 0,
+                suppressionRate: 0,
+                staleRate: 0,
+              },
+              engagement: {
+                responseRate: 0,
+                multiTurnRate: 0,
+                avgFirstResponseMin: 0,
+                avgObjectionCount: 0,
+                hardNoRate: 0,
+              },
+              appointments: {
+                total: 0,
+                bookingRate: 0,
+                showRate: 0,
+                cancelRate: 0,
+                avgDaysToAppointment: 0,
+              },
+              timeline: [],
+            });
+          }
+          return jsonResponse(payload);
+        } catch {
+          // External API unavailable — return empty shell
+          return jsonResponse({
+            conversations: {
+              total: 0,
+              byStatus: {},
+              byChannel: {},
+              avgMessagesPerConvo: 0,
+              suppressionRate: 0,
+              staleRate: 0,
+            },
+            engagement: {
+              responseRate: 0,
+              multiTurnRate: 0,
+              avgFirstResponseMin: 0,
+              avgObjectionCount: 0,
+              hardNoRate: 0,
+            },
+            appointments: {
+              total: 0,
+              bookingRate: 0,
+              showRate: 0,
+              cancelRate: 0,
+              avgDaysToAppointment: 0,
+            },
+            timeline: [],
+          });
+        }
+      }
+
+      case "get_attributions": {
+        const from = params.from ? String(params.from) : null;
+        const to = params.to ? String(params.to) : null;
+
+        // Step 1: Get attributions with policy data (no nested client embed — PostgREST aliasing bug)
+        let query = supabase
+          .from("bot_policy_attributions")
+          .select(
+            "id, policy_id, attribution_type, match_method, confidence_score, lead_name, conversation_started_at, external_conversation_id, external_appointment_id, created_at, policies(id, policy_number, monthly_premium, annual_premium, effective_date, status, client_id)",
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (from) query = query.gte("created_at", from);
+        if (to) query = query.lte("created_at", to);
+
+        const { data: rawAttrs, error: qErr } = await query;
+        if (qErr) {
+          return jsonResponse({ error: qErr.message }, 400);
+        }
+        const attrs = rawAttrs || [];
+
+        // Step 2: Batch-fetch client names for all attributed policies
+        // deno-lint-ignore no-explicit-any
+        const clientIds = attrs
+          .map((a: any) => a.policies?.client_id)
+          .filter(Boolean);
+        // deno-lint-ignore no-explicit-any
+        const clientMap: Record<string, any> = {};
+        if (clientIds.length > 0) {
+          const { data: clients } = await supabase
+            .from("clients")
+            .select("id, first_name, last_name")
+            .in("id", clientIds);
+          if (clients) {
+            for (const c of clients) {
+              clientMap[c.id] = {
+                first_name: c.first_name,
+                last_name: c.last_name,
+              };
+            }
+          }
+        }
+
+        // Step 3: Merge client data into attributions
+        // deno-lint-ignore no-explicit-any
+        const result = attrs.map((a: any) => {
+          const clientId = a.policies?.client_id;
+          const client = clientId ? clientMap[clientId] || null : null;
+          return {
+            ...a,
+            policies: a.policies
+              ? {
+                  id: a.policies.id,
+                  policy_number: a.policies.policy_number,
+                  monthly_premium: a.policies.monthly_premium,
+                  annual_premium: a.policies.annual_premium,
+                  effective_date: a.policies.effective_date,
+                  status: a.policies.status,
+                  clients: client,
+                }
+              : null,
+          };
+        });
+
+        return jsonResponse(result);
+      }
+
+      case "check_attribution": {
+        const { policyId } = params;
+        if (!policyId) {
+          return jsonResponse({ error: "policyId is required" }, 400);
+        }
+
+        // Already attributed?
+        const { data: existing } = await supabase
+          .from("bot_policy_attributions")
+          .select("id")
+          .eq("policy_id", policyId)
+          .maybeSingle();
+        if (existing) {
+          return jsonResponse({ matched: false, reason: "already_attributed" });
+        }
+
+        // Get policy + client info (verify ownership — service_role bypasses RLS)
+        const { data: policy } = await supabase
+          .from("policies")
+          .select("id, user_id, clients(first_name, last_name, phone)")
+          .eq("id", policyId)
+          .single();
+        if (!policy || !policy.clients) {
+          return jsonResponse({ matched: false, reason: "no_client" });
+        }
+        if (policy.user_id !== user.id) {
+          return jsonResponse({ error: "Forbidden" }, 403);
+        }
+
+        // deno-lint-ignore no-explicit-any
+        const client = policy.clients as any;
+        const clientPhone = (client.phone || "").replace(/\D/g, "");
+        const clientName =
+          `${client.first_name || ""} ${client.last_name || ""}`.trim();
+
+        // Search bot conversations for matching lead (last 90 days)
+        const from90d = new Date(Date.now() - 90 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        const qs = new URLSearchParams();
+        if (clientPhone) qs.set("leadPhone", clientPhone);
+        if (clientName) qs.set("leadName", clientName);
+        qs.set("from", from90d);
+
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/agents/${agentId}/conversations/search?${qs.toString()}`,
+        );
+        const { payload } = unwrap(res);
+        const matches = Array.isArray(payload) ? payload : [];
+
+        if (matches.length === 0) {
+          return jsonResponse({ matched: false, reason: "no_match" });
+        }
+
+        // Determine best match: phone match > name match
+        // deno-lint-ignore no-explicit-any
+        let bestMatch: any = null;
+        let matchMethod = "auto_name";
+        let confidence = 0.7;
+
+        for (const m of matches) {
+          const mPhone = (m.leadPhone || "").replace(/\D/g, "");
+          if (clientPhone && mPhone === clientPhone) {
+            bestMatch = m;
+            matchMethod = "auto_phone";
+            confidence = 1.0;
+            break;
+          }
+          if (!bestMatch) bestMatch = m;
+        }
+
+        if (!bestMatch) {
+          return jsonResponse({ matched: false, reason: "no_match" });
+        }
+
+        const attributionType = bestMatch.appointmentId
+          ? "bot_converted"
+          : "bot_assisted";
+
+        const { error: insertErr } = await supabase
+          .from("bot_policy_attributions")
+          .insert({
+            policy_id: policyId,
+            user_id: user.id,
+            external_conversation_id: bestMatch.id || bestMatch.conversationId,
+            external_appointment_id: bestMatch.appointmentId || null,
+            attribution_type: attributionType,
+            match_method: matchMethod,
+            confidence_score: confidence,
+            lead_name: bestMatch.leadName || clientName || null,
+            conversation_started_at: bestMatch.startedAt || null,
+          });
+
+        if (insertErr) {
+          // Unique constraint = already attributed (race condition), not an error
+          if (insertErr.code === "23505") {
+            return jsonResponse({
+              matched: false,
+              reason: "already_attributed",
+            });
+          }
+          return jsonResponse({ error: insertErr.message }, 400);
+        }
+
+        return jsonResponse({
+          matched: true,
+          attributionType,
+          matchMethod,
+          confidence,
+        });
+      }
+
+      case "link_attribution": {
+        const {
+          policyId,
+          conversationId: extConvoId,
+          appointmentId: extApptId,
+          leadName: manualLeadName,
+        } = params;
+        if (!policyId || !extConvoId) {
+          return jsonResponse(
+            { error: "policyId and conversationId are required" },
+            400,
+          );
+        }
+
+        // Verify policy ownership (service_role bypasses RLS)
+        const { data: linkPolicy } = await supabase
+          .from("policies")
+          .select("user_id")
+          .eq("id", policyId)
+          .single();
+        if (!linkPolicy || linkPolicy.user_id !== user.id) {
+          return jsonResponse({ error: "Forbidden" }, 403);
+        }
+
+        const { error: insertErr } = await supabase
+          .from("bot_policy_attributions")
+          .upsert(
+            {
+              policy_id: policyId,
+              user_id: user.id,
+              external_conversation_id: String(extConvoId),
+              external_appointment_id: extApptId ? String(extApptId) : null,
+              attribution_type: extApptId ? "bot_converted" : "bot_assisted",
+              match_method: "manual",
+              confidence_score: 1.0,
+              lead_name: manualLeadName ? String(manualLeadName) : null,
+            },
+            { onConflict: "policy_id" },
+          );
+
+        if (insertErr) {
+          return jsonResponse({ error: insertErr.message }, 400);
+        }
+        return jsonResponse({ success: true });
+      }
+
+      case "unlink_attribution": {
+        const { attributionId } = params;
+        if (!attributionId) {
+          return jsonResponse({ error: "attributionId is required" }, 400);
+        }
+
+        const { error: delErr } = await supabase
+          .from("bot_policy_attributions")
+          .delete()
+          .eq("id", attributionId)
+          .eq("user_id", user.id);
+
+        if (delErr) {
+          return jsonResponse({ error: delErr.message }, 400);
+        }
+        return jsonResponse({ success: true });
+      }
+
       default:
         return jsonResponse({ error: `Unknown action: ${action}` }, 400);
     }

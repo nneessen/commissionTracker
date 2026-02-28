@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   RefreshCw,
   WifiOff,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -33,8 +35,17 @@ import { SetupTab } from "./components/SetupTab";
 import { ConversationsTab } from "./components/ConversationsTab";
 import { AppointmentsTab } from "./components/AppointmentsTab";
 import { UsageTab } from "./components/UsageTab";
+import { AllBotsTab } from "./components/AllBotsTab";
+import { AnalyticsTab } from "./components/AnalyticsTab";
 
-type TabId = "overview" | "setup" | "conversations" | "appointments" | "usage";
+type TabId =
+  | "overview"
+  | "all-bots"
+  | "setup"
+  | "conversations"
+  | "appointments"
+  | "usage"
+  | "analytics";
 
 // Read initial tab from URL search params (e.g., after Calendly OAuth redirect with ?tab=setup)
 // NOTE: Do NOT call history.replaceState here — it triggers TanStack Router's Transitioner
@@ -44,9 +55,11 @@ function getInitialTab(): TabId {
   const tab = params.get("tab");
   if (
     tab === "setup" ||
+    tab === "all-bots" ||
     tab === "conversations" ||
     tab === "appointments" ||
-    tab === "usage"
+    tab === "usage" ||
+    tab === "analytics"
   ) {
     return tab;
   }
@@ -164,6 +177,7 @@ export function ChatBotPage() {
     locked?: boolean;
   }[] = [
     { id: "overview", label: "Subscription", icon: CreditCard },
+    { id: "all-bots", label: "All Bots", icon: TrendingUp },
     {
       id: "setup",
       label: "Bot Configuration",
@@ -178,6 +192,7 @@ export function ChatBotPage() {
       { id: "conversations", label: "Conversations", icon: MessageSquare },
       { id: "appointments", label: "Appointments", icon: Calendar },
       { id: "usage", label: "Usage", icon: Activity },
+      { id: "analytics", label: "My Analytics", icon: BarChart3 },
     );
   }
 
@@ -349,10 +364,20 @@ export function ChatBotPage() {
             <SetupTab />
           ))}
 
+        {/* All Bots — always visible to all users */}
+        {activeTab === "all-bots" && (
+          <AllBotsTab
+            onNavigateToSubscription={
+              !hasAddon ? () => setActiveTab("overview") : undefined
+            }
+          />
+        )}
+
         {/* Dashboard tabs — only rendered when visible */}
         {activeTab === "conversations" && <ConversationsTab />}
         {activeTab === "appointments" && <AppointmentsTab />}
         {activeTab === "usage" && <UsageTab />}
+        {activeTab === "analytics" && <AnalyticsTab />}
       </div>
     </div>
   );

@@ -7,10 +7,30 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -868,6 +888,59 @@ export type Database = {
             columns: ["performed_by"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      bot_policy_attributions: {
+        Row: {
+          attribution_type: string;
+          confidence_score: number;
+          conversation_started_at: string | null;
+          created_at: string | null;
+          external_appointment_id: string | null;
+          external_conversation_id: string;
+          id: string;
+          lead_name: string | null;
+          match_method: string;
+          policy_id: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          attribution_type: string;
+          confidence_score?: number;
+          conversation_started_at?: string | null;
+          created_at?: string | null;
+          external_appointment_id?: string | null;
+          external_conversation_id: string;
+          id?: string;
+          lead_name?: string | null;
+          match_method: string;
+          policy_id: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          attribution_type?: string;
+          confidence_score?: number;
+          conversation_started_at?: string | null;
+          created_at?: string | null;
+          external_appointment_id?: string | null;
+          external_conversation_id?: string;
+          id?: string;
+          lead_name?: string | null;
+          match_method?: string;
+          policy_id?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bot_policy_attributions_policy_id_fkey";
+            columns: ["policy_id"];
+            isOneToOne: true;
+            referencedRelation: "policies";
             referencedColumns: ["id"];
           },
         ];
@@ -13866,7 +13939,7 @@ export type Database = {
       cleanup_expired_evaluation_logs: { Args: never; Returns: number };
       cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_instagram_jobs: {
-        Args: { p_older_than?: unknown };
+        Args: { p_older_than?: string };
         Returns: number;
       };
       cleanup_old_audit_logs: {
@@ -17126,6 +17199,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       agent_status: ["unlicensed", "licensed", "not_applicable"],

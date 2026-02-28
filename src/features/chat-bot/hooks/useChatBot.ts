@@ -116,7 +116,7 @@ export class ChatBotApiError extends Error {
   }
 }
 
-async function chatBotApi<T>(
+export async function chatBotApi<T>(
   action: string,
   params?: Record<string, unknown>,
 ): Promise<T> {
