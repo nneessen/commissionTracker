@@ -18,6 +18,31 @@ import { AttributionTable } from "./analytics/AttributionTable";
 // Approximate monthly subscription cost for ROI calculation
 const BOT_MONTHLY_COST = 49;
 
+const emptyConversations = {
+  total: 0,
+  byStatus: {},
+  byChannel: {},
+  avgMessagesPerConvo: 0,
+  suppressionRate: 0,
+  staleRate: 0,
+} as const;
+
+const emptyAppointments = {
+  total: 0,
+  bookingRate: 0,
+  showRate: 0,
+  cancelRate: 0,
+  avgDaysToAppointment: 0,
+} as const;
+
+const emptyEngagement = {
+  responseRate: 0,
+  multiTurnRate: 0,
+  avgFirstResponseMin: 0,
+  avgObjectionCount: 0,
+  hardNoRate: 0,
+} as const;
+
 export function AnalyticsTab() {
   const [range, setRange] = useState(() => {
     const to = new Date().toISOString().slice(0, 10);
@@ -78,12 +103,18 @@ export function AnalyticsTab() {
         <>
           {/* Metric Cards Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <ConversationMetrics data={analytics.data.conversations} />
-            <AppointmentMetrics data={analytics.data.appointments} />
-            <EngagementMetrics data={analytics.data.engagement} />
+            <ConversationMetrics
+              data={analytics.data.conversations ?? emptyConversations}
+            />
+            <AppointmentMetrics
+              data={analytics.data.appointments ?? emptyAppointments}
+            />
+            <EngagementMetrics
+              data={analytics.data.engagement ?? emptyEngagement}
+            />
             <ConversionMetrics
               attributions={attributions.data || []}
-              totalConversations={analytics.data.conversations.total}
+              totalConversations={analytics.data.conversations?.total ?? 0}
             />
           </div>
 
@@ -91,10 +122,10 @@ export function AnalyticsTab() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             <BotROI
               attributions={attributions.data || []}
-              totalConversations={analytics.data.conversations.total}
+              totalConversations={analytics.data.conversations?.total ?? 0}
               monthlyCost={BOT_MONTHLY_COST}
             />
-            <TimelineChart data={analytics.data.timeline} />
+            <TimelineChart data={analytics.data.timeline ?? []} />
           </div>
         </>
       ) : null}

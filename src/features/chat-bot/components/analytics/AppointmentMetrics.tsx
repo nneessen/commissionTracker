@@ -9,6 +9,12 @@ export function AppointmentMetrics({
 }: {
   data: ChatBotAnalytics["appointments"];
 }) {
+  const total = data.total ?? 0;
+  const bookingRate = data.bookingRate ?? 0;
+  const showRate = data.showRate ?? 0;
+  const cancelRate = data.cancelRate ?? 0;
+  const avgDays = data.avgDaysToAppointment ?? 0;
+
   return (
     <div className="p-2.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
       <div className="flex items-center gap-1.5 mb-2">
@@ -17,27 +23,27 @@ export function AppointmentMetrics({
           Appointments
         </h4>
         <span className="ml-auto text-sm font-bold text-zinc-900 dark:text-zinc-100">
-          {data.total.toLocaleString()}
+          {total.toLocaleString()}
         </span>
       </div>
 
       <div className="space-y-1.5">
         <FunnelRow
           label="Booking Rate"
-          value={`${(data.bookingRate * 100).toFixed(1)}%`}
-          barPercent={data.bookingRate * 100}
+          value={`${(bookingRate * 100).toFixed(1)}%`}
+          barPercent={bookingRate * 100}
           color="bg-violet-500"
         />
         <FunnelRow
           label="Show Rate"
-          value={`${(data.showRate * 100).toFixed(1)}%`}
-          barPercent={data.showRate * 100}
+          value={`${(showRate * 100).toFixed(1)}%`}
+          barPercent={showRate * 100}
           color="bg-emerald-500"
         />
         <FunnelRow
           label="Cancel Rate"
-          value={`${(data.cancelRate * 100).toFixed(1)}%`}
-          barPercent={data.cancelRate * 100}
+          value={`${(cancelRate * 100).toFixed(1)}%`}
+          barPercent={cancelRate * 100}
           color="bg-red-400"
         />
       </div>
@@ -48,7 +54,7 @@ export function AppointmentMetrics({
             Avg days to appointment
           </span>
           <span className="text-[10px] font-medium text-zinc-900 dark:text-zinc-100">
-            {data.avgDaysToAppointment.toFixed(1)}
+            {avgDays.toFixed(1)}
           </span>
         </div>
       </div>

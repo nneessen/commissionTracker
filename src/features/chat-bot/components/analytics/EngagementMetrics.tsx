@@ -9,31 +9,37 @@ export function EngagementMetrics({
 }: {
   data: ChatBotAnalytics["engagement"];
 }) {
+  const responseRate = data.responseRate ?? 0;
+  const multiTurnRate = data.multiTurnRate ?? 0;
+  const avgFirstResponseMin = data.avgFirstResponseMin ?? 0;
+  const avgObjectionCount = data.avgObjectionCount ?? 0;
+  const hardNoRate = data.hardNoRate ?? 0;
+
   const rows = [
     {
       label: "Response Rate",
-      value: `${(data.responseRate * 100).toFixed(1)}%`,
-      good: data.responseRate > 0.5,
+      value: `${(responseRate * 100).toFixed(1)}%`,
+      good: responseRate > 0.5,
     },
     {
       label: "Multi-turn Rate",
-      value: `${(data.multiTurnRate * 100).toFixed(1)}%`,
-      good: data.multiTurnRate > 0.3,
+      value: `${(multiTurnRate * 100).toFixed(1)}%`,
+      good: multiTurnRate > 0.3,
     },
     {
       label: "Avg First Response",
-      value: `${data.avgFirstResponseMin.toFixed(0)} min`,
-      good: data.avgFirstResponseMin < 5,
+      value: `${avgFirstResponseMin.toFixed(0)} min`,
+      good: avgFirstResponseMin < 5,
     },
     {
       label: "Avg Objections",
-      value: data.avgObjectionCount.toFixed(1),
+      value: avgObjectionCount.toFixed(1),
       good: true,
     },
     {
       label: "Hard No Rate",
-      value: `${(data.hardNoRate * 100).toFixed(1)}%`,
-      good: data.hardNoRate < 0.2,
+      value: `${(hardNoRate * 100).toFixed(1)}%`,
+      good: hardNoRate < 0.2,
     },
   ];
 

@@ -9,10 +9,14 @@ export function ConversationMetrics({
 }: {
   data: ChatBotAnalytics["conversations"];
 }) {
-  const statusEntries = Object.entries(data.byStatus).sort(
+  const total = data.total ?? 0;
+  const avgMsgs = data.avgMessagesPerConvo ?? 0;
+  const suppression = data.suppressionRate ?? 0;
+  const stale = data.staleRate ?? 0;
+  const statusEntries = Object.entries(data.byStatus || {}).sort(
     ([, a], [, b]) => b - a,
   );
-  const channelEntries = Object.entries(data.byChannel).sort(
+  const channelEntries = Object.entries(data.byChannel || {}).sort(
     ([, a], [, b]) => b - a,
   );
 
@@ -24,7 +28,7 @@ export function ConversationMetrics({
           Conversations
         </h4>
         <span className="ml-auto text-sm font-bold text-zinc-900 dark:text-zinc-100">
-          {data.total.toLocaleString()}
+          {total.toLocaleString()}
         </span>
       </div>
 
@@ -68,19 +72,16 @@ export function ConversationMetrics({
 
       {/* Rates */}
       <div className="pt-1.5 border-t border-zinc-100 dark:border-zinc-800 space-y-1">
-        <RateRow
-          label="Avg msgs/convo"
-          value={data.avgMessagesPerConvo.toFixed(1)}
-        />
+        <RateRow label="Avg msgs/convo" value={avgMsgs.toFixed(1)} />
         <RateRow
           label="Suppression rate"
-          value={`${(data.suppressionRate * 100).toFixed(1)}%`}
-          warn={data.suppressionRate > 0.3}
+          value={`${(suppression * 100).toFixed(1)}%`}
+          warn={suppression > 0.3}
         />
         <RateRow
           label="Stale rate"
-          value={`${(data.staleRate * 100).toFixed(1)}%`}
-          warn={data.staleRate > 0.4}
+          value={`${(stale * 100).toFixed(1)}%`}
+          warn={stale > 0.4}
         />
       </div>
     </div>
