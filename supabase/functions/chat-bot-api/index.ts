@@ -531,14 +531,11 @@ serve(async (req) => {
         if (clientIds.length > 0) {
           const { data: clients } = await supabase
             .from("clients")
-            .select("id, first_name, last_name")
+            .select("id, name")
             .in("id", clientIds);
           if (clients) {
             for (const c of clients) {
-              clientMap[c.id] = {
-                first_name: c.first_name,
-                last_name: c.last_name,
-              };
+              clientMap[c.id] = { name: c.name };
             }
           }
         }
@@ -586,7 +583,7 @@ serve(async (req) => {
         // Get policy + client info (verify ownership — service_role bypasses RLS)
         const { data: policy } = await supabase
           .from("policies")
-          .select("id, user_id, clients(first_name, last_name, phone)")
+          .select("id, user_id, clients(name, phone)")
           .eq("id", policyId)
           .single();
         if (!policy || !policy.clients) {
@@ -599,8 +596,7 @@ serve(async (req) => {
         // deno-lint-ignore no-explicit-any
         const client = policy.clients as any;
         const clientPhone = (client.phone || "").replace(/\D/g, "");
-        const clientName =
-          `${client.first_name || ""} ${client.last_name || ""}`.trim();
+        const clientName = (client.name || "").trim();
 
         // Search bot conversations for matching lead (last 90 days)
         const from90d = new Date(Date.now() - 90 * 86400000)

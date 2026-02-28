@@ -66,9 +66,8 @@ export function AttributionTable({
           </thead>
           <tbody>
             {attributions.map((a) => {
-              const clientName = a.policies?.clients
-                ? `${a.policies.clients.first_name || ""} ${a.policies.clients.last_name || ""}`.trim()
-                : a.lead_name || "Unknown";
+              const clientName =
+                a.policies?.clients?.name || a.lead_name || "Unknown";
               const premium =
                 a.policies?.annual_premium ?? a.policies?.monthly_premium ?? 0;
 

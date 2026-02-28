@@ -57,8 +57,7 @@ export interface BotAttribution {
     effective_date: string;
     status: string;
     clients: {
-      first_name: string | null;
-      last_name: string | null;
+      name: string | null;
     } | null;
   } | null;
 }
