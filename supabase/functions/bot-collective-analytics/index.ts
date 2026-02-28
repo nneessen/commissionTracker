@@ -76,7 +76,7 @@ serve(async (req) => {
       );
 
     if (from) attrQuery = attrQuery.gte("created_at", from);
-    if (to) attrQuery = attrQuery.lte("created_at", to);
+    if (to) attrQuery = attrQuery.lte("created_at", `${to}T23:59:59.999Z`);
 
     const { data: attributions } = await attrQuery;
     const attrs = attributions || [];

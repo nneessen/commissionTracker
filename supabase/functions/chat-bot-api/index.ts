@@ -439,7 +439,16 @@ serve(async (req) => {
             "GET",
             `/api/external/agents/${agentId}/analytics${queryString}`,
           );
+          console.log(
+            "[get_analytics] raw res.data:",
+            JSON.stringify(res.data).slice(0, 500),
+          );
           const { payload, errorMessage } = unwrap(res);
+          console.log(
+            "[get_analytics] unwrapped payload:",
+            JSON.stringify(payload).slice(0, 500),
+          );
+          console.log("[get_analytics] errorMessage:", errorMessage);
           if (errorMessage) {
             // External API not deployed yet — return empty analytics shell
             return jsonResponse({
@@ -513,7 +522,7 @@ serve(async (req) => {
           .order("created_at", { ascending: false });
 
         if (from) query = query.gte("created_at", from);
-        if (to) query = query.lte("created_at", to);
+        if (to) query = query.lte("created_at", `${to}T23:59:59.999Z`);
 
         const { data: rawAttrs, error: qErr } = await query;
         if (qErr) {
