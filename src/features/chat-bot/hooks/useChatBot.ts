@@ -82,10 +82,10 @@ export interface ChatBotMessage {
 export interface ChatBotAppointment {
   id: string;
   leadName: string;
-  scheduledAt: string;
+  scheduledAt: string | null;
   status: string;
-  createdAt: string;
-  eventUrl?: string;
+  createdAt: string | null;
+  eventUrl?: string | null;
 }
 
 export interface ChatBotUsage {

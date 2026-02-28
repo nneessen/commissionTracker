@@ -383,14 +383,86 @@ serve(async (req) => {
           "GET",
           `/api/external/agents/${agentId}/appointments${queryString}`,
         );
+        console.log(
+          "[get_appointments] raw response:",
+          JSON.stringify(res.data).slice(0, 800),
+        );
         const { payload, meta, status, errorMessage } = unwrap(res);
         if (errorMessage) {
           return jsonResponse({ error: errorMessage }, status);
         }
+        // Normalize external API fields → frontend ChatBotAppointment shape.
+        // External APIs (Calendly-backed) may return snake_case or different field names.
+        // deno-lint-ignore no-explicit-any
+        const rawItems: any[] = Array.isArray(payload) ? payload : [];
+        // deno-lint-ignore no-explicit-any
+        const normalizedItems = rawItems.map((item: any) => {
+          // Map Calendly-style status → our status vocabulary
+          const rawStatus = (
+            item.status ||
+            item.event_status ||
+            ""
+          ).toLowerCase();
+          let normalizedStatus: string;
+          switch (rawStatus) {
+            case "confirmed":
+            case "active":
+            case "pending":
+              normalizedStatus = "scheduled";
+              break;
+            case "completed":
+            case "done":
+              normalizedStatus = "completed";
+              break;
+            case "cancelled":
+            case "canceled":
+              normalizedStatus = "cancelled";
+              break;
+            case "no_show":
+            case "no-show":
+            case "noshow":
+              normalizedStatus = "no_show";
+              break;
+            default:
+              normalizedStatus = rawStatus || "scheduled";
+          }
+          return {
+            id: item.id || item.uuid || item.uri || crypto.randomUUID(),
+            leadName:
+              item.leadName ||
+              item.lead_name ||
+              item.invitee_name ||
+              item.inviteeName ||
+              item.name ||
+              "Unknown Lead",
+            scheduledAt:
+              item.scheduledAt ||
+              item.scheduled_at ||
+              item.start_time ||
+              item.startTime ||
+              item.event_start ||
+              item.eventStart ||
+              null,
+            status: normalizedStatus,
+            createdAt:
+              item.createdAt ||
+              item.created_at ||
+              item.booked_at ||
+              item.bookedAt ||
+              null,
+            eventUrl:
+              item.eventUrl ||
+              item.event_url ||
+              item.uri ||
+              item.calendly_url ||
+              null,
+          };
+        });
         const pagination = meta?.pagination || {};
+        const total = pagination.total ?? meta?.total ?? normalizedItems.length;
         return jsonResponse({
-          data: Array.isArray(payload) ? payload : [],
-          total: pagination.total ?? 0,
+          data: normalizedItems,
+          total,
           page: pagination.page ?? 1,
           limit: pagination.limit ?? 20,
         });

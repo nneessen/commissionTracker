@@ -31,8 +31,10 @@ export function AppointmentsTab() {
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -43,8 +45,10 @@ export function AppointmentsTab() {
     });
   };
 
-  const formatCreated = (dateStr: string) => {
+  const formatCreated = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -52,26 +56,34 @@ export function AppointmentsTab() {
   };
 
   const statusBadge = (s: string) => {
-    switch (s) {
+    const normalized = s?.toLowerCase() || "";
+    switch (normalized) {
       case "scheduled":
+      case "confirmed":
+      case "active":
+      case "pending":
         return (
           <Badge className="text-[9px] h-3.5 px-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
             Scheduled
           </Badge>
         );
       case "completed":
+      case "done":
         return (
           <Badge className="text-[9px] h-3.5 px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
             Completed
           </Badge>
         );
       case "cancelled":
+      case "canceled":
         return (
           <Badge className="text-[9px] h-3.5 px-1 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
             Cancelled
           </Badge>
         );
       case "no_show":
+      case "no-show":
+      case "noshow":
         return (
           <Badge className="text-[9px] h-3.5 px-1 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
             No Show
@@ -83,7 +95,7 @@ export function AppointmentsTab() {
             variant="secondary"
             className="text-[9px] h-3.5 px-1 bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
           >
-            {s}
+            {s || "Unknown"}
           </Badge>
         );
     }
