@@ -27,7 +27,7 @@ export interface PolicyWithRelations {
   policy_number: string | null;
   user_id: string;
   status: string | null;
-  lifecycle_status: string | null;
+  lifecycle_status: string | null; // TODO: should this not be using a type/interface? lifecycle statuses will never change.
   annual_premium: number | string | null;
   product: string | null;
   carrier_id: string | null;
@@ -504,7 +504,9 @@ export class PolicyRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("user_id, status, lifecycle_status, annual_premium, created_at, submit_date, effective_date")
+        .select(
+          "user_id, status, lifecycle_status, annual_premium, created_at, submit_date, effective_date",
+        )
         .in("user_id", userIds);
 
       if (error) {
@@ -926,7 +928,9 @@ export class PolicyRepository extends BaseRepository<
       // Build base query with filters
       let query = this.client
         .from(this.tableName)
-        .select("status, lifecycle_status, annual_premium, effective_date", { count: "exact" });
+        .select("status, lifecycle_status, annual_premium, effective_date", {
+          count: "exact",
+        });
 
       // CRITICAL: Filter by current user ID when specified
       if (currentUserId) {
@@ -1134,7 +1138,8 @@ export class PolicyRepository extends BaseRepository<
     if (data.policyNumber !== undefined)
       dbData.policy_number = data.policyNumber;
     if (data.status !== undefined) dbData.status = data.status;
-    if (data.lifecycleStatus !== undefined) dbData.lifecycle_status = data.lifecycleStatus;
+    if (data.lifecycleStatus !== undefined)
+      dbData.lifecycle_status = data.lifecycleStatus;
     if (data.clientId !== undefined) dbData.client_id = data.clientId; // Use client_id foreign key
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
     if (data.productId !== undefined) dbData.product_id = data.productId; // NEW: Product ID field
