@@ -101,6 +101,7 @@ export function useAutoPostRecruitNotification() {
         last_name?: string | null;
         email?: string | null;
         resident_state?: string | null;
+        state?: string | null;
         npn?: string | null;
       };
       notificationType: "new_recruit" | "npn_received";

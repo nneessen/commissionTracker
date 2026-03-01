@@ -195,6 +195,7 @@ export function AddRecruitDialog({
         street_address: value.street_address || undefined,
         city: value.city || undefined,
         state: value.state || undefined,
+        resident_state: value.resident_state || value.state || undefined,
         zip: value.zip || undefined,
         agent_status,
         licensing_info,

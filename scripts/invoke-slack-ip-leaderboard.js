@@ -50,6 +50,21 @@ async function main() {
         console.log(`⏭️  Skipped: ${data.reason}`);
       } else {
         console.log(`✅ Posted to #${data.results[0].channel}`);
+        if (data.results[0].weekRange) {
+          console.log(`📅 Week Range: ${data.results[0].weekRange}`);
+        }
+        if (Array.isArray(data.results[0].topWTD)) {
+          console.log("🏆 Top WTD preview:");
+          for (const row of data.results[0].topWTD) {
+            console.log(`   - ${row.name}: $${row.ip} (${row.policies})`);
+          }
+        }
+        if (Array.isArray(data.results[0].topMTD)) {
+          console.log("📈 Top MTD preview:");
+          for (const row of data.results[0].topMTD) {
+            console.log(`   - ${row.name}: $${row.ip} (${row.policies})`);
+          }
+        }
       }
     } else {
       console.log(`❌ Failed: ${data.error || JSON.stringify(data)}`);

@@ -49,19 +49,21 @@ export function buildNewRecruitMessage(recruit: {
   last_name?: string | null;
   email?: string | null;
   resident_state?: string | null;
+  state?: string | null;
   upline_name?: string | null;
 }): { text: string; blocks: SlackBlock[] } {
   const fullName =
     `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() ||
     "Unknown";
   const text = `New Recruit: ${fullName}`;
+  const recruitState = recruit.resident_state || recruit.state || null;
 
   const detailLines = [
     `*Name:*  ${fullName}`,
     `*Email:*  ${recruit.email || "N/A"}`,
   ];
-  if (recruit.resident_state) {
-    detailLines.push(`*State:*  ${recruit.resident_state}`);
+  if (recruitState) {
+    detailLines.push(`*Resident State:*  ${recruitState}`);
   }
   if (recruit.upline_name) {
     detailLines.push(`*Upline:*  ${recruit.upline_name}`);
@@ -90,20 +92,22 @@ export function buildNpnReceivedMessage(recruit: {
   email?: string | null;
   npn?: string | null;
   resident_state?: string | null;
+  state?: string | null;
   upline_name?: string | null;
 }): { text: string; blocks: SlackBlock[] } {
   const fullName =
     `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim() ||
     "Unknown";
   const text = `NPN Received: ${fullName}`;
+  const recruitState = recruit.resident_state || recruit.state || null;
 
   const detailLines = [
     `*Name:*  ${fullName}`,
     `*Email:*  ${recruit.email || "N/A"}`,
     `*NPN:*  ${recruit.npn || "N/A"}`,
   ];
-  if (recruit.resident_state) {
-    detailLines.push(`*State:*  ${recruit.resident_state}`);
+  if (recruitState) {
+    detailLines.push(`*Resident State:*  ${recruitState}`);
   }
   if (recruit.upline_name) {
     detailLines.push(`*Upline:*  ${recruit.upline_name}`);
@@ -196,6 +200,7 @@ export async function autoPostRecruitNotification(
     last_name?: string | null;
     email?: string | null;
     resident_state?: string | null;
+    state?: string | null;
     npn?: string | null;
     upline_name?: string | null;
   },
