@@ -319,6 +319,14 @@ serve(async (req) => {
         });
       }
 
+      case "get_calendar_health": {
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/agents/${agentId}/calendar-health`,
+        );
+        return sendResult(res);
+      }
+
       // ──────────────────────────────────────────────
       // CONVERSATIONS & MESSAGES
       // ──────────────────────────────────────────────

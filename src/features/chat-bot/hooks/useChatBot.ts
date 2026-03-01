@@ -21,6 +21,7 @@ export const chatBotKeys = {
   calendlyStatus: () => [...chatBotKeys.all, "calendly-status"] as const,
   calendlyEventTypes: () =>
     [...chatBotKeys.all, "calendly-event-types"] as const,
+  calendarHealth: () => [...chatBotKeys.all, "calendar-health"] as const,
 };
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -101,6 +102,25 @@ interface PaginatedResponse<T> {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface CalendarHealthIssue {
+  code: string;
+  severity: "error" | "warning";
+  message: string;
+  action: string;
+}
+
+export interface CalendarHealthResponse {
+  healthy: boolean;
+  eventType: {
+    name: string;
+    slug: string;
+    duration: number;
+    locationKind: string | null;
+    schedulingUrl: string;
+  } | null;
+  issues: CalendarHealthIssue[];
 }
 
 // ─── API Helper ─────────────────────────────────────────────────
@@ -361,6 +381,9 @@ export function useDisconnectCalendly() {
       queryClient.invalidateQueries({
         queryKey: chatBotKeys.calendlyStatus(),
       });
+      queryClient.invalidateQueries({
+        queryKey: chatBotKeys.calendarHealth(),
+      });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect Calendly.");
@@ -398,5 +421,25 @@ export function useUpdateBotConfig() {
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update bot configuration.");
     },
+  });
+}
+
+// ─── Calendar Health ────────────────────────────────────────────
+
+export function useCalendarHealth(enabled = true) {
+  return useQuery({
+    queryKey: chatBotKeys.calendarHealth(),
+    queryFn: async () => {
+      try {
+        return await chatBotApi<CalendarHealthResponse>("get_calendar_health");
+      } catch (err) {
+        // If the external API doesn't support this endpoint yet, return null
+        if (err instanceof ChatBotApiError && err.isNotProvisioned) return null;
+        throw err;
+      }
+    },
+    enabled,
+    staleTime: 60_000,
+    retry: 1,
   });
 }

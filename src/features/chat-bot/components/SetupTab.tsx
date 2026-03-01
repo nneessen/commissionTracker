@@ -37,6 +37,7 @@ import {
   useDisconnectCalendly,
   useUpdateBotConfig,
 } from "../hooks/useChatBot";
+import { CalendarHealthBanner } from "./CalendarHealthBanner";
 
 // Common US timezones
 const TIMEZONES = [
@@ -279,6 +280,9 @@ export function SetupTab() {
         onDisconnect={() => disconnectCalendly.mutate()}
         disconnectLoading={disconnectCalendly.isPending}
       />
+
+      {/* Calendar Health Check */}
+      <CalendarHealthBanner enabled={calendlyStatus?.connected || false} />
 
       {/* Lead Source → Event Type Mappings */}
       {calendlyStatus?.connected && (
