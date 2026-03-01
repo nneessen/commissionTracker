@@ -774,9 +774,10 @@ export class PolicyRepository extends BaseRepository<
           query = query.lte("effective_date", filters.effectiveDateTo);
         }
 
-        // Search term filter
+        // Search term filter — use .ilike() (parameterized) instead of .or()
+        // string interpolation to prevent PostgREST filter injection
         if (filters.searchTerm) {
-          query = query.or(`policy_number.ilike.%${filters.searchTerm}%`);
+          query = query.ilike("policy_number", `%${filters.searchTerm}%`);
         }
       }
 

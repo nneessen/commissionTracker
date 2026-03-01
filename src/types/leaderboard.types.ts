@@ -42,8 +42,8 @@ export interface AgentLeaderboardEntry {
   agencyId: string | null;
   agencyName: string | null;
   directDownlineCount: number;
-  ipTotal: number; // Issued Premium - active policies with paid commissions
-  apTotal: number; // Annual Premium - pending policies
+  ipTotal: number; // Issued Premium - active policies with paid commissions based off effective date
+  apTotal: number; // Annual Premium - pending policies based off submit date
   policyCount: number; // Number of issued policies
   pendingPolicyCount: number; // Number of pending policies
   prospectCount: number; // Agent's own prospects (not yet in pipeline)

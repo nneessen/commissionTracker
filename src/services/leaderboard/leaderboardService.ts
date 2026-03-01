@@ -415,7 +415,8 @@ export const leaderboardService = {
   },
 
   /**
-   * Fetch list of agencies for the agency filter dropdown
+   * Fetch list of agencies for the agency filter dropdown.
+   * Tenant isolation: RLS policy on agencies table enforces imo_id = get_my_imo_id().
    * @returns Array of agency objects with id and name
    */
   async getAgencies(): Promise<{ id: string; name: string }[]> {

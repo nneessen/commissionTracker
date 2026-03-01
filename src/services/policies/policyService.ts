@@ -335,42 +335,55 @@ class PolicyService {
   }
 
   /**
-   * Get policies filtered by various criteria
-   * CRITICAL: Filters to only current user's policies
-   * Note: For simple filters, prefer using this method for server-side filtering
-   * For complex client-side operations, use hooks with client-side filtering
+   * Get policies filtered by various criteria (server-side).
+   * CRITICAL: Filters to only current user's policies.
+   * All filters are pushed to the DB query for performance.
    */
   async getFiltered(filters: PolicyFilters): Promise<Policy[]> {
-    // Get current user ID to filter policies
     const userId = await getCurrentUserId();
 
-    // Build filtered query - delegate to repository for complex filters
-    // Pass userId to ensure we only get current user's policies
-    const allPolicies = await this.repository.findAll({
-      userId: userId || undefined,
-    });
+    // Convert PolicyFilters to repository filter format for server-side filtering
+    const effectiveDateFrom =
+      filters.effectiveDateFrom ??
+      (filters.startDate ? formatDateForDB(filters.startDate) : undefined);
+    const effectiveDateTo =
+      filters.effectiveDateTo ??
+      (filters.endDate ? formatDateForDB(filters.endDate) : undefined);
 
-    return allPolicies.filter((policy) => {
-      if (filters.status && policy.status !== filters.status) return false;
-      if (filters.carrierId && policy.carrierId !== filters.carrierId)
-        return false;
-      if (filters.product && policy.product !== filters.product) return false;
-      if (filters.startDate) {
-        const policyDate = policy.effectiveDate; // Already in YYYY-MM-DD format
-        const startDateString = formatDateForDB(filters.startDate);
-        if (policyDate < startDateString) return false;
-      }
-      if (filters.endDate) {
-        const policyDate = policy.effectiveDate; // Already in YYYY-MM-DD format
-        const endDateString = formatDateForDB(filters.endDate);
-        if (policyDate > endDateString) return false;
-      }
-      if (filters.minPremium && policy.annualPremium < filters.minPremium)
-        return false;
-      if (filters.maxPremium && policy.annualPremium > filters.maxPremium)
-        return false;
-      return true;
-    });
+    const repoFilters: {
+      status?: string;
+      carrierId?: string;
+      product?: string;
+      effectiveDateFrom?: string;
+      effectiveDateTo?: string;
+      searchTerm?: string;
+    } = {};
+
+    if (filters.status) repoFilters.status = filters.status;
+    if (filters.carrierId) repoFilters.carrierId = filters.carrierId;
+    if (filters.product) repoFilters.product = filters.product;
+    if (effectiveDateFrom) repoFilters.effectiveDateFrom = effectiveDateFrom;
+    if (effectiveDateTo) repoFilters.effectiveDateTo = effectiveDateTo;
+    if (filters.searchTerm) repoFilters.searchTerm = filters.searchTerm;
+
+    const policies = await this.repository.findAll(
+      { userId: userId || undefined },
+      Object.keys(repoFilters).length > 0 ? repoFilters : undefined,
+    );
+
+    // Premium range filters — applied client-side since they're rarely used
+    // and annual_premium is already returned in the result set
+    if (filters.minPremium || filters.maxPremium) {
+      return policies.filter((policy) => {
+        if (filters.minPremium && policy.annualPremium < filters.minPremium)
+          return false;
+        if (filters.maxPremium && policy.annualPremium > filters.maxPremium)
+          return false;
+        return true;
+      });
+    }
+
+    return policies;
   }
 
   /**
