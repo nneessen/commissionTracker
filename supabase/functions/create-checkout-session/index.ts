@@ -2,7 +2,7 @@
 // Creates a Stripe Checkout Session for subscription purchases
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import Stripe from "https://esm.sh/stripe@17?target=deno";
 
 const corsHeaders = {

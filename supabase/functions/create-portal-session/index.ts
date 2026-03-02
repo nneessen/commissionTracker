@@ -2,7 +2,7 @@
 // Creates a Stripe Customer Portal session for managing subscriptions
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import Stripe from "https://esm.sh/stripe@17?target=deno";
 
 const corsHeaders = {
@@ -86,7 +86,10 @@ serve(async (req) => {
         // Backfill the DB so future calls don't need this fallback
         await supabase
           .from("user_subscriptions")
-          .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+          .update({
+            stripe_customer_id: customerId,
+            updated_at: new Date().toISOString(),
+          })
           .eq("user_id", user.id);
       }
     }

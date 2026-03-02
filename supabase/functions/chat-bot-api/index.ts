@@ -3,7 +3,7 @@
 // Auth: Bearer token (user JWT) → resolves user_id → looks up chat_bot_agents → proxies request.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -827,6 +827,22 @@ serve(async (req) => {
           return jsonResponse({ error: delErr.message }, 400);
         }
         return jsonResponse({ success: true });
+      }
+
+      case "get_monitoring": {
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/agents/${agentId}/monitoring`,
+        );
+        return sendResult(res);
+      }
+
+      case "get_system_health": {
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/monitoring/system`,
+        );
+        return sendResult(res);
       }
 
       default:

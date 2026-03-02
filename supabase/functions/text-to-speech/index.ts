@@ -2,7 +2,7 @@
 // ElevenLabs TTS Edge Function — converts text to speech audio
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 
@@ -53,7 +53,9 @@ serve(async (req) => {
 
     if (body.text.length > MAX_TEXT_LENGTH) {
       return new Response(
-        JSON.stringify({ error: `Text exceeds ${MAX_TEXT_LENGTH} character limit` }),
+        JSON.stringify({
+          error: `Text exceeds ${MAX_TEXT_LENGTH} character limit`,
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,10 +69,17 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify the user and get their IMO
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    const userClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      {
+        global: { headers: { Authorization: authHeader } },
+      },
+    );
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
@@ -102,7 +111,9 @@ serve(async (req) => {
 
     if (configError || !config) {
       return new Response(
-        JSON.stringify({ error: "ElevenLabs not configured for your organization" }),
+        JSON.stringify({
+          error: "ElevenLabs not configured for your organization",
+        }),
         {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -116,7 +127,9 @@ serve(async (req) => {
       apiKey = await decrypt(config.api_key_encrypted);
     } catch {
       return new Response(
-        JSON.stringify({ error: "Failed to decrypt API key. Please reconfigure." }),
+        JSON.stringify({
+          error: "Failed to decrypt API key. Please reconfigure.",
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -163,7 +176,9 @@ serve(async (req) => {
       }
       if (ttsResponse.status === 429) {
         return new Response(
-          JSON.stringify({ error: "ElevenLabs rate limit exceeded. Try again later." }),
+          JSON.stringify({
+            error: "ElevenLabs rate limit exceeded. Try again later.",
+          }),
           {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -194,12 +209,9 @@ serve(async (req) => {
   } catch (error) {
     console.error("TTS function error:", error);
     const errCorsHeaders = getCorsHeaders(req.headers.get("origin"));
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...errCorsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...errCorsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

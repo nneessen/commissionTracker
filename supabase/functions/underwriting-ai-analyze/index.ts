@@ -2,7 +2,7 @@
 // AI-Powered Underwriting Analysis Edge Function with Decision Tree Integration
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.24.0";
 import {
   evaluateDecisionTree,
