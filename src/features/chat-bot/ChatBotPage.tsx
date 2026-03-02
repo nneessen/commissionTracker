@@ -16,6 +16,7 @@ import {
   WifiOff,
   TrendingUp,
   BarChart3,
+  HeartPulse,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ import {
   type ChatBotAgent,
 } from "./hooks/useChatBot";
 import { useUserActiveAddons } from "@/hooks/subscription";
+import { useImo } from "@/contexts/ImoContext";
 import { useQueryClient } from "@tanstack/react-query";
 // eslint-disable-next-line no-restricted-imports
 import { subscriptionService } from "@/services/subscription";
@@ -37,6 +39,7 @@ import { AppointmentsTab } from "./components/AppointmentsTab";
 import { UsageTab } from "./components/UsageTab";
 import { AllBotsTab } from "./components/AllBotsTab";
 import { AnalyticsTab } from "./components/AnalyticsTab";
+import { MonitoringTab } from "./components/MonitoringTab";
 
 type TabId =
   | "overview"
@@ -45,7 +48,8 @@ type TabId =
   | "conversations"
   | "appointments"
   | "usage"
-  | "analytics";
+  | "analytics"
+  | "monitoring";
 
 // Read initial tab from URL search params (e.g., after Calendly OAuth redirect with ?tab=setup)
 // NOTE: Do NOT call history.replaceState here — it triggers TanStack Router's Transitioner
@@ -59,7 +63,8 @@ function getInitialTab(): TabId {
     tab === "conversations" ||
     tab === "appointments" ||
     tab === "usage" ||
-    tab === "analytics"
+    tab === "analytics" ||
+    tab === "monitoring"
   ) {
     return tab;
   }
@@ -82,6 +87,7 @@ function getWizardDoneKey(agentId: string): string {
 
 export function ChatBotPage() {
   const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
+  const { isSuperAdmin } = useImo();
   const { activeAddons, isLoading: addonsLoading } = useUserActiveAddons();
   const chatBotAddon = activeAddons.find(
     (a) => a.addon?.name === "ai_chat_bot",
@@ -194,6 +200,9 @@ export function ChatBotPage() {
       { id: "usage", label: "Usage", icon: Activity },
       { id: "analytics", label: "My Analytics", icon: BarChart3 },
     );
+    if (isSuperAdmin) {
+      tabs.push({ id: "monitoring", label: "Monitoring", icon: HeartPulse });
+    }
   }
 
   // Status badge
@@ -378,6 +387,7 @@ export function ChatBotPage() {
         {activeTab === "appointments" && <AppointmentsTab />}
         {activeTab === "usage" && <UsageTab />}
         {activeTab === "analytics" && <AnalyticsTab />}
+        {activeTab === "monitoring" && <MonitoringTab />}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
+import type { AgentMonitoringResponse } from "@/types/chat-bot-monitoring";
 
 // ─── Query Key Factory ──────────────────────────────────────────
 
@@ -22,6 +23,7 @@ export const chatBotKeys = {
   calendlyEventTypes: () =>
     [...chatBotKeys.all, "calendly-event-types"] as const,
   calendarHealth: () => [...chatBotKeys.all, "calendar-health"] as const,
+  monitoring: () => [...chatBotKeys.all, "monitoring"] as const,
 };
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -440,6 +442,35 @@ export function useCalendarHealth(enabled = true) {
     },
     enabled,
     staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+// ─── Monitoring ─────────────────────────────────────────────────
+
+export function useAgentMonitoring(enabled = true) {
+  return useQuery({
+    queryKey: chatBotKeys.monitoring(),
+    queryFn: async () => {
+      try {
+        return await chatBotApi<AgentMonitoringResponse>("get_monitoring");
+      } catch (err) {
+        // If the external API doesn't support this endpoint yet, return null
+        if (
+          err instanceof ChatBotApiError &&
+          (err.isNotProvisioned || err.isServiceError)
+        )
+          return null;
+        throw err;
+      }
+    },
+    enabled,
+    refetchInterval: (query) => {
+      // Stop polling if the endpoint isn't available yet
+      if (query.state.data === null) return false;
+      return 30_000;
+    },
+    staleTime: 15_000,
     retry: 1,
   });
 }
