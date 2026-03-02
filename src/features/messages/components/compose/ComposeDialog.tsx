@@ -218,8 +218,6 @@ export function ComposeDialog({
         threadId: replyTo?.threadId,
         replyToMessageId: replyTo?.messageId,
         scheduledFor: scheduledDate,
-        trackOpens: true,
-        trackClicks: true,
         // Gmail is primary provider when connected, Mailgun is fallback
         source: "owner",
         fromOverride: undefined,

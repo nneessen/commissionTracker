@@ -360,8 +360,6 @@ export const pipelineAutomationService = {
                   to: recipients.emails,
                   subject: resolvedSubject,
                   bodyHtml: resolvedBody,
-                  trackOpens: false,
-                  trackClicks: false,
                   source: "workflow",
                 });
                 if (!result.success) {

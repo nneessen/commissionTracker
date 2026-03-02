@@ -37,8 +37,6 @@ export interface SendEmailParams {
   trainingDocuments?: TrainingDocumentAttachment[]; // Training documents to attach
   scheduledFor?: Date;
   signatureId?: string;
-  trackOpens?: boolean;
-  trackClicks?: boolean;
   source?: EmailSource; // Determines which domain to use
   fromOverride?: string; // Override from address (for admins)
 }
@@ -144,8 +142,6 @@ export async function sendEmail(
     trainingDocuments,
     scheduledFor,
     signatureId,
-    trackOpens = true,
-    trackClicks = true,
     source = "personal",
     fromOverride,
   } = params;
@@ -274,18 +270,6 @@ export async function sendEmail(
           parentMessage.message_id_header,
         ];
       }
-    }
-
-    // Add tracking pixel if enabled
-    if (trackOpens) {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none" />`;
-      finalBodyHtml = `${finalBodyHtml}${trackingPixel}`;
-    }
-
-    // Rewrite links for click tracking if enabled
-    if (trackClicks) {
-      finalBodyHtml = rewriteLinksForTracking(finalBodyHtml, trackingId);
     }
 
     const fromName =
@@ -755,15 +739,6 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-function rewriteLinksForTracking(html: string, trackingId: string): string {
-  // Simple link rewriting - in production would use proper HTML parsing
-  const baseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-  return html.replace(/href="(https?:\/\/[^"]+)"/g, (_match, url) => {
-    const trackingUrl = `${baseUrl}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
-    return `href="${trackingUrl}"`;
-  });
-}
-
 // =========================================================================
 // Gmail Provider: Send email via Gmail API
 // =========================================================================
@@ -782,8 +757,6 @@ async function sendViaGmail(
     threadId,
     signatureId,
     scheduledFor,
-    trackOpens = true,
-    trackClicks = true,
   } = params;
 
   try {
@@ -846,18 +819,6 @@ async function sendViaGmail(
         // Use Gmail thread ID for threading in Gmail
         gmailThreadId = parentMessage.gmail_thread_id;
       }
-    }
-
-    // Add tracking pixel if enabled
-    if (trackOpens) {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none" />`;
-      finalBodyHtml = `${finalBodyHtml}${trackingPixel}`;
-    }
-
-    // Rewrite links for click tracking if enabled
-    if (trackClicks) {
-      finalBodyHtml = rewriteLinksForTracking(finalBodyHtml, trackingId);
     }
 
     // Handle scheduled emails (Gmail doesn't support scheduling natively, so we use our system)
