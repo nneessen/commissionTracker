@@ -161,6 +161,21 @@ serve(async (req) => {
         );
         const { payload, status, errorMessage, serviceDown } = unwrap(res);
         if (errorMessage) {
+          // If the external platform no longer recognises this agent (404),
+          // mark the local DB record as "failed" so re-provisioning works.
+          if (res.status === 404) {
+            await supabase
+              .from("chat_bot_agents")
+              .update({
+                provisioning_status: "failed",
+                error_message: "Agent not found on external platform",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", user.id);
+            console.log(
+              `[chat-bot-api] Marked agent ${agentId} as failed (404 from external API) for user ${user.id}`,
+            );
+          }
           return jsonResponse(
             { error: errorMessage, ...(serviceDown && { serviceDown: true }) },
             status,
