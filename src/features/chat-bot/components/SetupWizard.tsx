@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Loader2,
   Rocket,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +21,13 @@ import {
   type ChatBotAgent,
   useChatBotCloseStatus,
   useChatBotCalendlyStatus,
+  useChatBotGoogleStatus,
   useConnectClose,
   useDisconnectClose,
   useGetCalendlyAuthUrl,
   useDisconnectCalendly,
+  useGetGoogleAuthUrl,
+  useDisconnectGoogle,
   useUpdateBotConfig,
 } from "../hooks/useChatBot";
 
@@ -31,7 +35,7 @@ import {
 
 const STEPS = [
   { id: 1, title: "Connect Close" },
-  { id: 2, title: "Connect Calendly" },
+  { id: 2, title: "Connect Calendar" },
   { id: 3, title: "Lead Sources" },
   { id: 4, title: "Lead Statuses" },
   { id: 5, title: "Done" },
@@ -66,13 +70,24 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
     useChatBotCloseStatus();
   const { data: calendlyStatus, isLoading: calendlyLoading } =
     useChatBotCalendlyStatus();
+  const { data: googleStatus, isLoading: googleLoading } =
+    useChatBotGoogleStatus();
 
   // Mutations
   const connectClose = useConnectClose();
   const disconnectClose = useDisconnectClose();
   const getCalendlyAuth = useGetCalendlyAuthUrl();
   const disconnectCalendly = useDisconnectCalendly();
+  const getGoogleAuth = useGetGoogleAuthUrl();
+  const disconnectGoogle = useDisconnectGoogle();
   const updateConfig = useUpdateBotConfig();
+
+  // Derive which calendar provider is connected
+  const calendarProvider: "google" | "calendly" | null = googleStatus?.connected
+    ? "google"
+    : calendlyStatus?.connected
+      ? "calendly"
+      : null;
 
   const handleCalendlyConnect = async () => {
     const returnUrl = new URL(window.location.href);
@@ -84,8 +99,25 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
       } else {
         toast.error("Failed to get Calendly auth URL — no URL returned.");
       }
-    } catch (err) {
-      console.error("[Calendly] Auth URL error:", err);
+    } catch {
+      // Error toast handled by hook
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.set("tab", "setup");
+    try {
+      const result = await getGoogleAuth.mutateAsync(returnUrl.toString());
+      if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        toast.error(
+          "Failed to get Google Calendar auth URL — no URL returned.",
+        );
+      }
+    } catch {
+      // Error toast handled by hook
     }
   };
 
@@ -121,7 +153,12 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
         case 1:
           return closeStatus?.connected || false;
         case 2:
-          return calendlyStatus?.connected || false;
+          return (
+            calendlyStatus?.connected ||
+            false ||
+            googleStatus?.connected ||
+            false
+          );
         case 3:
           return sourcesSaved && leadSources.length > 0;
         case 4:
@@ -135,6 +172,7 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
     [
       closeStatus,
       calendlyStatus,
+      googleStatus,
       sourcesSaved,
       statusesSaved,
       leadSources,
@@ -234,41 +272,98 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
           </div>
         )}
 
-        {/* Step 2: Connect Calendly */}
+        {/* Step 2: Connect Calendar (Calendly or Google Calendar) */}
         {currentStep === 2 && (
           <div className="space-y-3">
             <div>
               <h3 className="text-[12px] font-semibold text-zinc-900 dark:text-zinc-100">
-                Connect your Calendly
+                Connect your calendar
               </h3>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
-                The bot checks your real Calendly availability to offer
-                appointment times, and books events when leads confirm. Requires
-                a Calendly Standard plan or above.
+                The bot checks your real calendar availability to offer
+                appointment times, and books events when leads confirm. Connect
+                either Calendly or Google Calendar.
               </p>
             </div>
-            <ConnectionCard
-              title="Calendly"
-              icon={
-                <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center">
-                  <span className="text-[8px] font-bold text-white">CAL</span>
-                </div>
-              }
-              connected={calendlyStatus?.connected || false}
-              statusLabel={
-                calendlyStatus?.connected
-                  ? calendlyStatus.userName
+
+            {calendarProvider === null ? (
+              <>
+                <ConnectionCard
+                  title="Calendly"
+                  icon={
+                    <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center">
+                      <span className="text-[8px] font-bold text-white">
+                        CAL
+                      </span>
+                    </div>
+                  }
+                  connected={false}
+                  isLoading={calendlyLoading}
+                  onOAuthConnect={handleCalendlyConnect}
+                  oauthLoading={getCalendlyAuth.isPending}
+                  oauthLabel="Connect Calendly"
+                  onDisconnect={() => disconnectCalendly.mutate()}
+                  disconnectLoading={disconnectCalendly.isPending}
+                />
+                <ConnectionCard
+                  title="Google Calendar"
+                  icon={
+                    <div className="w-6 h-6 rounded bg-red-500 flex items-center justify-center">
+                      <Calendar className="h-3 w-3 text-white" />
+                    </div>
+                  }
+                  connected={false}
+                  isLoading={googleLoading}
+                  onOAuthConnect={handleGoogleConnect}
+                  oauthLoading={getGoogleAuth.isPending}
+                  oauthLabel="Connect Google Calendar"
+                  onDisconnect={() => disconnectGoogle.mutate()}
+                  disconnectLoading={disconnectGoogle.isPending}
+                />
+              </>
+            ) : calendarProvider === "calendly" ? (
+              <ConnectionCard
+                title="Calendly"
+                icon={
+                  <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-white">CAL</span>
+                  </div>
+                }
+                connected={true}
+                statusLabel={
+                  calendlyStatus?.userName
                     ? `${calendlyStatus.userName} (${calendlyStatus.userEmail})`
                     : "Connected to Calendly"
-                  : undefined
-              }
-              isLoading={calendlyLoading}
-              onOAuthConnect={handleCalendlyConnect}
-              oauthLoading={getCalendlyAuth.isPending}
-              oauthLabel="Connect Calendly"
-              onDisconnect={() => disconnectCalendly.mutate()}
-              disconnectLoading={disconnectCalendly.isPending}
-            />
+                }
+                isLoading={calendlyLoading}
+                onOAuthConnect={handleCalendlyConnect}
+                oauthLoading={getCalendlyAuth.isPending}
+                oauthLabel="Connect Calendly"
+                onDisconnect={() => disconnectCalendly.mutate()}
+                disconnectLoading={disconnectCalendly.isPending}
+              />
+            ) : (
+              <ConnectionCard
+                title="Google Calendar"
+                icon={
+                  <div className="w-6 h-6 rounded bg-red-500 flex items-center justify-center">
+                    <Calendar className="h-3 w-3 text-white" />
+                  </div>
+                }
+                connected={true}
+                statusLabel={
+                  googleStatus?.userEmail
+                    ? `Connected as ${googleStatus.userEmail}`
+                    : "Connected to Google Calendar"
+                }
+                isLoading={googleLoading}
+                onOAuthConnect={handleGoogleConnect}
+                oauthLoading={getGoogleAuth.isPending}
+                oauthLabel="Connect Google Calendar"
+                onDisconnect={() => disconnectGoogle.mutate()}
+                disconnectLoading={disconnectGoogle.isPending}
+              />
+            )}
           </div>
         )}
 
@@ -390,8 +485,12 @@ export function SetupWizard({ agent, onComplete }: SetupWizardProps) {
               <div className="flex items-center gap-2 text-[10px]">
                 <Check className="h-3 w-3 text-emerald-500" />
                 <span className="text-zinc-600 dark:text-zinc-400">
-                  Calendly:{" "}
-                  {calendlyStatus?.connected ? "Connected" : "Not connected"}
+                  Calendar:{" "}
+                  {calendarProvider === "calendly"
+                    ? "Calendly connected"
+                    : calendarProvider === "google"
+                      ? "Google Calendar connected"
+                      : "Not connected"}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[10px]">

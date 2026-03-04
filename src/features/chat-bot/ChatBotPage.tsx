@@ -77,11 +77,15 @@ function getInitialTab(): TabId {
 
 function isSetupComplete(agent: ChatBotAgent): boolean {
   const closeConnected = agent.connections?.close?.connected || false;
-  const calendlyConnected = agent.connections?.calendly?.connected || false;
+  const calendarConnected =
+    agent.connections?.calendly?.connected ||
+    false ||
+    agent.connections?.google?.connected ||
+    false;
   const hasLeadSources = (agent.autoOutreachLeadSources?.length ?? 0) > 0;
   const hasLeadStatuses = (agent.allowedLeadStatuses?.length ?? 0) > 0;
   return (
-    closeConnected && calendlyConnected && hasLeadSources && hasLeadStatuses
+    closeConnected && calendarConnected && hasLeadSources && hasLeadStatuses
   );
 }
 
@@ -137,9 +141,9 @@ export function ChatBotPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("calendar") === "connected") {
-      toast.success("Calendly connected successfully!");
+      toast.success("Calendar connected successfully!");
     } else if (params.get("error")) {
-      toast.error(`Calendly connection failed: ${params.get("error")}`);
+      toast.error(`Calendar connection failed: ${params.get("error")}`);
     }
     if (params.has("tab") || params.has("calendar") || params.has("error")) {
       const url = new URL(window.location.href);

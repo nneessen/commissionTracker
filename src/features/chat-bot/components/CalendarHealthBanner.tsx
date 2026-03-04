@@ -48,7 +48,9 @@ export function CalendarHealthBanner({
           Unable to check calendar configuration
         </AlertTitle>
         <AlertDescription className="text-[10px] opacity-80 mt-0.5 flex items-center gap-2">
-          <span>We couldn&apos;t verify your Calendly setup right now.</span>
+          <span>
+            We couldn&apos;t verify your calendar configuration right now.
+          </span>
           <Button
             variant="ghost"
             size="sm"

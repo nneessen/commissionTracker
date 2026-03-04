@@ -1,7 +1,7 @@
 // src/features/chat-bot/components/SetupTab.tsx
-// Bot configuration + Close CRM / Calendly connection management + lead source/status config
+// Bot configuration + Close CRM / Calendly / Google Calendar connection management + lead source/status config
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Globe,
   Power,
@@ -12,6 +12,7 @@ import {
   Calendar,
   AlertTriangle,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +34,14 @@ import {
   useChatBotCloseStatus,
   useChatBotCalendlyStatus,
   useChatBotCalendlyEventTypes,
+  useChatBotGoogleStatus,
   useConnectClose,
   useDisconnectClose,
   useGetCalendlyAuthUrl,
   useDisconnectCalendly,
+  useGetGoogleAuthUrl,
+  useDisconnectGoogle,
+  useUpdateBusinessHours,
   useUpdateBotConfig,
 } from "../hooks/useChatBot";
 import { CalendarHealthBanner } from "./CalendarHealthBanner";
@@ -52,12 +57,16 @@ const TIMEZONES = [
   "Pacific/Honolulu",
 ];
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 export function SetupTab() {
   const { data: agent } = useChatBotAgent();
   const { data: closeStatus, isLoading: closeLoading } =
     useChatBotCloseStatus();
   const { data: calendlyStatus, isLoading: calendlyLoading } =
     useChatBotCalendlyStatus();
+  const { data: googleStatus, isLoading: googleLoading } =
+    useChatBotGoogleStatus();
   const {
     data: eventTypes,
     isLoading: eventTypesLoading,
@@ -70,7 +79,17 @@ export function SetupTab() {
   const disconnectClose = useDisconnectClose();
   const getCalendlyAuth = useGetCalendlyAuthUrl();
   const disconnectCalendly = useDisconnectCalendly();
+  const getGoogleAuth = useGetGoogleAuthUrl();
+  const disconnectGoogle = useDisconnectGoogle();
+  const updateBusinessHours = useUpdateBusinessHours();
   const updateConfig = useUpdateBotConfig();
+
+  // Derive which calendar provider is connected
+  const calendarProvider: "google" | "calendly" | null = googleStatus?.connected
+    ? "google"
+    : calendlyStatus?.connected
+      ? "calendly"
+      : null;
 
   // Local state for lead source/status editing
   const [leadSources, setLeadSources] = useState<string[] | null>(null);
@@ -82,6 +101,22 @@ export function SetupTab() {
   >(null);
   const [eventTypeDirty, setEventTypeDirty] = useState(false);
 
+  // Business hours local state
+  const [bhDays, setBhDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [bhStart, setBhStart] = useState("09:00");
+  const [bhEnd, setBhEnd] = useState("17:00");
+  const [bhDirty, setBhDirty] = useState(false);
+
+  // Initialize business hours from agent data
+  useEffect(() => {
+    if (agent?.businessHours) {
+      setBhDays(agent.businessHours.days);
+      setBhStart(agent.businessHours.startTime);
+      setBhEnd(agent.businessHours.endTime);
+      setBhDirty(false);
+    }
+  }, [agent?.businessHours]);
+
   // Resolve displayed values: local edits override agent data
   const displayedSources = leadSources ?? agent?.autoOutreachLeadSources ?? [];
   const displayedStatuses = leadStatuses ?? agent?.allowedLeadStatuses ?? [];
@@ -91,15 +126,30 @@ export function SetupTab() {
     returnUrl.searchParams.set("tab", "setup");
     try {
       const result = await getCalendlyAuth.mutateAsync(returnUrl.toString());
-      console.log("[Calendly] Auth URL response:", result);
       if (result?.url) {
         window.location.href = result.url;
       } else {
-        console.error("[Calendly] No URL in response:", result);
         toast.error("Failed to get Calendly auth URL — no URL returned.");
       }
-    } catch (err) {
-      console.error("[Calendly] Auth URL error:", err);
+    } catch {
+      // Error toast handled by hook
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.set("tab", "setup");
+    try {
+      const result = await getGoogleAuth.mutateAsync(returnUrl.toString());
+      if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        toast.error(
+          "Failed to get Google Calendar auth URL — no URL returned.",
+        );
+      }
+    } catch {
+      // Error toast handled by hook
     }
   };
 
@@ -132,6 +182,34 @@ export function SetupTab() {
         },
       },
     );
+  };
+
+  const handleSaveBusinessHours = () => {
+    if (bhStart >= bhEnd) {
+      toast.error("Start time must be before end time.");
+      return;
+    }
+    if (bhDays.length === 0) {
+      toast.error("Select at least one day.");
+      return;
+    }
+    updateBusinessHours.mutate(
+      { days: bhDays, startTime: bhStart, endTime: bhEnd },
+      {
+        onSuccess: () => {
+          setBhDirty(false);
+        },
+      },
+    );
+  };
+
+  const toggleDay = (day: number) => {
+    setBhDays((prev) =>
+      prev.includes(day)
+        ? prev.filter((d) => d !== day)
+        : [...prev, day].sort(),
+    );
+    setBhDirty(true);
   };
 
   const displayedEventTypeMappings =
@@ -264,35 +342,189 @@ export function SetupTab() {
         disconnectLoading={disconnectClose.isPending}
       />
 
-      {/* Calendly Connection */}
-      <ConnectionCard
-        title="Calendly"
-        icon={
-          <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center">
-            <span className="text-[8px] font-bold text-white">CAL</span>
-          </div>
-        }
-        connected={calendlyStatus?.connected || false}
-        statusLabel={
-          calendlyStatus?.connected
-            ? calendlyStatus.userName
+      {/* Calendar Connections — show both when none connected, single when one is */}
+      {calendarProvider === null ? (
+        <>
+          {/* Calendly */}
+          <ConnectionCard
+            title="Calendly"
+            icon={
+              <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center">
+                <span className="text-[8px] font-bold text-white">CAL</span>
+              </div>
+            }
+            connected={false}
+            isLoading={calendlyLoading}
+            onOAuthConnect={handleCalendlyConnect}
+            oauthLoading={getCalendlyAuth.isPending}
+            oauthLabel="Connect Calendly"
+            onDisconnect={() => disconnectCalendly.mutate()}
+            disconnectLoading={disconnectCalendly.isPending}
+          />
+
+          {/* Google Calendar */}
+          <ConnectionCard
+            title="Google Calendar"
+            icon={
+              <div className="w-6 h-6 rounded bg-red-500 flex items-center justify-center">
+                <Calendar className="h-3 w-3 text-white" />
+              </div>
+            }
+            connected={false}
+            isLoading={googleLoading}
+            onOAuthConnect={handleGoogleConnect}
+            oauthLoading={getGoogleAuth.isPending}
+            oauthLabel="Connect Google Calendar"
+            onDisconnect={() => disconnectGoogle.mutate()}
+            disconnectLoading={disconnectGoogle.isPending}
+          />
+        </>
+      ) : calendarProvider === "calendly" ? (
+        <ConnectionCard
+          title="Calendly"
+          icon={
+            <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center">
+              <span className="text-[8px] font-bold text-white">CAL</span>
+            </div>
+          }
+          connected={true}
+          statusLabel={
+            calendlyStatus?.userName
               ? `${calendlyStatus.userName} (${calendlyStatus.userEmail})`
               : "Connected to Calendly"
-            : undefined
-        }
-        isLoading={calendlyLoading}
-        onOAuthConnect={handleCalendlyConnect}
-        oauthLoading={getCalendlyAuth.isPending}
-        oauthLabel="Connect Calendly"
-        onDisconnect={() => disconnectCalendly.mutate()}
-        disconnectLoading={disconnectCalendly.isPending}
-      />
+          }
+          isLoading={calendlyLoading}
+          onOAuthConnect={handleCalendlyConnect}
+          oauthLoading={getCalendlyAuth.isPending}
+          oauthLabel="Connect Calendly"
+          onDisconnect={() => disconnectCalendly.mutate()}
+          disconnectLoading={disconnectCalendly.isPending}
+        />
+      ) : (
+        <ConnectionCard
+          title="Google Calendar"
+          icon={
+            <div className="w-6 h-6 rounded bg-red-500 flex items-center justify-center">
+              <Calendar className="h-3 w-3 text-white" />
+            </div>
+          }
+          connected={true}
+          statusLabel={
+            googleStatus?.userEmail
+              ? `Connected as ${googleStatus.userEmail}`
+              : "Connected to Google Calendar"
+          }
+          isLoading={googleLoading}
+          onOAuthConnect={handleGoogleConnect}
+          oauthLoading={getGoogleAuth.isPending}
+          oauthLabel="Connect Google Calendar"
+          onDisconnect={() => disconnectGoogle.mutate()}
+          disconnectLoading={disconnectGoogle.isPending}
+        />
+      )}
 
       {/* Calendar Health Check */}
-      <CalendarHealthBanner enabled={calendlyStatus?.connected || false} />
+      <CalendarHealthBanner enabled={calendarProvider !== null} />
 
-      {/* Lead Source → Event Type Mappings */}
-      {calendlyStatus?.connected && (
+      {/* Business Hours (Google Calendar only) */}
+      {calendarProvider === "google" && (
+        <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Clock className="h-3 w-3 text-zinc-400" />
+            <h2 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Business Hours
+            </h2>
+          </div>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-3">
+            Set available days and times for appointment scheduling via Google
+            Calendar.
+          </p>
+
+          {/* Day toggles */}
+          <div className="flex items-center gap-1 mb-3">
+            {DAY_LABELS.map((label, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => toggleDay(i)}
+                className={cn(
+                  "h-6 px-2 text-[10px] font-medium rounded-full border transition-colors",
+                  bhDays.includes(i)
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-400",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Time range */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                From
+              </span>
+              <input
+                type="time"
+                value={bhStart}
+                onChange={(e) => {
+                  setBhStart(e.target.value);
+                  setBhDirty(true);
+                }}
+                className="h-7 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 text-[11px] text-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                To
+              </span>
+              <input
+                type="time"
+                value={bhEnd}
+                onChange={(e) => {
+                  setBhEnd(e.target.value);
+                  setBhDirty(true);
+                }}
+                className="h-7 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 text-[11px] text-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+          </div>
+
+          {/* Validation error */}
+          {bhStart >= bhEnd && bhDirty && (
+            <p className="text-[10px] text-red-500 mt-1.5">
+              Start time must be before end time.
+            </p>
+          )}
+
+          {/* Save button */}
+          {bhDirty && (
+            <div className="flex items-center gap-2 pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800">
+              <Button
+                size="sm"
+                className="h-7 text-[10px]"
+                disabled={
+                  updateBusinessHours.isPending ||
+                  bhStart >= bhEnd ||
+                  bhDays.length === 0
+                }
+                onClick={handleSaveBusinessHours}
+              >
+                {updateBusinessHours.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Check className="h-3 w-3 mr-1" />
+                )}
+                Save Business Hours
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lead Source → Event Type Mappings (Calendly only) */}
+      {calendarProvider === "calendly" && (
         <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
           <div className="flex items-center gap-1.5 mb-2">
             <Calendar className="h-3 w-3 text-zinc-400" />

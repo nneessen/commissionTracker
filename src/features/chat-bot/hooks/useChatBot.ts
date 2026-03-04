@@ -27,6 +27,7 @@ export const chatBotKeys = {
   calendlyEventTypes: () =>
     [...chatBotKeys.all, "calendly-event-types"] as const,
   calendarHealth: () => [...chatBotKeys.all, "calendar-health"] as const,
+  googleStatus: () => [...chatBotKeys.all, "google-status"] as const,
   monitoring: () => [...chatBotKeys.all, "monitoring"] as const,
 };
 
@@ -52,9 +53,11 @@ export interface ChatBotAgent {
   specialties?: string[] | null;
   website?: string | null;
   location?: string | null;
+  businessHours?: { days: number[]; startTime: string; endTime: string } | null;
   connections?: {
     close?: { connected: boolean; orgName?: string };
     calendly?: { connected: boolean; eventType?: string };
+    google?: { connected: boolean; calendarId?: string };
   };
 }
 
@@ -336,6 +339,72 @@ export function useChatBotCalendlyEventTypes(enabled = true) {
     enabled,
     staleTime: 60_000,
     retry: 1,
+  });
+}
+
+// ─── Google Calendar ────────────────────────────────────────────
+
+export function useChatBotGoogleStatus() {
+  return useQuery({
+    queryKey: chatBotKeys.googleStatus(),
+    queryFn: () =>
+      chatBotApi<{
+        connected: boolean;
+        calendarId?: string;
+        userEmail?: string;
+      }>("get_google_status"),
+    staleTime: 30_000,
+  });
+}
+
+export function useGetGoogleAuthUrl() {
+  return useMutation({
+    mutationFn: (returnUrl: string) =>
+      chatBotApi<{ url: string }>("get_google_auth_url", { returnUrl }),
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to get Google auth URL.");
+    },
+  });
+}
+
+export function useDisconnectGoogle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => chatBotApi<{ success: boolean }>("disconnect_google"),
+    onSuccess: () => {
+      toast.success("Google Calendar disconnected.");
+      queryClient.invalidateQueries({ queryKey: chatBotKeys.agent() });
+      queryClient.invalidateQueries({
+        queryKey: chatBotKeys.googleStatus(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: chatBotKeys.calendarHealth(),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to disconnect Google Calendar.");
+    },
+  });
+}
+
+export function useUpdateBusinessHours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (businessHours: {
+      days: number[];
+      startTime: string;
+      endTime: string;
+    }) =>
+      chatBotApi<{ success: boolean }>("update_business_hours", {
+        businessHours,
+      }),
+    onSuccess: () => {
+      toast.success("Business hours updated.");
+      queryClient.invalidateQueries({ queryKey: chatBotKeys.agent() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update business hours.");
+    },
   });
 }
 

@@ -186,6 +186,7 @@ serve(async (req) => {
         const agentData = payload.agent || {};
         const closeConn = payload.connections?.close;
         const calendlyConn = payload.connections?.calendly;
+        const googleConn = payload.connections?.google;
 
         return jsonResponse({
           id: agentData.id,
@@ -208,6 +209,7 @@ serve(async (req) => {
           specialties: agentData.specialties || null,
           website: agentData.website || null,
           location: agentData.location || null,
+          businessHours: agentData.businessHours || null,
           connections: {
             close: closeConn
               ? { connected: true, orgName: closeConn.orgId || undefined }
@@ -216,6 +218,12 @@ serve(async (req) => {
               ? {
                   connected: true,
                   eventType: calendlyConn.calendarId || undefined,
+                }
+              : { connected: false },
+            google: googleConn
+              ? {
+                  connected: true,
+                  calendarId: googleConn.calendarId || undefined,
                 }
               : { connected: false },
           },
@@ -338,6 +346,55 @@ serve(async (req) => {
         const res = await callChatBotApi(
           "GET",
           `/api/external/agents/${agentId}/calendar-health`,
+        );
+        return sendResult(res);
+      }
+
+      // ──────────────────────────────────────────────
+      // GOOGLE CALENDAR CONNECTION
+      // ──────────────────────────────────────────────
+      case "get_google_auth_url": {
+        const returnUrl = params.returnUrl || "";
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/agents/${agentId}/google/authorize?returnUrl=${encodeURIComponent(returnUrl)}`,
+        );
+        const { payload, status, errorMessage } = unwrap(res);
+        if (errorMessage) {
+          return jsonResponse({ error: errorMessage }, status);
+        }
+        return jsonResponse({ url: payload.url });
+      }
+
+      case "get_google_status": {
+        const res = await callChatBotApi(
+          "GET",
+          `/api/external/agents/${agentId}/connections/google`,
+        );
+        if (!res.ok) {
+          return jsonResponse({ connected: false });
+        }
+        const { payload } = unwrap(res);
+        return jsonResponse({
+          connected: true,
+          calendarId: payload?.calendarId || undefined,
+          userEmail: payload?.userEmail || undefined,
+        });
+      }
+
+      case "disconnect_google": {
+        const res = await callChatBotApi(
+          "DELETE",
+          `/api/external/agents/${agentId}/connections/google`,
+        );
+        return sendResult(res);
+      }
+
+      case "update_business_hours": {
+        const res = await callChatBotApi(
+          "PATCH",
+          `/api/external/agents/${agentId}`,
+          { businessHours: params.businessHours },
         );
         return sendResult(res);
       }
