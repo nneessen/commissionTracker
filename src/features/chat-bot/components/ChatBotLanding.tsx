@@ -253,37 +253,51 @@ export function ChatBotLanding({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.15),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(139,92,246,0.1),transparent_50%)]" />
         <div className="relative px-6 py-5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
-              <Bot className="h-5 w-5 text-white" />
+          <div className="grid grid-cols-[1fr_auto] items-center gap-8">
+            {/* Left column — text content */}
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white tracking-tight">
+                  AI-Powered SMS Appointment Setter
+                </h1>
+                <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed max-w-lg">
+                  Responds to inbound leads instantly, has real conversations,
+                  and books appointments on your calendar. Works 24/7 so you
+                  never miss a lead.
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-white tracking-tight">
-                AI-Powered SMS Appointment Setter
-              </h1>
-              <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed max-w-lg">
-                Responds to inbound leads instantly, has real conversations, and
-                books appointments on your calendar. Works 24/7 so you never
-                miss a lead.
-              </p>
-              <div className="flex items-center gap-3 mt-3">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/80 rounded-md border border-zinc-700/50">
-                  <CloseLogo className="h-3 w-auto text-zinc-300" />
+
+            {/* Right column — integration logos */}
+            <div className="flex items-center gap-5">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center shadow-md shadow-black/20">
+                  <CloseLogo className="h-5 w-auto text-white" />
                 </div>
-                <span className="text-[10px] text-zinc-500">+</span>
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/80 rounded-md border border-zinc-700/50">
-                  <CalendlyLogo className="h-4 w-4" />
-                  <span className="text-[10px] text-zinc-300 font-medium">
-                    Calendly
-                  </span>
+                <span className="text-[9px] text-zinc-400 font-medium">
+                  Close CRM
+                </span>
+              </div>
+              <span className="text-xs text-zinc-600 font-medium">+</span>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center shadow-md shadow-black/20">
+                  <CalendlyLogo className="h-8 w-8" />
                 </div>
-                <span className="text-[10px] text-zinc-500">/</span>
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/80 rounded-md border border-zinc-700/50">
-                  <GoogleCalendarLogo className="h-4 w-4" />
-                  <span className="text-[10px] text-zinc-300 font-medium">
-                    Google Cal
-                  </span>
+                <span className="text-[9px] text-zinc-400 font-medium">
+                  Calendly
+                </span>
+              </div>
+              <span className="text-xs text-zinc-600 font-medium">/</span>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center shadow-md shadow-black/20">
+                  <GoogleCalendarLogo className="h-8 w-8" />
                 </div>
+                <span className="text-[9px] text-zinc-400 font-medium">
+                  Google Cal
+                </span>
               </div>
             </div>
           </div>
