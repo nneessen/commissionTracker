@@ -27,10 +27,12 @@ function getBotStatusLevel(botStatus: {
   botEnabled: boolean;
   closeConnected: boolean;
   calendlyConnected: boolean;
+  googleConnected: boolean;
 }): BotStatusLevel {
   if (!botStatus.isActive || !botStatus.botEnabled) return "red";
-  if (!botStatus.closeConnected || !botStatus.calendlyConnected)
-    return "yellow";
+  const calendarConnected =
+    botStatus.calendlyConnected || botStatus.googleConnected;
+  if (!botStatus.closeConnected || !calendarConnected) return "yellow";
   return "green";
 }
 
@@ -141,8 +143,15 @@ export function MonitoringTab() {
             active={monitoring.botStatus.closeConnected}
           />
           <StatusPill
-            label="Calendly"
-            active={monitoring.botStatus.calendlyConnected}
+            label={
+              monitoring.botStatus.calendarProvider === "google"
+                ? "Google Cal"
+                : "Calendly"
+            }
+            active={
+              monitoring.botStatus.calendlyConnected ||
+              monitoring.botStatus.googleConnected
+            }
           />
           <StatusPill
             label="Follow-Up"

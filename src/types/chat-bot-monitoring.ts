@@ -18,6 +18,8 @@ export interface AgentMonitoringResponse {
     botEnabled: boolean;
     closeConnected: boolean;
     calendlyConnected: boolean;
+    googleConnected: boolean;
+    calendarProvider: "google" | "calendly" | null;
     followUpEnabled: boolean;
   };
   activity24h: ActivityWindow;

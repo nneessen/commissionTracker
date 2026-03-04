@@ -124,6 +124,39 @@ function CalendlyLogo({ className }: { className?: string }) {
   );
 }
 
+// ─── Google Calendar Logo ────────────────────────────────────────
+
+function GoogleCalendarLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path d="M152.637 47.363H47.363v105.274h105.274V47.363z" fill="#fff" />
+      <path d="M152.637 200L200 152.637h-47.363V200z" fill="#EA4335" />
+      <path d="M200 47.363h-47.363v105.274H200V47.363z" fill="#FBBC04" />
+      <path
+        d="M152.637 152.637H47.363V200l52.637-26.318L152.637 200v-47.363z"
+        fill="#34A853"
+      />
+      <path d="M0 152.637V200h47.363v-47.363H0z" fill="#188038" />
+      <path d="M47.363 47.363V0L0 47.363h47.363z" fill="#1967D2" />
+      <path d="M47.363 0v47.363h105.274L100 21.181 47.363 0z" fill="#4285F4" />
+      <path d="M0 47.363v105.274h47.363V47.363H0z" fill="#4285F4" />
+      <path
+        d="M78.438 132.227c-4.675-3.152-7.903-7.754-9.672-13.792l10.834-4.463c1.04 3.96 2.807 7.033 5.301 9.22 2.494 2.186 5.507 3.265 9.013 3.265 3.59 0 6.679-1.147 9.268-3.44 2.59-2.294 3.884-5.178 3.884-8.652 0-3.558-1.352-6.49-4.057-8.8-2.704-2.31-6.084-3.464-10.138-3.464h-6.283v-10.72h5.65c3.59 0 6.603-1.03 9.04-3.09 2.437-2.06 3.655-4.83 3.655-8.31 0-3.134-1.11-5.656-3.33-7.57-2.22-1.912-5.022-2.868-8.406-2.868-3.3 0-5.93.918-7.896 2.752-1.965 1.835-3.384 4.076-4.21 6.627L70.364 74.91c1.36-4.326 3.963-8.116 7.965-11.228 3.894-3.037 8.915-4.622 14.674-4.622 4.39 0 8.368.878 11.894 2.636 3.527 1.758 6.297 4.21 8.31 7.36 2.013 3.148 3.02 6.674 3.02 10.578 0 3.988-.95 7.37-2.848 10.147-1.898 2.777-4.23 4.87-6.997 6.277v.693c3.558 1.495 6.413 3.808 8.637 6.99 2.224 3.182 3.323 6.92 3.323 11.17 0 4.25-1.098 8.076-3.295 11.477-2.196 3.4-5.252 6.075-9.168 8.023-3.916 1.95-8.348 2.923-13.296 2.923-5.684 0-10.827-1.576-15.502-4.728l-.643-.355z"
+        fill="#4285F4"
+      />
+      <path
+        d="M141.426 72.082l-11.903 8.598-5.997-9.1 20.964-15.12h8.252v78.27h-11.316V72.082z"
+        fill="#4285F4"
+      />
+    </svg>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────
 
 interface ChatBotLandingProps {
@@ -242,6 +275,13 @@ export function ChatBotLanding({
                   <CalendlyLogo className="h-4 w-4" />
                   <span className="text-[10px] text-zinc-300 font-medium">
                     Calendly
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500">/</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/80 rounded-md border border-zinc-700/50">
+                  <GoogleCalendarLogo className="h-4 w-4" />
+                  <span className="text-[10px] text-zinc-300 font-medium">
+                    Google Cal
                   </span>
                 </div>
               </div>
@@ -566,7 +606,7 @@ export function ChatBotLanding({
               icon: Calendar,
               color: "emerald",
               title: "Appointment Booked",
-              desc: "A Calendly event is created on your calendar and both you and the lead are notified",
+              desc: "An event is created on your calendar and both you and the lead are notified",
               bg: "bg-emerald-50 dark:bg-emerald-950/30",
             },
           ].map((item) => (
@@ -620,7 +660,7 @@ export function ChatBotLanding({
             {
               icon: Calendar,
               title: "Smart Scheduling",
-              desc: "Bot checks your real Calendly availability and offers times that work for both of you",
+              desc: "Bot checks your real calendar availability and offers times that work for both of you",
             },
             {
               icon: Globe,
@@ -681,10 +721,9 @@ export function ChatBotLanding({
             </span>{" "}
             and{" "}
             <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-              Calendly
+              Calendly or Google Calendar
             </span>
-            . Google Calendar support is coming next, followed by additional
-            CRMs. Make sure you have the following ready:
+            . Make sure you have the following ready:
           </p>
           <div className="space-y-2">
             <div className="flex items-start gap-2 p-2.5 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200/50 dark:border-zinc-800/50">
@@ -706,10 +745,10 @@ export function ChatBotLanding({
               <Calendar className="h-3.5 w-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
-                  Calendly Account
+                  Calendar Account
                 </p>
                 <ul className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 space-y-0.5">
-                  <li>Standard plan or above (required for scheduling API)</li>
+                  <li>Calendly (Standard+) or Google Calendar</li>
                   <li>At least one event type configured</li>
                 </ul>
               </div>
@@ -744,9 +783,9 @@ export function ChatBotLanding({
           <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-3">
             This bot currently works{" "}
             <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-              exclusively with Close CRM and Calendly
+              exclusively with Close CRM and either Calendly or Google Calendar
             </span>
-            . Both are required to use the bot.
+            . Close CRM plus one calendar provider are required.
           </p>
           <div className="flex items-center gap-4 mb-3">
             <div className="flex items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg flex-1 border border-zinc-100 dark:border-zinc-700/50">
@@ -773,7 +812,23 @@ export function ChatBotLanding({
                     Calendly
                   </p>
                   <Badge className="text-[7px] h-3 px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                    Required
+                    Option A
+                  </Badge>
+                </div>
+                <p className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                  Checks availability, books appointments
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg flex-1 border border-zinc-100 dark:border-zinc-700/50">
+              <GoogleCalendarLogo className="h-5 w-5 flex-shrink-0" />
+              <div>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] font-medium text-zinc-900 dark:text-zinc-100">
+                    Google Calendar
+                  </p>
+                  <Badge className="text-[7px] h-3 px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                    Option B
                   </Badge>
                 </div>
                 <p className="text-[9px] text-zinc-500 dark:text-zinc-400">
@@ -784,7 +839,9 @@ export function ChatBotLanding({
           </div>
           <div className="flex items-center gap-2 text-[10px] text-zinc-400 dark:text-zinc-500 border-t border-zinc-100 dark:border-zinc-800 pt-2.5">
             <ListChecks className="h-3 w-3 flex-shrink-0" />
-            <span>Coming soon: Google Calendar, then additional CRMs</span>
+            <span>
+              Connect either Calendly or Google Calendar — one required
+            </span>
           </div>
         </div>
       </section>

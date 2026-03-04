@@ -204,7 +204,7 @@ export function SetupGuideTab() {
             The bot monitors your Close CRM account for incoming text messages
             from leads that match your configured Lead Sources. When a message
             arrives, the AI reads the conversation history, responds naturally,
-            and works toward booking an appointment on your Calendly calendar.
+            and works toward booking an appointment on your calendar.
           </p>
           <Callout type="info">
             The bot also performs <strong>proactive outreach</strong> — it can
@@ -246,16 +246,16 @@ export function SetupGuideTab() {
 
           <div className="space-y-2">
             <h4 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Calendly
+              Calendar (Calendly or Google Calendar)
             </h4>
             <ul className="space-y-1 text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
               <li className="flex items-start gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
-                Standard plan or above (required for API access)
+                Calendly: Standard plan or above (required for API access)
               </li>
               <li className="flex items-start gap-1.5">
                 <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
-                At least one active event type configured
+                Google Calendar: Any Google account with Calendar access
               </li>
             </ul>
           </div>
@@ -316,15 +316,16 @@ export function SetupGuideTab() {
           </p>
         </StepCard>
 
-        <StepCard step={3} title="Connect Calendly">
+        <StepCard step={3} title="Connect Calendar">
           <p>
-            Click the Calendly connect button. This opens an OAuth popup where
-            you authorize access. You need a Calendly Standard plan or above for
-            API access.
+            Choose either Calendly or Google Calendar. Click the connect button
+            to authorize access via OAuth. For Calendly, you need a Standard
+            plan or above.
           </p>
           <p>
             Once connected, the bot can check your availability and create
-            bookings directly on your calendar.
+            bookings directly on your calendar. Only one calendar provider can
+            be active at a time.
           </p>
         </StepCard>
 
@@ -512,7 +513,7 @@ export function SetupGuideTab() {
           />
           <FaqItem
             question="What if my calendar is fully booked?"
-            answer="The bot checks your real-time Calendly availability before offering times. If there are no open slots, it lets the lead know and offers to follow up when availability opens up."
+            answer="The bot checks your real-time calendar availability before offering times. If there are no open slots, it lets the lead know and offers to follow up when availability opens up."
           />
           <FaqItem
             question="Where can I see bot conversations?"
@@ -561,11 +562,11 @@ export function SetupGuideTab() {
             </ol>
           </StepCard>
 
-          <StepCard step={2} title="Calendly connection failing">
+          <StepCard step={2} title="Calendar connection failing">
             <ol className="list-decimal pl-3 space-y-0.5">
               <li>
-                Make sure you have a Calendly <strong>Standard</strong> plan or
-                above
+                For Calendly: make sure you have a <strong>Standard</strong>{" "}
+                plan or above
               </li>
               <li>
                 Try disconnecting and reconnecting — click the disconnect
@@ -573,11 +574,11 @@ export function SetupGuideTab() {
               </li>
               <li>
                 Ensure pop-ups are not blocked in your browser (the OAuth flow
-                uses a popup)
+                uses a redirect)
               </li>
               <li>
-                If using a Calendly team account, make sure you have admin
-                permissions
+                For Google Calendar: ensure you grant calendar read/write
+                permissions when prompted
               </li>
             </ol>
           </StepCard>
@@ -589,10 +590,10 @@ export function SetupGuideTab() {
                 Configuration — it should match the timezone you want
                 appointments in
               </li>
-              <li>Verify your Calendly availability hours are set correctly</li>
+              <li>Verify your calendar availability hours are set correctly</li>
               <li>
-                Ensure your Calendly event type has the correct duration and
-                buffer times
+                For Calendly: ensure your event type has the correct duration
+                and buffer times
               </li>
             </ol>
           </StepCard>
@@ -600,16 +601,14 @@ export function SetupGuideTab() {
           <StepCard step={4} title="Wrong event type being offered to leads">
             <ol className="list-decimal pl-3 space-y-0.5">
               <li>
-                If using auto-detection, the bot picks the default event type —
-                set your preferred type as default in Calendly
+                For Calendly: if using auto-detection, the bot picks the default
+                event type — set your preferred type as default in Calendly
               </li>
               <li>
                 For more control, set up explicit event type mappings in Bot
                 Configuration (Step 7 in the walkthrough above)
               </li>
-              <li>
-                Check that the mapped event type is still active in Calendly
-              </li>
+              <li>Check that the mapped event type is still active</li>
             </ol>
           </StepCard>
 
