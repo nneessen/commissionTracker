@@ -35,6 +35,8 @@ interface RouteGuardProps {
   noStaffRoles?: boolean;
   /** If true, only staff roles (trainer, contracting_manager) can access */
   staffOnly?: boolean;
+  /** If true, only super admins can access this route */
+  superAdminOnly?: boolean;
   /** Required email for super-admin routes */
   requireEmail?: string;
   /** Whitelist of emails that can access this route (super admins always bypass) */
@@ -85,6 +87,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   noRecruits = false,
   noStaffRoles = false,
   staffOnly = false,
+  superAdminOnly = false,
   requireEmail,
   allowedEmails,
   allowedAgencyId,
@@ -138,6 +141,11 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   // Super admin bypass - users with is_super_admin flag bypass all checks
   if (isSuperAdmin) {
     return <>{children}</>;
+  }
+
+  // Check super-admin-only routes
+  if (superAdminOnly) {
+    return <>{fallback || <PermissionDenied />}</>;
   }
 
   const currentEmail = supabaseUser?.email;

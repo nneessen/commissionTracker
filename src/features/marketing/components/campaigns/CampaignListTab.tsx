@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2, Mail, MessageSquare, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,8 @@ import { cn } from "@/lib/utils";
 import { useCampaigns, useDeleteCampaign } from "../../hooks/useCampaigns";
 import type { CampaignStatus } from "../../types/marketing.types";
 import type { EmailBlock } from "@/types/email.types";
-import { CampaignWizard } from "./CampaignWizard";
 import { CampaignDetailSheet } from "./CampaignDetailSheet";
+import { saveCampaignPrefill } from "../../utils/campaign-prefill";
 
 const STATUS_CONFIG: Record<
   CampaignStatus,
@@ -79,10 +80,10 @@ export function CampaignListTab({
   initialBlocks,
   initialSubject,
 }: CampaignListTabProps) {
-  const [wizardOpen, setWizardOpen] = useState(!!initialBlocks);
-  const [editCampaignId, setEditCampaignId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const didAutoPrefillNavigate = useRef(false);
 
   const { data: campaigns, isLoading, error } = useCampaigns();
   const deleteMutation = useDeleteCampaign();
@@ -103,12 +104,34 @@ export function CampaignListTab({
 
   function handleRowClick(campaignId: string, status: CampaignStatus) {
     if (status === "draft") {
-      setEditCampaignId(campaignId);
-      setWizardOpen(true);
+      navigate({ to: `/marketing/campaigns/${campaignId}/edit` });
     } else {
       setDetailId(campaignId);
     }
   }
+
+  useEffect(() => {
+    if (!initialBlocks || didAutoPrefillNavigate.current) return;
+
+    const prefillId = saveCampaignPrefill({
+      blocks: initialBlocks,
+      subject: initialSubject,
+    });
+    didAutoPrefillNavigate.current = true;
+
+    if (!prefillId) {
+      toast.error(
+        "Could not preload template content. Opening a blank campaign instead.",
+      );
+      navigate({ to: "/marketing/campaigns/new" });
+      return;
+    }
+
+    navigate({
+      to: "/marketing/campaigns/new",
+      search: { prefill: prefillId },
+    });
+  }, [initialBlocks, initialSubject, navigate]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -120,10 +143,7 @@ export function CampaignListTab({
         <Button
           size="sm"
           className="h-6 px-2 text-[10px] gap-1"
-          onClick={() => {
-            setEditCampaignId(null);
-            setWizardOpen(true);
-          }}
+          onClick={() => navigate({ to: "/marketing/campaigns/new" })}
         >
           <Plus className="h-3 w-3" />
           New Campaign
@@ -196,7 +216,9 @@ export function CampaignListTab({
                       variant="outline"
                       size="sm"
                       className="h-6 px-2 text-[10px] gap-1 mt-1"
-                      onClick={() => setWizardOpen(true)}
+                      onClick={() =>
+                        navigate({ to: "/marketing/campaigns/new" })
+                      }
                     >
                       <Plus className="h-3 w-3" />
                       Create your first campaign
@@ -341,18 +363,6 @@ export function CampaignListTab({
           </TableBody>
         </Table>
       </div>
-
-      {/* Campaign Wizard */}
-      <CampaignWizard
-        open={wizardOpen}
-        onOpenChange={(v) => {
-          setWizardOpen(v);
-          if (!v) setEditCampaignId(null);
-        }}
-        editCampaignId={editCampaignId}
-        initialBlocks={!editCampaignId ? initialBlocks : undefined}
-        initialSubject={!editCampaignId ? initialSubject : undefined}
-      />
 
       {/* Campaign Detail Sheet */}
       <CampaignDetailSheet

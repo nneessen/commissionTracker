@@ -62,6 +62,8 @@ import { BillingPage } from "./features/billing/BillingPage";
 import { LeadIntelligenceDashboard } from "./features/admin/components/lead-vendors";
 import { ChatBotPage } from "./features/chat-bot";
 import { MarketingHubPage } from "./features/marketing";
+import { TemplateEditorPage } from "./features/marketing/components/templates/TemplateEditorPage";
+import { CampaignEditorPage } from "./features/marketing/components/campaigns/CampaignEditorPage";
 
 // Lazy-loaded underwriting pages
 const UnderwritingWizardPage = lazy(
@@ -789,10 +791,93 @@ const marketingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "marketing",
   component: () => (
-    <RouteGuard noRecruits noStaffRoles>
+    <RouteGuard noRecruits noStaffRoles superAdminOnly>
       <MarketingHubPage />
     </RouteGuard>
   ),
+});
+
+// Marketing Hub - templates tab deep-link
+const marketingTemplatesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "marketing/templates",
+  component: () => (
+    <RouteGuard noRecruits noStaffRoles superAdminOnly>
+      <MarketingHubPage initialTab="templates" />
+    </RouteGuard>
+  ),
+});
+
+// Marketing Hub - campaigns tab deep-link
+const marketingCampaignsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "marketing/campaigns",
+  component: () => (
+    <RouteGuard noRecruits noStaffRoles superAdminOnly>
+      <MarketingHubPage initialTab="campaigns" />
+    </RouteGuard>
+  ),
+});
+
+// Marketing campaign editor - create
+const marketingCampaignCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "marketing/campaigns/new",
+  validateSearch: (search: Record<string, unknown>): { prefill?: string } => ({
+    prefill:
+      typeof search.prefill === "string" && search.prefill.length > 0
+        ? search.prefill
+        : undefined,
+  }),
+  component: MarketingCampaignCreateRouteComponent,
+});
+
+function MarketingCampaignCreateRouteComponent() {
+  const { prefill } = marketingCampaignCreateRoute.useSearch();
+  return (
+    <RouteGuard noRecruits noStaffRoles superAdminOnly>
+      <CampaignEditorPage prefillKey={prefill} />
+    </RouteGuard>
+  );
+}
+
+// Marketing campaign editor - edit draft
+const marketingCampaignEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "marketing/campaigns/$campaignId/edit",
+  component: () => {
+    const { campaignId } = marketingCampaignEditRoute.useParams();
+    return (
+      <RouteGuard noRecruits noStaffRoles superAdminOnly>
+        <CampaignEditorPage editCampaignId={campaignId} />
+      </RouteGuard>
+    );
+  },
+});
+
+// Marketing template editor - create
+const marketingTemplateCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "marketing/templates/new",
+  component: () => (
+    <RouteGuard noRecruits noStaffRoles superAdminOnly>
+      <TemplateEditorPage />
+    </RouteGuard>
+  ),
+});
+
+// Marketing template editor - edit
+const marketingTemplateEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "marketing/templates/$templateId/edit",
+  component: () => {
+    const { templateId } = marketingTemplateEditRoute.useParams();
+    return (
+      <RouteGuard noRecruits noStaffRoles superAdminOnly>
+        <TemplateEditorPage templateId={templateId} />
+      </RouteGuard>
+    );
+  },
 });
 
 // Create the route tree - all routes are already linked via getParentRoute
@@ -848,6 +933,12 @@ const routeTree = rootRoute.addChildren([
   theStandardTeamRoute,
   leadVendorsRoute,
   marketingRoute,
+  marketingCampaignsRoute,
+  marketingCampaignCreateRoute,
+  marketingCampaignEditRoute,
+  marketingTemplatesRoute,
+  marketingTemplateCreateRoute,
+  marketingTemplateEditRoute,
   underwritingWizardRoute,
   quickQuoteRoute,
   chatBotRoute,

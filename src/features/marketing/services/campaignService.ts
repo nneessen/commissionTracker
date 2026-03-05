@@ -5,6 +5,20 @@ import type {
   RecipientSource,
 } from "../types/marketing.types";
 
+type CampaignUpdatePayload = Partial<
+  Pick<
+    MarketingCampaign,
+    | "name"
+    | "subject_override"
+    | "template_id"
+    | "audience_id"
+    | "sms_content"
+    | "brand_settings"
+    | "status"
+    | "scheduled_for"
+  >
+>;
+
 export async function getCampaigns(): Promise<MarketingCampaign[]> {
   const { data, error } = await supabase
     .from("bulk_email_campaigns")
@@ -67,19 +81,7 @@ export async function createCampaign(campaign: {
 
 export async function updateCampaign(
   id: string,
-  updates: Partial<
-    Pick<
-      MarketingCampaign,
-      | "name"
-      | "subject_override"
-      | "template_id"
-      | "audience_id"
-      | "sms_content"
-      | "brand_settings"
-      | "status"
-      | "scheduled_for"
-    >
-  >,
+  updates: CampaignUpdatePayload,
 ): Promise<MarketingCampaign> {
   const { data, error } = await supabase
     .from("bulk_email_campaigns")
@@ -89,6 +91,25 @@ export async function updateCampaign(
     .single();
 
   if (error) throw error;
+  return data as MarketingCampaign;
+}
+
+export async function updateDraftCampaign(
+  id: string,
+  updates: CampaignUpdatePayload,
+): Promise<MarketingCampaign> {
+  const { data, error } = await supabase
+    .from("bulk_email_campaigns")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "draft")
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    throw new Error("Only draft campaigns can be edited");
+  }
   return data as MarketingCampaign;
 }
 

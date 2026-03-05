@@ -1,10 +1,4 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +44,7 @@ import {
   useCampaign,
   useCampaignRecipients,
   useCreateCampaign,
-  useUpdateCampaign,
+  useUpdateDraftCampaign,
   useAddCampaignRecipients,
 } from "../../hooks/useCampaigns";
 import {
@@ -88,8 +82,7 @@ function cloneBlocksWithNewIds(blocks: EmailBlock[]): EmailBlock[] {
 }
 
 interface CampaignWizardProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
   editCampaignId?: string | null;
   initialBlocks?: EmailBlock[];
   initialSubject?: string;
@@ -137,8 +130,7 @@ const PRESET_POOLS: { value: PresetPool; label: string; desc: string }[] = [
 ];
 
 export function CampaignWizard({
-  open,
-  onOpenChange,
+  onClose,
   editCampaignId,
   initialBlocks,
   initialSubject,
@@ -155,12 +147,12 @@ export function CampaignWizard({
     editCampaignId ?? null,
   );
   const createCampaign = useCreateCampaign();
-  const updateCampaign = useUpdateCampaign();
+  const updateCampaign = useUpdateDraftCampaign();
   const addRecipients = useAddCampaignRecipients();
 
   // Load draft campaign data when editing
   useEffect(() => {
-    if (open && editCampaignId && editCampaign) {
+    if (editCampaignId && editCampaign?.status === "draft") {
       setState((prev) => ({
         ...prev,
         name: editCampaign.name,
@@ -178,11 +170,11 @@ export function CampaignWizard({
         })),
       }));
     }
-  }, [open, editCampaignId, editCampaign, editRecipients]);
+  }, [editCampaignId, editCampaign, editRecipients]);
 
   // Load initial blocks from template flow
   useEffect(() => {
-    if (open && initialBlocks && !editCampaignId) {
+    if (initialBlocks && !editCampaignId) {
       setState((prev) => ({
         ...prev,
         blocks: initialBlocks,
@@ -190,7 +182,7 @@ export function CampaignWizard({
         step: 0,
       }));
     }
-  }, [open, initialBlocks, initialSubject, editCampaignId]);
+  }, [initialBlocks, initialSubject, editCampaignId]);
 
   function reset() {
     setState(INITIAL_STATE);
@@ -198,9 +190,9 @@ export function CampaignWizard({
     setStarterOpen(false);
   }
 
-  function handleClose(value: boolean) {
-    if (!value) reset();
-    onOpenChange(value);
+  function closeWizard() {
+    reset();
+    onClose();
   }
 
   function set<K extends keyof WizardState>(key: K, value: WizardState[K]) {
@@ -320,7 +312,7 @@ export function CampaignWizard({
       toast.success(
         `Campaign "${state.name}" sent to ${state.resolvedContacts.length} recipients.`,
       );
-      handleClose(false);
+      closeWizard();
     } catch (err) {
       console.error("Campaign send error:", err);
       toast.error("Failed to send campaign. Check console for details.");
@@ -331,6 +323,10 @@ export function CampaignWizard({
   // Save as draft
   async function handleSaveDraft() {
     if (!user?.id || !state.name.trim()) return;
+    if (editCampaignId && editCampaign?.status !== "draft") {
+      toast.error("Only draft campaigns can be edited.");
+      return;
+    }
     setSavingDraft(true);
 
     try {
@@ -349,7 +345,6 @@ export function CampaignWizard({
                 ? (state.audienceId ?? null)
                 : null,
             brand_settings: blocksData,
-            status: "draft",
           },
         });
         toast.success("Draft updated.");
@@ -388,7 +383,7 @@ export function CampaignWizard({
         toast.success("Draft saved.");
       }
 
-      handleClose(false);
+      closeWizard();
     } catch {
       toast.error("Failed to save draft.");
     } finally {
@@ -443,6 +438,24 @@ export function CampaignWizard({
               </div>
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (editCampaignId && editCampaign && editCampaign.status !== "draft") {
+    return (
+      <div className="flex h-full items-center justify-center rounded-md border border-border bg-background p-6">
+        <div className="flex max-w-md flex-col items-center gap-3 text-center">
+          <p className="text-sm font-medium">
+            This campaign can no longer be edited.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Only campaigns in draft status can be edited.
+          </p>
+          <Button size="sm" variant="outline" onClick={onClose}>
+            Back to Campaigns
+          </Button>
         </div>
       </div>
     );
@@ -759,125 +772,123 @@ export function CampaignWizard({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl p-0 max-h-[85vh] flex flex-col">
-          <DialogHeader className="px-4 py-2.5 border-b shrink-0">
-            <DialogTitle className="text-sm font-semibold">
-              {editCampaignId ? "Edit Draft Campaign" : "Create Campaign"}
-            </DialogTitle>
-          </DialogHeader>
+      <div className="flex h-full flex-col rounded-md border border-border bg-background">
+        <div className="px-4 py-2.5 border-b shrink-0">
+          <h1 className="text-sm font-semibold">
+            {editCampaignId ? "Edit Draft Campaign" : "Create Campaign"}
+          </h1>
+        </div>
 
-          {/* Step Indicator */}
-          <div className="flex items-center gap-0 px-4 py-2 border-b bg-zinc-50 dark:bg-zinc-900 shrink-0">
-            {STEPS.map((label, i) => (
-              <div key={label} className="flex items-center">
-                {i > 0 && (
-                  <ChevronRight className="h-3 w-3 text-muted-foreground/40 mx-1" />
+        {/* Step Indicator */}
+        <div className="flex items-center gap-0 px-4 py-2 border-b bg-zinc-50 dark:bg-zinc-900 shrink-0">
+          {STEPS.map((label, i) => (
+            <div key={label} className="flex items-center">
+              {i > 0 && (
+                <ChevronRight className="h-3 w-3 text-muted-foreground/40 mx-1" />
+              )}
+              <button
+                className={cn(
+                  "flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors",
+                  i === state.step
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : i < state.step
+                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                      : "text-muted-foreground",
                 )}
-                <button
-                  className={cn(
-                    "flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors",
-                    i === state.step
-                      ? "bg-primary text-primary-foreground font-medium"
-                      : i < state.step
-                        ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                        : "text-muted-foreground",
-                  )}
-                  onClick={() => {
-                    // Only allow going back to completed steps
-                    if (i < state.step) set("step", i);
-                  }}
-                  disabled={i > state.step}
-                >
-                  {i < state.step ? (
-                    <Check className="h-2.5 w-2.5" />
-                  ) : (
-                    <span className="text-[9px] font-mono">{i + 1}</span>
-                  )}
-                  {label}
-                </button>
-              </div>
-            ))}
-          </div>
+                onClick={() => {
+                  // Only allow going back to completed steps
+                  if (i < state.step) set("step", i);
+                }}
+                disabled={i > state.step}
+              >
+                {i < state.step ? (
+                  <Check className="h-2.5 w-2.5" />
+                ) : (
+                  <span className="text-[9px] font-mono">{i + 1}</span>
+                )}
+                {label}
+              </button>
+            </div>
+          ))}
+        </div>
 
-          {/* Step Content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {state.step === 0 && renderSetup()}
-            {state.step === 1 && renderAudience()}
-            {state.step === 2 && renderContent()}
-            {state.step === 3 && renderReview()}
-          </div>
+        {/* Step Content */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {state.step === 0 && renderSetup()}
+          {state.step === 1 && renderAudience()}
+          {state.step === 2 && renderContent()}
+          {state.step === 3 && renderReview()}
+        </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t bg-zinc-50 dark:bg-zinc-900 shrink-0">
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-t bg-zinc-50 dark:bg-zinc-900 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] px-3"
+            onClick={prevStep}
+            disabled={state.step === 0}
+          >
+            <ChevronLeft className="h-3 w-3 mr-1" />
+            Back
+          </Button>
+
+          <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="h-7 text-[11px] px-3"
-              onClick={prevStep}
-              disabled={state.step === 0}
+              onClick={closeWizard}
             >
-              <ChevronLeft className="h-3 w-3 mr-1" />
-              Back
+              Cancel
             </Button>
 
-            <div className="flex gap-2">
+            {/* Save Draft — visible when there's at least a name */}
+            {state.name.trim() && (
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-[11px] px-3"
-                onClick={() => handleClose(false)}
+                className="h-7 text-[11px] px-3 gap-1"
+                onClick={handleSaveDraft}
+                disabled={savingDraft || state.sending}
               >
-                Cancel
+                {savingDraft ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Save className="h-3 w-3" />
+                )}
+                Save Draft
               </Button>
+            )}
 
-              {/* Save Draft — visible when there's at least a name */}
-              {state.name.trim() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-[11px] px-3 gap-1"
-                  onClick={handleSaveDraft}
-                  disabled={savingDraft || state.sending}
-                >
-                  {savingDraft ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Save className="h-3 w-3" />
-                  )}
-                  Save Draft
-                </Button>
-              )}
-
-              {state.step < STEPS.length - 1 ? (
-                <Button
-                  size="sm"
-                  className="h-7 text-[11px] px-3 gap-1"
-                  onClick={nextStep}
-                  disabled={!canAdvance()}
-                >
-                  Next
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  className="h-7 text-[11px] px-3 gap-1 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => setConfirmSend(true)}
-                  disabled={state.sending}
-                >
-                  {state.sending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Send className="h-3 w-3" />
-                  )}
-                  Send Campaign
-                </Button>
-              )}
-            </div>
+            {state.step < STEPS.length - 1 ? (
+              <Button
+                size="sm"
+                className="h-7 text-[11px] px-3 gap-1"
+                onClick={nextStep}
+                disabled={!canAdvance()}
+              >
+                Next
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="h-7 text-[11px] px-3 gap-1 bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => setConfirmSend(true)}
+                disabled={state.sending}
+              >
+                {state.sending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Send className="h-3 w-3" />
+                )}
+                Send Campaign
+              </Button>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
 
       {/* Send Confirmation */}
       <AlertDialog open={confirmSend} onOpenChange={setConfirmSend}>

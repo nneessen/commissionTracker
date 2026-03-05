@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Loader2,
   LayoutTemplate,
@@ -23,7 +24,6 @@ import type {
   EmailTemplate,
   ColumnsBlockContent,
 } from "@/types/email.types";
-import { TemplateEditorDialog } from "./TemplateEditorDialog";
 
 // Deep-clone blocks with fresh UUIDs
 function cloneBlocksWithNewIds(blocks: EmailBlock[]): EmailBlock[] {
@@ -190,12 +190,11 @@ function SavedTemplateCard({
 export function TemplateGalleryTab({
   onStartCampaignWithBlocks,
 }: TemplateGalleryTabProps) {
+  const navigate = useNavigate();
   const { data: savedTemplates, isLoading } = useEmailTemplates();
   const deleteTemplate = useDeleteEmailTemplate();
   const duplicateTemplate = useDuplicateEmailTemplate();
 
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editTemplate, setEditTemplate] = useState<EmailTemplate | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
@@ -220,8 +219,7 @@ export function TemplateGalleryTab({
   }
 
   function handleEdit(template: EmailTemplate) {
-    setEditTemplate(template);
-    setEditorOpen(true);
+    navigate({ to: `/marketing/templates/${template.id}/edit` });
   }
 
   function handleDuplicate(template: EmailTemplate) {
@@ -300,10 +298,7 @@ export function TemplateGalleryTab({
           <Button
             size="sm"
             className="h-6 text-[11px] gap-1"
-            onClick={() => {
-              setEditTemplate(null);
-              setEditorOpen(true);
-            }}
+            onClick={() => navigate({ to: "/marketing/templates/new" })}
           >
             <Plus className="h-3 w-3" />
             Create Template
@@ -338,13 +333,6 @@ export function TemplateGalleryTab({
           </div>
         )}
       </section>
-
-      {/* Template Editor */}
-      <TemplateEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        template={editTemplate}
-      />
     </div>
   );
 }

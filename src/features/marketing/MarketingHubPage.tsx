@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Navigate } from "@tanstack/react-router";
 import { Send, LayoutTemplate, Users, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,13 +19,23 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export function MarketingHubPage() {
+interface MarketingHubPageProps {
+  initialTab?: TabId;
+}
+
+export function MarketingHubPage({
+  initialTab = "campaigns",
+}: MarketingHubPageProps) {
   const { data: profile, isLoading } = useCurrentUserProfile();
-  const [activeTab, setActiveTab] = useState<TabId>("campaigns");
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [pendingBlocks, setPendingBlocks] = useState<
     EmailBlock[] | undefined
   >();
   const [pendingSubject, setPendingSubject] = useState<string | undefined>();
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Cross-tab callback: template tab → campaign tab with pre-populated blocks
   const handleStartCampaignWithBlocks = useCallback(

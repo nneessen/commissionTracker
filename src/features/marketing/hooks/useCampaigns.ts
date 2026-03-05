@@ -4,6 +4,7 @@ import {
   getCampaign,
   createCampaign,
   updateCampaign,
+  updateDraftCampaign,
   deleteCampaign,
   updateCampaignStatus,
   getCampaignRecipients,
@@ -48,6 +49,20 @@ export function useUpdateCampaign() {
       id: string;
       updates: Parameters<typeof updateCampaign>[1];
     }) => updateCampaign(id, updates),
+    onSuccess: () => qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY }),
+  });
+}
+
+export function useUpdateDraftCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Parameters<typeof updateDraftCampaign>[1];
+    }) => updateDraftCampaign(id, updates),
     onSuccess: () => qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY }),
   });
 }
