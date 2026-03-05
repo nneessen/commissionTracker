@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Mail, MousePointer, Eye, AlertTriangle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { cn } from "@/lib/utils";
 import {
   useOverallMetrics,
@@ -15,6 +17,7 @@ import {
 } from "../../hooks/useCampaignAnalytics";
 import { format } from "date-fns";
 import type { CampaignStatus } from "../../types/marketing.types";
+import { CampaignDetailSheet } from "../campaigns/CampaignDetailSheet";
 
 const STATUS_COLORS: Record<CampaignStatus, string> = {
   draft: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
@@ -53,9 +56,21 @@ function KpiBlock({ icon: Icon, label, value, sub, iconClass }: KpiBlockProps) {
 }
 
 export function AnalyticsTab() {
-  const { data: metrics, isLoading: metricsLoading } = useOverallMetrics();
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  const fromStr = dateRange.from?.toISOString();
+  const toStr = dateRange.to?.toISOString();
+
+  const { data: metrics, isLoading: metricsLoading } = useOverallMetrics(
+    fromStr,
+    toStr,
+  );
   const { data: recentCampaigns, isLoading: campaignsLoading } =
-    useRecentCampaigns(10);
+    useRecentCampaigns(10, fromStr, toStr);
 
   const isLoading = metricsLoading || campaignsLoading;
 
@@ -73,6 +88,18 @@ export function AnalyticsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Date Range Picker */}
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] font-medium text-muted-foreground">
+          Campaign Analytics
+        </div>
+        <DateRangePicker
+          value={dateRange}
+          onChange={setDateRange}
+          placeholder="All time"
+        />
+      </div>
+
       {/* KPI Blocks */}
       <div className="grid grid-cols-4 gap-3">
         <KpiBlock
@@ -158,7 +185,8 @@ export function AnalyticsTab() {
                   return (
                     <TableRow
                       key={campaign.id}
-                      className="hover:bg-muted/30 py-1.5"
+                      className="hover:bg-muted/30 py-1.5 cursor-pointer"
+                      onClick={() => setDetailId(campaign.id)}
                     >
                       <TableCell className="py-1.5 px-3 text-[11px] font-medium max-w-[180px]">
                         <span className="truncate block">{campaign.name}</span>
@@ -221,6 +249,15 @@ export function AnalyticsTab() {
           </Table>
         </div>
       </div>
+
+      {/* Campaign Detail Sheet */}
+      <CampaignDetailSheet
+        campaignId={detailId}
+        open={!!detailId}
+        onOpenChange={(v) => {
+          if (!v) setDetailId(null);
+        }}
+      />
     </div>
   );
 }

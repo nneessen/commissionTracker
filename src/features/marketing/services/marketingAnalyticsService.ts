@@ -1,13 +1,21 @@
 import { supabase } from "@/services/base/supabase";
 import type { CampaignMetrics } from "../types/marketing.types";
 
-export async function getOverallMetrics(): Promise<CampaignMetrics> {
-  const { data, error } = await supabase
+export async function getOverallMetrics(
+  from?: string,
+  to?: string,
+): Promise<CampaignMetrics> {
+  let query = supabase
     .from("bulk_email_campaigns")
     .select(
       "sent_count, opened_count, clicked_count, bounced_count, failed_count",
     )
     .in("status", ["sent", "sending"]);
+
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to);
+
+  const { data, error } = await query;
 
   if (error) throw error;
 
@@ -75,14 +83,23 @@ export async function getCampaignMetrics(
   };
 }
 
-export async function getRecentCampaigns(limit = 10) {
-  const { data, error } = await supabase
+export async function getRecentCampaigns(
+  limit = 10,
+  from?: string,
+  to?: string,
+) {
+  let query = supabase
     .from("bulk_email_campaigns")
     .select(
       "id, name, status, campaign_type, sent_count, opened_count, clicked_count, bounced_count, created_at, completed_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to);
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data || [];

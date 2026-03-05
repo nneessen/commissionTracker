@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,7 @@ import {
   Check,
   Paintbrush,
   LayoutTemplate,
+  Save,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,7 +47,10 @@ import type { EmailBlock, ColumnsBlockContent } from "@/types/email.types";
 import { STARTER_TEMPLATES } from "../../services/starterTemplateService";
 import { useAudiences } from "../../hooks/useAudiences";
 import {
+  useCampaign,
+  useCampaignRecipients,
   useCreateCampaign,
+  useUpdateCampaign,
   useAddCampaignRecipients,
 } from "../../hooks/useCampaigns";
 import {
@@ -86,6 +90,9 @@ function cloneBlocksWithNewIds(blocks: EmailBlock[]): EmailBlock[] {
 interface CampaignWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editCampaignId?: string | null;
+  initialBlocks?: EmailBlock[];
+  initialSubject?: string;
 }
 
 type PresetPool = "agents" | "clients" | "leads";
@@ -129,15 +136,61 @@ const PRESET_POOLS: { value: PresetPool; label: string; desc: string }[] = [
   { value: "leads", label: "All Leads", desc: "Recruiting leads with email" },
 ];
 
-export function CampaignWizard({ open, onOpenChange }: CampaignWizardProps) {
+export function CampaignWizard({
+  open,
+  onOpenChange,
+  editCampaignId,
+  initialBlocks,
+  initialSubject,
+}: CampaignWizardProps) {
   const { user } = useAuth();
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
   const [confirmSend, setConfirmSend] = useState(false);
   const [starterOpen, setStarterOpen] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const { data: audiences } = useAudiences();
+  const { data: editCampaign } = useCampaign(editCampaignId ?? null);
+  const { data: editRecipients } = useCampaignRecipients(
+    editCampaignId ?? null,
+  );
   const createCampaign = useCreateCampaign();
+  const updateCampaign = useUpdateCampaign();
   const addRecipients = useAddCampaignRecipients();
+
+  // Load draft campaign data when editing
+  useEffect(() => {
+    if (open && editCampaignId && editCampaign) {
+      setState((prev) => ({
+        ...prev,
+        name: editCampaign.name,
+        campaignType: editCampaign.campaign_type,
+        subject: editCampaign.subject_override || "",
+        audienceId: editCampaign.audience_id,
+        audienceMode: editCampaign.audience_id ? "saved" : "preset",
+        blocks:
+          (editCampaign.brand_settings as { blocks?: EmailBlock[] })?.blocks ||
+          [],
+        resolvedContacts: (editRecipients || []).map((r) => ({
+          email: r.email_address,
+          first_name: r.first_name || "",
+          last_name: r.last_name || "",
+        })),
+      }));
+    }
+  }, [open, editCampaignId, editCampaign, editRecipients]);
+
+  // Load initial blocks from template flow
+  useEffect(() => {
+    if (open && initialBlocks && !editCampaignId) {
+      setState((prev) => ({
+        ...prev,
+        blocks: initialBlocks,
+        subject: initialSubject || prev.subject,
+        step: 0,
+      }));
+    }
+  }, [open, initialBlocks, initialSubject, editCampaignId]);
 
   function reset() {
     setState(INITIAL_STATE);
@@ -223,12 +276,14 @@ export function CampaignWizard({ open, onOpenChange }: CampaignWizardProps) {
       // 1. Create campaign record
       const campaign = await createCampaign.mutateAsync({
         name: state.name,
-        subject: state.subject,
+        subject_override: state.subject,
         campaign_type: state.campaignType,
         audience_id:
           state.audienceMode === "saved"
             ? (state.audienceId ?? undefined)
             : undefined,
+        recipient_source:
+          state.audienceMode === "saved" ? "audience" : "manual",
         user_id: user.id,
       });
 
@@ -270,6 +325,74 @@ export function CampaignWizard({ open, onOpenChange }: CampaignWizardProps) {
       console.error("Campaign send error:", err);
       toast.error("Failed to send campaign. Check console for details.");
       set("sending", false);
+    }
+  }
+
+  // Save as draft
+  async function handleSaveDraft() {
+    if (!user?.id || !state.name.trim()) return;
+    setSavingDraft(true);
+
+    try {
+      const blocksData =
+        state.blocks.length > 0 ? { blocks: state.blocks } : {};
+
+      if (editCampaignId) {
+        // Update existing draft
+        await updateCampaign.mutateAsync({
+          id: editCampaignId,
+          updates: {
+            name: state.name,
+            subject_override: state.subject || null,
+            audience_id:
+              state.audienceMode === "saved"
+                ? (state.audienceId ?? null)
+                : null,
+            brand_settings: blocksData,
+            status: "draft",
+          },
+        });
+        toast.success("Draft updated.");
+      } else {
+        // Create new draft
+        const campaign = await createCampaign.mutateAsync({
+          name: state.name,
+          subject_override: state.subject || undefined,
+          campaign_type: state.campaignType,
+          audience_id:
+            state.audienceMode === "saved"
+              ? (state.audienceId ?? undefined)
+              : undefined,
+          brand_settings: blocksData,
+          recipient_source:
+            state.audienceMode === "saved" ? "audience" : "manual",
+          status: "draft",
+          user_id: user.id,
+        });
+
+        // Save recipients if any resolved
+        if (state.resolvedContacts.length > 0) {
+          await addRecipients.mutateAsync({
+            campaignId: campaign.id,
+            recipients: state.resolvedContacts.map((c) => ({
+              email: c.email,
+              first_name: c.first_name,
+              last_name: c.last_name,
+              variables: {
+                first_name: c.first_name,
+                last_name: c.last_name,
+              },
+            })),
+          });
+        }
+        toast.success("Draft saved.");
+      }
+
+      handleClose(false);
+    } catch {
+      toast.error("Failed to save draft.");
+    } finally {
+      setSavingDraft(false);
     }
   }
 
@@ -640,7 +763,7 @@ export function CampaignWizard({ open, onOpenChange }: CampaignWizardProps) {
         <DialogContent className="max-w-4xl p-0 max-h-[85vh] flex flex-col">
           <DialogHeader className="px-4 py-2.5 border-b shrink-0">
             <DialogTitle className="text-sm font-semibold">
-              Create Campaign
+              {editCampaignId ? "Edit Draft Campaign" : "Create Campaign"}
             </DialogTitle>
           </DialogHeader>
 
@@ -707,6 +830,24 @@ export function CampaignWizard({ open, onOpenChange }: CampaignWizardProps) {
               >
                 Cancel
               </Button>
+
+              {/* Save Draft — visible when there's at least a name */}
+              {state.name.trim() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-[11px] px-3 gap-1"
+                  onClick={handleSaveDraft}
+                  disabled={savingDraft || state.sending}
+                >
+                  {savingDraft ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Save className="h-3 w-3" />
+                  )}
+                  Save Draft
+                </Button>
+              )}
 
               {state.step < STEPS.length - 1 ? (
                 <Button

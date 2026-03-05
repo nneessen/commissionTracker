@@ -11,6 +11,7 @@ export type CampaignStatus =
 export type AudienceType = "dynamic" | "static" | "csv_import";
 export type SourcePool = "agents" | "clients" | "leads" | "external" | "mixed";
 export type ContactType = "agent" | "client" | "lead" | "external";
+export type RecipientSource = "manual" | "audience" | "csv";
 
 export interface MarketingAudience {
   id: string;
@@ -67,24 +68,30 @@ export interface MarketingBrandSettings {
   updated_at: string;
 }
 
+// Matches bulk_email_campaigns DB schema exactly
 export interface MarketingCampaign {
   id: string;
   name: string;
-  subject: string | null;
+  subject_override: string | null;
   campaign_type: CampaignType;
   status: CampaignStatus;
   template_id: string | null;
   audience_id: string | null;
   sms_content: string | null;
-  brand_settings: Record<string, unknown>;
-  total_recipients: number;
+  brand_settings: Record<string, unknown> | null;
+  recipient_count: number;
+  recipient_source: RecipientSource;
   sent_count: number;
   opened_count: number;
   clicked_count: number;
   bounced_count: number;
   failed_count: number;
+  delivered_count: number;
+  unsubscribed_count: number;
   scheduled_for: string | null;
+  started_at: string | null;
   completed_at: string | null;
+  send_rate: number | null;
   created_at: string | null;
   updated_at: string | null;
   user_id: string;

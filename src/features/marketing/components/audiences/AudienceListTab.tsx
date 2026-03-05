@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Users, Loader2 } from "lucide-react";
+import { Plus, Trash2, Users, Loader2, Contact } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,8 @@ import {
 import { resolveAudienceContacts } from "../../services/audienceService";
 import type { SourcePool } from "../../types/marketing.types";
 import { format } from "date-fns";
+import { AudienceDetailSheet } from "./AudienceDetailSheet";
+import { ExternalContactsPanel } from "./ExternalContactsPanel";
 
 const SOURCE_POOL_OPTIONS: { value: SourcePool; label: string }[] = [
   { value: "agents", label: "Agents" },
@@ -53,6 +55,8 @@ const SOURCE_POOL_COLORS: Record<SourcePool, string> = {
   external: "bg-violet-500/10 text-violet-600 border-violet-500/20",
   mixed: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
 };
+
+type ViewMode = "audiences" | "external";
 
 interface NewAudienceForm {
   name: string;
@@ -148,11 +152,13 @@ export function AudienceListTab() {
   const createAudience = useCreateAudience();
   const deleteAudience = useDeleteAudience();
 
+  const [viewMode, setViewMode] = useState<ViewMode>("audiences");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
   } | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const [form, setForm] = useState<NewAudienceForm>({
     name: "",
@@ -175,7 +181,6 @@ export function AudienceListTab() {
     }
 
     try {
-      // Resolve contacts first to get accurate count
       const resolved = await resolveAudienceContacts(form.source_pool, {});
       await createAudience.mutateAsync({
         name: form.name.trim(),
@@ -208,126 +213,165 @@ export function AudienceListTab() {
 
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">
-          {audiences?.length ?? 0} audience
-          {(audiences?.length ?? 0) !== 1 ? "s" : ""}
-        </span>
+      {/* View Toggle */}
+      <div className="flex items-center gap-1.5">
         <Button
+          variant={viewMode === "audiences" ? "default" : "outline"}
           size="sm"
-          className="h-6 text-[11px] gap-1"
-          onClick={() => setCreateOpen(true)}
+          className="h-6 text-[10px] px-2 gap-1"
+          onClick={() => setViewMode("audiences")}
         >
-          <Plus className="h-3 w-3" />
-          New Audience
+          <Users className="h-3 w-3" />
+          Audiences
+        </Button>
+        <Button
+          variant={viewMode === "external" ? "default" : "outline"}
+          size="sm"
+          className="h-6 text-[10px] px-2 gap-1"
+          onClick={() => setViewMode("external")}
+        >
+          <Contact className="h-3 w-3" />
+          External Contacts
         </Button>
       </div>
 
-      {/* Table */}
-      <div className="border border-border rounded-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/40 hover:bg-muted/40">
-              <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
-                Name
-              </TableHead>
-              <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
-                Type
-              </TableHead>
-              <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
-                Source
-              </TableHead>
-              <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3 text-right">
-                Contacts
-              </TableHead>
-              <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
-                Created
-              </TableHead>
-              <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3 w-8" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center">
-                  <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : !audiences?.length ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-10 text-center text-[11px] text-muted-foreground"
-                >
-                  <Users className="h-5 w-5 mx-auto mb-1.5 opacity-40" />
-                  No audiences yet. Create one to get started.
-                </TableCell>
-              </TableRow>
-            ) : (
-              audiences.map((audience) => (
-                <TableRow
-                  key={audience.id}
-                  className="hover:bg-muted/30 py-1.5"
-                >
-                  <TableCell className="py-1.5 px-3 text-[11px] font-medium">
-                    {audience.name}
-                    {audience.description && (
-                      <div className="text-[10px] text-muted-foreground font-normal truncate max-w-[200px]">
-                        {audience.description}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-3">
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] h-4 px-1.5 font-normal capitalize"
-                    >
-                      {audience.audience_type.replace("_", " ")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-1.5 px-3">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[10px] h-4 px-1.5 font-normal capitalize border",
-                        SOURCE_POOL_COLORS[
-                          audience.source_pool as SourcePool
-                        ] ?? SOURCE_POOL_COLORS.mixed,
-                      )}
-                    >
-                      {audience.source_pool}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-1.5 px-3 text-[11px] text-right tabular-nums">
-                    {(audience.contact_count ?? 0).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-3 text-[11px] text-muted-foreground whitespace-nowrap">
-                    {audience.created_at
-                      ? format(new Date(audience.created_at), "MMM d, yyyy")
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-3 text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        setDeleteTarget({
-                          id: audience.id,
-                          name: audience.name,
-                        })
-                      }
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </TableCell>
+      {viewMode === "external" ? (
+        <ExternalContactsPanel />
+      ) : (
+        <>
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground">
+              {audiences?.length ?? 0} audience
+              {(audiences?.length ?? 0) !== 1 ? "s" : ""}
+            </span>
+            <Button
+              size="sm"
+              className="h-6 text-[11px] gap-1"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus className="h-3 w-3" />
+              New Audience
+            </Button>
+          </div>
+
+          {/* Table */}
+          <div className="border border-border rounded-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
+                    Name
+                  </TableHead>
+                  <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
+                    Type
+                  </TableHead>
+                  <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
+                    Source
+                  </TableHead>
+                  <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3 text-right">
+                    Contacts
+                  </TableHead>
+                  <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3">
+                    Created
+                  </TableHead>
+                  <TableHead className="text-[10px] font-medium text-muted-foreground h-7 py-0 px-3 w-8" />
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center">
+                      <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ) : !audiences?.length ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="py-10 text-center text-[11px] text-muted-foreground"
+                    >
+                      <Users className="h-5 w-5 mx-auto mb-1.5 opacity-40" />
+                      No audiences yet. Create one to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  audiences.map((audience) => (
+                    <TableRow
+                      key={audience.id}
+                      className="hover:bg-muted/30 py-1.5 cursor-pointer"
+                      onClick={() => setDetailId(audience.id)}
+                    >
+                      <TableCell className="py-1.5 px-3 text-[11px] font-medium">
+                        {audience.name}
+                        {audience.description && (
+                          <div className="text-[10px] text-muted-foreground font-normal truncate max-w-[200px]">
+                            {audience.description}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-1.5 px-3">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] h-4 px-1.5 font-normal capitalize"
+                        >
+                          {audience.audience_type.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-1.5 px-3">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] h-4 px-1.5 font-normal capitalize border",
+                            SOURCE_POOL_COLORS[
+                              audience.source_pool as SourcePool
+                            ] ?? SOURCE_POOL_COLORS.mixed,
+                          )}
+                        >
+                          {audience.source_pool}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-1.5 px-3 text-[11px] text-right tabular-nums">
+                        {(audience.contact_count ?? 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="py-1.5 px-3 text-[11px] text-muted-foreground whitespace-nowrap">
+                        {audience.created_at
+                          ? format(new Date(audience.created_at), "MMM d, yyyy")
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="py-1.5 px-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget({
+                              id: audience.id,
+                              name: audience.name,
+                            });
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
+
+      {/* Audience Detail Sheet */}
+      <AudienceDetailSheet
+        audienceId={detailId}
+        open={!!detailId}
+        onOpenChange={(v) => {
+          if (!v) setDetailId(null);
+        }}
+      />
 
       {/* Create Dialog */}
       <Dialog
@@ -345,7 +389,6 @@ export function AudienceListTab() {
           </DialogHeader>
 
           <div className="px-4 py-3 space-y-3">
-            {/* Name */}
             <div className="space-y-1">
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                 Name <span className="text-destructive">*</span>
@@ -360,7 +403,6 @@ export function AudienceListTab() {
               />
             </div>
 
-            {/* Source Pool */}
             <div className="space-y-1">
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                 Source Pool <span className="text-destructive">*</span>
@@ -389,7 +431,6 @@ export function AudienceListTab() {
               <ContactCountPreview sourcePool={form.source_pool} />
             </div>
 
-            {/* Description */}
             <div className="space-y-1">
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                 Description{" "}

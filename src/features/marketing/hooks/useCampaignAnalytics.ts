@@ -5,10 +5,10 @@ import {
   getRecentCampaigns,
 } from "../services/marketingAnalyticsService";
 
-export function useOverallMetrics() {
+export function useOverallMetrics(from?: string, to?: string) {
   return useQuery({
-    queryKey: ["marketing-analytics", "overall"],
-    queryFn: getOverallMetrics,
+    queryKey: ["marketing-analytics", "overall", from, to],
+    queryFn: () => getOverallMetrics(from, to),
   });
 }
 
@@ -20,9 +20,9 @@ export function useCampaignMetrics(campaignId: string | null) {
   });
 }
 
-export function useRecentCampaigns(limit = 10) {
+export function useRecentCampaigns(limit = 10, from?: string, to?: string) {
   return useQuery({
-    queryKey: ["marketing-analytics", "recent", limit],
-    queryFn: () => getRecentCampaigns(limit),
+    queryKey: ["marketing-analytics", "recent", limit, from, to],
+    queryFn: () => getRecentCampaigns(limit, from, to),
   });
 }

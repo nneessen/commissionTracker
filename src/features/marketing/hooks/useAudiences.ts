@@ -10,6 +10,8 @@ import {
   getExternalContacts,
   createExternalContact,
   deleteExternalContact,
+  removeAudienceMember,
+  bulkCreateExternalContacts,
 } from "../services/audienceService";
 
 const AUDIENCES_KEY = ["marketing-audiences"];
@@ -98,6 +100,28 @@ export function useDeleteExternalContact() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteExternalContact,
+    onSuccess: () => qc.invalidateQueries({ queryKey: EXTERNAL_CONTACTS_KEY }),
+  });
+}
+
+export function useRemoveAudienceMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: removeAudienceMember,
+    onSuccess: () => qc.invalidateQueries({ queryKey: AUDIENCES_KEY }),
+  });
+}
+
+export function useBulkCreateExternalContacts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      contacts,
+      createdBy,
+    }: {
+      contacts: Parameters<typeof bulkCreateExternalContacts>[0];
+      createdBy: string;
+    }) => bulkCreateExternalContacts(contacts, createdBy),
     onSuccess: () => qc.invalidateQueries({ queryKey: EXTERNAL_CONTACTS_KEY }),
   });
 }

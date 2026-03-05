@@ -257,3 +257,44 @@ export async function deleteExternalContact(id: string): Promise<void> {
 
   if (error) throw error;
 }
+
+export async function removeAudienceMember(memberId: string): Promise<void> {
+  const { error } = await supabase
+    .from("marketing_audience_members")
+    .delete()
+    .eq("id", memberId);
+
+  if (error) throw error;
+}
+
+export async function bulkCreateExternalContacts(
+  contacts: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    company?: string;
+    tags?: string[];
+    source?: string;
+  }[],
+  createdBy: string,
+): Promise<{ imported: number; skipped: number }> {
+  const BATCH_SIZE = 500;
+  let imported = 0;
+
+  for (let i = 0; i < contacts.length; i += BATCH_SIZE) {
+    const batch = contacts.slice(i, i + BATCH_SIZE).map((c) => ({
+      ...c,
+      created_by: createdBy,
+    }));
+
+    const { data, error } = await supabase
+      .from("marketing_external_contacts")
+      .upsert(batch, { onConflict: "email" })
+      .select("id");
+
+    if (error) throw error;
+    imported += data?.length ?? 0;
+  }
+
+  return { imported, skipped: contacts.length - imported };
+}

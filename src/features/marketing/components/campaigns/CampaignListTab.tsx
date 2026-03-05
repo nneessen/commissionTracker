@@ -25,7 +25,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCampaigns, useDeleteCampaign } from "../../hooks/useCampaigns";
 import type { CampaignStatus } from "../../types/marketing.types";
+import type { EmailBlock } from "@/types/email.types";
 import { CampaignWizard } from "./CampaignWizard";
+import { CampaignDetailSheet } from "./CampaignDetailSheet";
 
 const STATUS_CONFIG: Record<
   CampaignStatus,
@@ -68,8 +70,18 @@ function pct(num: number, denom: number): string {
   return `${((num / denom) * 100).toFixed(1)}%`;
 }
 
-export function CampaignListTab() {
-  const [wizardOpen, setWizardOpen] = useState(false);
+interface CampaignListTabProps {
+  initialBlocks?: EmailBlock[];
+  initialSubject?: string;
+}
+
+export function CampaignListTab({
+  initialBlocks,
+  initialSubject,
+}: CampaignListTabProps) {
+  const [wizardOpen, setWizardOpen] = useState(!!initialBlocks);
+  const [editCampaignId, setEditCampaignId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: campaigns, isLoading, error } = useCampaigns();
@@ -89,6 +101,15 @@ export function CampaignListTab() {
     });
   }
 
+  function handleRowClick(campaignId: string, status: CampaignStatus) {
+    if (status === "draft") {
+      setEditCampaignId(campaignId);
+      setWizardOpen(true);
+    } else {
+      setDetailId(campaignId);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {/* Toolbar */}
@@ -99,7 +120,10 @@ export function CampaignListTab() {
         <Button
           size="sm"
           className="h-6 px-2 text-[10px] gap-1"
-          onClick={() => setWizardOpen(true)}
+          onClick={() => {
+            setEditCampaignId(null);
+            setWizardOpen(true);
+          }}
         >
           <Plus className="h-3 w-3" />
           New Campaign
@@ -198,7 +222,8 @@ export function CampaignListTab() {
                 return (
                   <TableRow
                     key={campaign.id}
-                    className="py-1.5 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 border-b border-border/60 last:border-0"
+                    className="py-1.5 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 border-b border-border/60 last:border-0 cursor-pointer"
+                    onClick={() => handleRowClick(campaign.id, campaign.status)}
                   >
                     {/* Name */}
                     <TableCell className="py-1.5 pl-3">
@@ -206,9 +231,9 @@ export function CampaignListTab() {
                         <span className="text-[11px] font-medium leading-tight truncate max-w-[200px]">
                           {campaign.name}
                         </span>
-                        {campaign.subject && (
+                        {campaign.subject_override && (
                           <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                            {campaign.subject}
+                            {campaign.subject_override}
                           </span>
                         )}
                       </div>
@@ -244,7 +269,7 @@ export function CampaignListTab() {
                     {/* Recipients */}
                     <TableCell className="py-1.5 text-right">
                       <span className="text-[11px] tabular-nums">
-                        {campaign.total_recipients.toLocaleString()}
+                        {campaign.recipient_count.toLocaleString()}
                       </span>
                     </TableCell>
 
@@ -294,7 +319,10 @@ export function CampaignListTab() {
                         variant="ghost"
                         size="sm"
                         className="h-5 w-5 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={() => setDeleteId(campaign.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(campaign.id);
+                        }}
                         disabled={
                           deleteMutation.isPending && deleteId === campaign.id
                         }
@@ -315,7 +343,25 @@ export function CampaignListTab() {
       </div>
 
       {/* Campaign Wizard */}
-      <CampaignWizard open={wizardOpen} onOpenChange={setWizardOpen} />
+      <CampaignWizard
+        open={wizardOpen}
+        onOpenChange={(v) => {
+          setWizardOpen(v);
+          if (!v) setEditCampaignId(null);
+        }}
+        editCampaignId={editCampaignId}
+        initialBlocks={!editCampaignId ? initialBlocks : undefined}
+        initialSubject={!editCampaignId ? initialSubject : undefined}
+      />
+
+      {/* Campaign Detail Sheet */}
+      <CampaignDetailSheet
+        campaignId={detailId}
+        open={!!detailId}
+        onOpenChange={(v) => {
+          if (!v) setDetailId(null);
+        }}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog

@@ -8,6 +8,8 @@ import {
   updateCampaignStatus,
   getCampaignRecipients,
   addCampaignRecipients,
+  resetFailedRecipients,
+  duplicateCampaign,
 } from "../services/campaignService";
 import type { CampaignStatus } from "../types/marketing.types";
 
@@ -85,6 +87,23 @@ export function useAddCampaignRecipients() {
       campaignId: string;
       recipients: { email: string; variables?: Record<string, string> }[];
     }) => addCampaignRecipients(campaignId, recipients),
+    onSuccess: () => qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY }),
+  });
+}
+
+export function useResetFailedRecipients() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: resetFailedRecipients,
+    onSuccess: () => qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY }),
+  });
+}
+
+export function useDuplicateCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      duplicateCampaign(id, userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY }),
   });
 }

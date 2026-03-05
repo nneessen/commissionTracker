@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Navigate } from "@tanstack/react-router";
 import { Send, LayoutTemplate, Users, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { CampaignListTab } from "./components/campaigns/CampaignListTab";
 import { TemplateGalleryTab } from "./components/templates/TemplateGalleryTab";
 import { AudienceListTab } from "./components/audiences/AudienceListTab";
 import { AnalyticsTab } from "./components/analytics/AnalyticsTab";
+import type { EmailBlock } from "@/types/email.types";
 
 const TABS = [
   { id: "campaigns", label: "Campaigns", icon: Send },
@@ -21,8 +22,22 @@ type TabId = (typeof TABS)[number]["id"];
 export function MarketingHubPage() {
   const { data: profile, isLoading } = useCurrentUserProfile();
   const [activeTab, setActiveTab] = useState<TabId>("campaigns");
+  const [pendingBlocks, setPendingBlocks] = useState<
+    EmailBlock[] | undefined
+  >();
+  const [pendingSubject, setPendingSubject] = useState<string | undefined>();
 
-  // Super-admin gate — defense-in-depth on top of RLS
+  // Cross-tab callback: template tab → campaign tab with pre-populated blocks
+  const handleStartCampaignWithBlocks = useCallback(
+    (blocks: EmailBlock[], subject?: string) => {
+      setPendingBlocks(blocks);
+      setPendingSubject(subject);
+      setActiveTab("campaigns");
+    },
+    [],
+  );
+
+  // Super-admin gate
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -50,7 +65,14 @@ export function MarketingHubPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                // Clear pending blocks if navigating away from campaigns
+                if (tab.id !== "campaigns") {
+                  setPendingBlocks(undefined);
+                  setPendingSubject(undefined);
+                }
+              }}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-t-md border border-b-0 transition-colors -mb-px",
                 isActive
@@ -67,8 +89,17 @@ export function MarketingHubPage() {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-auto p-4">
-        {activeTab === "campaigns" && <CampaignListTab />}
-        {activeTab === "templates" && <TemplateGalleryTab />}
+        {activeTab === "campaigns" && (
+          <CampaignListTab
+            initialBlocks={pendingBlocks}
+            initialSubject={pendingSubject}
+          />
+        )}
+        {activeTab === "templates" && (
+          <TemplateGalleryTab
+            onStartCampaignWithBlocks={handleStartCampaignWithBlocks}
+          />
+        )}
         {activeTab === "audiences" && <AudienceListTab />}
         {activeTab === "analytics" && <AnalyticsTab />}
       </div>
