@@ -26,7 +26,7 @@ import type {
 } from "../../types/hierarchy.types";
 import { NotFoundError, ValidationError } from "../../errors/ServiceErrors";
 import { userTargetsRepository } from "../targets/UserTargetsRepository";
-import { parseLocalDate } from "../../lib/date";
+import { calculateCommissionProgress } from "../../utils/commissionProgress";
 
 /**
  * Service layer for hierarchy operations
@@ -1045,39 +1045,32 @@ class HierarchyService {
       );
 
       const enrichedCommissions = commissions.map((commission) => {
+        const policy = Array.isArray(commission.policy)
+          ? (commission.policy[0] ?? null)
+          : commission.policy;
         const amount = parseFloat(String(commission.amount) || "0");
-        const storedEarned = parseFloat(
-          String(commission.earned_amount) || "0",
-        );
         const chargebackAmount = parseFloat(
           String(commission.chargeback_amount) || "0",
         );
         const advanceMonths = commission.advance_months || 9;
 
-        const earnedBreakdown = this.calculateEarnedBreakdown({
+        const earnedBreakdown = calculateCommissionProgress({
           amount,
-          advanceMonths,
-          storedMonthsPaid: commission.months_paid || 0,
-          effectiveDate: commission.policy?.effective_date || null,
-          lifecycleStatus: commission.policy?.lifecycle_status || null,
-          cancellationDate: commission.policy?.cancellation_date || null,
+          advanceMonths: commission.advance_months,
+          fallbackMonthsPaid: commission.months_paid || 0,
+          effectiveDate: policy?.effective_date || null,
+          lifecycleStatus: policy?.lifecycle_status || null,
+          cancellationDate: policy?.cancellation_date || null,
         });
-
-        const earnedAmount =
-          earnedBreakdown.monthsPaid > 0
-            ? earnedBreakdown.earnedAmount
-            : storedEarned;
-
-        const unearnedAmount = Math.max(0, amount - earnedAmount);
 
         return {
           id: commission.id,
           date: commission.created_at || new Date().toISOString(),
-          policyNumber: commission.policy?.policy_number || "N/A",
+          policyNumber: policy?.policy_number || "N/A",
           type: commission.type,
           amount,
-          earnedAmount,
-          unearnedAmount,
+          earnedAmount: earnedBreakdown.earnedAmount,
+          unearnedAmount: earnedBreakdown.unearnedAmount,
           monthsPaid: earnedBreakdown.monthsPaid,
           advanceMonths,
           chargebackAmount,
@@ -1386,66 +1379,6 @@ class HierarchyService {
   }
 
   /**
-   * Calculate dynamic earned/unearned values based on policy life.
-   * Falls back to stored values when policy effective date is unavailable.
-   */
-  private calculateEarnedBreakdown(params: {
-    amount: number;
-    advanceMonths: number;
-    storedMonthsPaid: number;
-    effectiveDate: string | null;
-    lifecycleStatus: string | null;
-    cancellationDate: string | null;
-  }): { monthsPaid: number; earnedAmount: number; unearnedAmount: number } {
-    const normalizedAdvanceMonths = params.advanceMonths > 0 ? params.advanceMonths : 9;
-    let monthsPaid = Math.max(0, params.storedMonthsPaid || 0);
-
-    if (params.effectiveDate) {
-      const effectiveDate = parseLocalDate(params.effectiveDate);
-      const isClosedPolicy =
-        params.lifecycleStatus === "cancelled" ||
-        params.lifecycleStatus === "lapsed";
-
-      if (!isClosedPolicy || params.cancellationDate) {
-        const endDate =
-          isClosedPolicy && params.cancellationDate
-            ? parseLocalDate(params.cancellationDate)
-            : new Date();
-        const elapsedMonths = this.calculateElapsedMonths(effectiveDate, endDate);
-        monthsPaid = Math.max(monthsPaid, elapsedMonths);
-      }
-    }
-
-    const cappedMonthsPaid = Math.min(monthsPaid, normalizedAdvanceMonths);
-    const monthlyEarnRate = params.amount / normalizedAdvanceMonths;
-    const earnedAmount = monthlyEarnRate * cappedMonthsPaid;
-    const unearnedAmount = Math.max(0, params.amount - earnedAmount);
-
-    return {
-      monthsPaid: cappedMonthsPaid,
-      earnedAmount,
-      unearnedAmount,
-    };
-  }
-
-  /**
-   * Calculate completed months elapsed between dates.
-   */
-  private calculateElapsedMonths(startDate: Date, endDate: Date): number {
-    if (endDate < startDate) return 0;
-
-    let months =
-      (endDate.getFullYear() - startDate.getFullYear()) * 12 +
-      (endDate.getMonth() - startDate.getMonth());
-
-    if (endDate.getDate() < startDate.getDate()) {
-      months -= 1;
-    }
-
-    return Math.max(0, months);
-  }
-
-  /**
    * Calculate policy metrics from policy rows
    * Uses lifecycle_status for active/lapsed/cancelled counts (lifecycle states)
    */
@@ -1481,10 +1414,20 @@ class HierarchyService {
   } {
     return commissions.reduce(
       (acc, comm) => {
+        const policy = Array.isArray(comm.policy)
+          ? (comm.policy[0] ?? null)
+          : comm.policy;
         const amount = parseFloat(String(comm.amount) || "0");
-        const earned = parseFloat(String(comm.earned_amount) || "0");
+        const progress = calculateCommissionProgress({
+          amount,
+          advanceMonths: comm.advance_months,
+          fallbackMonthsPaid: comm.months_paid,
+          effectiveDate: policy?.effective_date || null,
+          lifecycleStatus: policy?.lifecycle_status || null,
+          cancellationDate: policy?.cancellation_date || null,
+        });
         acc.total += amount;
-        if (comm.status === "earned") acc.earned += earned;
+        acc.earned += progress.earnedAmount;
         if (comm.status === "paid") acc.paid += amount;
         return acc;
       },

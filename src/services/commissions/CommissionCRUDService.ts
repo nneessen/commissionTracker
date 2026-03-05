@@ -16,6 +16,7 @@ import {
   WORKFLOW_EVENTS,
 } from "../events/workflowEventEmitter";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { commissionStatusService } from "./CommissionStatusService";
 
 export interface CreateCommissionData {
   policyId?: string;
@@ -262,7 +263,7 @@ class CommissionCRUDService {
           this.repository as unknown as { client: SupabaseClient }
         ).client
           .from("policies")
-          .select("status")
+          .select("lifecycle_status")
           .eq("id", commission.policyId)
           .single();
 
@@ -270,38 +271,25 @@ class CommissionCRUDService {
           throw new DatabaseError("markAsPaid", policyError);
         }
 
-        if (policy.status !== "active") {
+        if (policy.lifecycle_status !== "active") {
           throw new ValidationError(
-            `Cannot mark commission as paid. Policy status is ${policy.status}, must be active.`,
+            `Cannot mark commission as paid. Policy lifecycle is ${policy.lifecycle_status}, must be active.`,
             [
               {
-                field: "policy.status",
-                message: `Policy status is ${policy.status}, must be active`,
-                value: policy.status,
+                field: "policy.lifecycle_status",
+                message: `Policy lifecycle is ${policy.lifecycle_status}, must be active`,
+                value: policy.lifecycle_status,
               },
             ],
           );
         }
       }
 
-      const updateData = {
+      await commissionStatusService.updateCommissionStatus({
+        commissionId: id,
         status: "paid",
-        payment_date: paymentDate || new Date(),
-        updated_at: new Date(),
-      };
-
-      const { error: updateError } = await (
-        this.repository as unknown as { client: SupabaseClient }
-      ).client
-        .from("commissions")
-        .update(updateData)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (updateError) {
-        throw new DatabaseError("markAsPaid", updateError);
-      }
+        paymentDate,
+      });
 
       // Use repository's transform (via findById) for consistent conversion
       const updatedCommission = await this.getById(id);

@@ -9,6 +9,7 @@ import {
 } from "../../types/commission.types";
 import { queryPerformance } from "../../utils/performance";
 import { formatDateForDB } from "../../lib/date";
+import { calculateCommissionProgress } from "../../utils/commissionProgress";
 
 /** DB row type — generated from Supabase schema, NOT Record<string, any> */
 type CommissionRow = Database["public"]["Tables"]["commissions"]["Row"];
@@ -22,6 +23,20 @@ export interface CommissionMetricRow {
   amount: number | string | null;
   status: string | null;
   earned_amount: number | string | null;
+  advance_months: number | null;
+  months_paid: number | null;
+  policy:
+    | {
+        effective_date: string | null;
+        lifecycle_status: string | null;
+        cancellation_date: string | null;
+      }
+    | Array<{
+        effective_date: string | null;
+        lifecycle_status: string | null;
+        cancellation_date: string | null;
+      }>
+    | null;
 }
 
 export interface CommissionWithPolicy {
@@ -41,7 +56,12 @@ export interface CommissionWithPolicy {
     effective_date: string | null;
     lifecycle_status: string | null;
     cancellation_date: string | null;
-  } | null;
+  } | Array<{
+    policy_number: string;
+    effective_date: string | null;
+    lifecycle_status: string | null;
+    cancellation_date: string | null;
+  }> | null;
 }
 
 export class CommissionRepository extends BaseRepository<
@@ -103,6 +123,38 @@ export class CommissionRepository extends BaseRepository<
     };
   }
 
+  private getPolicyRecord(
+    policy: CommissionWithPolicy["policy"] | CommissionMetricRow["policy"],
+  ) {
+    if (Array.isArray(policy)) {
+      return policy[0] || null;
+    }
+
+    return policy;
+  }
+
+  private transformFromDBWithPolicy(dbRecord: CommissionWithPolicy): Commission {
+    const commission = this.transformFromDB(
+      dbRecord as unknown as Record<string, unknown>,
+    );
+    const policy = this.getPolicyRecord(dbRecord.policy);
+    const progress = calculateCommissionProgress({
+      amount: commission.amount,
+      advanceMonths: dbRecord.advance_months,
+      fallbackMonthsPaid: dbRecord.months_paid,
+      effectiveDate: policy?.effective_date || null,
+      lifecycleStatus: policy?.lifecycle_status || null,
+      cancellationDate: policy?.cancellation_date || null,
+    });
+
+    return {
+      ...commission,
+      monthsPaid: progress.monthsPaid,
+      earnedAmount: progress.earnedAmount,
+      unearnedAmount: progress.unearnedAmount,
+    };
+  }
+
   async findByPolicy(policyId: string): Promise<Commission[]> {
     return queryPerformance.trackQuery(
       "findByPolicy",
@@ -111,7 +163,12 @@ export class CommissionRepository extends BaseRepository<
         try {
           const { data, error } = await this.client
             .from(this.tableName)
-            .select("*")
+            .select(
+              `
+              *,
+              policy:policies(policy_number,effective_date,lifecycle_status,cancellation_date)
+            `,
+            )
             .eq("policy_id", policyId)
             .order("created_at", { ascending: false });
 
@@ -119,7 +176,11 @@ export class CommissionRepository extends BaseRepository<
             throw this.handleError(error, "findByPolicy");
           }
 
-          return data?.map((item) => this.transformFromDB(item)) || [];
+          return (
+            (data as CommissionWithPolicy[])?.map((item) =>
+              this.transformFromDBWithPolicy(item),
+            ) || []
+          );
         } catch (error) {
           throw this.wrapError(error, "findByPolicy");
         }
@@ -131,7 +192,12 @@ export class CommissionRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("*")
+        .select(
+          `
+          *,
+          policy:policies(policy_number,effective_date,lifecycle_status,cancellation_date)
+        `,
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -139,7 +205,11 @@ export class CommissionRepository extends BaseRepository<
         throw this.handleError(error, "findByAgent");
       }
 
-      return data?.map((item) => this.transformFromDB(item)) || [];
+      return (
+        (data as CommissionWithPolicy[])?.map((item) =>
+          this.transformFromDBWithPolicy(item),
+        ) || []
+      );
     } catch (error) {
       throw this.wrapError(error, "findByAgent");
     }
@@ -155,7 +225,12 @@ export class CommissionRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("*")
+        .select(
+          `
+          *,
+          policy:policies(policy_number,effective_date,lifecycle_status,cancellation_date)
+        `,
+        )
         .in("user_id", userIds)
         .order("created_at", { ascending: false });
 
@@ -163,7 +238,11 @@ export class CommissionRepository extends BaseRepository<
         throw this.handleError(error, "findByAgents");
       }
 
-      return data?.map((item) => this.transformFromDB(item)) || [];
+      return (
+        (data as CommissionWithPolicy[])?.map((item) =>
+          this.transformFromDBWithPolicy(item),
+        ) || []
+      );
     } catch (error) {
       throw this.wrapError(error, "findByAgents");
     }
@@ -177,7 +256,17 @@ export class CommissionRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select("user_id, amount, status, earned_amount")
+        .select(
+          `
+          user_id,
+          amount,
+          status,
+          earned_amount,
+          advance_months,
+          months_paid,
+          policy:policies(effective_date,lifecycle_status,cancellation_date)
+        `,
+        )
         .in("user_id", userIds);
 
       if (error) {

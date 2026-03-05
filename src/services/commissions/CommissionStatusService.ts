@@ -18,11 +18,18 @@ import {
   ValidationError,
 } from "../../errors/ServiceErrors";
 import { formatDateForDB, parseLocalDate } from "../../lib/date";
+import { calculateCommissionProgress } from "../../utils/commissionProgress";
 
 export interface UpdateMonthsPaidParams {
   commissionId: string;
   lastPaymentDate?: Date; // Optional - defaults to today if not provided
   // monthsPaid is now automatically calculated from effective_date
+}
+
+export interface UpdateCommissionStatusParams {
+  commissionId: string;
+  status: "pending" | "unpaid" | "paid" | "charged_back";
+  paymentDate?: Date;
 }
 
 export interface UpdateMonthsPaidResult {
@@ -32,6 +39,16 @@ export interface UpdateMonthsPaidResult {
   earnedAmount: number;
   unearnedAmount: number;
   message: string;
+}
+
+export interface UpdateCommissionStatusResult {
+  id: string;
+  user_id: string;
+  status: string;
+  payment_date: string | null;
+  months_paid: number;
+  earned_amount: number;
+  unearned_amount: number;
 }
 
 export interface MarkAsCancelledParams {
@@ -106,11 +123,14 @@ class CommissionStatusService {
         .select(
           `
           id,
+          months_paid,
           advance_months,
           amount,
           policy_id,
           policies!inner (
-            effective_date
+            effective_date,
+            lifecycle_status,
+            cancellation_date
           )
         `,
         )
@@ -130,48 +150,22 @@ class CommissionStatusService {
       const policy = (commission as any).policies;
       const effectiveDate = policy?.effective_date;
 
-      if (!effectiveDate) {
-        throw new ValidationError("Policy effective_date not found", [
-          {
-            field: "effectiveDate",
-            message: "Cannot calculate months_paid without effective_date",
-            value: null,
-          },
-        ]);
-      }
-
-      // Calculate months_paid using database function
-      const { data: monthsPaidData, error: calcError } = await supabase.rpc(
-        "calculate_months_paid",
-        {
-          p_effective_date: effectiveDate,
-          p_end_date: formatDateForDB(lastPaymentDate || new Date()),
-        },
-      );
-
-      if (calcError) {
-        throw new DatabaseError("calculate_months_paid", calcError);
-      }
-
-      const monthsPaid = monthsPaidData || 0;
-
-      // Cap at advance_months
-      const cappedMonthsPaid = Math.min(
-        monthsPaid,
-        commission.advance_months || 9,
-      );
-
-      // Calculate earned and unearned amounts
-      const monthlyRate = commission.amount / (commission.advance_months || 9);
-      const earnedAmount = monthlyRate * cappedMonthsPaid;
-      const unearnedAmount = commission.amount - earnedAmount;
+      const progress = calculateCommissionProgress({
+        amount: Number(commission.amount || 0),
+        advanceMonths: commission.advance_months,
+        fallbackMonthsPaid: commission.months_paid,
+        effectiveDate: effectiveDate || null,
+        lifecycleStatus: policy?.lifecycle_status || null,
+        cancellationDate: policy?.cancellation_date || null,
+        asOfDate: lastPaymentDate,
+      });
 
       // Update commission with calculated values
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
       const updateData: any = {
-        months_paid: cappedMonthsPaid,
-        earned_amount: earnedAmount,
-        unearned_amount: Math.max(0, unearnedAmount),
+        months_paid: progress.monthsPaid,
+        earned_amount: progress.earnedAmount,
+        unearned_amount: progress.unearnedAmount,
         updated_at: new Date().toISOString(),
       };
 
@@ -195,7 +189,7 @@ class CommissionStatusService {
         {
           commissionId,
           effectiveDate,
-          monthsPaid: cappedMonthsPaid,
+          monthsPaid: progress.monthsPaid,
           earnedAmount: updated.earned_amount,
           unearnedAmount: updated.unearned_amount,
         },
@@ -208,11 +202,90 @@ class CommissionStatusService {
         monthsPaid: updated.months_paid,
         earnedAmount: parseFloat(updated.earned_amount || "0"),
         unearnedAmount: parseFloat(updated.unearned_amount || "0"),
-        message: `Auto-calculated months paid: ${cappedMonthsPaid} months`,
+        message: `Auto-calculated months paid: ${progress.monthsPaid} months`,
       };
     } catch (error) {
       logger.error(
         "CommissionStatusService.updateMonthsPaid",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  async updateCommissionStatus(
+    params: UpdateCommissionStatusParams,
+  ): Promise<UpdateCommissionStatusResult> {
+    const { commissionId, status, paymentDate } = params;
+
+    try {
+      const updateData: Record<string, unknown> = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (status === "paid") {
+        updateData.payment_date = (paymentDate || new Date()).toISOString();
+        updateData.chargeback_amount = 0;
+        updateData.chargeback_date = null;
+        updateData.chargeback_reason = null;
+      } else if (status === "pending" || status === "unpaid") {
+        updateData.payment_date = null;
+        updateData.chargeback_amount = 0;
+        updateData.chargeback_date = null;
+        updateData.chargeback_reason = null;
+      } else if (status === "charged_back") {
+        updateData.chargeback_date = formatDateForDB(new Date());
+        updateData.chargeback_reason = "Manual chargeback";
+      }
+
+      const { error: updateError } = await supabase
+        .from("commissions")
+        .update(updateData)
+        .eq("id", commissionId)
+        .select("id")
+        .single();
+
+      if (updateError) {
+        throw new DatabaseError("updateCommissionStatus", updateError);
+      }
+
+      const progress = await this.updateMonthsPaid({ commissionId });
+
+      if (status === "charged_back") {
+        const { error: chargebackError } = await supabase
+          .from("commissions")
+          .update({
+            chargeback_amount: progress.unearnedAmount,
+            chargeback_date: formatDateForDB(new Date()),
+            chargeback_reason: "Manual chargeback",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", commissionId)
+          .select("id")
+          .single();
+
+        if (chargebackError) {
+          throw new DatabaseError("updateCommissionStatus", chargebackError);
+        }
+      }
+
+      const { data: refreshed, error: refreshedError } = await supabase
+        .from("commissions")
+        .select(
+          "id, user_id, status, payment_date, months_paid, earned_amount, unearned_amount",
+        )
+        .eq("id", commissionId)
+        .single();
+
+      if (refreshedError) {
+        throw new DatabaseError("updateCommissionStatus", refreshedError);
+      }
+
+      return refreshed as UpdateCommissionStatusResult;
+    } catch (error) {
+      logger.error(
+        "CommissionStatusService.updateCommissionStatus",
         error instanceof Error ? error : new Error(String(error)),
       );
       throw error;

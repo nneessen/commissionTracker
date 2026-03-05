@@ -202,16 +202,17 @@ export function useMetricsWithDateRange(
   })();
 
   const periodCommissions = (() => {
-    const earned = filteredCommissions
-      .filter((c) => c.status === "paid")
-      .reduce((sum, c) => sum + (c.amount || 0), 0);
+    const earned = filteredCommissions.reduce(
+      (sum, c) => sum + (c.earnedAmount || 0),
+      0,
+    );
 
     const paid = filteredCommissions
       .filter((c) => c.status === "paid")
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
     const pending = filteredCommissions
-      .filter((c) => c.status === "pending")
+      .filter((c) => c.status === "pending" || c.status === "unpaid")
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
     // Group by carrier - look up carrier from the related policy
