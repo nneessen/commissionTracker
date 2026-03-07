@@ -68,6 +68,17 @@ export async function addDomainToVercel(
 
       // Handle specific Vercel errors
       if (errorData.error?.code === "domain_already_in_use") {
+        // Check if the domain is already on OUR project (not a real conflict)
+        const existingStatus = await getDomainStatus(hostname);
+        if (existingStatus.success && existingStatus.data) {
+          console.log(
+            "[vercel-api] Domain already on our project, returning existing data:",
+            hostname,
+          );
+          return { success: true, data: existingStatus.data };
+        }
+
+        // It's genuinely on another project
         return {
           success: false,
           error:
