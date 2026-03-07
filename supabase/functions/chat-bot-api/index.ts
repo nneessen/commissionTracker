@@ -140,10 +140,10 @@ serve(async (req) => {
     // TEAM PROVISION — must run BEFORE agent lookup (no agent row exists yet)
     // ──────────────────────────────────────────────
     if (action === "team_provision") {
-      // 1. Verify team membership: super admin, IMO owner, or IMO admin
+      // 1. Get this user's profile + hierarchy_path
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("first_name, last_name, roles, is_super_admin")
+        .select("first_name, last_name, hierarchy_path")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -151,17 +151,31 @@ serve(async (req) => {
         return jsonResponse({ error: "User profile not found" }, 404);
       }
 
-      const roles: string[] = Array.isArray(profile.roles) ? profile.roles : [];
-      const isTeamMember =
-        profile.is_super_admin === true ||
-        roles.includes("imo_owner") ||
-        roles.includes("imo_admin");
+      // 2. Check if any upline in the hierarchy has a billing-exempt bot.
+      //    hierarchy_path is dot-separated: "root.manager.agent"
+      //    Parse out all ancestor IDs (excluding self).
+      const hierarchyPath = profile.hierarchy_path || user.id;
+      const segments = hierarchyPath.split(".");
+      // All IDs except the last one (self) are uplines
+      const uplineIds = segments.slice(0, -1);
 
-      if (!isTeamMember) {
+      let isOnExemptTeam = false;
+      if (uplineIds.length > 0) {
+        const { data: exemptUplines } = await supabase
+          .from("chat_bot_agents")
+          .select("user_id")
+          .in("user_id", uplineIds)
+          .eq("billing_exempt", true)
+          .eq("provisioning_status", "active")
+          .limit(1);
+        isOnExemptTeam = (exemptUplines?.length ?? 0) > 0;
+      }
+
+      if (!isOnExemptTeam) {
         return jsonResponse(
           {
             error:
-              "Only team members (IMO owners, admins, super admins) can activate a free team bot",
+              "Free bot access requires your team leader to have an active billing-exempt bot",
           },
           403,
         );

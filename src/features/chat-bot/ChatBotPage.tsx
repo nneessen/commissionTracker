@@ -28,6 +28,7 @@ import {
   useChatBotAgent,
   useUpdateBotConfig,
   useProvisionTeamBot,
+  useIsOnExemptTeam,
   ChatBotApiError,
   type ChatBotAgent,
 } from "./hooks/useChatBot";
@@ -99,8 +100,9 @@ function getWizardDoneKey(agentId: string): string {
 
 export function ChatBotPage() {
   const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
-  const { isImoOwner, isImoAdmin, isSuperAdmin } = useImo();
-  const isTeamMember = isImoOwner || isImoAdmin || isSuperAdmin;
+  const { isSuperAdmin } = useImo();
+  const { data: isOnExemptTeam = false } = useIsOnExemptTeam();
+  const isTeamMember = isOnExemptTeam || isSuperAdmin;
   const { activeAddons, isLoading: addonsLoading } = useUserActiveAddons();
   const chatBotAddon = activeAddons.find(
     (a) => a.addon?.name === "ai_chat_bot",
