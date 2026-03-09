@@ -15,6 +15,7 @@ vi.mock("@/contexts/AuthContext", () => ({
   useAuth: vi.fn(),
 }));
 
+// eslint-disable-next-line no-restricted-imports
 import { supabase } from "@/services/base/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsOnExemptTeam } from "../hooks/useChatBot";

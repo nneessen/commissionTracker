@@ -1,10 +1,14 @@
 // supabase/functions/slack-ip-leaderboard/index.ts
-// Posts weekly IP (Issued Premium) report to configured Slack channel
+// Posts weekly IP (Issued Premium) + Submits report to configured Slack channel
 //
 // **IP (Issued Premium) Definition:**
 // Policies that are APPROVED and PLACED/ISSUED count towards IP.
 // Based on effective_date, not submit_date.
 // Does NOT include pending policies that have not been issued yet.
+//
+// **Submits Definition:**
+// All submitted policies (active, pending, approved) count towards submits.
+// Based on submit_date.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
@@ -18,6 +22,10 @@ interface IPLeaderboardEntry {
   wtd_policies: number;
   mtd_ip: number;
   mtd_policies: number;
+  wtd_submits: number;
+  wtd_submit_ap: number;
+  mtd_submits: number;
+  mtd_submit_ap: number;
 }
 
 interface AgencyIPEntry {
@@ -27,6 +35,10 @@ interface AgencyIPEntry {
   wtd_policies: number;
   mtd_ip: number;
   mtd_policies: number;
+  wtd_submits: number;
+  wtd_submit_ap: number;
+  mtd_submits: number;
+  mtd_submit_ap: number;
 }
 
 interface ActiveAgency {
@@ -53,6 +65,21 @@ interface PolicyForIP {
   agency_id: string | null;
   annual_premium: number | string | null;
   effective_date: string | null;
+}
+
+interface PolicyForSubmit {
+  id: string;
+  user_id: string | null;
+  agency_id: string | null;
+  annual_premium: number | string | null;
+  submit_date: string | null;
+}
+
+interface SubmitData {
+  wtd_submits: number;
+  wtd_submit_ap: number;
+  mtd_submits: number;
+  mtd_submit_ap: number;
 }
 
 interface ReportingWindow {
@@ -208,6 +235,48 @@ async function fetchPoliciesForRange(
   return allPolicies;
 }
 
+/**
+ * Fetch all submitted policies in the given submit-date window.
+ * Includes active, pending, and approved statuses.
+ * Uses pagination to avoid row limits.
+ */
+async function fetchSubmittedPoliciesForRange(
+  supabase: ReturnType<typeof createClient>,
+  imoId: string,
+  startDate: string,
+  endDate: string,
+): Promise<PolicyForSubmit[]> {
+  const pageSize = 1000;
+  let from = 0;
+  const allPolicies: PolicyForSubmit[] = [];
+
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from("policies")
+      .select("id, user_id, agency_id, annual_premium, submit_date")
+      .eq("imo_id", imoId)
+      .in("status", ["active", "pending", "approved"])
+      .not("submit_date", "is", null)
+      .gte("submit_date", startDate)
+      .lte("submit_date", endDate)
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Failed to fetch submitted policies: ${error.message}`);
+    }
+
+    const rows = (data || []) as PolicyForSubmit[];
+    allPolicies.push(...rows);
+
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return allPolicies;
+}
+
 async function fetchUserNames(
   supabase: ReturnType<typeof createClient>,
   userIds: string[],
@@ -279,8 +348,49 @@ async function fetchAgencyUsers(
   return (data || []) as UserProfileForAgency[];
 }
 
+/**
+ * Build submit data map keyed by user_id from submitted policies.
+ */
+function buildSubmitMap(
+  submitPolicies: PolicyForSubmit[],
+  monthStart: string,
+  monthEnd: string,
+  weekStart: string,
+  weekEnd: string,
+): Map<string, SubmitData> {
+  const byUser = new Map<string, SubmitData>();
+
+  for (const policy of submitPolicies) {
+    if (!policy.user_id || !policy.submit_date) continue;
+    const premium = Number(policy.annual_premium || 0);
+    const validPremium = Number.isFinite(premium) ? premium : 0;
+
+    const existing = byUser.get(policy.user_id) || {
+      wtd_submits: 0,
+      wtd_submit_ap: 0,
+      mtd_submits: 0,
+      mtd_submit_ap: 0,
+    };
+
+    if (inDateRange(policy.submit_date, monthStart, monthEnd)) {
+      existing.mtd_submits += 1;
+      existing.mtd_submit_ap += validPremium;
+    }
+
+    if (inDateRange(policy.submit_date, weekStart, weekEnd)) {
+      existing.wtd_submits += 1;
+      existing.wtd_submit_ap += validPremium;
+    }
+
+    byUser.set(policy.user_id, existing);
+  }
+
+  return byUser;
+}
+
 function buildAgentEntries(
-  policies: PolicyForIP[],
+  ipPolicies: PolicyForIP[],
+  submitMap: Map<string, SubmitData>,
   monthStart: string,
   monthEnd: string,
   weekStart: string,
@@ -289,7 +399,8 @@ function buildAgentEntries(
 ): IPLeaderboardEntry[] {
   const byUser = new Map<string, IPLeaderboardEntry>();
 
-  for (const policy of policies) {
+  // Process IP policies
+  for (const policy of ipPolicies) {
     if (!policy.user_id || !policy.effective_date) continue;
     const premium = Number(policy.annual_premium || 0);
     if (!Number.isFinite(premium)) continue;
@@ -303,6 +414,10 @@ function buildAgentEntries(
         wtd_policies: 0,
         mtd_ip: 0,
         mtd_policies: 0,
+        wtd_submits: 0,
+        wtd_submit_ap: 0,
+        mtd_submits: 0,
+        mtd_submit_ap: 0,
       } as IPLeaderboardEntry);
 
     if (inDateRange(policy.effective_date, monthStart, monthEnd)) {
@@ -318,13 +433,43 @@ function buildAgentEntries(
     byUser.set(policy.user_id, existing);
   }
 
+  // Merge submit data into existing entries and create submit-only entries
+  for (const [userId, submit] of submitMap) {
+    const existing = byUser.get(userId) || {
+      agent_id: userId,
+      agent_name: userNameById.get(userId) || "Unknown",
+      wtd_ip: 0,
+      wtd_policies: 0,
+      mtd_ip: 0,
+      mtd_policies: 0,
+      wtd_submits: 0,
+      wtd_submit_ap: 0,
+      mtd_submits: 0,
+      mtd_submit_ap: 0,
+    };
+
+    existing.wtd_submits = submit.wtd_submits;
+    existing.wtd_submit_ap = submit.wtd_submit_ap;
+    existing.mtd_submits = submit.mtd_submits;
+    existing.mtd_submit_ap = submit.mtd_submit_ap;
+
+    byUser.set(userId, existing);
+  }
+
   return [...byUser.values()]
-    .filter((entry) => entry.wtd_ip > 0 || entry.mtd_ip > 0)
-    .sort((a, b) => b.mtd_ip - a.mtd_ip);
+    .filter(
+      (entry) =>
+        entry.wtd_ip > 0 ||
+        entry.mtd_ip > 0 ||
+        entry.wtd_submits > 0 ||
+        entry.mtd_submits > 0,
+    )
+    .sort((a, b) => b.mtd_ip - a.mtd_ip || b.mtd_submits - a.mtd_submits);
 }
 
 function buildAgencyEntries(
-  policies: PolicyForIP[],
+  ipPolicies: PolicyForIP[],
+  submitMap: Map<string, SubmitData>,
   monthStart: string,
   monthEnd: string,
   weekStart: string,
@@ -370,6 +515,7 @@ function buildAgencyEntries(
     return descendants;
   };
 
+  // IP totals per user
   const policyTotalsByUserId = new Map<
     string,
     {
@@ -380,7 +526,7 @@ function buildAgencyEntries(
     }
   >();
 
-  for (const policy of policies) {
+  for (const policy of ipPolicies) {
     if (!policy.user_id || !policy.effective_date) continue;
     const premium = Number(policy.annual_premium || 0);
     if (!Number.isFinite(premium)) continue;
@@ -451,14 +597,27 @@ function buildAgencyEntries(
     let wtdPolicies = 0;
     let mtdIP = 0;
     let mtdPolicies = 0;
+    let wtdSubmits = 0;
+    let wtdSubmitAP = 0;
+    let mtdSubmits = 0;
+    let mtdSubmitAP = 0;
 
     for (const userId of memberUserIds) {
-      const totals = policyTotalsByUserId.get(userId);
-      if (!totals) continue;
-      wtdIP += totals.wtd_ip;
-      wtdPolicies += totals.wtd_policies;
-      mtdIP += totals.mtd_ip;
-      mtdPolicies += totals.mtd_policies;
+      const ipTotals = policyTotalsByUserId.get(userId);
+      if (ipTotals) {
+        wtdIP += ipTotals.wtd_ip;
+        wtdPolicies += ipTotals.wtd_policies;
+        mtdIP += ipTotals.mtd_ip;
+        mtdPolicies += ipTotals.mtd_policies;
+      }
+
+      const submitTotals = submitMap.get(userId);
+      if (submitTotals) {
+        wtdSubmits += submitTotals.wtd_submits;
+        wtdSubmitAP += submitTotals.wtd_submit_ap;
+        mtdSubmits += submitTotals.mtd_submits;
+        mtdSubmitAP += submitTotals.mtd_submit_ap;
+      }
     }
 
     results.push({
@@ -468,12 +627,22 @@ function buildAgencyEntries(
       wtd_policies: wtdPolicies,
       mtd_ip: mtdIP,
       mtd_policies: mtdPolicies,
+      wtd_submits: wtdSubmits,
+      wtd_submit_ap: wtdSubmitAP,
+      mtd_submits: mtdSubmits,
+      mtd_submit_ap: mtdSubmitAP,
     });
   }
 
   return results
-    .filter((entry) => entry.wtd_ip > 0 || entry.mtd_ip > 0)
-    .sort((a, b) => b.mtd_ip - a.mtd_ip);
+    .filter(
+      (entry) =>
+        entry.wtd_ip > 0 ||
+        entry.mtd_ip > 0 ||
+        entry.wtd_submits > 0 ||
+        entry.mtd_submits > 0,
+    )
+    .sort((a, b) => b.mtd_ip - a.mtd_ip || b.mtd_submits - a.mtd_submits);
 }
 
 /**
@@ -484,10 +653,17 @@ function buildDisplayAgencies(
   agencies: AgencyIPEntry[],
   totalWTD: number,
   totalMTD: number,
+  totalWTDSubmits: number,
+  totalWTDSubmitAP: number,
+  totalMTDSubmits: number,
+  totalMTDSubmitAP: number,
 ): AgencyIPEntry[] {
   const display = [...agencies]
-    .filter((a) => a.wtd_ip > 0 || a.mtd_ip > 0)
-    .sort((a, b) => b.mtd_ip - a.mtd_ip);
+    .filter(
+      (a) =>
+        a.wtd_ip > 0 || a.mtd_ip > 0 || a.wtd_submits > 0 || a.mtd_submits > 0,
+    )
+    .sort((a, b) => b.mtd_ip - a.mtd_ip || b.mtd_submits - a.mtd_submits);
 
   const selfMadeIndex = display.findIndex((agency) =>
     agency.agency_name.toLowerCase().includes("self made"),
@@ -498,6 +674,10 @@ function buildDisplayAgencies(
       ...display[selfMadeIndex],
       wtd_ip: totalWTD,
       mtd_ip: totalMTD,
+      wtd_submits: totalWTDSubmits,
+      wtd_submit_ap: totalWTDSubmitAP,
+      mtd_submits: totalMTDSubmits,
+      mtd_submit_ap: totalMTDSubmitAP,
     };
   } else {
     display.unshift({
@@ -507,91 +687,101 @@ function buildDisplayAgencies(
       wtd_policies: 0,
       mtd_ip: totalMTD,
       mtd_policies: 0,
+      wtd_submits: totalWTDSubmits,
+      wtd_submit_ap: totalWTDSubmitAP,
+      mtd_submits: totalMTDSubmits,
+      mtd_submit_ap: totalMTDSubmitAP,
     });
   }
 
-  return display.sort((a, b) => b.mtd_ip - a.mtd_ip);
+  return display.sort(
+    (a, b) => b.mtd_ip - a.mtd_ip || b.mtd_submits - a.mtd_submits,
+  );
 }
 
 /**
- * Build IP leaderboard message
+ * Build combined IP + Submits leaderboard message
  */
 function buildIPLeaderboardMessage(
   agents: IPLeaderboardEntry[],
   agencies: AgencyIPEntry[],
-  totalAgentCount: number,
+  _totalAgentCount: number,
   weekRange: string,
 ): string {
-  let message = `:chart_with_upwards_trend: *Weekly IP Report*\n`;
+  let message = `:chart_with_upwards_trend: *Weekly IP & Submits Report*\n`;
   message += `:date: Week of ${weekRange}\n\n`;
-  message += `*IP (Issued Premium):* Approved & placed policies count towards IP only. Pending policies not yet issued are excluded.\n\n`;
+  message += `*IP (Issued Premium):* Approved & placed policies by effective date\n`;
+  message += `*Submitted Apps:* All submitted policies by submit date\n\n`;
   message += `:warning: *Accuracy depends on YOU:* Update your policies from pending to approved when policies go into effect.\n\n`;
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // Top Producers WTD - agents with WTD IP > 0
+  // ── Top Producers WTD (ranked by submit AP) ──
   const agentsWithWTD = agents
-    .filter((a) => a.wtd_ip > 0)
-    .sort((a, b) => b.wtd_ip - a.wtd_ip);
-  const agentsWithZeroWTD = totalAgentCount - agentsWithWTD.length;
+    .filter((a) => a.wtd_ip > 0 || a.wtd_submits > 0)
+    .sort((a, b) => b.wtd_submit_ap - a.wtd_submit_ap || b.wtd_ip - a.wtd_ip);
 
   if (agentsWithWTD.length > 0) {
     message += `*Top Producers (WTD):*\n`;
     agentsWithWTD.forEach((agent, index) => {
       const rank = index + 1;
       const emoji = getRankEmoji(rank);
+      const submitAP = formatCurrency(agent.wtd_submit_ap);
+      const paddedAP = submitAP.padStart(10, " ");
       const ip = formatCurrency(agent.wtd_ip);
-      const policies = agent.wtd_policies;
-      const paddedIP = ip.padStart(10, " ");
-      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? "policy" : "policies"})\n`;
+      message += `${emoji} ${paddedAP} AP  ·  ${agent.agent_name}  (${ip} IP)\n`;
     });
     message += `\n`;
   }
 
-  // Show agents with zero WTD
-  if (agentsWithZeroWTD > 0) {
-    message += `_${agentsWithZeroWTD} agent${agentsWithZeroWTD === 1 ? "" : "s"} with $0 IP this week_\n\n`;
-  }
-
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // Top Producers MTD
+  // ── Top Producers MTD (ranked by submit AP) ──
   const agentsWithMTD = agents
-    .filter((a) => a.mtd_ip > 0)
-    .sort((a, b) => b.mtd_ip - a.mtd_ip);
-  const agentsWithZeroMTD = totalAgentCount - agentsWithMTD.length;
+    .filter((a) => a.mtd_ip > 0 || a.mtd_submits > 0)
+    .sort((a, b) => b.mtd_submit_ap - a.mtd_submit_ap || b.mtd_ip - a.mtd_ip);
 
   if (agentsWithMTD.length > 0) {
     message += `*Top Producers (MTD):*\n`;
     agentsWithMTD.forEach((agent, index) => {
       const rank = index + 1;
       const emoji = getRankEmoji(rank);
+      const submitAP = formatCurrency(agent.mtd_submit_ap);
+      const paddedAP = submitAP.padStart(10, " ");
       const ip = formatCurrency(agent.mtd_ip);
-      const policies = agent.mtd_policies;
-      const paddedIP = ip.padStart(10, " ");
-      message += `${emoji} ${paddedIP}  ·  ${agent.agent_name}  (${policies} ${policies === 1 ? "policy" : "policies"})\n`;
+      message += `${emoji} ${paddedAP} AP  ·  ${agent.agent_name}  (${ip} IP)\n`;
     });
     message += `\n`;
   }
 
-  // Show agents with zero MTD
-  if (agentsWithZeroMTD > 0) {
-    message += `_${agentsWithZeroMTD} agent${agentsWithZeroMTD === 1 ? "" : "s"} with $0 IP this month_\n\n`;
-  }
+  // ── Totals ──
+  const totalWTDIP = agents.reduce((sum, agent) => sum + agent.wtd_ip, 0);
+  const totalMTDIP = agents.reduce((sum, agent) => sum + agent.mtd_ip, 0);
+  const totalWTDSubmits = agents.reduce((sum, a) => sum + a.wtd_submits, 0);
+  const totalWTDSubmitAP = agents.reduce((sum, a) => sum + a.wtd_submit_ap, 0);
+  const totalMTDSubmits = agents.reduce((sum, a) => sum + a.mtd_submits, 0);
+  const totalMTDSubmitAP = agents.reduce((sum, a) => sum + a.mtd_submit_ap, 0);
 
-  const totalWTD = agents.reduce((sum, agent) => sum + agent.wtd_ip, 0);
-  const totalMTD = agents.reduce((sum, agent) => sum + agent.mtd_ip, 0);
-  const displayAgencies = buildDisplayAgencies(agencies, totalWTD, totalMTD);
+  const displayAgencies = buildDisplayAgencies(
+    agencies,
+    totalWTDIP,
+    totalMTDIP,
+    totalWTDSubmits,
+    totalWTDSubmitAP,
+    totalMTDSubmits,
+    totalMTDSubmitAP,
+  );
 
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-  message += `:moneybag: *Total WTD:* ${formatCurrency(totalWTD)}\n`;
-  message += `:calendar: *Total MTD:* ${formatCurrency(totalMTD)}\n\n`;
+  message += `:moneybag: *Total WTD:* ${formatCurrency(totalWTDSubmitAP)} AP submitted  ·  ${formatCurrency(totalWTDIP)} IP\n`;
+  message += `:calendar: *Total MTD:* ${formatCurrency(totalMTDSubmitAP)} AP submitted  ·  ${formatCurrency(totalMTDIP)} IP\n\n`;
 
-  // Agency rankings (sorted by MTD IP descending)
+  // ── Agency rankings ──
   message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
   message += `:office: *Agency Rankings*\n\n`;
 
   displayAgencies.forEach((agency) => {
-    message += `${agency.agency_name}:  WTD ${formatCurrency(agency.wtd_ip)} · MTD ${formatCurrency(agency.mtd_ip)}\n`;
+    message += `${agency.agency_name}:\n`;
+    message += `  WTD: ${formatCurrency(agency.wtd_submit_ap)} AP · ${formatCurrency(agency.wtd_ip)} IP  |  MTD: ${formatCurrency(agency.mtd_submit_ap)} AP · ${formatCurrency(agency.mtd_ip)} IP\n`;
   });
 
   return message;
@@ -683,22 +873,33 @@ serve(async (req) => {
         ? reportingWindow.weekStart
         : reportingWindow.monthStart;
 
-    // Pull approved policies for month-through-report-end and aggregate in code.
-    // This guarantees date-window correctness even if RPC definitions lag deployment.
-    const policies = await fetchPoliciesForRange(
-      supabase,
-      imoId,
-      fetchStartDate,
-      reportingWindow.weekEnd,
-    );
+    // Fetch IP policies (approved, by effective_date) and submitted policies
+    // (active/pending/approved, by submit_date) in parallel
+    const [ipPolicies, submitPolicies] = await Promise.all([
+      fetchPoliciesForRange(
+        supabase,
+        imoId,
+        fetchStartDate,
+        reportingWindow.weekEnd,
+      ),
+      fetchSubmittedPoliciesForRange(
+        supabase,
+        imoId,
+        fetchStartDate,
+        reportingWindow.weekEnd,
+      ),
+    ]);
 
-    if (!policies || policies.length === 0) {
-      console.log("[slack-ip-leaderboard] No IP data available");
+    if (
+      (!ipPolicies || ipPolicies.length === 0) &&
+      (!submitPolicies || submitPolicies.length === 0)
+    ) {
+      console.log("[slack-ip-leaderboard] No IP or submit data available");
       return new Response(
         JSON.stringify({
           ok: true,
           skipped: true,
-          reason: "No IP data",
+          reason: "No IP or submit data",
         }),
         {
           status: 200,
@@ -707,18 +908,33 @@ serve(async (req) => {
       );
     }
 
-    const userIds = [
-      ...new Set(policies.map((p) => p.user_id).filter(Boolean)),
-    ].map((id) => id as string);
+    // Collect all user IDs from both datasets
+    const ipUserIds = ipPolicies
+      .map((p) => p.user_id)
+      .filter(Boolean) as string[];
+    const submitUserIds = submitPolicies
+      .map((p) => p.user_id)
+      .filter(Boolean) as string[];
+    const allUserIds = [...new Set([...ipUserIds, ...submitUserIds])];
 
     const [userNameById, activeAgencies, agencyUsers] = await Promise.all([
-      fetchUserNames(supabase, userIds),
+      fetchUserNames(supabase, allUserIds),
       fetchActiveAgencies(supabase, imoId),
       fetchAgencyUsers(supabase, imoId),
     ]);
 
+    // Build submit map from submitted policies
+    const submitMap = buildSubmitMap(
+      submitPolicies,
+      reportingWindow.monthStart,
+      reportingWindow.monthEnd,
+      reportingWindow.weekStart,
+      reportingWindow.weekEnd,
+    );
+
     const agents = buildAgentEntries(
-      policies,
+      ipPolicies,
+      submitMap,
       reportingWindow.monthStart,
       reportingWindow.monthEnd,
       reportingWindow.weekStart,
@@ -727,7 +943,8 @@ serve(async (req) => {
     );
 
     const agencies = buildAgencyEntries(
-      policies,
+      ipPolicies,
+      submitMap,
       reportingWindow.monthStart,
       reportingWindow.monthEnd,
       reportingWindow.weekStart,
@@ -805,42 +1022,58 @@ serve(async (req) => {
         .eq("id", integration.id);
     }
 
-    const totalWTD = agents.reduce((sum, agent) => sum + agent.wtd_ip, 0);
-    const totalMTD = agents.reduce((sum, agent) => sum + agent.mtd_ip, 0);
-    const displayAgencies = buildDisplayAgencies(agencies, totalWTD, totalMTD);
+    const totalWTDIP = agents.reduce((sum, agent) => sum + agent.wtd_ip, 0);
+    const totalMTDIP = agents.reduce((sum, agent) => sum + agent.mtd_ip, 0);
+    const totalWTDSubmits = agents.reduce((sum, a) => sum + a.wtd_submits, 0);
+    const totalMTDSubmits = agents.reduce((sum, a) => sum + a.mtd_submits, 0);
+    const displayAgencies = buildDisplayAgencies(
+      agencies,
+      totalWTDIP,
+      totalMTDIP,
+      totalWTDSubmits,
+      agents.reduce((sum, a) => sum + a.wtd_submit_ap, 0),
+      totalMTDSubmits,
+      agents.reduce((sum, a) => sum + a.mtd_submit_ap, 0),
+    );
 
     const result = {
       channel: integration.leaderboard_channel_name,
       weekRange,
       topWTD: [...agents]
-        .filter((agent) => agent.wtd_ip > 0)
-        .sort((a, b) => b.wtd_ip - a.wtd_ip)
+        .filter((agent) => agent.wtd_ip > 0 || agent.wtd_submits > 0)
+        .sort((a, b) => b.wtd_ip - a.wtd_ip || b.wtd_submits - a.wtd_submits)
         .slice(0, 5)
         .map((agent) => ({
           name: agent.agent_name,
           ip: Math.round(agent.wtd_ip),
           policies: agent.wtd_policies,
+          submits: agent.wtd_submits,
+          submitAP: Math.round(agent.wtd_submit_ap),
         })),
       topMTD: [...agents]
-        .filter((agent) => agent.mtd_ip > 0)
-        .sort((a, b) => b.mtd_ip - a.mtd_ip)
+        .filter((agent) => agent.mtd_ip > 0 || agent.mtd_submits > 0)
+        .sort((a, b) => b.mtd_ip - a.mtd_ip || b.mtd_submits - a.mtd_submits)
         .slice(0, 5)
         .map((agent) => ({
           name: agent.agent_name,
           ip: Math.round(agent.mtd_ip),
           policies: agent.mtd_policies,
+          submits: agent.mtd_submits,
+          submitAP: Math.round(agent.mtd_submit_ap),
         })),
       topAgencies: displayAgencies.slice(0, 5).map((agency) => ({
         name: agency.agency_name,
         wtd: Math.round(agency.wtd_ip),
         mtd: Math.round(agency.mtd_ip),
+        wtdSubmits: agency.wtd_submits,
+        mtdSubmits: agency.mtd_submits,
       })),
       ok: data.ok,
       error: data.error,
     };
 
     console.log(
-      `[slack-ip-leaderboard] Posted IP report to #${integration.leaderboard_channel_name} (${weekRange})`,
+      `[slack-ip-leaderboard] Posted IP & submits report to #${integration.leaderboard_channel_name} (${weekRange})`,
     );
 
     return new Response(JSON.stringify({ ok: true, results: [result] }), {
