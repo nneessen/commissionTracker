@@ -1,16 +1,11 @@
 import type {
   SessionEligibilitySummary,
   SessionRecommendationInput,
+  UnderwritingSession,
 } from "../types/underwriting.types";
 // eslint-disable-next-line no-restricted-imports
 import type { DecisionEngineResult } from "@/services/underwriting/decisionEngine";
 import { formatCurrency, safeParseJsonArray } from "./formatters";
-
-/** Input type for face amount helpers — supports optional plural field ahead of migration */
-interface FaceAmountFields {
-  requested_face_amount: number | null;
-  requested_face_amounts?: unknown;
-}
 
 function roundTo(value: number, digits: number): number {
   const factor = 10 ** digits;
@@ -92,7 +87,14 @@ export function buildSessionRecommendations(
   });
 }
 
-export function getRequestedFaceAmounts(session: FaceAmountFields): number[] {
+type SessionFaceAmountFields = Pick<
+  UnderwritingSession,
+  "requested_face_amount" | "requested_face_amounts"
+>;
+
+export function getRequestedFaceAmounts(
+  session: SessionFaceAmountFields,
+): number[] {
   const exactAmounts = safeParseJsonArray<unknown>(
     session.requested_face_amounts,
   )
@@ -110,7 +112,9 @@ export function getRequestedFaceAmounts(session: FaceAmountFields): number[] {
     : [];
 }
 
-export function formatRequestedFaceAmounts(session: FaceAmountFields): string {
+export function formatRequestedFaceAmounts(
+  session: SessionFaceAmountFields,
+): string {
   const amounts = getRequestedFaceAmounts(session);
 
   if (amounts.length === 0) {

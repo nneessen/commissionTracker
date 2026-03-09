@@ -10900,6 +10900,7 @@ export type Database = {
           notes: string | null;
           recommendations: Json;
           requested_face_amount: number | null;
+          requested_face_amounts: Json;
           requested_product_types: string[] | null;
           risk_factors: string[] | null;
           session_duration_seconds: number | null;
@@ -10931,6 +10932,7 @@ export type Database = {
           notes?: string | null;
           recommendations?: Json;
           requested_face_amount?: number | null;
+          requested_face_amounts?: Json;
           requested_product_types?: string[] | null;
           risk_factors?: string[] | null;
           session_duration_seconds?: number | null;
@@ -10962,6 +10964,7 @@ export type Database = {
           notes?: string | null;
           recommendations?: Json;
           requested_face_amount?: number | null;
+          requested_face_amounts?: Json;
           requested_product_types?: string[] | null;
           risk_factors?: string[] | null;
           session_duration_seconds?: number | null;
@@ -16814,8 +16817,8 @@ export type Database = {
         Returns: Json;
       };
       safe_uuid_from_text: { Args: { input: string }; Returns: string };
-      save_underwriting_session: {
-        Args: { p_payload: Json; p_user_id: string };
+      save_underwriting_session_v2: {
+        Args: { p_payload: Json };
         Returns: Json;
       };
       save_workflow_as_org_template: {

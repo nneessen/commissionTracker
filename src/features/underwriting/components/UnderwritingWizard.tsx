@@ -38,11 +38,7 @@ import {
   buildSessionHealthSnapshot,
   parseSessionHealthSnapshot,
 } from "../utils/session-health-snapshot";
-import {
-  buildEligibilitySummary,
-  buildSessionRecommendations,
-  getRequestedFaceAmounts,
-} from "../utils/session-persistence";
+import { getRequestedFaceAmounts } from "../utils/session-persistence";
 import type {
   WizardFormData,
   WizardStep,
@@ -51,7 +47,7 @@ import type {
   CoverageRequest,
   AIAnalysisResult,
   AIAnalysisRequest,
-  SessionSaveData,
+  SessionSaveInput,
   UnderwritingSession,
   ConditionResponse,
   TobaccoInfo,
@@ -530,53 +526,12 @@ function UnderwritingWizardInner() {
     const decisionResult = decisionEngineMutation.data;
     if (!analysisResult || !decisionResult) return;
 
-    const bmi = calculateBMI(
-      formData.client.heightFeet,
-      formData.client.heightInches,
-      formData.client.weight,
-    );
-
-    const decisionEngineRecs =
-      decisionEngineMutation.data?.recommendations || [];
-    const topRateTableRecs = decisionEngineRecs.slice(0, 3).map((rec) => {
-      const quotedHealthClass =
-        rec.healthClassUsed ??
-        rec.healthClassRequested ??
-        rec.healthClassResult;
-      const quoteClassNote =
-        (rec.availableRateClasses?.length ?? 0) === 0 &&
-        rec.monthlyPremium === null
-          ? "No premium matrix loaded for quoteable classes"
-          : rec.wasFallback &&
-              rec.healthClassRequested &&
-              rec.healthClassUsed &&
-              rec.healthClassUsed !== rec.healthClassRequested
-            ? `UW ${rec.healthClassRequested} -> Quote ${rec.healthClassUsed}`
-            : rec.availableRateClasses?.length === 1
-              ? "Single rate class product"
-              : undefined;
-
-      return {
-        carrierName: rec.carrierName,
-        productName: rec.productName,
-        termYears: rec.termYears ?? null,
-        healthClass: quotedHealthClass,
-        quotedHealthClass,
-        underwritingHealthClass: rec.healthClassResult,
-        quoteClassNote,
-        monthlyPremium: rec.monthlyPremium ?? null,
-        faceAmount: rec.maxCoverage,
-        reason: rec.reason || "best_value",
-      };
-    });
-
-    const sessionData: SessionSaveData = {
+    const sessionData: SessionSaveInput = {
       clientName: formData.client.name || undefined,
       clientDob: formData.client.dob,
       clientAge: formData.client.age,
       clientGender: formData.client.gender,
       clientState: formData.client.state,
-      clientBmi: bmi,
       clientHeightInches:
         formData.client.heightFeet * 12 + formData.client.heightInches,
       clientWeightLbs: formData.client.weight,
@@ -591,12 +546,6 @@ function UnderwritingWizardInner() {
       tobaccoDetails: formData.health.tobacco,
       requestedFaceAmounts: formData.coverage.faceAmounts,
       requestedProductTypes: formData.coverage.productTypes,
-      aiAnalysis: null,
-      healthTier: analysisResult.healthTier,
-      riskFactors: analysisResult.riskFactors,
-      recommendations: topRateTableRecs,
-      eligibilitySummary: buildEligibilitySummary(decisionResult),
-      sessionRecommendations: buildSessionRecommendations(decisionResult),
       sessionDurationSeconds: Math.floor(
         (Date.now() - sessionStartTime) / 1000,
       ),

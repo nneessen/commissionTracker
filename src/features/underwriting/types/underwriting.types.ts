@@ -622,13 +622,12 @@ export interface SessionHealthSnapshot {
   medications?: MedicationInfo;
 }
 
-export interface SessionSaveData {
+export interface SessionSaveInput {
   clientName?: string;
   clientDob?: string | null;
   clientAge: number;
   clientGender: string;
   clientState: string;
-  clientBmi: number;
   clientHeightInches: number;
   clientWeightLbs: number;
   healthResponses: Record<string, ConditionResponse> | SessionHealthSnapshot;
@@ -637,13 +636,6 @@ export interface SessionSaveData {
   tobaccoDetails?: TobaccoInfo;
   requestedFaceAmounts: number[]; // Array of face amounts
   requestedProductTypes: string[];
-  aiAnalysis: AIAnalysisResult | null; // Now nullable - we store rate table recs instead
-  healthTier: HealthTier;
-  riskFactors: string[];
-  // Can be AI recommendations (legacy) or rate table recommendations (new)
-  recommendations: CarrierRecommendation[] | RateTableRecommendation[];
-  eligibilitySummary: SessionEligibilitySummary;
-  sessionRecommendations: SessionRecommendationInput[];
   decisionTreeId?: string;
   sessionDurationSeconds?: number;
   notes?: string;
