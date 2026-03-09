@@ -32,8 +32,10 @@ export {
   underwritingQueryKeys,
   guideQueryKeys,
   carriersWithProductsQueryKeys,
+  coverageAuditKeys,
   parseFollowUpSchema,
   groupConditionsByCategory,
+  useCoverageAudit,
 } from "./hooks";
 
 // Types
@@ -44,6 +46,7 @@ export type {
   WizardFormData,
   ClientInfo,
   HealthInfo,
+  MedicationInfo,
   CoverageRequest,
   AIAnalysisResult,
   AIAnalysisRequest,
@@ -137,6 +140,7 @@ export type {
 // UW Wizard Usage Hook
 export {
   useUWWizardUsage,
+  useRecordUWWizardRun,
   getUsageStatus,
   getDaysRemaining,
   uwWizardUsageKeys,

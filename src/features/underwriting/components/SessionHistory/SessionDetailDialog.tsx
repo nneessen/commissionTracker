@@ -19,7 +19,6 @@ import {
 import type {
   UnderwritingSession,
   CarrierRecommendation,
-  ConditionResponse,
 } from "../../types/underwriting.types";
 import { getHealthTierLabel } from "../../types/underwriting.types";
 import {
@@ -30,8 +29,8 @@ import {
   formatProductType,
   isValidHealthTier,
   safeParseJsonArray,
-  safeParseJsonObject,
 } from "../../utils/formatters";
+import { parseSessionHealthSnapshot } from "../../utils/session-health-snapshot";
 
 interface SessionDetailDialogProps {
   session: UnderwritingSession | null;
@@ -54,9 +53,8 @@ export function SessionDetailDialog({
   const conditionsReported = safeParseJsonArray<string>(
     session.conditions_reported,
   );
-  const healthResponses = safeParseJsonObject<
-    Record<string, ConditionResponse>
-  >(session.health_responses);
+  const healthSnapshot = parseSessionHealthSnapshot(session.health_responses);
+  const healthResponses = healthSnapshot.conditionsByCode;
   const productTypes = safeParseJsonArray<string>(
     session.requested_product_types,
   );

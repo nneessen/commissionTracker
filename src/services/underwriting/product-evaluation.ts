@@ -13,6 +13,7 @@ import type {
   ProductEvaluationResult,
   ExtractedCriteria,
   HealthClass,
+  ApprovalResult,
 } from "./decision-engine.types";
 import type { EligibilityStatus } from "@/features/underwriting";
 import type {
@@ -22,24 +23,30 @@ import type {
   BmiTableData,
   BuildRatingClass,
 } from "@/features/underwriting";
-import {
-  lookupBuildRatingUnified,
-} from "@/features/underwriting";
+import { lookupBuildRatingUnified } from "@/features/underwriting";
 import {
   getPremiumMatrixForProduct,
   getAvailableTermsForAge,
   getLongestAvailableTermForAge,
+  getAvailableRateClassesForQuote,
   calculateAlternativeQuotes,
   getComparisonFaceAmounts,
+  type GenderType,
   type TobaccoClass,
   type TermYears,
   type PremiumMatrix,
   type AlternativeQuote,
 } from "./premiumMatrixService";
-import { checkEligibility, getMaxFaceAmountForAgeTerm } from "./eligibility-filter";
+import {
+  checkEligibility,
+  getMaxFaceAmountForAgeTerm,
+} from "./eligibility-filter";
 import { applyBuildConstraint } from "./approval-scoring";
 import { getPremium } from "./premium-calculator";
-import { calculateApprovalV2 } from "./ruleEngineV2Adapter";
+import {
+  calculateApprovalV2,
+  type ClientProfileV2,
+} from "./ruleEngineV2Adapter";
 
 // Debug flag - set to false in production to suppress verbose logging
 const DEBUG_DECISION_ENGINE =
@@ -154,70 +161,106 @@ export async function getExtractedCriteriaMap(
  * This is a major performance optimization - instead of N queries (one per product),
  * we fetch all matrices with a single query using an IN clause.
  *
+ * Filters by gender + tobacco_class to reduce payload ~75%. These filters are safe
+ * because interpolatePremium and getAvailableRateClassesForQuote already filter to
+ * a single gender + tobacco combination internally.
+ *
  * @param productIds - Array of product IDs
  * @param imoId - IMO ID for filtering
+ * @param gender - Client gender to filter matrix rows
+ * @param tobaccoUse - Client tobacco usage to filter matrix rows
  * @returns Map of productId to PremiumMatrix array
  */
 export async function batchFetchPremiumMatrices(
   productIds: string[],
   imoId: string,
+  gender: GenderType,
+  tobaccoUse: boolean,
 ): Promise<Map<string, PremiumMatrix[]>> {
   const matrixMap = new Map<string, PremiumMatrix[]>();
   if (productIds.length === 0) return matrixMap;
 
-  const PAGE_SIZE = 10000; // High limit to get all matrices in one query
+  // Supabase project caps at 5000 rows per request (PostgREST db_max_rows).
+  // We paginate with .range() to fetch everything.
+  const PAGE_SIZE = 5000;
+  const tobaccoClass: TobaccoClass = tobaccoUse ? "tobacco" : "non_tobacco";
 
-  // Fetch all premium matrices for all products in one query
-  // CRITICAL: Must use .limit() to avoid Supabase default 1000 row truncation
-  const { data, error, count } = await supabase
+  const selectQuery = `
+    *,
+    product:products(id, name, product_type, carrier_id)
+  `;
+
+  // First page + exact count to know total rows
+  const {
+    data: firstPage,
+    error,
+    count,
+  } = await supabase
     .from("premium_matrix")
-    .select(
-      `
-      *,
-      product:products(id, name, product_type, carrier_id)
-    `,
-      { count: "exact" },
-    )
+    .select(selectQuery, { count: "exact" })
     .in("product_id", productIds)
     .eq("imo_id", imoId)
+    .eq("gender", gender)
+    .eq("tobacco_class", tobaccoClass)
     .order("product_id", { ascending: true })
     .order("age", { ascending: true })
     .order("face_amount", { ascending: true })
-    .limit(PAGE_SIZE);
+    .range(0, PAGE_SIZE - 1);
 
   if (error) {
     console.error("Error batch fetching premium matrices:", error);
-    // Return empty map - individual fetches will happen as fallback
     return matrixMap;
   }
 
-  // Log diagnostic info
-  const rowsFetched = data?.length ?? 0;
-  console.log(
-    `[BatchFetch] Fetched ${rowsFetched} rows for ${productIds.length} products (total in DB: ${count ?? "unknown"})`,
-  );
+  let allData = (firstPage || []) as PremiumMatrix[];
+  const totalRows = count ?? allData.length;
 
-  // Check for potential truncation
-  if (count && count > PAGE_SIZE) {
-    console.warn(
-      `[BatchFetch] WARNING: Results may be truncated! DB has ${count} rows but limit is ${PAGE_SIZE}`,
+  // Fetch remaining pages in parallel if we hit the page limit
+  if (allData.length >= PAGE_SIZE && totalRows > PAGE_SIZE) {
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    const remainingPromises = Array.from({ length: totalPages - 1 }, (_, i) =>
+      supabase
+        .from("premium_matrix")
+        .select(selectQuery)
+        .in("product_id", productIds)
+        .eq("imo_id", imoId)
+        .eq("gender", gender)
+        .eq("tobacco_class", tobaccoClass)
+        .order("product_id", { ascending: true })
+        .order("age", { ascending: true })
+        .order("face_amount", { ascending: true })
+        .range((i + 1) * PAGE_SIZE, (i + 2) * PAGE_SIZE - 1),
     );
+
+    const remainingResults = await Promise.all(remainingPromises);
+    for (const result of remainingResults) {
+      if (result.error) {
+        console.error("Error fetching batch page:", result.error);
+        // Continue with what we have — fallback will cover missing products
+        break;
+      }
+      allData = allData.concat((result.data || []) as PremiumMatrix[]);
+    }
   }
 
+  console.log(
+    `[BatchFetch] Fetched ${allData.length}/${totalRows} rows for ${productIds.length} products (gender=${gender}, tobacco=${tobaccoClass})`,
+  );
+
   // Group by productId
-  for (const row of data || []) {
+  for (const row of allData) {
     const pid = row.product_id;
     if (!matrixMap.has(pid)) {
       matrixMap.set(pid, []);
     }
-    matrixMap.get(pid)!.push(row as PremiumMatrix);
+    matrixMap.get(pid)!.push(row);
   }
 
   // Log which products got data
-  const productsWithData = [...matrixMap.keys()];
+  const productsWithData = matrixMap.size;
   const productsMissing = productIds.filter((pid) => !matrixMap.has(pid));
   console.log(
-    `[BatchFetch] Products with matrix data: ${productsWithData.length}/${productIds.length}`,
+    `[BatchFetch] Products with matrix data: ${productsWithData}/${productIds.length}`,
   );
   if (productsMissing.length > 0) {
     console.log(
@@ -397,6 +440,54 @@ export function calculateScore(
   };
 }
 
+export function buildApprovalClientProfile(
+  client: ProductEvaluationContext["client"],
+): ClientProfileV2 {
+  return {
+    age: client.age,
+    gender: client.gender as "male" | "female",
+    state: client.state,
+    bmi: client.bmi,
+    tobacco: client.tobacco,
+    healthConditions: client.healthConditions,
+    medications: client.medications,
+    conditionResponses: client.conditionResponses,
+  };
+}
+
+const MANUAL_REVIEW_REQUIRED_REASON =
+  "Carrier/product requires manual underwriting review for one or more reported medical conditions or medications.";
+
+export function requiresManualReviewForRecommendation(
+  approval: Pick<ApprovalResult, "conditionDecisions">,
+): boolean {
+  return approval.conditionDecisions.some(
+    (decision) =>
+      decision.decision === "case_by_case" || decision.isApproved !== true,
+  );
+}
+
+export function applyRecommendationSafetyGate(
+  eligibility: EvaluatedProduct["eligibility"],
+  approval: Pick<ApprovalResult, "conditionDecisions">,
+): EvaluatedProduct["eligibility"] {
+  if (
+    eligibility.status !== "eligible" ||
+    !requiresManualReviewForRecommendation(approval)
+  ) {
+    return eligibility;
+  }
+
+  return {
+    ...eligibility,
+    status: "unknown",
+    reasons: [
+      ...new Set([...eligibility.reasons, MANUAL_REVIEW_REQUIRED_REASON]),
+    ],
+    confidence: Math.min(eligibility.confidence, 0.75),
+  };
+}
+
 // =============================================================================
 // Single Product Evaluation
 // =============================================================================
@@ -525,27 +616,13 @@ export async function evaluateSingleProduct(
     return { evaluated: null, stats };
   }
 
-  if (eligibility.status === "unknown") {
-    stats.unknownEligibility = true;
-  } else {
-    stats.passedEligibility = true;
-  }
-
   // Stage 2: Approval (uses rule engine v2 with compound predicates)
   const approval = await calculateApprovalV2({
     carrierId: product.carrierId,
     productId: product.productId,
     imoId,
     healthConditions: client.healthConditions,
-    client: {
-      age: client.age,
-      gender: client.gender as "male" | "female",
-      state: client.state,
-      bmi: client.bmi,
-      tobacco: client.tobacco,
-      healthConditions: client.healthConditions,
-      conditionResponses: client.conditionResponses,
-    },
+    client: buildApprovalClientProfile(client),
   });
 
   // For unknown eligibility, we don't skip on low likelihood
@@ -555,6 +632,17 @@ export async function evaluateSingleProduct(
     return { evaluated: null, stats };
   }
   stats.passedAcceptance = true;
+
+  const effectiveEligibility = applyRecommendationSafetyGate(
+    eligibility,
+    approval,
+  );
+
+  if (effectiveEligibility.status === "unknown") {
+    stats.unknownEligibility = true;
+  } else {
+    stats.passedEligibility = true;
+  }
 
   // Stage 2.5: Build Chart Constraint
   // Apply carrier build chart as a floor on health class
@@ -660,6 +748,12 @@ export async function evaluateSingleProduct(
     premiumResult.premium !== null ? !premiumResult.wasExact : undefined;
   const termYearsUsed =
     premiumResult.premium !== null ? premiumResult.termYears : undefined;
+  const availableRateClasses = getAvailableRateClassesForQuote(
+    matrix,
+    client.gender,
+    client.tobacco ? "tobacco" : "non_tobacco",
+    termForQuotes,
+  );
 
   // Debug: Log premium lookup result
   if (DEBUG_DECISION_ENGINE) {
@@ -789,8 +883,8 @@ export async function evaluateSingleProduct(
     approval.likelihood,
     premium,
     0, // Will recalculate maxPremium later
-    eligibility.status,
-    eligibility.confidence,
+    effectiveEligibility.status,
+    effectiveEligibility.confidence,
   );
 
   // Calculate raw score for now (will be adjusted with maxPremium)
@@ -799,12 +893,13 @@ export async function evaluateSingleProduct(
 
   const evaluated: EvaluatedProduct = {
     product,
-    eligibility,
+    eligibility: effectiveEligibility,
     approval,
     premium,
     healthClassRequested,
     healthClassUsed,
     wasFallback,
+    availableRateClasses,
     termYears: termYearsUsed,
     availableTerms,
     alternativeQuotes,

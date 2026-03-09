@@ -30,6 +30,7 @@ import {
   parseFollowUpSchema,
   groupConditionsByCategory,
 } from "../../hooks";
+import { isFollowUpValueAnswered } from "../../utils/follow-up-validation";
 import type {
   HealthInfo,
   ConditionResponse,
@@ -48,7 +49,7 @@ interface HealthConditionsStepProps {
 export default function HealthConditionsStep({
   data,
   onChange,
-  errors: _errors,
+  errors,
 }: HealthConditionsStepProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
@@ -58,7 +59,7 @@ export default function HealthConditionsStep({
     null,
   );
 
-  const { data: conditions = [], isLoading } = useHealthConditions();
+  const { data: conditions = [], isLoading, error } = useHealthConditions();
 
   const groupedConditions = useMemo(
     () => groupConditionsByCategory(conditions),
@@ -194,6 +195,15 @@ export default function HealthConditionsStep({
     );
   }
 
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300">
+        Unable to load health conditions. Retry before using the wizard for
+        underwriting screening.
+      </div>
+    );
+  }
+
   const activeSchema = activeCondition
     ? parseFollowUpSchema(activeCondition)
     : null;
@@ -206,6 +216,17 @@ export default function HealthConditionsStep({
         <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
           Select health conditions. Follow-up questions appear on the right.
         </div>
+
+        {errors.health && (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300">
+            <div className="font-medium">{errors.health}</div>
+            {errors.healthDetails && (
+              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {errors.healthDetails}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative mb-3">
@@ -266,7 +287,9 @@ export default function HealthConditionsStep({
                       hasFollowUps &&
                       isSelected &&
                       schema.questions.some(
-                        (q) => q.required && !conditionResponses[q.id],
+                        (q) =>
+                          q.required &&
+                          !isFollowUpValueAnswered(q, conditionResponses[q.id]),
                       );
 
                     return (
@@ -466,10 +489,19 @@ export default function HealthConditionsStep({
                     question={question}
                     value={activeConditionResponses[question.id]}
                     onChange={(value) =>
-                      updateConditionResponses(activeConditionCode!, {
-                        ...activeConditionResponses,
-                        [question.id]: value,
-                      })
+                      updateConditionResponses(
+                        activeConditionCode!,
+                        value === undefined
+                          ? Object.fromEntries(
+                              Object.entries(activeConditionResponses).filter(
+                                ([key]) => key !== question.id,
+                              ),
+                            )
+                          : {
+                              ...activeConditionResponses,
+                              [question.id]: value,
+                            },
+                      )
                     }
                   />
                 ))}
@@ -498,7 +530,7 @@ export default function HealthConditionsStep({
 interface FollowUpQuestionFieldProps {
   question: FollowUpQuestion;
   value: string | number | string[] | undefined;
-  onChange: (value: string | number | string[]) => void;
+  onChange: (value: string | number | string[] | undefined) => void;
 }
 
 /** Sort options alphabetically, keeping catch-all values ("Other", "Unknown", "N/A", "None") at the end */
@@ -527,7 +559,10 @@ function FollowUpQuestionField({
     switch (question.type) {
       case "select":
         return (
-          <Select value={(value as string) || ""} onValueChange={onChange}>
+          <Select
+            value={(value as string) || ""}
+            onValueChange={(nextValue) => onChange(nextValue || undefined)}
+          >
             <SelectTrigger className="h-9 text-sm">
               <SelectValue placeholder="Select an option..." />
             </SelectTrigger>
@@ -577,8 +612,16 @@ function FollowUpQuestionField({
             min={question.min}
             max={question.max}
             step={question.step || 1}
-            value={(value as number) || ""}
-            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+            value={typeof value === "number" ? value : ""}
+            onChange={(e) => {
+              if (e.target.value === "") {
+                onChange(undefined);
+                return;
+              }
+
+              const parsed = Number(e.target.value);
+              onChange(Number.isFinite(parsed) ? parsed : undefined);
+            }}
             className="h-9 text-sm"
           />
         );
@@ -588,7 +631,7 @@ function FollowUpQuestionField({
           <Input
             type="date"
             value={(value as string) || ""}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(e.target.value || undefined)}
             className="h-9 text-sm"
           />
         );
@@ -599,7 +642,7 @@ function FollowUpQuestionField({
           <Input
             type="text"
             value={(value as string) || ""}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(e.target.value || undefined)}
             className="h-9 text-sm"
             placeholder="Enter response..."
           />

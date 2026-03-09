@@ -1,7 +1,7 @@
 // src/features/underwriting/hooks/useUWWizardUsage.ts
 // Hook for tracking UW Wizard usage and quota
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/base/supabase";
 
@@ -15,6 +15,21 @@ export interface UWWizardUsage {
   tier_id: string;
   tier_name: string;
   source: "team_owner" | "team_seat" | "addon";
+}
+
+export interface RecordUWWizardRunInput {
+  imoId: string;
+  runKey: string;
+  sessionId?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+}
+
+export interface RecordUWWizardRunResult {
+  success: boolean;
+  new_runs_used: number;
+  runs_remaining: number;
+  already_recorded: boolean;
 }
 
 export const uwWizardUsageKeys = {
@@ -44,26 +59,58 @@ export function useUWWizardUsage() {
         throw error;
       }
 
-      if (!data || data.length === 0) {
-        // Return default values for users without usage records yet
-        return {
-          runs_used: 0,
-          runs_limit: 100, // Default starter tier
-          runs_remaining: 100,
-          usage_percent: 0,
-          billing_period_start: new Date().toISOString().split("T")[0],
-          billing_period_end: new Date().toISOString().split("T")[0],
-          tier_id: "starter",
-          tier_name: "Starter",
-          source: "addon",
-        };
-      }
-
-      return data[0] as UWWizardUsage;
+      return data?.[0] ? (data[0] as UWWizardUsage) : null;
     },
     enabled: !!userId,
     staleTime: 30 * 1000, // 30 seconds - refresh frequently during wizard use
     refetchOnWindowFocus: true,
+  });
+}
+
+export function useRecordUWWizardRun() {
+  const queryClient = useQueryClient();
+  const { user, supabaseUser } = useAuth();
+  const userId = supabaseUser?.id || user?.id;
+
+  return useMutation<RecordUWWizardRunResult, Error, RecordUWWizardRunInput>({
+    mutationFn: async ({
+      imoId,
+      runKey,
+      sessionId = null,
+      inputTokens = null,
+      outputTokens = null,
+    }) => {
+      if (!userId) {
+        throw new Error("Authenticated user required");
+      }
+
+      const { data, error } = await supabase.rpc("record_uw_wizard_run", {
+        p_imo_id: imoId,
+        p_run_key: runKey,
+        p_user_id: userId,
+        p_session_id: sessionId,
+        p_input_tokens: inputTokens,
+        p_output_tokens: outputTokens,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error("No usage result returned");
+      }
+
+      return data[0] as RecordUWWizardRunResult;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: uwWizardUsageKeys.all });
+      if (userId) {
+        queryClient.invalidateQueries({
+          queryKey: uwWizardUsageKeys.user(userId),
+        });
+      }
+    },
   });
 }
 

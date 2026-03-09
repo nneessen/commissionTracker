@@ -1,6 +1,6 @@
 // src/features/targets/components/PersistencyScenarios.tsx
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -136,11 +136,14 @@ export function PersistencyScenarios({
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-1.5">
           <Target className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            What-If Persistency Scenarios
+            What-If Scenarios
+          </span>
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+            — Persistency
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -180,8 +183,8 @@ export function PersistencyScenarios({
         </div>
 
         {/* Scenarios Table */}
-        <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
-          <Table>
+        <div className="rounded-md border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+          <Table className="min-w-[480px]">
             <TableHeader>
               <TableRow className="h-7 border-b border-zinc-200 dark:border-zinc-800">
                 <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 w-20">
@@ -193,10 +196,10 @@ export function PersistencyScenarios({
                 <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-center">
                   Monthly
                 </TableHead>
-                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-center">
+                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-center hidden sm:table-cell">
                   Weekly
                 </TableHead>
-                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-center">
+                <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-center hidden sm:table-cell">
                   Daily
                 </TableHead>
                 <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-center">
@@ -256,11 +259,11 @@ export function PersistencyScenarios({
                       {scenario.monthlyPoliciesNeeded}
                     </TableCell>
 
-                    <TableCell className="text-[11px] text-center p-2 font-mono text-zinc-500 dark:text-zinc-400">
+                    <TableCell className="text-[11px] text-center p-2 font-mono text-zinc-500 dark:text-zinc-400 hidden sm:table-cell">
                       {scenario.weeklyPoliciesNeeded}
                     </TableCell>
 
-                    <TableCell className="text-[11px] text-center p-2 font-mono text-zinc-500 dark:text-zinc-400">
+                    <TableCell className="text-[11px] text-center p-2 font-mono text-zinc-500 dark:text-zinc-400 hidden sm:table-cell">
                       {scenario.dailyPoliciesNeeded}
                     </TableCell>
 
@@ -305,7 +308,7 @@ export function PersistencyScenarios({
         </div>
 
         {/* Key Insights */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="p-2 rounded-md bg-zinc-100 dark:bg-zinc-800">
             <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
               Best Case (95% Persistency)

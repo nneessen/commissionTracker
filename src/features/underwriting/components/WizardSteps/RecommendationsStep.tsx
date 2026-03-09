@@ -544,7 +544,7 @@ function DecisionEngineTable({
               Monthly Premium
             </th>
             <th className="py-3 px-4 font-semibold text-zinc-600 dark:text-zinc-300 text-center">
-              Health Class
+              Quoted Class
             </th>
             <th className="py-3 px-4 font-semibold text-zinc-600 dark:text-zinc-300">
               Coverage Options
@@ -654,23 +654,37 @@ function DecisionEngineRow({
 }: DecisionEngineRowProps) {
   const isTableRated = recommendation.buildRating?.startsWith("table_");
   const uwHealthClass = recommendation.healthClassResult;
-  const badge = getHealthClassBadge(uwHealthClass);
+  const quotedHealthClass =
+    recommendation.healthClassUsed ??
+    recommendation.healthClassRequested ??
+    uwHealthClass;
+  const badge = getHealthClassBadge(quotedHealthClass);
   const isSI = isSimplifiedIssuance(uwHealthClass);
+  const isSingleRateClass = recommendation.availableRateClasses?.length === 1;
+  const hasAvailableRateClasses =
+    (recommendation.availableRateClasses?.length ?? 0) > 0;
+  const hasNoRateMatrix =
+    !hasAvailableRateClasses &&
+    recommendation.monthlyPremium === null &&
+    !isTableRated;
+  const requestedBadge = recommendation.healthClassRequested
+    ? getHealthClassBadge(recommendation.healthClassRequested)
+    : null;
+  const uwBadge = getHealthClassBadge(uwHealthClass);
 
   const healthClassDisplay = isTableRated ? (
     <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
       {BUILD_RATING_CLASS_LABELS[recommendation.buildRating!] ?? "Table Rated"}
     </span>
-  ) : recommendation.wasFallback ? (
-    <span className="text-xs">
-      <span className="line-through opacity-50 mr-0.5">
-        {recommendation.healthClassRequested?.slice(0, 4)}
+  ) : hasNoRateMatrix ? (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="inline-block rounded border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+        No rates loaded
       </span>
-      →
-      <span className="font-medium ml-0.5">
-        {recommendation.healthClassUsed?.slice(0, 4)}
+      <span className="text-[9px] text-zinc-400 text-center leading-tight">
+        UW {uwBadge.label}
       </span>
-    </span>
+    </div>
   ) : (
     <div className="flex flex-col items-center gap-0.5">
       <span
@@ -681,6 +695,20 @@ function DecisionEngineRow({
       >
         {badge.label}
       </span>
+      {recommendation.wasFallback &&
+        requestedBadge &&
+        recommendation.healthClassUsed && (
+          <span className="text-[9px] text-zinc-400 text-center leading-tight">
+            UW {requestedBadge.label}
+            <span className="mx-0.5">→</span>
+            Quote {badge.label}
+          </span>
+        )}
+      {isSingleRateClass && (
+        <span className="text-[9px] text-zinc-400 text-center leading-tight">
+          Single rate class product
+        </span>
+      )}
       {isSI && (
         <span className="text-[9px] text-zinc-400">Premium: Standard</span>
       )}
@@ -747,9 +775,9 @@ function DecisionEngineRow({
 
       {/* Health Class Column */}
       <td className="py-3 px-4 text-center">
-        <span className="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium border border-zinc-200 dark:border-zinc-700">
+        <div className="inline-flex min-w-[112px] items-center justify-center rounded-md bg-zinc-100 px-2.5 py-1 dark:bg-zinc-800">
           {healthClassDisplay}
-        </span>
+        </div>
       </td>
 
       {/* Coverage Options Column - Mini Table */}

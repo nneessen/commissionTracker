@@ -91,6 +91,7 @@ interface AnalysisRequest {
   };
   decisionTreeId?: string;
   imoId?: string; // For fetching relevant guides
+  runKey?: string;
 }
 
 // Product underwriting constraints stored in metadata
@@ -275,7 +276,12 @@ serve(async (req) => {
       coverage,
       decisionTreeId,
       imoId: requestedImoId,
+      runKey: requestedRunKey,
     } = body;
+    const runKey =
+      typeof requestedRunKey === "string" && requestedRunKey.trim().length > 0
+        ? requestedRunKey.trim()
+        : crypto.randomUUID();
 
     // CRITICAL: Validate imoId ownership - prevent cross-tenant access
     if (requestedImoId && requestedImoId !== authenticatedImoId) {
@@ -300,7 +306,7 @@ serve(async (req) => {
     // ==========================================================================
     // USAGE QUOTA CHECK - Verify user has runs remaining before proceeding
     // ==========================================================================
-    const { data: quotaCheck, error: quotaError } = await supabase.rpc(
+    const { data: quotaCheck, error: quotaError } = await userClient.rpc(
       "can_run_uw_wizard",
       { p_user_id: user.id },
     );
@@ -891,21 +897,28 @@ serve(async (req) => {
     };
 
     let usageInfo = null;
+    let usageRecorded = false;
     try {
-      const { data: incrementResult } = await supabase.rpc(
-        "increment_uw_wizard_usage",
+      const { data: incrementResult } = await userClient.rpc(
+        "record_uw_wizard_run",
         {
-          p_user_id: user.id,
           p_imo_id: imoId,
+          p_run_key: runKey,
           p_session_id: null, // Could pass session ID if saving
           p_input_tokens: tokenUsage.input,
           p_output_tokens: tokenUsage.output,
         },
       );
 
-      if (incrementResult && incrementResult.length > 0) {
+      if (
+        incrementResult &&
+        incrementResult.length > 0 &&
+        incrementResult[0].success
+      ) {
+        usageRecorded = true;
+
         // Get full usage info for response
-        const { data: currentUsage } = await supabase.rpc(
+        const { data: currentUsage } = await userClient.rpc(
           "get_uw_wizard_usage",
           { p_user_id: user.id },
         );
@@ -936,6 +949,7 @@ serve(async (req) => {
         success: true,
         analysis: analysisResult,
         usage: usageInfo,
+        usageRecorded,
         filteredProducts: filteredOutProducts,
         fullUnderwritingRequired: productsRequiringFullUW,
         // Phase 5: Include criteria evaluation results

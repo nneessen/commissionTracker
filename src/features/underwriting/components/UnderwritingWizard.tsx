@@ -26,11 +26,18 @@ import {
   useSaveUnderwritingSession,
   useDecisionEngineRecommendations,
   transformWizardToDecisionEngineInput,
+  useHealthConditions,
   useUWWizardUsage,
+  useRecordUWWizardRun,
   getUsageStatus,
   useUnderwritingFeatureFlag,
 } from "../hooks";
 import { calculateBMI } from "../utils/bmiCalculator";
+import { getMissingRequiredFollowUps } from "../utils/follow-up-validation";
+import {
+  buildSessionHealthSnapshot,
+  parseSessionHealthSnapshot,
+} from "../utils/session-health-snapshot";
 import type {
   WizardFormData,
   WizardStep,
@@ -46,7 +53,7 @@ import type {
   ProductType,
 } from "../types/underwriting.types";
 import { WIZARD_STEPS } from "../types/underwriting.types";
-import { safeParseJsonObject, safeParseJsonArray } from "../utils/formatters";
+import { safeParseJsonArray } from "../utils/formatters";
 
 // Layout and step components
 import { WizardPageLayout } from "./wizard-page-layout";
@@ -58,6 +65,7 @@ import MedicationsStep from "./WizardSteps/MedicationsStep";
 import CoverageRequestStep from "./WizardSteps/CoverageRequestStep";
 import ReviewStep from "./WizardSteps/ReviewStep";
 import RecommendationsStep from "./WizardSteps/RecommendationsStep";
+import WizardInfoPanel from "./WizardInfoPanel";
 
 const initialClientInfo: ClientInfo = {
   name: "",
@@ -165,11 +173,18 @@ function UnderwritingWizardInner() {
   const [showLimitDialog, setShowLimitDialog] = useState(false);
 
   const analysisInFlightRef = useRef(false);
+  const pendingRunKeyRef = useRef<string | null>(null);
 
   const { user } = useAuth();
   const analysisMutation = useUnderwritingAnalysis();
   const decisionEngineMutation = useDecisionEngineRecommendations();
   const saveSessionMutation = useSaveUnderwritingSession();
+  const recordRunMutation = useRecordUWWizardRun();
+  const {
+    data: healthConditions = [],
+    isLoading: healthConditionsLoading,
+    error: healthConditionsError,
+  } = useHealthConditions();
 
   const { data: usageData, refetch: refetchUsage } = useUWWizardUsage();
   const usageStatus = getUsageStatus(usageData);
@@ -209,6 +224,38 @@ function UnderwritingWizardInner() {
 
   const validateHealthInfo = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    if (healthConditionsLoading) {
+      newErrors.health =
+        "Health condition requirements are still loading. Please wait a moment.";
+      setErrors(newErrors);
+      return false;
+    }
+
+    if (healthConditionsError) {
+      newErrors.health =
+        "Unable to validate required health questions right now.";
+      newErrors.healthDetails =
+        "Condition requirements could not be loaded. Please retry before continuing.";
+      setErrors(newErrors);
+      return false;
+    }
+
+    const missingFollowUps = getMissingRequiredFollowUps(
+      formData.health.conditions,
+      healthConditions,
+    );
+
+    if (missingFollowUps.length > 0) {
+      const missingConditionNames = [
+        ...new Set(missingFollowUps.map((item) => item.conditionName)),
+      ];
+
+      newErrors.health =
+        "Complete the required follow-up questions before continuing.";
+      newErrors.healthDetails = `Missing required answers for ${missingConditionNames.join(", ")}.`;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -284,6 +331,8 @@ function UnderwritingWizardInner() {
         formData.client.heightInches,
         formData.client.weight,
       );
+      const runKey = crypto.randomUUID();
+      pendingRunKeyRef.current = runKey;
 
       const aiRequest: AIAnalysisRequest = {
         client: {
@@ -308,6 +357,7 @@ function UnderwritingWizardInner() {
           productTypes: formData.coverage.productTypes,
         },
         imoId: user?.imo_id || undefined,
+        runKey,
       };
 
       const decisionInput = transformWizardToDecisionEngineInput(
@@ -324,10 +374,35 @@ function UnderwritingWizardInner() {
         onSuccess: (result) => {
           analysisInFlightRef.current = false;
           setAnalysisResult(result);
-          refetchUsage();
+
+          const pendingRunKey = pendingRunKeyRef.current;
+          pendingRunKeyRef.current = null;
+
+          if (result.usageRecorded !== true && pendingRunKey && user?.imo_id) {
+            recordRunMutation.mutate(
+              {
+                imoId: user.imo_id,
+                runKey: pendingRunKey,
+              },
+              {
+                onError: (recordError) => {
+                  console.error(
+                    "[UW Wizard] Failed to record run client-side fallback:",
+                    recordError,
+                  );
+                },
+                onSettled: () => {
+                  refetchUsage();
+                },
+              },
+            );
+          } else {
+            refetchUsage();
+          }
         },
         onError: (error: UWAnalysisError) => {
           analysisInFlightRef.current = false;
+          pendingRunKeyRef.current = null;
           setLastAnalyzedData(null);
 
           if (error instanceof UWAnalysisError) {
@@ -457,15 +532,37 @@ function UnderwritingWizardInner() {
 
     const decisionEngineRecs =
       decisionEngineMutation.data?.recommendations || [];
-    const topRateTableRecs = decisionEngineRecs.slice(0, 3).map((rec) => ({
-      carrierName: rec.carrierName,
-      productName: rec.productName,
-      termYears: rec.termYears ?? null,
-      healthClass: rec.healthClassResult,
-      monthlyPremium: rec.monthlyPremium ?? 0,
-      faceAmount: rec.maxCoverage,
-      reason: rec.reason || "best_value",
-    }));
+    const topRateTableRecs = decisionEngineRecs.slice(0, 3).map((rec) => {
+      const quotedHealthClass =
+        rec.healthClassUsed ??
+        rec.healthClassRequested ??
+        rec.healthClassResult;
+      const quoteClassNote =
+        (rec.availableRateClasses?.length ?? 0) === 0 &&
+        rec.monthlyPremium === null
+          ? "No premium matrix loaded for quoteable classes"
+          : rec.wasFallback &&
+              rec.healthClassRequested &&
+              rec.healthClassUsed &&
+              rec.healthClassUsed !== rec.healthClassRequested
+            ? `UW ${rec.healthClassRequested} -> Quote ${rec.healthClassUsed}`
+            : rec.availableRateClasses?.length === 1
+              ? "Single rate class product"
+              : undefined;
+
+      return {
+        carrierName: rec.carrierName,
+        productName: rec.productName,
+        termYears: rec.termYears ?? null,
+        healthClass: quotedHealthClass,
+        quotedHealthClass,
+        underwritingHealthClass: rec.healthClassResult,
+        quoteClassNote,
+        monthlyPremium: rec.monthlyPremium ?? null,
+        faceAmount: rec.maxCoverage,
+        reason: rec.reason || "best_value",
+      };
+    });
 
     const sessionData: SessionSaveData = {
       clientName: formData.client.name || undefined,
@@ -473,12 +570,9 @@ function UnderwritingWizardInner() {
       clientGender: formData.client.gender,
       clientState: formData.client.state,
       clientBmi: bmi,
-      healthResponses: formData.health.conditions.reduce(
-        (acc, c) => {
-          acc[c.conditionCode] = c;
-          return acc;
-        },
-        {} as Record<string, (typeof formData.health.conditions)[0]>,
+      healthResponses: buildSessionHealthSnapshot(
+        formData.health.conditions,
+        formData.health.medications,
       ),
       conditionsReported: formData.health.conditions.map(
         (c) => c.conditionCode,
@@ -522,11 +616,10 @@ function UnderwritingWizardInner() {
       const heightFeet = Math.floor(totalHeightInches / 12);
       const heightInches = totalHeightInches % 12;
 
-      const healthResponses = safeParseJsonObject<
-        Record<string, ConditionResponse>
-      >(session.health_responses);
-
-      const conditions: ConditionResponse[] = Object.values(healthResponses);
+      const healthSnapshot = parseSessionHealthSnapshot(
+        session.health_responses,
+      );
+      const conditions: ConditionResponse[] = healthSnapshot.conditions;
       const tobaccoDetails = session.tobacco_details as TobaccoInfo | null;
       const productTypes = safeParseJsonArray<ProductType>(
         session.requested_product_types,
@@ -548,7 +641,8 @@ function UnderwritingWizardInner() {
           tobacco: tobaccoDetails || {
             currentUse: session.tobacco_use || false,
           },
-          medications: initialHealthInfo.medications,
+          medications:
+            healthSnapshot.medications || initialHealthInfo.medications,
         },
         coverage: {
           faceAmounts: session.requested_face_amount
@@ -704,28 +798,64 @@ function UnderwritingWizardInner() {
           </>
         }
       >
-        {/* Step Content Container */}
-        <div className="flex-1 flex flex-col overflow-hidden p-4">
-          {/* Step Title */}
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50 flex-shrink-0">
-            <Sparkles className="h-5 w-5 text-amber-500" />
-            <h3 className="text-base font-semibold text-foreground">
-              {currentStep.label}
-            </h3>
-          </div>
-
-          {/* Error display */}
-          {errors.submit && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
-              <p className="text-sm text-red-600 dark:text-red-400">
-                {errors.submit}
-              </p>
+        <div className="flex-1 overflow-hidden p-4">
+          <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+            <div className="min-h-0">
+              <WizardInfoPanel
+                currentStep={currentStep.id}
+                formData={formData}
+              />
             </div>
-          )}
 
-          {/* Step Form */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            {renderStepContent()}
+            <div className="min-h-0 overflow-hidden rounded-[28px] border border-border/70 bg-background/90 shadow-sm backdrop-blur-sm">
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="border-b border-border/60 bg-gradient-to-r from-amber-50/80 via-background to-background px-5 py-4 dark:from-amber-950/20">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full text-[10px] uppercase tracking-[0.16em]"
+                    >
+                      Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
+                    >
+                      Screening workflow
+                    </Badge>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3
+                        className="text-lg font-semibold text-foreground"
+                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                      >
+                        {currentStep.label}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {currentStep.description ||
+                          "Capture accurate underwriting details before reviewing the results."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {errors.submit && (
+                  <div className="border-b border-red-200 bg-red-50/80 px-5 py-3 dark:border-red-800 dark:bg-red-950/20">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {errors.submit}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 md:px-5 md:py-5">
+                  {renderStepContent()}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -5,6 +5,7 @@
  * unknown propagation and aggregation.
  */
 
+import type { MedicationInfo } from "@/features/underwriting";
 import {
   type FieldCondition,
   type PredicateGroup,
@@ -50,6 +51,139 @@ interface CarrierAggregationConfig {
 // =============================================================================
 // FIELD CONDITION EVALUATION
 // =============================================================================
+
+const BOOLEAN_MEDICATION_FIELDS: Array<keyof MedicationInfo> = [
+  "bloodThinners",
+  "heartMeds",
+  "insulinUse",
+  "oralDiabetesMeds",
+  "antidepressants",
+  "antianxiety",
+  "antipsychotics",
+  "moodStabilizers",
+  "sleepAids",
+  "seizureMeds",
+  "migraineMeds",
+  "inhalers",
+  "copdMeds",
+  "thyroidMeds",
+  "hormonalTherapy",
+  "steroids",
+  "immunosuppressants",
+  "biologics",
+  "dmards",
+  "cancerTreatment",
+  "antivirals",
+  "adhdMeds",
+  "osteoporosisMeds",
+  "kidneyMeds",
+  "liverMeds",
+];
+
+const COUNT_MEDICATION_FIELDS: Array<keyof MedicationInfo> = [
+  "bpMedCount",
+  "cholesterolMedCount",
+];
+
+function buildMedicationClasses(medications: MedicationInfo): string[] {
+  const classes: string[] = [];
+
+  if (medications.bpMedCount > 0) classes.push("bp_medications");
+  if (medications.cholesterolMedCount > 0)
+    classes.push("cholesterol_medications");
+
+  const booleanClassMap: Array<[keyof MedicationInfo, string]> = [
+    ["bloodThinners", "blood_thinners"],
+    ["heartMeds", "heart_meds"],
+    ["insulinUse", "insulin"],
+    ["oralDiabetesMeds", "oral_diabetes_meds"],
+    ["antidepressants", "antidepressants"],
+    ["antianxiety", "antianxiety"],
+    ["antipsychotics", "antipsychotics"],
+    ["moodStabilizers", "mood_stabilizers"],
+    ["sleepAids", "sleep_aids"],
+    ["seizureMeds", "seizure_meds"],
+    ["migraineMeds", "migraine_meds"],
+    ["inhalers", "inhalers"],
+    ["copdMeds", "copd_meds"],
+    ["thyroidMeds", "thyroid_meds"],
+    ["hormonalTherapy", "hormonal_therapy"],
+    ["steroids", "steroids"],
+    ["immunosuppressants", "immunosuppressants"],
+    ["biologics", "biologics"],
+    ["dmards", "dmards"],
+    ["cancerTreatment", "cancer_treatment"],
+    ["antivirals", "antivirals"],
+    ["adhdMeds", "adhd_meds"],
+    ["osteoporosisMeds", "osteoporosis_meds"],
+    ["kidneyMeds", "kidney_meds"],
+    ["liverMeds", "liver_meds"],
+  ];
+
+  for (const [field, className] of booleanClassMap) {
+    if (medications[field] === true) {
+      classes.push(className);
+    }
+  }
+
+  if (medications.painMedications === "otc_only") {
+    classes.push("pain_medications", "otc_pain");
+  }
+  if (medications.painMedications === "prescribed_non_opioid") {
+    classes.push("pain_medications", "prescribed_non_opioid");
+  }
+  if (medications.painMedications === "opioid") {
+    classes.push("pain_medications", "opioid");
+  }
+
+  return [...new Set(classes)];
+}
+
+function addMedicationFacts(
+  factsRecord: Record<string, unknown>,
+  medications?: MedicationInfo,
+): void {
+  if (!medications) {
+    return;
+  }
+
+  for (const field of BOOLEAN_MEDICATION_FIELDS) {
+    factsRecord[`medications.${field}`] = medications[field];
+  }
+
+  for (const field of COUNT_MEDICATION_FIELDS) {
+    factsRecord[`medications.${field}`] = medications[field];
+  }
+
+  factsRecord["medications.painMedications"] = medications.painMedications;
+
+  const medicationClasses = buildMedicationClasses(medications);
+  const totalSignals =
+    BOOLEAN_MEDICATION_FIELDS.filter((field) => medications[field] === true)
+      .length +
+    COUNT_MEDICATION_FIELDS.filter(
+      (field) =>
+        typeof medications[field] === "number" &&
+        (medications[field] as number) > 0,
+    ).length +
+    (medications.painMedications !== "none" ? 1 : 0);
+
+  factsRecord["medications.classes"] = medicationClasses;
+  factsRecord["medications.totalSignals"] = totalSignals;
+  factsRecord["medications.hasAny"] = totalSignals > 0;
+  factsRecord["medications.opioidUse"] =
+    medications.painMedications === "opioid";
+  factsRecord["medications.highRisk"] = [
+    medications.insulinUse,
+    medications.antipsychotics,
+    medications.immunosuppressants,
+    medications.biologics,
+    medications.cancerTreatment,
+    medications.kidneyMeds,
+    medications.liverMeds,
+    medications.painMedications === "opioid",
+  ].some(Boolean);
+}
 
 /**
  * Get a value from the fact map using dot notation
@@ -926,6 +1060,7 @@ export function buildFactMap(
     bmi?: number;
     state?: string;
     tobacco: boolean;
+    medications?: MedicationInfo;
   },
   healthConditions: string[],
   conditionResponses: Record<string, Record<string, unknown>>,
@@ -948,6 +1083,7 @@ export function buildFactMap(
   // Add condition-specific responses
   // Use type assertion through unknown to allow dynamic keys
   const factsRecord = facts as unknown as Record<string, unknown>;
+  addMedicationFacts(factsRecord, client.medications);
   for (const [conditionCode, responses] of Object.entries(conditionResponses)) {
     for (const [fieldId, value] of Object.entries(responses)) {
       factsRecord[`${conditionCode}.${fieldId}`] = value;

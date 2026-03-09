@@ -2,7 +2,7 @@
 // Tab for managing carrier acceptance rules (v2 - compound predicates)
 // NOTE: Approval workflow removed - single-user system, rules are active immediately
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -29,8 +29,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Loader2, Shield, Wand2, Calendar, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  Shield,
+  Wand2,
+  Calendar,
+  AlertTriangle,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useCarriersWithProducts } from "../../hooks/useCarriersWithProducts";
 import {
@@ -50,6 +58,7 @@ import {
 import {
   useGenerateKnockoutRules,
   useGenerateAgeRules,
+  useGenerateGuaranteedIssueRules,
   useKnockoutCodes,
   type GenerationStrategy,
 } from "../../hooks/useGenerateRules";
@@ -70,8 +79,14 @@ export function AcceptanceRulesTab() {
   // Generation dialog state
   const [knockoutDialogOpen, setKnockoutDialogOpen] = useState(false);
   const [ageRulesDialogOpen, setAgeRulesDialogOpen] = useState(false);
+  const [guaranteedIssueDialogOpen, setGuaranteedIssueDialogOpen] =
+    useState(false);
   const [generationStrategy, setGenerationStrategy] =
     useState<GenerationStrategy>("skip_if_exists");
+  const [
+    selectedGuaranteedIssueProductIds,
+    setSelectedGuaranteedIssueProductIds,
+  ] = useState<string[]>([]);
 
   // Queries
   const { data: carriers, isLoading: loadingCarriers } =
@@ -97,12 +112,33 @@ export function AcceptanceRulesTab() {
   // Generation mutations
   const generateKnockout = useGenerateKnockoutRules();
   const generateAge = useGenerateAgeRules();
+  const generateGuaranteedIssue = useGenerateGuaranteedIssueRules();
 
   // Carriers list
   const carriersList = useMemo(() => {
     if (!carriers) return [];
     return carriers.map((c) => ({ id: c.id, name: c.name }));
   }, [carriers]);
+
+  const selectedCarrierProducts = useMemo(() => {
+    if (!carriers || !selectedCarrierId) return [];
+    return (
+      carriers.find((carrier) => carrier.id === selectedCarrierId)?.products ??
+      []
+    );
+  }, [carriers, selectedCarrierId]);
+
+  useEffect(() => {
+    setSelectedGuaranteedIssueProductIds([]);
+  }, [selectedCarrierId]);
+
+  const toggleGuaranteedIssueProduct = (productId: string) => {
+    setSelectedGuaranteedIssueProductIds((current) =>
+      current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId],
+    );
+  };
 
   // Get carriers with rule sets
   const _carriersWithRuleSets = useMemo(() => {
@@ -334,6 +370,38 @@ export function AcceptanceRulesTab() {
     }
   };
 
+  const handleGenerateGuaranteedIssueRules = async () => {
+    if (!selectedCarrierId || selectedGuaranteedIssueProductIds.length === 0) {
+      return;
+    }
+
+    try {
+      const result = await generateGuaranteedIssue.mutateAsync({
+        carrierId: selectedCarrierId,
+        productIds: selectedGuaranteedIssueProductIds,
+        strategy: generationStrategy,
+      });
+
+      if (result.success) {
+        toast.success(
+          `Generated ${result.created} guaranteed-issue draft rule sets across ${result.productsProcessed} products (${result.skipped} skipped)`,
+        );
+        setGuaranteedIssueDialogOpen(false);
+        setSelectedGuaranteedIssueProductIds([]);
+      } else {
+        toast.error(
+          result.error || "Failed to generate guaranteed-issue draft rules",
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate guaranteed-issue draft rules",
+      );
+    }
+  };
+
   // Loading state
   if (loadingCarriers) {
     return (
@@ -352,7 +420,8 @@ export function AcceptanceRulesTab() {
     deleteRule.isPending ||
     reorderRules.isPending ||
     generateKnockout.isPending ||
-    generateAge.isPending;
+    generateAge.isPending ||
+    generateGuaranteedIssue.isPending;
 
   return (
     <div className="space-y-3">
@@ -409,6 +478,18 @@ export function AcceptanceRulesTab() {
                     <div>Age Rules from Products</div>
                     <div className="text-[9px] text-zinc-400">
                       Based on product min/max age
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setGuaranteedIssueDialogOpen(true)}
+                  className="text-[11px]"
+                >
+                  <ShieldCheck className="h-3 w-3 mr-2 text-emerald-500" />
+                  <div>
+                    <div>Guaranteed Issue Drafts</div>
+                    <div className="text-[9px] text-zinc-400">
+                      For explicitly selected accept-all products
                     </div>
                   </div>
                 </DropdownMenuItem>
@@ -554,6 +635,156 @@ export function AcceptanceRulesTab() {
                 </>
               ) : (
                 "Generate Knockout Rules"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Generate Age Rules Dialog */}
+      <AlertDialog
+        open={guaranteedIssueDialogOpen}
+        onOpenChange={setGuaranteedIssueDialogOpen}
+      >
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              Generate Guaranteed-Issue Draft Rules
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-[11px] text-muted-foreground space-y-2">
+                <p>
+                  This creates <strong>draft</strong> product-specific rule sets
+                  that always return <strong>Guaranteed Issue</strong> for every
+                  active wizard condition on the selected products.
+                </p>
+                <p>
+                  Only use this for products that truly accept applicants
+                  regardless of reported medical conditions. Existing approved
+                  rule sets are never modified.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  Products
+                </Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() =>
+                      setSelectedGuaranteedIssueProductIds(
+                        selectedCarrierProducts.map((product) => product.id),
+                      )
+                    }
+                  >
+                    Select all
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() => setSelectedGuaranteedIssueProductIds([])}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+
+              {!selectedCarrierProducts.length ? (
+                <div className="rounded border border-zinc-200 px-3 py-2 text-[10px] text-muted-foreground dark:border-zinc-800">
+                  No active products found for this carrier.
+                </div>
+              ) : (
+                <div className="max-h-52 space-y-1 overflow-y-auto rounded border border-zinc-200 p-2 dark:border-zinc-800">
+                  {selectedCarrierProducts.map((product) => {
+                    const checked = selectedGuaranteedIssueProductIds.includes(
+                      product.id,
+                    );
+
+                    return (
+                      <label
+                        key={product.id}
+                        className="flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() =>
+                            toggleGuaranteedIssueProduct(product.id)
+                          }
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-[11px] font-medium text-foreground">
+                            {product.name}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground">
+                            {product.product_type.replaceAll("_", " ")}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                If draft rule set already exists:
+              </Label>
+              <Select
+                value={generationStrategy}
+                onValueChange={(v) =>
+                  setGenerationStrategy(v as GenerationStrategy)
+                }
+              >
+                <SelectTrigger className="h-7 text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="skip_if_exists" className="text-[11px]">
+                    Skip existing drafts
+                  </SelectItem>
+                  <SelectItem value="create_new_draft" className="text-[11px]">
+                    Create new draft version
+                  </SelectItem>
+                  <SelectItem value="upsert_draft" className="text-[11px]">
+                    Replace existing draft
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-7 text-[10px]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleGenerateGuaranteedIssueRules}
+              disabled={
+                generateGuaranteedIssue.isPending ||
+                selectedGuaranteedIssueProductIds.length === 0
+              }
+              className="h-7 text-[10px]"
+            >
+              {generateGuaranteedIssue.isPending ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate GI Drafts"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

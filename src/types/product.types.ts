@@ -134,7 +134,16 @@ export interface ProductMetadata {
     conditionCodes: string[];
   };
   /** Threshold above which full underwriting is required */
-  fullUnderwritingThreshold?: number;
+  fullUnderwritingThreshold?:
+    | number
+    | {
+        faceAmountThreshold: number;
+        ageBands?: Array<{
+          minAge: number;
+          maxAge: number;
+          threshold: number;
+        }>;
+      };
 }
 
 // Product selection item for forms

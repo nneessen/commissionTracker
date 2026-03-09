@@ -130,6 +130,184 @@ export const CLIENT_FIELDS: Record<string, FieldDefinition> = {
     label: "Tobacco Use",
     description: "Current tobacco user",
   },
+  "medications.hasAny": {
+    type: "boolean",
+    label: "Any Medications Flagged",
+    description: "At least one medication signal was reported",
+  },
+  "medications.totalSignals": {
+    type: "numeric",
+    label: "Medication Signal Count",
+    description: "Count of medication flags or medication categories reported",
+  },
+  "medications.classes": {
+    type: "array",
+    label: "Medication Classes",
+    description: "Canonical medication classes derived from the intake step",
+    options: [
+      { value: "bp_medications", label: "BP Medications" },
+      { value: "cholesterol_medications", label: "Cholesterol Medications" },
+      { value: "blood_thinners", label: "Blood Thinners" },
+      { value: "heart_meds", label: "Heart Medications" },
+      { value: "insulin", label: "Insulin" },
+      { value: "oral_diabetes_meds", label: "Oral Diabetes Medications" },
+      { value: "antidepressants", label: "Antidepressants" },
+      { value: "antianxiety", label: "Anti-Anxiety" },
+      { value: "antipsychotics", label: "Antipsychotics" },
+      { value: "mood_stabilizers", label: "Mood Stabilizers" },
+      { value: "sleep_aids", label: "Sleep Aids" },
+      { value: "pain_medications", label: "Pain Medications" },
+      { value: "otc_pain", label: "OTC Pain" },
+      { value: "opioid", label: "Opioid" },
+      { value: "prescribed_non_opioid", label: "Rx Non-Opioid" },
+      { value: "seizure_meds", label: "Seizure Medications" },
+      { value: "migraine_meds", label: "Migraine Medications" },
+      { value: "inhalers", label: "Inhalers" },
+      { value: "copd_meds", label: "COPD Medications" },
+      { value: "thyroid_meds", label: "Thyroid Medications" },
+      { value: "hormonal_therapy", label: "Hormonal Therapy" },
+      { value: "steroids", label: "Steroids" },
+      { value: "immunosuppressants", label: "Immunosuppressants" },
+      { value: "biologics", label: "Biologics" },
+      { value: "dmards", label: "DMARDs" },
+      { value: "cancer_treatment", label: "Cancer Treatment" },
+      { value: "antivirals", label: "Antivirals" },
+      { value: "adhd_meds", label: "ADHD Medications" },
+      { value: "osteoporosis_meds", label: "Osteoporosis Medications" },
+      { value: "kidney_meds", label: "Kidney Medications" },
+      { value: "liver_meds", label: "Liver Medications" },
+    ],
+  },
+  "medications.bpMedCount": {
+    type: "numeric",
+    label: "BP Medication Count",
+    description: "Number of blood pressure medications reported",
+  },
+  "medications.cholesterolMedCount": {
+    type: "numeric",
+    label: "Cholesterol Medication Count",
+    description: "Number of cholesterol medications reported",
+  },
+  "medications.painMedications": {
+    type: "set",
+    label: "Pain Medication Type",
+    options: [
+      { value: "none", label: "None" },
+      { value: "otc_only", label: "OTC Only" },
+      { value: "prescribed_non_opioid", label: "Rx Non-Opioid" },
+      { value: "opioid", label: "Opioid" },
+    ],
+  },
+  "medications.opioidUse": {
+    type: "boolean",
+    label: "Opioid Use",
+    description: "Pain medication intake indicates opioid use",
+  },
+  "medications.highRisk": {
+    type: "boolean",
+    label: "High-Risk Medication Signal",
+    description: "Derived flag for high-impact medication profiles",
+  },
+  "medications.insulinUse": {
+    type: "boolean",
+    label: "Insulin Use",
+  },
+  "medications.bloodThinners": {
+    type: "boolean",
+    label: "Blood Thinners",
+  },
+  "medications.heartMeds": {
+    type: "boolean",
+    label: "Heart Medications",
+  },
+  "medications.oralDiabetesMeds": {
+    type: "boolean",
+    label: "Oral Diabetes Medications",
+  },
+  "medications.antidepressants": {
+    type: "boolean",
+    label: "Antidepressants",
+  },
+  "medications.antianxiety": {
+    type: "boolean",
+    label: "Anti-Anxiety",
+  },
+  "medications.antipsychotics": {
+    type: "boolean",
+    label: "Antipsychotics",
+  },
+  "medications.moodStabilizers": {
+    type: "boolean",
+    label: "Mood Stabilizers",
+  },
+  "medications.sleepAids": {
+    type: "boolean",
+    label: "Sleep Aids",
+  },
+  "medications.seizureMeds": {
+    type: "boolean",
+    label: "Seizure Medications",
+  },
+  "medications.migraineMeds": {
+    type: "boolean",
+    label: "Migraine Medications",
+  },
+  "medications.inhalers": {
+    type: "boolean",
+    label: "Inhalers",
+  },
+  "medications.copdMeds": {
+    type: "boolean",
+    label: "COPD Medications",
+  },
+  "medications.thyroidMeds": {
+    type: "boolean",
+    label: "Thyroid Medications",
+  },
+  "medications.hormonalTherapy": {
+    type: "boolean",
+    label: "Hormonal Therapy",
+  },
+  "medications.steroids": {
+    type: "boolean",
+    label: "Steroids",
+  },
+  "medications.immunosuppressants": {
+    type: "boolean",
+    label: "Immunosuppressants",
+  },
+  "medications.biologics": {
+    type: "boolean",
+    label: "Biologics",
+  },
+  "medications.dmards": {
+    type: "boolean",
+    label: "DMARDs",
+  },
+  "medications.cancerTreatment": {
+    type: "boolean",
+    label: "Cancer Treatment",
+  },
+  "medications.antivirals": {
+    type: "boolean",
+    label: "Antivirals",
+  },
+  "medications.adhdMeds": {
+    type: "boolean",
+    label: "ADHD Medications",
+  },
+  "medications.osteoporosisMeds": {
+    type: "boolean",
+    label: "Osteoporosis Medications",
+  },
+  "medications.kidneyMeds": {
+    type: "boolean",
+    label: "Kidney Medications",
+  },
+  "medications.liverMeds": {
+    type: "boolean",
+    label: "Liver Medications",
+  },
   // Health conditions array - enables combination and knockout rules
   conditions: {
     type: "array",

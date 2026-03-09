@@ -89,6 +89,7 @@ export {
 
 export {
   useUWWizardUsage,
+  useRecordUWWizardRun,
   getUsageStatus,
   getDaysRemaining,
   uwWizardUsageKeys,
@@ -102,3 +103,5 @@ export {
   getProductCoverage,
   getCarrierAggregateCoverage,
 } from "./useCoverageStats";
+
+export { useCoverageAudit, coverageAuditKeys } from "./useCoverageAudit";

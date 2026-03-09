@@ -8,6 +8,7 @@ import type {
   CriteriaFilterResult,
   CriteriaFilteredProduct,
   CriteriaEvaluationResult,
+  UWWizardUsageSummary,
 } from "../types/underwriting.types";
 
 export class UWAnalysisError extends Error {
@@ -129,6 +130,9 @@ async function analyzeClient(
     reasoning: data.analysis.reasoning || "",
     processingTimeMs: Date.now() - startTime,
     criteriaFilters, // Phase 5: Include criteria filters
+    usage: (data.usage as UWWizardUsageSummary | null | undefined) ?? null,
+    usageRecorded:
+      (data.usageRecorded as boolean | undefined) ?? Boolean(data.usage),
   };
 
   return result;

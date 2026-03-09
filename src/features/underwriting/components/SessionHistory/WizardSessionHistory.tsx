@@ -33,7 +33,6 @@ import { useUserSessionsPaginated } from "../../hooks/useUnderwritingSessions";
 import type {
   UnderwritingSession,
   CarrierRecommendation,
-  ConditionResponse,
   RateTableRecommendation,
 } from "../../types/underwriting.types";
 import { getHealthTierLabel } from "../../types/underwriting.types";
@@ -46,8 +45,8 @@ import {
   capitalizeFirst,
   formatProductType,
   safeParseJsonArray,
-  safeParseJsonObject,
 } from "../../utils/formatters";
+import { parseSessionHealthSnapshot } from "../../utils/session-health-snapshot";
 
 const PAGE_SIZE = 15;
 
@@ -64,8 +63,12 @@ export function WizardSessionHistory({
   const [page, setPage] = useState(0);
   const deferredSearch = useDeferredValue(search);
 
-  const { data: result, isLoading, error, isFetching } =
-    useUserSessionsPaginated(page, PAGE_SIZE, deferredSearch);
+  const {
+    data: result,
+    isLoading,
+    error,
+    isFetching,
+  } = useUserSessionsPaginated(page, PAGE_SIZE, deferredSearch);
 
   const sessions = result?.data ?? [];
   const totalCount = result?.count ?? 0;
@@ -292,9 +295,8 @@ function SessionDetailView({
   const conditionsReported = safeParseJsonArray<string>(
     session.conditions_reported,
   );
-  const healthResponses = safeParseJsonObject<
-    Record<string, ConditionResponse>
-  >(session.health_responses);
+  const healthSnapshot = parseSessionHealthSnapshot(session.health_responses);
+  const healthResponses = healthSnapshot.conditionsByCode;
   const productTypes = safeParseJsonArray<string>(
     session.requested_product_types,
   );
@@ -483,9 +485,19 @@ function SessionDetailView({
                                 variant="outline"
                                 className="text-[9px] px-1.5 py-0"
                               >
-                                {rec.healthClass}
+                                {rec.quotedHealthClass || rec.healthClass}
                               </Badge>
                             </div>
+                            {(rec.quoteClassNote ||
+                              (rec.underwritingHealthClass &&
+                                rec.underwritingHealthClass !==
+                                  (rec.quotedHealthClass ||
+                                    rec.healthClass))) && (
+                              <div className="mt-1 text-[9px] text-muted-foreground">
+                                {rec.quoteClassNote ||
+                                  `UW ${rec.underwritingHealthClass} -> Quote ${rec.quotedHealthClass || rec.healthClass}`}
+                              </div>
+                            )}
                             <div className="mt-2 flex items-center justify-between text-[10px]">
                               <span className="text-muted-foreground">
                                 Face Amount
@@ -498,9 +510,15 @@ function SessionDetailView({
                               <span className="text-muted-foreground">
                                 Monthly Premium
                               </span>
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                {formatCurrency(rec.monthlyPremium)}/mo
-                              </span>
+                              {rec.monthlyPremium !== null ? (
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                  {formatCurrency(rec.monthlyPremium)}/mo
+                                </span>
+                              ) : (
+                                <span className="font-medium text-muted-foreground">
+                                  TBD
+                                </span>
+                              )}
                             </div>
                           </div>
                         ),

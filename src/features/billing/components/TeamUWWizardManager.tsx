@@ -59,7 +59,9 @@ export function TeamUWWizardManager() {
     try {
       const result = await subscriptionService.addSeatPack();
       if (result.success) {
-        toast.success("Seat pack added! You now have 5 additional agent seats.");
+        toast.success(
+          "Seat pack added! You now have 5 additional agent seats.",
+        );
         queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
         queryClient.invalidateQueries({ queryKey: teamSeatKeys.all });
       } else {
@@ -141,7 +143,7 @@ export function TeamUWWizardManager() {
                   Agent
                 </th>
                 <th className="text-right px-2 py-1.5 font-medium text-zinc-500 dark:text-zinc-400">
-                  Limit
+                  Usage
                 </th>
                 <th className="text-right px-2 py-1.5 font-medium text-zinc-500 dark:text-zinc-400 w-16">
                   Action
@@ -169,7 +171,12 @@ export function TeamUWWizardManager() {
                     )}
                   </td>
                   <td className="px-2 py-1.5 text-right text-zinc-600 dark:text-zinc-400">
-                    {seat.runs_limit} runs/mo
+                    <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {seat.runs_used} / {seat.runs_limit}
+                    </div>
+                    <div className="text-[9px] text-zinc-400">
+                      {seat.runs_remaining} left
+                    </div>
                   </td>
                   <td className="px-2 py-1.5 text-right">
                     <button

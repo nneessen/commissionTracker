@@ -82,57 +82,10 @@ interface ProductWithConstraints {
 // =============================================================================
 
 /**
- * Linear interpolation between two points
+ * Exact-match premium lookup — no interpolation, no estimation.
+ * Returns the real imported rate or null.
  */
-function lerp(
-  x: number,
-  x0: number,
-  x1: number,
-  y0: number,
-  y1: number,
-): number {
-  if (x1 === x0) return y0;
-  return y0 + ((x - x0) * (y1 - y0)) / (x1 - x0);
-}
-
-/**
- * Find the nearest lower and upper values in a sorted array
- */
-function findBounds(
-  value: number,
-  sortedValues: number[],
-): { lower: number | null; upper: number | null } {
-  if (sortedValues.length === 0) {
-    return { lower: null, upper: null };
-  }
-
-  if (sortedValues.includes(value)) {
-    return { lower: value, upper: value };
-  }
-
-  if (value < sortedValues[0]) {
-    return { lower: null, upper: sortedValues[0] };
-  }
-
-  if (value > sortedValues[sortedValues.length - 1]) {
-    return { lower: sortedValues[sortedValues.length - 1], upper: null };
-  }
-
-  let lower = sortedValues[0];
-  let upper = sortedValues[sortedValues.length - 1];
-
-  for (const v of sortedValues) {
-    if (v <= value && v > lower) lower = v;
-    if (v >= value && v < upper) upper = v;
-  }
-
-  return { lower, upper };
-}
-
-/**
- * Pure interpolation function - works entirely on in-memory data
- */
-function interpolatePremiumPure(
+function lookupPremium(
   matrix: PremiumMatrixWithCarrier[],
   targetAge: number,
   targetFaceAmount: number,
@@ -141,132 +94,19 @@ function interpolatePremiumPure(
   healthClass: HealthClass,
   termYears: TermYears | null,
 ): number | null {
-  // Filter to matching classification
-  const filtered = matrix.filter(
-    (m) =>
+  for (const m of matrix) {
+    if (
+      m.age === targetAge &&
+      m.face_amount === targetFaceAmount &&
       m.gender === gender &&
       m.tobacco_class === tobaccoClass &&
       m.health_class === healthClass &&
-      (termYears !== null ? m.term_years === termYears : m.term_years === null),
-  );
-
-  if (filtered.length === 0) {
-    return null;
-  }
-
-  // Build lookup map
-  const lookup = new Map<string, number>();
-  for (const m of filtered) {
-    lookup.set(`${m.age}-${m.face_amount}`, Number(m.monthly_premium));
-  }
-
-  // Get unique sorted ages and face amounts
-  const ages = [...new Set(filtered.map((m) => m.age))].sort((a, b) => a - b);
-  const faceAmounts = [...new Set(filtered.map((m) => m.face_amount))].sort(
-    (a, b) => a - b,
-  );
-
-  // Exact match
-  const exactKey = `${targetAge}-${targetFaceAmount}`;
-  if (lookup.has(exactKey)) {
-    return lookup.get(exactKey)!;
-  }
-
-  // Rate-per-thousand calculation when only ONE face amount exists
-  if (faceAmounts.length === 1) {
-    const knownFaceAmount = faceAmounts[0];
-    const ageBounds = findBounds(targetAge, ages);
-    const ageLow = ageBounds.lower ?? ageBounds.upper;
-    const ageHigh = ageBounds.upper ?? ageBounds.lower;
-
-    if (ageLow === null || ageHigh === null) {
-      return null;
-    }
-
-    const premiumLow = lookup.get(`${ageLow}-${knownFaceAmount}`);
-    const premiumHigh = lookup.get(`${ageHigh}-${knownFaceAmount}`);
-
-    if (premiumLow === undefined && premiumHigh === undefined) {
-      return null;
-    }
-
-    let premiumAtKnownFace: number;
-    if (
-      premiumLow !== undefined &&
-      premiumHigh !== undefined &&
-      ageLow !== ageHigh
+      (termYears !== null ? m.term_years === termYears : m.term_years === null)
     ) {
-      premiumAtKnownFace = lerp(
-        targetAge,
-        ageLow,
-        ageHigh,
-        premiumLow,
-        premiumHigh,
-      );
-    } else {
-      premiumAtKnownFace = premiumLow ?? premiumHigh!;
+      return Number(m.monthly_premium);
     }
-
-    const ratePerThousand = premiumAtKnownFace / (knownFaceAmount / 1000);
-    return ratePerThousand * (targetFaceAmount / 1000);
   }
-
-  // Bilinear interpolation
-  const ageBounds = findBounds(targetAge, ages);
-  const faceBounds = findBounds(targetFaceAmount, faceAmounts);
-
-  const ageLow = ageBounds.lower ?? ageBounds.upper;
-  const ageHigh = ageBounds.upper ?? ageBounds.lower;
-  const faceLow = faceBounds.lower ?? faceBounds.upper;
-  const faceHigh = faceBounds.upper ?? faceBounds.lower;
-
-  if (
-    ageLow === null ||
-    ageHigh === null ||
-    faceLow === null ||
-    faceHigh === null
-  ) {
-    return null;
-  }
-
-  const q11 = lookup.get(`${ageLow}-${faceLow}`);
-  const q12 = lookup.get(`${ageLow}-${faceHigh}`);
-  const q21 = lookup.get(`${ageHigh}-${faceLow}`);
-  const q22 = lookup.get(`${ageHigh}-${faceHigh}`);
-
-  const corners = [q11, q12, q21, q22].filter((v) => v !== undefined);
-  if (corners.length < 2) {
-    return corners.length > 0
-      ? corners.reduce((a, b) => a + b!, 0) / corners.length
-      : null;
-  }
-
-  if (
-    q11 !== undefined &&
-    q12 !== undefined &&
-    q21 !== undefined &&
-    q22 !== undefined
-  ) {
-    const r1 = lerp(targetFaceAmount, faceLow, faceHigh, q11, q12);
-    const r2 = lerp(targetFaceAmount, faceLow, faceHigh, q21, q22);
-    return lerp(targetAge, ageLow, ageHigh, r1, r2);
-  }
-
-  // Partial interpolation fallbacks
-  if (q11 !== undefined && q12 !== undefined) {
-    return lerp(targetFaceAmount, faceLow, faceHigh, q11, q12);
-  }
-  if (q21 !== undefined && q22 !== undefined) {
-    return lerp(targetFaceAmount, faceLow, faceHigh, q21, q22);
-  }
-  if (q11 !== undefined && q21 !== undefined) {
-    return lerp(targetAge, ageLow, ageHigh, q11, q21);
-  }
-  if (q12 !== undefined && q22 !== undefined) {
-    return lerp(targetAge, ageLow, ageHigh, q12, q22);
-  }
-
-  return corners.reduce((a, b) => a + b!, 0) / corners.length;
+  return null;
 }
 
 /**
@@ -294,10 +134,10 @@ function findMaxCoverageForBudget(
     return null;
   }
 
-  // Get valid face amounts from the matrix
-  const faceAmounts = [...new Set(filtered.map((m) => m.face_amount))].sort(
-    (a, b) => a - b,
-  );
+  // Get face amounts that exist at this exact age
+  const faceAmounts = [
+    ...new Set(filtered.filter((m) => m.age === age).map((m) => m.face_amount)),
+  ].sort((a, b) => a - b);
 
   if (faceAmounts.length === 0) {
     return null;
@@ -311,7 +151,7 @@ function findMaxCoverageForBudget(
     const mid = Math.floor((lo + hi) / 2);
     const testFace = faceAmounts[mid];
 
-    const premium = interpolatePremiumPure(
+    const premium = lookupPremium(
       productMatrix,
       age,
       testFace,
@@ -646,7 +486,7 @@ export function calculateQuotesForCoverage(
           };
         }
 
-        const premium = interpolatePremiumPure(
+        const premium = lookupPremium(
           productData.matrix,
           input.age,
           faceAmount,
@@ -767,7 +607,7 @@ export function calculateQuotesForBudget(
         if (effectiveMaxFace && result.faceAmount > effectiveMaxFace) {
           cappedFaceAmount = effectiveMaxFace;
           // Recalculate premium for capped face amount
-          const recalculatedPremium = interpolatePremiumPure(
+          const recalculatedPremium = lookupPremium(
             productData.matrix,
             input.age,
             cappedFaceAmount,

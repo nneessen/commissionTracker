@@ -183,7 +183,7 @@ export function TimePeriodSelector({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">
+      <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 overflow-x-auto">
         {periods.map(({ value, label }) => (
           <button
             key={value}

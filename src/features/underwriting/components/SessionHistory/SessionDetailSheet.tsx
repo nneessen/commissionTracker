@@ -20,7 +20,6 @@ import {
 import type {
   UnderwritingSession,
   CarrierRecommendation,
-  ConditionResponse,
   RateTableRecommendation,
 } from "../../types/underwriting.types";
 import { getHealthTierLabel } from "../../types/underwriting.types";
@@ -32,8 +31,8 @@ import {
   formatProductType,
   isValidHealthTier,
   safeParseJsonArray,
-  safeParseJsonObject,
 } from "../../utils/formatters";
+import { parseSessionHealthSnapshot } from "../../utils/session-health-snapshot";
 
 interface SessionDetailSheetProps {
   session: UnderwritingSession | null;
@@ -56,9 +55,8 @@ export function SessionDetailSheet({
   const conditionsReported = safeParseJsonArray<string>(
     session.conditions_reported,
   );
-  const healthResponses = safeParseJsonObject<
-    Record<string, ConditionResponse>
-  >(session.health_responses);
+  const healthSnapshot = parseSessionHealthSnapshot(session.health_responses);
+  const healthResponses = healthSnapshot.conditionsByCode;
   const productTypes = safeParseJsonArray<string>(
     session.requested_product_types,
   );
@@ -243,9 +241,19 @@ export function SessionDetailSheet({
                                 variant="outline"
                                 className="text-[10px] px-2 py-0.5"
                               >
-                                {rec.healthClass}
+                                {rec.quotedHealthClass || rec.healthClass}
                               </Badge>
                             </div>
+                            {(rec.quoteClassNote ||
+                              (rec.underwritingHealthClass &&
+                                rec.underwritingHealthClass !==
+                                  (rec.quotedHealthClass ||
+                                    rec.healthClass))) && (
+                              <div className="mt-1 text-[10px] text-zinc-400">
+                                {rec.quoteClassNote ||
+                                  `UW ${rec.underwritingHealthClass} -> Quote ${rec.quotedHealthClass || rec.healthClass}`}
+                              </div>
+                            )}
                             <div className="mt-2 flex items-center justify-between text-[11px]">
                               <span className="text-zinc-500 dark:text-zinc-400">
                                 Face Amount
@@ -258,9 +266,15 @@ export function SessionDetailSheet({
                               <span className="text-zinc-500 dark:text-zinc-400">
                                 Monthly Premium
                               </span>
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                {formatCurrency(rec.monthlyPremium)}/mo
-                              </span>
+                              {rec.monthlyPremium !== null ? (
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                  {formatCurrency(rec.monthlyPremium)}/mo
+                                </span>
+                              ) : (
+                                <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                                  TBD
+                                </span>
+                              )}
                             </div>
                           </div>
                         ),

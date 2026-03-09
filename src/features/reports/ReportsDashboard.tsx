@@ -185,7 +185,7 @@ export function ReportsDashboard() {
               customRange={customRange}
               onCustomRangeChange={setCustomRange}
             />
-            <div className="flex gap-1">
+            <div className="hidden sm:flex gap-1">
               <Button
                 onClick={handleExportPDF}
                 size="sm"

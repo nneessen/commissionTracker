@@ -64,6 +64,37 @@ export function getMaxFaceAmountForAgeTerm(
   return maxFace;
 }
 
+/**
+ * Resolve the face amount above which a product requires full underwriting.
+ * Supports both legacy numeric metadata and the richer age-banded object shape.
+ */
+export function getFullUnderwritingThreshold(
+  metadata: ProductMetadata | null | undefined,
+  clientAge: number,
+): number | null {
+  const thresholdConfig = metadata?.fullUnderwritingThreshold;
+  if (thresholdConfig === undefined || thresholdConfig === null) {
+    return null;
+  }
+
+  if (typeof thresholdConfig === "number") {
+    return thresholdConfig > 0 ? thresholdConfig : null;
+  }
+
+  const ageBands = thresholdConfig.ageBands;
+  if (ageBands && ageBands.length > 0) {
+    for (const band of ageBands) {
+      if (clientAge >= band.minAge && clientAge <= band.maxAge) {
+        return band.threshold;
+      }
+    }
+  }
+
+  return thresholdConfig.faceAmountThreshold > 0
+    ? thresholdConfig.faceAmountThreshold
+    : null;
+}
+
 // =============================================================================
 // Eligibility Checking
 // =============================================================================
@@ -89,6 +120,7 @@ export function checkEligibility(
   termYears?: number | null,
 ): EligibilityResult {
   const ineligibleReasons: string[] = [];
+  const unknownReasons: string[] = [];
   const missingFields: MissingFieldInfo[] = [];
 
   // Check basic product constraints (from products table)
@@ -120,6 +152,35 @@ export function checkEligibility(
     const termInfo = termYears ? ` for ${termYears}yr term` : "";
     ineligibleReasons.push(
       `Requested $${coverage.faceAmount.toLocaleString()} exceeds max $${maxFace.toLocaleString()} for age ${client.age}${termInfo}`,
+    );
+  }
+
+  // Product metadata knockout conditions
+  if (product.metadata?.knockoutConditions?.length) {
+    const normalizedKnockouts = new Set(
+      product.metadata.knockoutConditions.map((code) => code.toLowerCase()),
+    );
+    const matchingKnockouts = client.healthConditions.filter((conditionCode) =>
+      normalizedKnockouts.has(conditionCode.toLowerCase()),
+    );
+
+    if (matchingKnockouts.length > 0) {
+      ineligibleReasons.push(
+        `Product knockout condition: ${matchingKnockouts.join(", ")}`,
+      );
+    }
+  }
+
+  const fullUnderwritingThreshold = getFullUnderwritingThreshold(
+    product.metadata,
+    client.age,
+  );
+  if (
+    fullUnderwritingThreshold !== null &&
+    coverage.faceAmount > fullUnderwritingThreshold
+  ) {
+    unknownReasons.push(
+      `Requested $${coverage.faceAmount.toLocaleString()} exceeds simplified issue threshold $${fullUnderwritingThreshold.toLocaleString()} and may require full underwriting`,
     );
   }
 
@@ -199,6 +260,19 @@ export function checkEligibility(
         ineligibleReasons.push(`Not available in ${client.state}`);
       }
     }
+
+    if (
+      client.state &&
+      extractedCriteria.stateAvailability?.availableStates?.length
+    ) {
+      if (
+        !extractedCriteria.stateAvailability.availableStates.includes(
+          client.state,
+        )
+      ) {
+        ineligibleReasons.push(`Not available in ${client.state}`);
+      }
+    }
   }
 
   // Check data completeness for conditions
@@ -242,12 +316,15 @@ export function checkEligibility(
     };
   }
 
-  if (missingFields.length > 0) {
+  if (unknownReasons.length > 0 || missingFields.length > 0) {
     return {
       status: "unknown",
-      reasons: ["Missing required follow-up information"],
+      reasons:
+        missingFields.length > 0
+          ? [...unknownReasons, "Missing required follow-up information"]
+          : unknownReasons,
       missingFields,
-      confidence: completeness.confidence,
+      confidence: missingFields.length > 0 ? completeness.confidence : 1,
     };
   }
 

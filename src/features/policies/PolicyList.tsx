@@ -465,7 +465,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
       </div>
 
       {/* Smart Contextual Metrics Bar */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 text-[11px]">
+      <div className="flex items-center gap-x-3 gap-y-1 flex-wrap px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 text-[11px]">
         {metrics ? (
           <>
             {/* Count metrics */}
@@ -587,7 +587,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
 
       {/* Collapsible Filter Panel */}
       {showFilters && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
           <Select
             value={filters.status || "all"}
             onValueChange={(value) =>
@@ -702,8 +702,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
         </div>
       )}
 
-      {/* Table Container - Scrollable */}
-      <div className="flex-1 overflow-auto">
+      {/* Table Container - Desktop Only */}
+      <div className="hidden md:block flex-1 overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 bg-white dark:bg-zinc-900 z-10">
             <TableRow className="h-8 border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
@@ -1216,8 +1216,211 @@ export const PolicyList: React.FC<PolicyListProps> = ({
         </Table>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="flex-1 overflow-auto md:hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LogoSpinner size="xl" className="mr-2" />
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Loading...
+            </span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center py-12 gap-2">
+            <AlertCircle className="h-8 w-8 text-zinc-300 dark:text-zinc-600" />
+            <span className="text-[11px] text-red-600 dark:text-red-400">
+              {error instanceof Error ? error.message : String(error)}
+            </span>
+            <Button
+              onClick={refresh}
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] px-2"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : policies.length === 0 ? (
+          <div className="flex flex-col items-center py-12">
+            <FileText className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              {filterCount > 0
+                ? "No policies match your filters"
+                : "No policies found"}
+            </p>
+          </div>
+        ) : (
+          <div className="px-2 py-1.5 space-y-1.5">
+            {policies.map((policy) => {
+              const carrier = getCarrierById(policy.carrierId);
+              const policyCommission = commissionsByPolicy[policy.id];
+              const commission = policyCommission?.amount || 0;
+              return (
+                <div
+                  key={policy.id}
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2.5"
+                >
+                  {/* Top: Client name + Actions menu */}
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-[12px] text-zinc-900 dark:text-zinc-100 truncate">
+                        {policy.client.name}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        {policy.policyNumber} &middot; {policy.client.age}y
+                        &middot; {policy.client.state}
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 ml-2 flex-shrink-0"
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem
+                          onClick={() => onEditPolicy(policy.id)}
+                          className="text-[11px]"
+                        >
+                          <Edit className="mr-2 h-3.5 w-3.5" />
+                          Edit Policy
+                        </DropdownMenuItem>
+                        {canViewCommissions && !policy.leadPurchaseId && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setPolicyToLink(policy);
+                              setLinkDialogOpen(true);
+                            }}
+                            className="text-[11px]"
+                          >
+                            <Link2 className="mr-2 h-3.5 w-3.5" />
+                            Link to Lead Purchase
+                          </DropdownMenuItem>
+                        )}
+                        {policy.status === "approved" &&
+                          policy.lifecycleStatus === "active" && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => handleCancelPolicy(policy.id)}
+                                className="text-amber-600 dark:text-amber-400 text-[11px]"
+                              >
+                                <XCircle className="mr-2 h-3.5 w-3.5" />
+                                Cancel Policy
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleLapsePolicy(policy.id)}
+                                className="text-amber-600 dark:text-amber-400 text-[11px]"
+                              >
+                                <AlertCircle className="mr-2 h-3.5 w-3.5" />
+                                Mark as Lapsed
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        {policy.status === "approved" &&
+                          (policy.lifecycleStatus === "cancelled" ||
+                            policy.lifecycleStatus === "lapsed") && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleReinstatePolicy(
+                                  policy.id,
+                                  policy.lifecycleStatus as
+                                    | "cancelled"
+                                    | "lapsed",
+                                )
+                              }
+                              className="text-emerald-600 dark:text-emerald-400 text-[11px]"
+                            >
+                              <CheckCircle className="mr-2 h-3.5 w-3.5" />
+                              Reinstate Policy
+                            </DropdownMenuItem>
+                          )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleDeletePolicy(policy.id, policy.client.name)
+                          }
+                          disabled={isDeleting}
+                          className="text-red-600 dark:text-red-400 text-[11px]"
+                        >
+                          <Trash2 className="mr-2 h-3.5 w-3.5" />
+                          Delete Policy
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Carrier + Product */}
+                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
+                    {carrier?.name || "Unknown"} &middot;{" "}
+                    {PRODUCT_ABBREV[policy.product] || policy.product} &middot;{" "}
+                    {dateColumnType === "effective"
+                      ? formatDate(policy.effectiveDate)
+                      : policy.submitDate
+                        ? formatDate(policy.submitDate)
+                        : "—"}
+                  </div>
+
+                  {/* Bottom: Status badges + Premium */}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "text-[10px] font-medium px-1.5 py-0.5 rounded capitalize",
+                          policy.status === "pending" &&
+                            "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                          policy.status === "approved" &&
+                            "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                          policy.status === "denied" &&
+                            "bg-red-500/10 text-red-600 dark:text-red-400",
+                          policy.status === "withdrawn" &&
+                            "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+                        )}
+                      >
+                        {policy.status}
+                      </span>
+                      {policy.status === "approved" && (
+                        <span
+                          className={cn(
+                            "text-[10px] font-medium px-1.5 py-0.5 rounded capitalize",
+                            (!policy.lifecycleStatus ||
+                              policy.lifecycleStatus === "active") &&
+                              "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                            policy.lifecycleStatus === "lapsed" &&
+                              "bg-red-500/10 text-red-600 dark:text-red-400",
+                            policy.lifecycleStatus === "cancelled" &&
+                              "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+                            policy.lifecycleStatus === "expired" &&
+                              "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+                          )}
+                        >
+                          {policy.lifecycleStatus || "active"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[12px] font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+                        {formatCurrency(policy.annualPremium)}
+                      </div>
+                      {canViewCommissions && (
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          {formatCurrency(commission)} comm
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Server-side Pagination Controls */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-t border-zinc-200 dark:border-zinc-800 flex-shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 border-t border-zinc-200 dark:border-zinc-800 flex-shrink-0">
         <div className="flex items-center gap-3 text-[10px]">
           <span className="text-zinc-500 dark:text-zinc-400">
             <span className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -1269,7 +1472,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
 
-          <div className="flex items-center gap-0.5">
+          <div className="hidden sm:flex items-center gap-0.5">
             {(() => {
               const pages = [];
               const maxVisible = 5;

@@ -157,6 +157,15 @@ export function PremiumMatrixGrid({
     return map;
   }, [existingData]);
 
+  // Compute dynamic ages from DB data (fallback to GRID_AGES for empty products)
+  const gridAges = useMemo(() => {
+    if (existingData && existingData.length > 0) {
+      const ageSet = new Set(existingData.map((entry) => entry.age));
+      return [...ageSet].sort((a, b) => a - b);
+    }
+    return [...GRID_AGES];
+  }, [existingData]);
+
   // Clear cell inputs when classification changes
   useEffect(() => {
     setCellInputs({});
@@ -224,23 +233,23 @@ export function PremiumMatrixGrid({
       if (e.key === "Tab" && !e.shiftKey) {
         if (faceIndex < faceAmounts.length - 1) {
           nextFace = faceAmounts[faceIndex + 1];
-        } else if (ageIndex < GRID_AGES.length - 1) {
-          nextAge = GRID_AGES[ageIndex + 1];
+        } else if (ageIndex < gridAges.length - 1) {
+          nextAge = gridAges[ageIndex + 1];
           nextFace = faceAmounts[0];
         }
       } else if (e.key === "Tab" && e.shiftKey) {
         if (faceIndex > 0) {
           nextFace = faceAmounts[faceIndex - 1];
         } else if (ageIndex > 0) {
-          nextAge = GRID_AGES[ageIndex - 1];
+          nextAge = gridAges[ageIndex - 1];
           nextFace = faceAmounts[faceAmounts.length - 1];
         }
-      } else if (e.key === "ArrowDown" && ageIndex < GRID_AGES.length - 1) {
+      } else if (e.key === "ArrowDown" && ageIndex < gridAges.length - 1) {
         e.preventDefault();
-        nextAge = GRID_AGES[ageIndex + 1];
+        nextAge = gridAges[ageIndex + 1];
       } else if (e.key === "ArrowUp" && ageIndex > 0) {
         e.preventDefault();
-        nextAge = GRID_AGES[ageIndex - 1];
+        nextAge = gridAges[ageIndex - 1];
       } else if (e.key === "ArrowRight" && faceIndex < faceAmounts.length - 1) {
         e.preventDefault();
         nextFace = faceAmounts[faceIndex + 1];
@@ -249,8 +258,8 @@ export function PremiumMatrixGrid({
         nextFace = faceAmounts[faceIndex - 1];
       } else if (e.key === "Enter") {
         e.preventDefault();
-        if (ageIndex < GRID_AGES.length - 1) {
-          nextAge = GRID_AGES[ageIndex + 1];
+        if (ageIndex < gridAges.length - 1) {
+          nextAge = gridAges[ageIndex + 1];
         }
       } else {
         return;
@@ -273,7 +282,7 @@ export function PremiumMatrixGrid({
         }, 0);
       }
     },
-    [faceAmounts, columnVirtualizer],
+    [faceAmounts, columnVirtualizer, gridAges],
   );
 
   // Save all changes
@@ -320,11 +329,11 @@ export function PremiumMatrixGrid({
 
   // Count statistics
   const stats = useMemo(() => {
-    const totalCells = GRID_AGES.length * faceAmounts.length;
+    const totalCells = gridAges.length * faceAmounts.length;
     let filledCells = 0;
     let pendingChanges = 0;
 
-    for (const age of GRID_AGES) {
+    for (const age of gridAges) {
       for (const faceAmount of faceAmounts) {
         const key: CellKey = `${age}-${faceAmount}`;
         if (existingMap.has(key) || cellInputs[key]) {
@@ -337,7 +346,7 @@ export function PremiumMatrixGrid({
     }
 
     return { totalCells, filledCells, pendingChanges };
-  }, [existingMap, cellInputs, faceAmounts]);
+  }, [existingMap, cellInputs, faceAmounts, gridAges]);
 
   if (isLoading) {
     return (
@@ -570,7 +579,7 @@ export function PremiumMatrixGrid({
               </div>
 
               {/* Data rows */}
-              {GRID_AGES.map((age, ageIndex) => (
+              {gridAges.map((age, ageIndex) => (
                 <div
                   key={age}
                   className="flex border-t border-zinc-100 dark:border-zinc-800"

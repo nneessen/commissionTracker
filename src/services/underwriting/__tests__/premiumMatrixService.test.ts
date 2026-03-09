@@ -9,6 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   interpolatePremium,
+  getAvailableRateClassesForQuote,
   type PremiumMatrix,
   type GenderType,
   type TobaccoClass,
@@ -51,6 +52,54 @@ function createMatrixRow(
     created_by: null, // Optional field for test fixtures
   };
 }
+
+// =============================================================================
+// Available quoteable rate class detection
+// =============================================================================
+
+describe("getAvailableRateClassesForQuote", () => {
+  it("returns only the single actual class for a single-class term product", () => {
+    const matrix = [
+      createMatrixRow(45, 100000, 42, {
+        healthClass: "standard",
+        termYears: 20,
+      }),
+      createMatrixRow(50, 100000, 49, {
+        healthClass: "standard",
+        termYears: 20,
+      }),
+    ];
+
+    expect(
+      getAvailableRateClassesForQuote(matrix, "male", "non_tobacco", 20),
+    ).toEqual(["standard"]);
+  });
+
+  it("returns multiple classes in best-to-worst order for multi-class products", () => {
+    const matrix = [
+      createMatrixRow(45, 100000, 30, {
+        healthClass: "preferred_plus",
+        termYears: 20,
+      }),
+      createMatrixRow(45, 100000, 34, {
+        healthClass: "preferred",
+        termYears: 20,
+      }),
+      createMatrixRow(45, 100000, 40, {
+        healthClass: "standard_plus",
+        termYears: 20,
+      }),
+      createMatrixRow(45, 100000, 48, {
+        healthClass: "standard",
+        termYears: 20,
+      }),
+    ];
+
+    expect(
+      getAvailableRateClassesForQuote(matrix, "male", "non_tobacco", 20),
+    ).toEqual(["preferred_plus", "preferred", "standard_plus", "standard"]);
+  });
+});
 
 /**
  * Create a standard 2D matrix for testing interpolation.

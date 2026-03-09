@@ -205,6 +205,18 @@ export interface AIAnalysisResult {
   reasoning: string;
   processingTimeMs?: number;
   criteriaFilters?: CriteriaFilterResult; // Phase 5: Criteria evaluation results
+  usage?: UWWizardUsageSummary | null;
+  usageRecorded?: boolean;
+}
+
+export interface UWWizardUsageSummary {
+  runs_used: number;
+  runs_limit: number;
+  runs_remaining: number;
+  usage_percent: number;
+  tier_id: string;
+  tier_name: string;
+  source?: "team_owner" | "team_seat" | "addon";
 }
 
 // ============================================================================
@@ -458,6 +470,7 @@ export interface AIAnalysisRequest {
   };
   decisionTreeId?: string;
   imoId?: string; // For fetching relevant carrier guides
+  runKey?: string;
 }
 
 // ============================================================================
@@ -564,9 +577,18 @@ export interface RateTableRecommendation {
   productName: string;
   termYears: number | null;
   healthClass: string;
-  monthlyPremium: number;
+  quotedHealthClass?: string;
+  underwritingHealthClass?: string | null;
+  quoteClassNote?: string;
+  monthlyPremium: number | null;
   faceAmount: number;
   reason: string;
+}
+
+export interface SessionHealthSnapshot {
+  version: 2;
+  conditionsByCode: Record<string, ConditionResponse>;
+  medications?: MedicationInfo;
 }
 
 export interface SessionSaveData {
@@ -575,7 +597,7 @@ export interface SessionSaveData {
   clientGender: string;
   clientState: string;
   clientBmi: number;
-  healthResponses: Record<string, ConditionResponse>;
+  healthResponses: Record<string, ConditionResponse> | SessionHealthSnapshot;
   conditionsReported: string[];
   tobaccoUse: boolean;
   tobaccoDetails?: TobaccoInfo;

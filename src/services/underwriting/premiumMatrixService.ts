@@ -1406,6 +1406,41 @@ export function getAvailableTermsForAge(
 }
 
 /**
+ * Get rate classes that actually exist for a specific quote context.
+ * This is used to distinguish the underwriting outcome from the product's
+ * real quoteable classes in the premium matrix.
+ */
+export function getAvailableRateClassesForQuote(
+  matrix: PremiumMatrix[],
+  gender: GenderType,
+  tobaccoClass: TobaccoClass,
+  termYears?: TermYears | null,
+): RateableHealthClass[] {
+  const classSet = new Set<RateableHealthClass>();
+
+  for (const row of matrix) {
+    if (row.gender !== gender || row.tobacco_class !== tobaccoClass) {
+      continue;
+    }
+
+    if (termYears === null) {
+      if (row.term_years !== null) continue;
+    } else if (termYears !== undefined && row.term_years !== termYears) {
+      continue;
+    }
+
+    const normalizedClass = normalizeHealthClass(row.health_class);
+    if (normalizedClass) {
+      classSet.add(normalizedClass);
+    }
+  }
+
+  return HEALTH_CLASS_FALLBACK_ORDER.filter((healthClass) =>
+    classSet.has(healthClass),
+  );
+}
+
+/**
  * Get the longest available term from a premium matrix.
  * Returns null if no term products (permanent only).
  */

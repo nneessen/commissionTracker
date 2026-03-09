@@ -25,9 +25,8 @@ interface UWLimitReachedDialogProps {
 
 // Tier comparison for upgrade prompts
 const TIER_INFO = [
-  { id: "starter", name: "Starter", runs: 150, price: "$9.99" },
-  { id: "professional", name: "Professional", runs: 400, price: "$24.99" },
-  { id: "agency", name: "Agency", runs: 1000, price: "$49.99" },
+  { id: "starter", name: "Starter", runs: 100, price: "$9.99" },
+  { id: "professional", name: "Professional", runs: 500, price: "$24.99" },
 ];
 
 export function UWLimitReachedDialog({
@@ -38,10 +37,17 @@ export function UWLimitReachedDialog({
   const navigate = useNavigate();
   const daysRemaining = getDaysRemaining(usage);
 
-  const currentTier =
-    TIER_INFO.find((t) => t.id === usage?.tier_id) || TIER_INFO[0];
+  const currentTier = usage
+    ? {
+        id: usage.tier_id,
+        name: usage.tier_name,
+        runs: usage.runs_limit,
+        price: "",
+      }
+    : TIER_INFO[0];
   const currentTierIndex = TIER_INFO.findIndex((t) => t.id === usage?.tier_id);
-  const upgradeTiers = TIER_INFO.slice(currentTierIndex + 1);
+  const upgradeTiers =
+    currentTierIndex >= 0 ? TIER_INFO.slice(currentTierIndex + 1) : [];
 
   const handleUpgrade = () => {
     onOpenChange(false);

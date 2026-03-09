@@ -89,6 +89,7 @@ export function transformWizardToDecisionEngineInput(
       weight: clientInfo.weight,
       tobacco: healthInfo.tobacco.currentUse,
       healthConditions,
+      medications: healthInfo.medications,
       conditionResponses,
     },
     coverage: {

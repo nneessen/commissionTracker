@@ -8,6 +8,7 @@ import {
   getAvailableKnockoutCodes,
   generateKnockoutRules,
   generateAgeRulesFromProducts,
+  generateGuaranteedIssueRulesFromProducts,
   type GenerationStrategy,
   type KnockoutCondition,
   type GenerationResult,
@@ -119,6 +120,46 @@ export function useGenerateAgeRules() {
         queryKey: ruleEngineKeys.ruleSets(carrierId),
       });
       // Also invalidate the "needing review" list
+      queryClient.invalidateQueries({
+        queryKey: ruleEngineKeys.needingReview(),
+      });
+    },
+  });
+}
+
+/**
+ * Generate guaranteed-issue draft rules for explicitly selected products.
+ */
+export function useGenerateGuaranteedIssueRules() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { imo } = useImo();
+
+  return useMutation({
+    mutationFn: async ({
+      carrierId,
+      productIds,
+      strategy = "skip_if_exists",
+    }: {
+      carrierId: string;
+      productIds: string[];
+      strategy?: GenerationStrategy;
+    }) => {
+      if (!user?.id) throw new Error("User not authenticated");
+      if (!imo?.id) throw new Error("No IMO selected");
+
+      return generateGuaranteedIssueRulesFromProducts({
+        carrierId,
+        imoId: imo.id,
+        productIds,
+        strategy,
+        userId: user.id,
+      });
+    },
+    onSuccess: (_result, { carrierId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ruleEngineKeys.ruleSets(carrierId),
+      });
       queryClient.invalidateQueries({
         queryKey: ruleEngineKeys.needingReview(),
       });

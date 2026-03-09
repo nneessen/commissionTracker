@@ -35,7 +35,10 @@ export type {
 } from "./decision-engine.types";
 
 // Eligibility filter functions
-export { checkEligibility, getMaxFaceAmountForAgeTerm } from "./eligibility-filter";
+export {
+  checkEligibility,
+  getMaxFaceAmountForAgeTerm,
+} from "./eligibility-filter";
 
 // Approval scoring functions
 export {
@@ -154,7 +157,7 @@ export async function getRecommendations(
   // OPTIMIZATION: Fetch criteria, premium matrices, and build charts in parallel
   const [criteriaMap, premiumMatrixMap, buildChartMap] = await Promise.all([
     getExtractedCriteriaMap(productIds),
-    batchFetchPremiumMatrices(productIds, imoId),
+    batchFetchPremiumMatrices(productIds, imoId, client.gender, client.tobacco),
     batchFetchBuildCharts(products, imoId),
   ]);
 
@@ -247,6 +250,7 @@ export async function getRecommendations(
     healthClassRequested: e.healthClassRequested,
     healthClassUsed: e.healthClassUsed,
     wasFallback: e.wasFallback,
+    availableRateClasses: e.availableRateClasses,
     termYears: e.termYears,
     availableTerms: e.availableTerms,
     alternativeQuotes: e.alternativeQuotes,

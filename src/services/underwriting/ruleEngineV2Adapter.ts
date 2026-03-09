@@ -22,6 +22,8 @@ import type { RuleSetWithRules } from "./ruleService";
 import type { AcceptanceDecision } from "./acceptanceService";
 import type { HealthClass } from "./premiumMatrixService";
 import type { DraftRuleInfo } from "@/features/underwriting/types/underwriting.types";
+import type { MedicationInfo } from "@/features/underwriting";
+import { deriveRuleConditionCodes } from "./derivedConditionCodes";
 
 // =============================================================================
 // Types
@@ -34,6 +36,7 @@ export interface ClientProfileV2 {
   bmi?: number;
   tobacco: boolean;
   healthConditions: string[];
+  medications?: MedicationInfo;
   conditionResponses?: Record<string, Record<string, unknown>>;
 }
 
@@ -161,6 +164,20 @@ function adaptRuleSetForEvaluation(rs: RuleSetWithRules): UnderwritingRuleSet {
   return (result.success ? result.data : prepared) as UnderwritingRuleSet;
 }
 
+function chooseHighestVersionRuleSet(
+  ruleSets: RuleSetWithRules[],
+): RuleSetWithRules | null {
+  if (ruleSets.length === 0) {
+    return null;
+  }
+
+  return [...ruleSets].sort((a, b) => {
+    const aVersion = a.version ?? -Infinity;
+    const bVersion = b.version ?? -Infinity;
+    return bVersion - aVersion;
+  })[0];
+}
+
 // =============================================================================
 // Main Adapter Function
 // =============================================================================
@@ -202,6 +219,13 @@ export async function calculateApprovalV2(params: {
   }
 
   const conditionResponses = client.conditionResponses ?? {};
+  const { allConditionCodes, derivedConditionCodes } = deriveRuleConditionCodes(
+    {
+      age: client.age,
+      healthConditions,
+      conditionResponses,
+    },
+  );
 
   // Build FactMap from client data
   // Note: bmi and state are optional - when undefined, rules will evaluate as "unknown"
@@ -212,6 +236,7 @@ export async function calculateApprovalV2(params: {
       bmi: client.bmi,
       state: client.state,
       tobacco: client.tobacco,
+      medications: client.medications,
     },
     healthConditions,
     conditionResponses,
@@ -222,7 +247,7 @@ export async function calculateApprovalV2(params: {
     loadApprovedRuleSets(imoId, carrierId, productId, { scope: "global" }),
     loadApprovedRuleSets(imoId, carrierId, productId, {
       scope: "condition",
-      conditionCodes: healthConditions,
+      conditionCodes: allConditionCodes,
     }),
   ]);
 
@@ -275,33 +300,62 @@ export async function calculateApprovalV2(params: {
   }
 
   // Evaluate each health condition
-  const conditionOutcomes: ConditionOutcome[] = healthConditions.map((cc) => {
-    const sets = byCondition.get(cc) ?? [];
+  const baseConditionOutcomes: ConditionOutcome[] = healthConditions.map(
+    (cc) => {
+      const sets = byCondition.get(cc) ?? [];
 
-    if (sets.length === 0) {
-      // No approved rule set for this condition => unknown/refer
-      return {
-        conditionCode: cc,
-        eligibility: "unknown" as const,
-        healthClass: "unknown" as DSLHealthClass,
-        tableUnits: 0,
-        flatExtra: null,
-        concerns: [
-          `${cc}: no approved rule set found - manual review required`,
-        ],
-        matchedRules: [],
-        missingFields: [],
-      };
-    }
+      if (sets.length === 0) {
+        // No approved rule set for this condition => unknown/refer
+        return {
+          conditionCode: cc,
+          eligibility: "unknown" as const,
+          healthClass: "unknown" as DSLHealthClass,
+          tableUnits: 0,
+          flatExtra: null,
+          concerns: [
+            `${cc}: no approved rule set found - manual review required`,
+          ],
+          matchedRules: [],
+          missingFields: [],
+        };
+      }
 
-    // Pick highest version rule set (null versions sort last, matching SQL NULLS LAST)
-    const chosen = sets.sort((a, b) => {
-      const aVersion = a.version ?? -Infinity;
-      const bVersion = b.version ?? -Infinity;
-      return bVersion - aVersion;
-    })[0];
-    return evaluateRuleSet(adaptRuleSetForEvaluation(chosen), facts);
-  });
+      const chosen = chooseHighestVersionRuleSet(sets);
+      if (!chosen) {
+        return {
+          conditionCode: cc,
+          eligibility: "unknown" as const,
+          healthClass: "unknown" as DSLHealthClass,
+          tableUnits: 0,
+          flatExtra: null,
+          concerns: [
+            `${cc}: no approved rule set found - manual review required`,
+          ],
+          matchedRules: [],
+          missingFields: [],
+        };
+      }
+
+      return evaluateRuleSet(adaptRuleSetForEvaluation(chosen), facts);
+    },
+  );
+
+  const derivedConditionOutcomes: ConditionOutcome[] =
+    derivedConditionCodes.flatMap((conditionCode) => {
+      const sets = byCondition.get(conditionCode) ?? [];
+      const chosen = chooseHighestVersionRuleSet(sets);
+
+      if (!chosen) {
+        return [];
+      }
+
+      return [evaluateRuleSet(adaptRuleSetForEvaluation(chosen), facts)];
+    });
+
+  const conditionOutcomes = [
+    ...baseConditionOutcomes,
+    ...derivedConditionOutcomes,
+  ];
 
   // Aggregate all outcomes (global + conditions)
   const aggregated = aggregateOutcomes(conditionOutcomes, globalOutcome, {

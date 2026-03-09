@@ -12332,6 +12332,7 @@ export type Database = {
           imo_id: string;
           input_tokens: number | null;
           output_tokens: number | null;
+          run_key: string | null;
           session_id: string | null;
           user_id: string;
         };
@@ -12342,6 +12343,7 @@ export type Database = {
           imo_id: string;
           input_tokens?: number | null;
           output_tokens?: number | null;
+          run_key?: string | null;
           session_id?: string | null;
           user_id: string;
         };
@@ -12352,6 +12354,7 @@ export type Database = {
           imo_id?: string;
           input_tokens?: number | null;
           output_tokens?: number | null;
+          run_key?: string | null;
           session_id?: string | null;
           user_id?: string;
         };
@@ -13858,6 +13861,10 @@ export type Database = {
         Args: { approver_id: string; target_user_id: string };
         Returns: boolean;
       };
+      admin_delete_domain: {
+        Args: { p_domain_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       admin_deleteuser: { Args: { target_user_id: string }; Returns: Json };
       admin_deny_user: {
         Args: { approver_id: string; reason: string; target_user_id: string };
@@ -14003,6 +14010,10 @@ export type Database = {
       approve_underwriting_rule_set: {
         Args: { p_notes?: string; p_rule_set_id: string };
         Returns: Json;
+      };
+      assert_uw_wizard_usage_access: {
+        Args: { p_user_id: string };
+        Returns: undefined;
       };
       build_agency_org_chart: {
         Args: {
@@ -16022,6 +16033,22 @@ export type Database = {
         }[];
       };
       get_team_seat_limit: { Args: { p_owner_id: string }; Returns: number };
+      get_team_uw_wizard_seat_usage: {
+        Args: { p_owner_id: string };
+        Returns: {
+          agent_email: string;
+          agent_first_name: string;
+          agent_id: string;
+          agent_last_name: string;
+          created_at: string;
+          last_run_at: string;
+          runs_limit: number;
+          runs_remaining: number;
+          runs_used: number;
+          seat_id: string;
+          team_owner_id: string;
+        }[];
+      };
       get_templates_for_platform: {
         Args: { p_imo_id: string; p_platform: string; p_user_id: string };
         Returns: {
@@ -16694,6 +16721,22 @@ export type Database = {
           p_user_id: string;
         };
         Returns: string;
+      };
+      record_uw_wizard_run: {
+        Args: {
+          p_imo_id: string;
+          p_input_tokens?: number;
+          p_output_tokens?: number;
+          p_run_key: string;
+          p_session_id?: string;
+          p_user_id?: string;
+        };
+        Returns: {
+          already_recorded: boolean;
+          new_runs_used: number;
+          runs_remaining: number;
+          success: boolean;
+        }[];
       };
       record_workflow_email: {
         Args: {

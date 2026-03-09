@@ -8,7 +8,12 @@ import { describe, it, expect } from "vitest";
 // Import from actual production module
 // =============================================================================
 
-import { calculateScore } from "../product-evaluation";
+import {
+  applyRecommendationSafetyGate,
+  buildApprovalClientProfile,
+  calculateScore,
+  requiresManualReviewForRecommendation,
+} from "../product-evaluation";
 
 import type { ScoreComponents } from "@/features/underwriting";
 
@@ -127,6 +132,135 @@ describe("calculateScore", () => {
       const result = calculateScore(0.9, 50, 100, "eligible", 0.75);
       expect(result.dataConfidence).toBe(0.75);
     });
+  });
+});
+
+describe("buildApprovalClientProfile", () => {
+  it("preserves medication signals for approval evaluation", () => {
+    const profile = buildApprovalClientProfile({
+      age: 44,
+      gender: "female",
+      state: "TX",
+      bmi: 29.4,
+      heightFeet: 5,
+      heightInches: 6,
+      weight: 182,
+      tobacco: false,
+      healthConditions: ["diabetes"],
+      medications: {
+        bpMedCount: 0,
+        bloodThinners: false,
+        heartMeds: false,
+        cholesterolMedCount: 0,
+        insulinUse: true,
+        oralDiabetesMeds: false,
+        antidepressants: false,
+        antianxiety: false,
+        antipsychotics: false,
+        moodStabilizers: false,
+        sleepAids: false,
+        adhdMeds: false,
+        painMedications: "none",
+        seizureMeds: false,
+        migraineMeds: false,
+        inhalers: false,
+        copdMeds: false,
+        thyroidMeds: false,
+        hormonalTherapy: false,
+        steroids: false,
+        immunosuppressants: false,
+        biologics: false,
+        dmards: false,
+        cancerTreatment: false,
+        antivirals: false,
+        osteoporosisMeds: false,
+        kidneyMeds: false,
+        liverMeds: false,
+      },
+      conditionResponses: {
+        diabetes: {
+          insulin_use: true,
+          good_control: false,
+        },
+      },
+    });
+
+    expect(profile.medications?.insulinUse).toBe(true);
+    expect(profile.conditionResponses?.diabetes).toEqual({
+      insulin_use: true,
+      good_control: false,
+    });
+  });
+});
+
+describe("recommendation safety gate", () => {
+  it("treats case-by-case approval outcomes as manual review", () => {
+    expect(
+      requiresManualReviewForRecommendation({
+        conditionDecisions: [
+          {
+            conditionCode: "diabetes",
+            decision: "case_by_case",
+            likelihood: 0.5,
+            healthClassResult: null,
+            isApproved: true,
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it("downgrades otherwise-eligible products to unknown when manual review is required", () => {
+    const gated = applyRecommendationSafetyGate(
+      {
+        status: "eligible",
+        reasons: [],
+        missingFields: [],
+        confidence: 1,
+      },
+      {
+        conditionDecisions: [
+          {
+            conditionCode: "copd",
+            decision: "case_by_case",
+            likelihood: 0.6,
+            healthClassResult: null,
+            isApproved: true,
+          },
+        ],
+      },
+    );
+
+    expect(gated.status).toBe("unknown");
+    expect(gated.reasons).toEqual(
+      expect.arrayContaining([
+        "Carrier/product requires manual underwriting review for one or more reported medical conditions or medications.",
+      ]),
+    );
+    expect(gated.confidence).toBe(0.75);
+  });
+
+  it("leaves eligible products alone when all condition decisions are approved", () => {
+    const eligibility = {
+      status: "eligible" as const,
+      reasons: [],
+      missingFields: [],
+      confidence: 1,
+    };
+
+    const gated = applyRecommendationSafetyGate(eligibility, {
+      conditionDecisions: [
+        {
+          conditionCode: "hypertension",
+          decision: "approved",
+          likelihood: 0.9,
+          healthClassResult: "standard",
+          isApproved: true,
+        },
+      ],
+    });
+
+    expect(gated).toBe(eligibility);
   });
 });
 

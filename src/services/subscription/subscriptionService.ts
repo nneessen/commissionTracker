@@ -18,6 +18,8 @@ import type { Database } from "@/types/database.types";
 
 type UserSubscriptionAddonRow =
   Database["public"]["Tables"]["user_subscription_addons"]["Row"];
+type TeamUWWizardSeatUsageRow =
+  Database["public"]["Functions"]["get_team_uw_wizard_seat_usage"]["Returns"][number];
 
 export interface UserActiveAddon extends UserSubscriptionAddonRow {
   addon: SubscriptionAddon | null;
@@ -474,30 +476,33 @@ class SubscriptionService {
    * Get all team UW wizard seats for a team owner
    */
   async getTeamUWWizardSeats(ownerId: string): Promise<TeamUWWizardSeat[]> {
-    const { data, error } = await supabase
-      .from("team_uw_wizard_seats")
-      .select(
-        `
-        id,
-        team_owner_id,
-        agent_id,
-        runs_limit,
-        created_at,
-        agent:user_profiles!team_uw_wizard_seats_agent_id_fkey(
-          id, first_name, last_name, email
-        )
-      `,
-      )
-      .eq("team_owner_id", ownerId);
+    const { data, error } = await supabase.rpc(
+      "get_team_uw_wizard_seat_usage",
+      {
+        p_owner_id: ownerId,
+      },
+    );
 
     if (error) {
       console.error("Failed to fetch team UW wizard seats:", error);
       return [];
     }
 
-    return (data || []).map((row) => ({
-      ...row,
-      agent: Array.isArray(row.agent) ? row.agent[0] : row.agent,
+    return (data || []).map((row: TeamUWWizardSeatUsageRow) => ({
+      id: row.seat_id,
+      team_owner_id: row.team_owner_id,
+      agent_id: row.agent_id,
+      runs_limit: row.runs_limit,
+      runs_used: row.runs_used,
+      runs_remaining: row.runs_remaining,
+      last_run_at: row.last_run_at,
+      created_at: row.created_at,
+      agent: {
+        id: row.agent_id,
+        first_name: row.agent_first_name,
+        last_name: row.agent_last_name,
+        email: row.agent_email,
+      },
     })) as TeamUWWizardSeat[];
   }
 
@@ -683,6 +688,9 @@ export interface TeamUWWizardSeat {
   team_owner_id: string;
   agent_id: string;
   runs_limit: number;
+  runs_used: number;
+  runs_remaining: number;
+  last_run_at: string | null;
   created_at: string;
   agent: {
     id: string;

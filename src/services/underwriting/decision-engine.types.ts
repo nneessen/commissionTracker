@@ -9,6 +9,7 @@ import type {
   ScoreComponents,
   DraftRuleInfo,
   RuleProvenance,
+  MedicationInfo,
 } from "@/features/underwriting";
 import type {
   GenderType,
@@ -61,6 +62,7 @@ export interface ClientProfile {
   weight?: number;
   tobacco: boolean;
   healthConditions: string[]; // condition codes
+  medications?: MedicationInfo;
   /** Per-condition follow-up responses (for data completeness assessment) */
   conditionResponses?: Record<string, Record<string, unknown>>;
 }
@@ -98,7 +100,16 @@ export interface ProductMetadata {
     }>;
   };
   knockoutConditions?: string[];
-  fullUnderwritingThreshold?: number;
+  fullUnderwritingThreshold?:
+    | number
+    | {
+        faceAmountThreshold: number;
+        ageBands?: Array<{
+          minAge: number;
+          maxAge: number;
+          threshold: number;
+        }>;
+      };
   stateAvailability?: string[];
 }
 
@@ -151,6 +162,8 @@ export interface Recommendation {
   healthClassUsed?: RateableHealthClass;
   /** True if health class fallback was used (different from requested) */
   wasFallback?: boolean;
+  /** Rate classes that actually exist in the product's quoteable premium matrix */
+  availableRateClasses?: RateableHealthClass[];
   /** Term length in years used for premium lookup (null for permanent products) */
   termYears?: number | null;
   /** Available term lengths for this product (sorted ascending) */
@@ -219,6 +232,8 @@ export interface EvaluatedProduct {
   healthClassUsed?: RateableHealthClass;
   /** True if health class fallback was used */
   wasFallback?: boolean;
+  /** Rate classes that actually exist in the product's quoteable premium matrix */
+  availableRateClasses?: RateableHealthClass[];
   /** Term length in years used for premium lookup (null for permanent products) */
   termYears?: number | null;
   /** Available term lengths for this product */
@@ -309,6 +324,7 @@ export interface ExtractedCriteria {
     conditionCodes?: string[];
   };
   stateAvailability?: {
+    availableStates?: string[];
     unavailableStates?: string[];
   };
 }

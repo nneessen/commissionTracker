@@ -1,6 +1,6 @@
 // src/features/analytics/AnalyticsDashboard.tsx
 
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { BarChart3, Sparkles, CheckCircle2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { TimePeriodSelector } from "./components/TimePeriodSelector";
@@ -118,18 +118,18 @@ function AnalyticsDashboardContent() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5">
       {/* Compact Header Card */}
-      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
           <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             Analytics
           </h1>
-          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 hidden sm:inline">
             Performance metrics and insights
           </span>
         </div>
 
-        {/* TimePeriodSelector and Export - all on same row */}
+        {/* TimePeriodSelector and Export */}
         <div className="flex items-center gap-3">
           <TimePeriodSelector
             selectedPeriod={timePeriod}
@@ -137,7 +137,7 @@ function AnalyticsDashboardContent() {
             customRange={customRange}
             onCustomRangeChange={setCustomRange}
           />
-          <div className="flex gap-1.5 flex-shrink-0">
+          <div className="hidden sm:flex gap-1.5 flex-shrink-0">
             <Button
               onClick={handleExportCSV}
               size="sm"

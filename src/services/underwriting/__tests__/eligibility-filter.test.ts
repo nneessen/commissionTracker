@@ -11,6 +11,7 @@ import { describe, it, expect } from "vitest";
 import {
   checkEligibility,
   getMaxFaceAmountForAgeTerm,
+  getFullUnderwritingThreshold,
 } from "../eligibility-filter";
 
 import type {
@@ -25,7 +26,9 @@ import type {
 // Test Helpers
 // =============================================================================
 
-function createProduct(overrides: Partial<ProductCandidate> = {}): ProductCandidate {
+function createProduct(
+  overrides: Partial<ProductCandidate> = {},
+): ProductCandidate {
   return {
     productId: "test-product-1",
     productName: "Test Term Life",
@@ -52,7 +55,9 @@ function createClient(overrides: Partial<ClientProfile> = {}): ClientProfile {
   };
 }
 
-function createCoverage(overrides: Partial<CoverageRequest> = {}): CoverageRequest {
+function createCoverage(
+  overrides: Partial<CoverageRequest> = {},
+): CoverageRequest {
   return {
     faceAmount: 250000,
     ...overrides,
@@ -167,7 +172,12 @@ describe("getMaxFaceAmountForAgeTerm", () => {
     });
 
     it("ignores term restrictions for undefined term", () => {
-      const result = getMaxFaceAmountForAgeTerm(metadata, 1000000, 40, undefined);
+      const result = getMaxFaceAmountForAgeTerm(
+        metadata,
+        1000000,
+        40,
+        undefined,
+      );
       expect(result).toBe(500000);
     });
   });
@@ -211,6 +221,53 @@ describe("getMaxFaceAmountForAgeTerm", () => {
       const result = getMaxFaceAmountForAgeTerm(metadata, 1000000, 55, 20);
       expect(result).toBe(250000);
     });
+  });
+});
+
+// =============================================================================
+// Tests: getFullUnderwritingThreshold
+// =============================================================================
+
+describe("getFullUnderwritingThreshold", () => {
+  it("returns null when metadata has no threshold", () => {
+    expect(getFullUnderwritingThreshold(null, 45)).toBeNull();
+  });
+
+  it("supports legacy numeric threshold metadata", () => {
+    expect(
+      getFullUnderwritingThreshold({ fullUnderwritingThreshold: 150000 }, 45),
+    ).toBe(150000);
+  });
+
+  it("uses age band threshold when available", () => {
+    expect(
+      getFullUnderwritingThreshold(
+        {
+          fullUnderwritingThreshold: {
+            faceAmountThreshold: 250000,
+            ageBands: [
+              { minAge: 18, maxAge: 50, threshold: 300000 },
+              { minAge: 51, maxAge: 80, threshold: 100000 },
+            ],
+          },
+        },
+        60,
+      ),
+    ).toBe(100000);
+  });
+
+  it("falls back to base threshold when no age band matches", () => {
+    expect(
+      getFullUnderwritingThreshold(
+        {
+          fullUnderwritingThreshold: {
+            faceAmountThreshold: 250000,
+            ageBands: [{ minAge: 18, maxAge: 50, threshold: 300000 }],
+          },
+        },
+        60,
+      ),
+    ).toBe(250000);
   });
 });
 
@@ -262,7 +319,9 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("below minimum"))).toBe(true);
+      expect(result.reasons.some((r) => r.includes("below minimum"))).toBe(
+        true,
+      );
     });
 
     it("returns ineligible when face amount above maximum", () => {
@@ -293,7 +352,9 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("exceeds max $250,000"))).toBe(true);
+      expect(
+        result.reasons.some((r) => r.includes("exceeds max $250,000")),
+      ).toBe(true);
     });
 
     it("allows higher face amount for younger client", () => {
@@ -361,7 +422,9 @@ describe("checkEligibility", () => {
       );
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("for 30yr term"))).toBe(true);
+      expect(result.reasons.some((r) => r.includes("for 30yr term"))).toBe(
+        true,
+      );
     });
 
     it("uses base limit when term has no restriction", () => {
@@ -393,7 +456,9 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage, criteria);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("above issue age 75"))).toBe(true);
+      expect(result.reasons.some((r) => r.includes("above issue age 75"))).toBe(
+        true,
+      );
     });
 
     it("applies extracted face amount limits", () => {
@@ -407,7 +472,9 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage, criteria);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("exceeds age-based max"))).toBe(true);
+      expect(
+        result.reasons.some((r) => r.includes("exceeds age-based max")),
+      ).toBe(true);
     });
 
     it("applies extracted age-tiered face amounts", () => {
@@ -424,11 +491,34 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage, criteria);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("exceeds age-based max $300,000"))).toBe(true);
+      expect(
+        result.reasons.some((r) =>
+          r.includes("exceeds age-based max $300,000"),
+        ),
+      ).toBe(true);
     });
   });
 
   describe("knockout conditions", () => {
+    it("rejects client with product metadata knockout condition", () => {
+      const product = createProduct({
+        metadata: {
+          knockoutConditions: ["hiv", "als"],
+        },
+      });
+      const client = createClient({ healthConditions: ["HIV", "diabetes"] });
+      const coverage = createCoverage();
+
+      const result = checkEligibility(product, client, coverage);
+
+      expect(result.status).toBe("ineligible");
+      expect(
+        result.reasons.some((r) =>
+          r.includes("Product knockout condition: HIV"),
+        ),
+      ).toBe(true);
+    });
+
     it("rejects client with knockout condition", () => {
       const product = createProduct();
       const client = createClient({ healthConditions: ["hiv", "diabetes"] });
@@ -440,12 +530,16 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage, criteria);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("Knockout condition: hiv"))).toBe(true);
+      expect(
+        result.reasons.some((r) => r.includes("Knockout condition: hiv")),
+      ).toBe(true);
     });
 
     it("allows client without knockout conditions", () => {
       const product = createProduct();
-      const client = createClient({ healthConditions: ["diabetes", "hypertension"] });
+      const client = createClient({
+        healthConditions: ["diabetes", "hypertension"],
+      });
       const coverage = createCoverage();
       const criteria: ExtractedCriteria = {
         knockoutConditions: { conditionCodes: ["hiv", "als"] },
@@ -458,7 +552,9 @@ describe("checkEligibility", () => {
 
     it("lists multiple knockout conditions", () => {
       const product = createProduct();
-      const client = createClient({ healthConditions: ["hiv", "als", "diabetes"] });
+      const client = createClient({
+        healthConditions: ["hiv", "als", "diabetes"],
+      });
       const coverage = createCoverage();
       const criteria: ExtractedCriteria = {
         knockoutConditions: { conditionCodes: ["hiv", "als"] },
@@ -472,6 +568,25 @@ describe("checkEligibility", () => {
   });
 
   describe("state availability", () => {
+    it("rejects client when extracted available states exclude client state", () => {
+      const product = createProduct();
+      const client = createClient({ state: "TX" });
+      const coverage = createCoverage();
+      const criteria: ExtractedCriteria = {
+        stateAvailability: {
+          availableStates: ["FL", "GA"],
+          unavailableStates: [],
+        },
+      };
+
+      const result = checkEligibility(product, client, coverage, criteria);
+
+      expect(result.status).toBe("ineligible");
+      expect(
+        result.reasons.some((r) => r.includes("Not available in TX")),
+      ).toBe(true);
+    });
+
     it("rejects client in unavailable state", () => {
       const product = createProduct();
       const client = createClient({ state: "NY" });
@@ -483,7 +598,9 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage, criteria);
 
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("Not available in NY"))).toBe(true);
+      expect(
+        result.reasons.some((r) => r.includes("Not available in NY")),
+      ).toBe(true);
     });
 
     it("allows client in available state", () => {
@@ -514,6 +631,27 @@ describe("checkEligibility", () => {
   });
 
   describe("tri-state eligibility (unknown)", () => {
+    it("returns unknown when face amount exceeds full underwriting threshold", () => {
+      const product = createProduct({
+        metadata: {
+          fullUnderwritingThreshold: {
+            faceAmountThreshold: 250000,
+            ageBands: [{ minAge: 51, maxAge: 80, threshold: 100000 }],
+          },
+        },
+      });
+      const client = createClient({ age: 60 });
+      const coverage = createCoverage({ faceAmount: 150000 });
+
+      const result = checkEligibility(product, client, coverage);
+
+      expect(result.status).toBe("unknown");
+      expect(
+        result.reasons.some((r) => r.includes("may require full underwriting")),
+      ).toBe(true);
+      expect(result.confidence).toBe(1);
+    });
+
     it("returns unknown when condition has no follow-up responses", () => {
       const product = createProduct();
       const client = createClient({
@@ -525,7 +663,9 @@ describe("checkEligibility", () => {
       const result = checkEligibility(product, client, coverage);
 
       expect(result.status).toBe("unknown");
-      expect(result.reasons).toContain("Missing required follow-up information");
+      expect(result.reasons).toContain(
+        "Missing required follow-up information",
+      );
       expect(result.missingFields).toHaveLength(1);
       expect(result.missingFields[0].conditionCode).toBe("diabetes");
     });
@@ -557,13 +697,19 @@ describe("checkEligibility", () => {
 
       // Age violation should take precedence over missing data
       expect(result.status).toBe("ineligible");
-      expect(result.reasons.some((r) => r.includes("above maximum"))).toBe(true);
+      expect(result.reasons.some((r) => r.includes("above maximum"))).toBe(
+        true,
+      );
     });
   });
 
   describe("multiple reasons", () => {
     it("collects all ineligibility reasons", () => {
-      const product = createProduct({ minAge: 25, maxAge: 65, maxFaceAmount: 500000 });
+      const product = createProduct({
+        minAge: 25,
+        maxAge: 65,
+        maxFaceAmount: 500000,
+      });
       const client = createClient({ age: 70, state: "NY" });
       const coverage = createCoverage({ faceAmount: 750000 });
       const criteria: ExtractedCriteria = {
@@ -574,7 +720,9 @@ describe("checkEligibility", () => {
 
       expect(result.status).toBe("ineligible");
       expect(result.reasons.length).toBeGreaterThanOrEqual(2);
-      expect(result.reasons.some((r) => r.includes("above maximum"))).toBe(true);
+      expect(result.reasons.some((r) => r.includes("above maximum"))).toBe(
+        true,
+      );
       expect(result.reasons.some((r) => r.includes("exceeds max"))).toBe(true);
     });
   });

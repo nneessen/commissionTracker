@@ -442,11 +442,10 @@ function QuickQuoteContent({
         <Info className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
         <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-tight">
           <span className="font-semibold">
-            Rates are 100% accurate for ages in multiples of 5
+            All rates are real imported carrier data.
           </span>{" "}
-          (25, 30, 35, 40…). All other ages are being added progressively —{" "}
-          <span className="font-medium">American Amicable</span> is complete,
-          with a new carrier added daily.
+          If a rate is not shown, it has not been imported yet for that age/face
+          amount combination.
         </p>
       </div>
 
