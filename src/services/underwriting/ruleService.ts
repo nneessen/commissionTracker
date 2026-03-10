@@ -598,12 +598,12 @@ export async function revertToDraft(
  * Log a rule evaluation (for audit trail)
  */
 export async function logEvaluation(
-  sessionId: string,
-  ruleSetId: string | null,
-  ruleId: string | null,
-  conditionCode: string | null,
-  result: "matched" | "failed" | "unknown" | "skipped",
-  details: {
+  _sessionId: string,
+  _ruleSetId: string | null,
+  _ruleId: string | null,
+  _conditionCode: string | null,
+  _result: "matched" | "failed" | "unknown" | "skipped",
+  _details: {
     matchedConditions?: unknown;
     failedConditions?: unknown;
     missingFields?: unknown;
@@ -611,30 +611,7 @@ export async function logEvaluation(
     inputHash?: string;
   },
 ): Promise<void> {
-  const { data, error } = await supabase.rpc(
-    "log_underwriting_rule_evaluation",
-    {
-      p_condition_code: conditionCode,
-      p_failed_conditions: details.failedConditions ?? null,
-      p_input_hash: details.inputHash ?? null,
-      p_matched_conditions: details.matchedConditions ?? null,
-      p_missing_fields: details.missingFields ?? null,
-      p_outcome_applied: details.outcomeApplied ?? null,
-      p_predicate_result: result,
-      p_rule_id: ruleId,
-      p_rule_set_id: ruleSetId,
-      p_session_id: sessionId,
-    },
+  throw new Error(
+    "Client-side underwriting audit writes are disabled. Persist audit logs via the backend authoritative save path.",
   );
-
-  if (error) {
-    throw new Error(`Failed to write underwriting audit log: ${error.message}`);
-  }
-
-  const rpcResult = data as { success: boolean; error?: string } | null;
-  if (!rpcResult?.success) {
-    throw new Error(
-      rpcResult?.error || "Failed to write underwriting audit log",
-    );
-  }
 }

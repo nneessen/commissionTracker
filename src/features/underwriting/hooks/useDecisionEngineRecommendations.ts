@@ -4,14 +4,25 @@ import { supabase } from "@/services/base/supabase";
 import type { DecisionEngineResult } from "@/services/underwriting/decisionEngine";
 import {
   buildAuthoritativeUnderwritingRunInput,
+  buildAuthoritativeSessionSaveInput,
   type UnderwritingDecisionRunInput,
 } from "../utils/build-authoritative-run-input";
+import type { SignedAuthoritativeRunEnvelope } from "../types/underwriting.types";
 
-export { buildAuthoritativeUnderwritingRunInput };
+export {
+  buildAuthoritativeUnderwritingRunInput,
+  buildAuthoritativeSessionSaveInput,
+};
+
+export interface UnderwritingDecisionRunResponse {
+  requestId: string;
+  decisionResult: DecisionEngineResult;
+  authoritativeRunEnvelope: SignedAuthoritativeRunEnvelope;
+}
 
 async function runDecisionEngine(
   request: UnderwritingDecisionRunInput,
-): Promise<DecisionEngineResult> {
+): Promise<UnderwritingDecisionRunResponse> {
   const { data, error } = await supabase.functions.invoke(
     "run-underwriting-session",
     {
@@ -37,24 +48,37 @@ async function runDecisionEngine(
 
   const parsed = data as {
     success?: boolean;
+    requestId?: string;
     decisionResult?: DecisionEngineResult;
+    authoritativeRunEnvelope?: SignedAuthoritativeRunEnvelope;
     error?: string;
   } | null;
 
-  if (!parsed?.success || !parsed.decisionResult) {
+  if (
+    !parsed?.success ||
+    !parsed.requestId ||
+    !parsed.decisionResult ||
+    !parsed.authoritativeRunEnvelope
+  ) {
     throw new Error(parsed?.error || "Failed to compute underwriting run");
   }
 
-  return parsed.decisionResult;
+  return {
+    requestId: parsed.requestId,
+    decisionResult: parsed.decisionResult,
+    authoritativeRunEnvelope: parsed.authoritativeRunEnvelope,
+  };
 }
 
 export function useDecisionEngineRecommendations() {
-  return useMutation<DecisionEngineResult, Error, UnderwritingDecisionRunInput>(
-    {
-      mutationFn: runDecisionEngine,
-      onError: (error) => {
-        console.error("Decision engine error:", error);
-      },
+  return useMutation<
+    UnderwritingDecisionRunResponse,
+    Error,
+    UnderwritingDecisionRunInput
+  >({
+    mutationFn: runDecisionEngine,
+    onError: (error) => {
+      console.error("Decision engine error:", error);
     },
-  );
+  });
 }

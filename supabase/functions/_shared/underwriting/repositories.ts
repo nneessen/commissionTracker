@@ -1,21 +1,20 @@
-/* eslint-disable no-restricted-imports -- Edge-function bridge imports pure underwriting modules directly for Deno bundling. */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.47.10";
 
-import type { Database } from "@/types/database.types.ts";
+import type { Database } from "../../../../src/types/database.types.ts";
 import type {
   BuildChartInfo,
   ExtractedCriteria,
   ProductCandidate,
-} from "@/services/underwriting/decision-engine.types.ts";
+} from "../../../../src/services/underwriting/decision-engine.types.ts";
 import type {
   PremiumMatrix,
   GenderType,
   TobaccoClass,
-} from "@/services/underwriting/premium-matrix-core.ts";
+} from "../../../../src/services/underwriting/premium-matrix-core.ts";
 import type {
   RuleSetScope,
   ReviewStatus,
-} from "@/services/underwriting/ruleEngineDSL.ts";
+} from "../../../../src/services/underwriting/ruleEngineDSL.ts";
 
 type RuleSetRow = Database["public"]["Tables"]["underwriting_rule_sets"]["Row"];
 type RuleRow = Database["public"]["Tables"]["underwriting_rules"]["Row"];

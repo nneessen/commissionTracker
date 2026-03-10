@@ -6,8 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 import { underwritingQueryKeys } from "./useHealthConditions";
 import type {
+  SaveAuthoritativeSessionInput,
   UnderwritingSession,
-  SessionSaveInput,
 } from "../types/underwriting.types";
 
 export interface PaginatedSessionsResult {
@@ -132,7 +132,7 @@ async function fetchSession(sessionId: string): Promise<UnderwritingSession> {
 }
 
 interface SaveSessionParams {
-  data: SessionSaveInput;
+  data: SaveAuthoritativeSessionInput;
 }
 
 interface SaveUnderwritingSessionResult {
@@ -213,7 +213,7 @@ export function useSaveUnderwritingSession() {
   const { agency, imo } = useImo();
 
   return useMutation({
-    mutationFn: (data: SessionSaveInput) => saveSession({ data }),
+    mutationFn: (data: SaveAuthoritativeSessionInput) => saveSession({ data }),
     onSuccess: () => {
       // Invalidate the sessions list (both user and agency)
       if (user?.id) {

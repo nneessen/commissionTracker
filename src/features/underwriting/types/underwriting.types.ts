@@ -405,6 +405,18 @@ export interface SessionEligibilitySummary {
   ineligible: number;
 }
 
+export interface PersistableAuditLogEntry {
+  ruleSetId: string | null;
+  ruleId: string | null;
+  conditionCode: string;
+  predicateResult: "matched" | "failed" | "unknown" | "skipped";
+  matchedConditions: unknown[] | null;
+  failedConditions: unknown[] | null;
+  missingFields: unknown[] | null;
+  outcomeApplied: Record<string, unknown> | null;
+  inputHash: string;
+}
+
 // ============================================================================
 // Phase 5: Criteria Evaluation Types
 // ============================================================================
@@ -641,6 +653,27 @@ export interface SessionSaveInput {
   notes?: string;
   selectedTermYears?: number | null;
   runKey?: string | null;
+}
+
+export interface SignedAuthoritativeRunEnvelope {
+  version: 1;
+  actorId: string;
+  requestId: string;
+  issuedAt: string;
+  input: SessionSaveInput & { runKey: string };
+  result: {
+    sessionRecommendations: SessionRecommendationInput[];
+    rateTableRecommendations: RateTableRecommendation[];
+    eligibilitySummary: SessionEligibilitySummary;
+    evaluationMetadata: Record<string, unknown>;
+  };
+  auditRows: PersistableAuditLogEntry[];
+  signature: string;
+}
+
+export interface SaveAuthoritativeSessionInput {
+  input: SessionSaveInput;
+  authoritativeRunEnvelope: SignedAuthoritativeRunEnvelope;
 }
 
 // ============================================================================

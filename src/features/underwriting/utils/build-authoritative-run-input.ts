@@ -2,7 +2,9 @@ import type {
   ClientInfo,
   CoverageRequest,
   HealthInfo,
+  SaveAuthoritativeSessionInput,
   SessionSaveInput,
+  SignedAuthoritativeRunEnvelope,
 } from "../types/underwriting.types";
 import { buildSessionHealthSnapshot } from "./session-health-snapshot";
 
@@ -47,5 +49,37 @@ export function buildAuthoritativeUnderwritingRunInput(params: {
     sessionDurationSeconds,
     selectedTermYears,
     runKey,
+  };
+}
+
+export function buildAuthoritativeSessionSaveInput(params: {
+  clientInfo: ClientInfo;
+  healthInfo: HealthInfo;
+  coverageRequest: CoverageRequest;
+  runKey: string;
+  authoritativeRunEnvelope: SignedAuthoritativeRunEnvelope;
+  selectedTermYears?: number | null;
+  sessionDurationSeconds?: number;
+}): SaveAuthoritativeSessionInput {
+  const {
+    authoritativeRunEnvelope,
+    clientInfo,
+    healthInfo,
+    coverageRequest,
+    runKey,
+    selectedTermYears = null,
+    sessionDurationSeconds,
+  } = params;
+
+  return {
+    input: buildAuthoritativeUnderwritingRunInput({
+      clientInfo,
+      healthInfo,
+      coverageRequest,
+      runKey,
+      selectedTermYears,
+      sessionDurationSeconds,
+    }),
+    authoritativeRunEnvelope,
   };
 }

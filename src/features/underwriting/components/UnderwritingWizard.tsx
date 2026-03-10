@@ -26,6 +26,7 @@ import {
   useSaveUnderwritingSession,
   useDecisionEngineRecommendations,
   buildAuthoritativeUnderwritingRunInput,
+  buildAuthoritativeSessionSaveInput,
   useHealthConditions,
   useUWWizardUsage,
   useRecordUWWizardRun,
@@ -44,7 +45,6 @@ import type {
   CoverageRequest,
   AIAnalysisResult,
   AIAnalysisRequest,
-  SessionSaveInput,
   UnderwritingSession,
   ConditionResponse,
   TobaccoInfo,
@@ -521,21 +521,24 @@ function UnderwritingWizardInner() {
   );
 
   const handleSaveSession = useCallback(async () => {
-    const decisionResult = decisionEngineMutation.data;
-    if (!analysisResult || !decisionResult) return;
+    const authoritativeRun = decisionEngineMutation.data;
+    if (!analysisResult || !authoritativeRun?.authoritativeRunEnvelope) return;
 
-    const sessionData: SessionSaveInput =
-      buildAuthoritativeUnderwritingRunInput({
-        clientInfo: formData.client,
-        healthInfo: formData.health,
-        coverageRequest: formData.coverage,
-        runKey: pendingRunKeyRef.current || crypto.randomUUID(),
-        selectedTermYears,
-        sessionDurationSeconds: Math.floor(
-          (Date.now() - sessionStartTime) / 1000,
-        ),
-      });
-    pendingRunKeyRef.current = sessionData.runKey || pendingRunKeyRef.current;
+    const sessionData = buildAuthoritativeSessionSaveInput({
+      clientInfo: formData.client,
+      healthInfo: formData.health,
+      coverageRequest: formData.coverage,
+      runKey:
+        pendingRunKeyRef.current ||
+        authoritativeRun.authoritativeRunEnvelope.input.runKey,
+      authoritativeRunEnvelope: authoritativeRun.authoritativeRunEnvelope,
+      selectedTermYears,
+      sessionDurationSeconds: Math.floor(
+        (Date.now() - sessionStartTime) / 1000,
+      ),
+    });
+    pendingRunKeyRef.current =
+      sessionData.input.runKey || pendingRunKeyRef.current;
 
     try {
       await saveSessionMutation.mutateAsync(sessionData);
@@ -658,7 +661,9 @@ function UnderwritingWizardInner() {
         return (
           <RecommendationsStep
             aiResult={analysisResult}
-            decisionEngineResult={decisionEngineMutation.data || null}
+            decisionEngineResult={
+              decisionEngineMutation.data?.decisionResult || null
+            }
             isDecisionEngineLoading={decisionEngineMutation.isPending}
             isAILoading={analysisMutation.isPending}
             clientInfo={formData.client}
@@ -829,7 +834,9 @@ function UnderwritingWizardInner() {
               <Button
                 onClick={handleSaveSession}
                 disabled={
-                  isSaving || !analysisResult || !decisionEngineMutation.data
+                  isSaving ||
+                  !analysisResult ||
+                  !decisionEngineMutation.data?.authoritativeRunEnvelope
                 }
                 size="sm"
                 className="h-8 text-xs px-4 bg-emerald-600 hover:bg-emerald-700 text-white"

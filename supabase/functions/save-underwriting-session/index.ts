@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
 import { corsResponse, getCorsHeaders } from "../_shared/cors.ts";
-import { computeAuthoritativeUnderwritingRun } from "../_shared/underwriting/engine.ts";
+import { verifySignedAuthoritativeRunEnvelope } from "../_shared/underwriting/authoritative-envelope.ts";
 import { sanitizeUnderwritingPayload } from "../_shared/underwriting/payload.ts";
 
 serve(async (req) => {
@@ -88,38 +88,45 @@ serve(async (req) => {
       );
     }
 
-    const payload = sanitizeUnderwritingPayload(await req.json(), {
+    const requestBody = await req.json();
+    const payload =
+      typeof requestBody === "object" && requestBody !== null
+        ? (requestBody as Record<string, unknown>)
+        : null;
+
+    const rawInputPayload =
+      payload === null
+        ? requestBody
+        : Object.fromEntries(
+            Object.entries(payload).filter(
+              ([key]) => key !== "authoritativeRunEnvelope",
+            ),
+          );
+
+    const rawInput = sanitizeUnderwritingPayload(rawInputPayload, {
       allowRunKey: true,
       allowSelectedTermYears: true,
     });
-
-    const runResult = await computeAuthoritativeUnderwritingRun({
-      client,
-      payload,
-      imoId: profile.imo_id,
-      requestId,
+    const verifiedRun = await verifySignedAuthoritativeRunEnvelope({
+      envelope: payload?.authoritativeRunEnvelope,
+      actorId: user.id,
+      saveInput: rawInput,
+      secret: supabaseServiceRoleKey,
     });
-
-    const rpcPayload = {
-      sessionRecommendations: runResult.sessionRecommendations,
-      eligibilitySummary: runResult.eligibilitySummary,
-      rateTableRecommendations: runResult.rateTableRecommendations,
-      evaluationMetadata: runResult.evaluationMetadata,
-    };
 
     const { data, error } = await adminClient.rpc(
       "persist_underwriting_run_v1",
       {
         p_actor_id: user.id,
-        p_input: payload,
-        p_result: rpcPayload,
-        p_audit_rows: runResult.auditRows,
+        p_input: verifiedRun.input,
+        p_result: verifiedRun.result,
+        p_audit_rows: verifiedRun.auditRows,
       },
     );
 
     if (error) {
       console.error("[save-underwriting-session] RPC error", {
-        requestId,
+        requestId: verifiedRun.requestId,
         userId: user.id,
         code: error.code,
         message: error.message,
@@ -129,7 +136,7 @@ serve(async (req) => {
           success: false,
           code: "save_failed",
           error: "Failed to save underwriting session",
-          requestId,
+          requestId: verifiedRun.requestId,
         }),
         {
           status: 500,
@@ -150,7 +157,7 @@ serve(async (req) => {
           success: false,
           code: "save_failed",
           error: parsed?.error || "Failed to save underwriting session",
-          requestId,
+          requestId: verifiedRun.requestId,
         }),
         {
           status: 500,
@@ -163,7 +170,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         session: parsed.session,
-        requestId,
+        requestId: verifiedRun.requestId,
       }),
       {
         status: 200,
@@ -178,7 +185,10 @@ serve(async (req) => {
     const isPayloadError =
       message.includes("required") ||
       message.includes("must") ||
-      message.includes("Only raw wizard inputs");
+      message.includes("Only raw wizard inputs") ||
+      message.includes("authoritative underwriting run envelope") ||
+      message.includes("Run results are stale");
+    const isAccessDenied = message === "Access denied";
 
     console.error("[save-underwriting-session] failed", {
       requestId,
@@ -188,12 +198,19 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        code: isPayloadError ? "invalid_payload" : "save_failed",
-        error: isPayloadError ? message : "Failed to save underwriting session",
+        code: isAccessDenied
+          ? "unauthorized"
+          : isPayloadError
+            ? "invalid_payload"
+            : "save_failed",
+        error:
+          isPayloadError || isAccessDenied
+            ? message
+            : "Failed to save underwriting session",
         requestId,
       }),
       {
-        status: isPayloadError ? 400 : 500,
+        status: isAccessDenied ? 403 : isPayloadError ? 400 : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );

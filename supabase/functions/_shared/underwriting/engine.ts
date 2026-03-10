@@ -1,31 +1,30 @@
-/* eslint-disable no-restricted-imports -- Edge-function bridge imports pure underwriting modules directly for Deno bundling. */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.47.10";
 
-import type { Database } from "@/types/database.types.ts";
+import type { Database } from "../../../../src/types/database.types.ts";
 import {
   transformConditionResponses,
   type TransformedConditionResponses,
-} from "@/services/underwriting/conditionResponseTransformer.ts";
+} from "../../../../src/services/underwriting/conditionResponseTransformer.ts";
 import {
   checkEligibility,
   getMaxFaceAmountForAgeTerm,
-} from "@/services/underwriting/eligibility-filter.ts";
-import { lookupBuildRatingUnified } from "@/features/underwriting/utils/buildTableLookup.ts";
-import { calculateBMI } from "@/features/underwriting/utils/bmiCalculator.ts";
+} from "../../../../src/services/underwriting/eligibility-filter.ts";
+import { lookupBuildRatingUnified } from "../../../../src/features/underwriting/utils/buildTableLookup.ts";
+import { calculateBMI } from "../../../../src/features/underwriting/utils/bmiCalculator.ts";
 import {
   buildFactMap,
   evaluateRuleSet,
   aggregateOutcomes,
   generateInputHash,
-} from "@/services/underwriting/ruleEvaluator.ts";
+} from "../../../../src/services/underwriting/ruleEvaluator.ts";
 import {
   UnderwritingRuleSetSchema,
   type ConditionOutcome,
   type FactMap,
   type HealthClass as DSLHealthClass,
   type UnderwritingRuleSet,
-} from "@/services/underwriting/ruleEngineDSL.ts";
-import { deriveRuleConditionCodes } from "@/services/underwriting/derivedConditionCodes.ts";
+} from "../../../../src/services/underwriting/ruleEngineDSL.ts";
+import { deriveRuleConditionCodes } from "../../../../src/services/underwriting/derivedConditionCodes.ts";
 import type {
   BuildChartInfo,
   DecisionEngineResult,
@@ -34,14 +33,14 @@ import type {
   Recommendation,
   EvaluatedProduct,
   ScoreComponents,
-} from "@/services/underwriting/decision-engine.types.ts";
+} from "../../../../src/services/underwriting/decision-engine.types.ts";
 import type {
   AlternativeQuote,
   GenderType,
   HealthClass,
   PremiumMatrix,
   TermYears,
-} from "@/services/underwriting/premium-matrix-core.ts";
+} from "../../../../src/services/underwriting/premium-matrix-core.ts";
 import {
   calculateAlternativeQuotes,
   getAvailableRateClassesForQuote,
@@ -49,13 +48,13 @@ import {
   getComparisonFaceAmounts,
   getLongestAvailableTermForAge,
   interpolatePremium,
-} from "@/services/underwriting/premium-matrix-core.ts";
+} from "../../../../src/services/underwriting/premium-matrix-core.ts";
 import type {
   DraftRuleInfo,
   RateTableRecommendation,
   SessionEligibilitySummary,
   SessionRecommendationInput,
-} from "@/features/underwriting/types/underwriting.types.ts";
+} from "../../../../src/features/underwriting/types/underwriting.types.ts";
 
 import type { UnderwritingRawPayload } from "./payload.ts";
 import { parseHealthSnapshot } from "./payload.ts";
