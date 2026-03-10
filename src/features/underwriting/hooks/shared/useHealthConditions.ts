@@ -7,55 +7,8 @@ import type {
   FollowUpSchema,
   ConditionCategory,
 } from "../../types/underwriting.types";
-
-export const underwritingQueryKeys = {
-  all: ["underwriting"] as const,
-  conditions: () => [...underwritingQueryKeys.all, "conditions"] as const,
-  guides: (imoId: string) =>
-    [...underwritingQueryKeys.all, "guides", imoId] as const,
-  guide: (guideId: string) =>
-    [...underwritingQueryKeys.all, "guide", guideId] as const,
-  decisionTrees: (imoId: string) =>
-    [...underwritingQueryKeys.all, "decision-trees", imoId] as const,
-  decisionTree: (treeId: string) =>
-    [...underwritingQueryKeys.all, "decision-tree", treeId] as const,
-  sessions: (userId: string) =>
-    [...underwritingQueryKeys.all, "sessions", userId] as const,
-  session: (sessionId: string) =>
-    [...underwritingQueryKeys.all, "session", sessionId] as const,
-  agencySessions: (imoId: string | null | undefined, agencyId: string) =>
-    [
-      ...underwritingQueryKeys.all,
-      "agency-sessions",
-      imoId || "no-imo",
-      agencyId,
-    ] as const,
-  agencySessionsPaginated: (
-    imoId: string | null | undefined,
-    agencyId: string,
-    page: number,
-    pageSize: number,
-    search: string,
-  ) =>
-    [
-      ...underwritingQueryKeys.agencySessions(imoId, agencyId),
-      { page, pageSize, search },
-    ] as const,
-  sessionsPaginated: (
-    userId: string,
-    page: number,
-    pageSize: number,
-    search: string,
-  ) =>
-    [
-      ...underwritingQueryKeys.all,
-      "sessions",
-      userId,
-      { page, pageSize, search },
-    ] as const,
-  featureEnabled: (agencyId: string) =>
-    [...underwritingQueryKeys.all, "feature-enabled", agencyId] as const,
-};
+export { underwritingQueryKeys } from "./query-keys";
+import { underwritingQueryKeys } from "./query-keys";
 
 async function fetchHealthConditions(): Promise<HealthCondition[]> {
   const { data, error } = await supabase

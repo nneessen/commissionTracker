@@ -2,10 +2,10 @@
 
 export {
   useHealthConditions,
-  underwritingQueryKeys,
   parseFollowUpSchema,
   groupConditionsByCategory,
 } from "./shared/useHealthConditions";
+export { underwritingQueryKeys } from "./shared/query-keys";
 
 export {
   useUnderwritingFeatureFlag,

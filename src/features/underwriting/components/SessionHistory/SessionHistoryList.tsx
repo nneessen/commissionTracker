@@ -24,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserSessionsPaginated } from "../../hooks/sessions/useUnderwritingSessions";
 import { SessionDetailDialog } from "./SessionDetailDialog";
-import type { UnderwritingSession } from "../../types/underwriting.types";
+import type { UnderwritingSessionSummary } from "../../types/underwriting.types";
 import { getHealthTierLabel } from "../../types/underwriting.types";
 import {
   formatSessionDate,
@@ -51,12 +51,13 @@ export function SessionHistoryList() {
   const totalCount = result?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const [selectedSession, setSelectedSession] =
-    useState<UnderwritingSession | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
+    null,
+  );
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const handleViewSession = (session: UnderwritingSession) => {
-    setSelectedSession(session);
+  const handleViewSession = (session: UnderwritingSessionSummary) => {
+    setSelectedSessionId(session.session_id);
     setDetailOpen(true);
   };
 
@@ -151,7 +152,7 @@ export function SessionHistoryList() {
             ) : sessions.length > 0 ? (
               sessions.map((session) => (
                 <TableRow
-                  key={session.id}
+                  key={session.session_id}
                   className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
                   onClick={() => handleViewSession(session)}
                 >
@@ -244,7 +245,7 @@ export function SessionHistoryList() {
 
       {/* Session Detail Dialog */}
       <SessionDetailDialog
-        session={selectedSession}
+        sessionId={selectedSessionId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
       />

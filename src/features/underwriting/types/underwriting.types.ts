@@ -29,6 +29,8 @@ export type UnderwritingSession =
   Database["public"]["Tables"]["underwriting_sessions"]["Row"];
 export type UnderwritingSessionInsert =
   Database["public"]["Tables"]["underwriting_sessions"]["Insert"];
+export type UnderwritingSessionSummary =
+  Database["public"]["Functions"]["list_my_underwriting_sessions_v1"]["Returns"][number];
 
 // ============================================================================
 // Follow-up Question Types

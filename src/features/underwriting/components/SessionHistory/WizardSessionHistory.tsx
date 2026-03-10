@@ -29,7 +29,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUserSessionsPaginated } from "../../hooks/sessions/useUnderwritingSessions";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  fetchUnderwritingSession,
+  useUnderwritingSession,
+  useUserSessionsPaginated,
+} from "../../hooks/sessions/useUnderwritingSessions";
 import type {
   UnderwritingSession,
   CarrierRecommendation,
@@ -48,6 +53,7 @@ import {
 } from "../../utils/shared/formatters";
 import { parseSessionHealthSnapshot } from "../../utils/sessions/session-health-snapshot";
 import { formatRequestedFaceAmounts } from "../../utils/sessions/session-persistence";
+import { underwritingQueryKeys } from "../../hooks/shared/query-keys";
 
 const PAGE_SIZE = 15;
 
@@ -60,6 +66,7 @@ export function WizardSessionHistory({
   onClose,
   onLoadSession,
 }: WizardSessionHistoryProps) {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const deferredSearch = useDeferredValue(search);
@@ -75,8 +82,17 @@ export function WizardSessionHistory({
   const totalCount = result?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const [viewingSession, setViewingSession] =
-    useState<UnderwritingSession | null>(null);
+  const [viewingSessionId, setViewingSessionId] = useState<string | null>(null);
+
+  const loadSessionById = async (sessionId: string) => {
+    const session = await queryClient.fetchQuery({
+      queryKey: underwritingQueryKeys.session(sessionId),
+      queryFn: () => fetchUnderwritingSession(sessionId),
+      staleTime: 60 * 1000,
+    });
+
+    onLoadSession(session);
+  };
 
   // Reset to page 0 when search changes
   const handleSearchChange = (value: string) => {
@@ -85,12 +101,12 @@ export function WizardSessionHistory({
   };
 
   // Show session detail view
-  if (viewingSession) {
+  if (viewingSessionId) {
     return (
       <SessionDetailView
-        session={viewingSession}
-        onBack={() => setViewingSession(null)}
-        onLoad={() => onLoadSession(viewingSession)}
+        sessionId={viewingSessionId}
+        onBack={() => setViewingSessionId(null)}
+        onLoad={() => loadSessionById(viewingSessionId)}
       />
     );
   }
@@ -178,7 +194,7 @@ export function WizardSessionHistory({
                 <TableBody>
                   {sessions.map((session) => (
                     <TableRow
-                      key={session.id}
+                      key={session.session_id}
                       className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30"
                     >
                       <TableCell className="px-3 py-2 text-[10px] text-muted-foreground">
@@ -213,7 +229,9 @@ export function WizardSessionHistory({
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-[10px]"
-                            onClick={() => setViewingSession(session)}
+                            onClick={() =>
+                              setViewingSessionId(session.session_id)
+                            }
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             View
@@ -222,7 +240,7 @@ export function WizardSessionHistory({
                             variant="ghost"
                             size="sm"
                             className="h-6 px-2 text-[10px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                            onClick={() => onLoadSession(session)}
+                            onClick={() => loadSessionById(session.session_id)}
                           >
                             <Upload className="h-3 w-3 mr-1" />
                             Load
@@ -281,14 +299,66 @@ export function WizardSessionHistory({
 
 // Session Detail View - displays inline in the dialog
 function SessionDetailView({
-  session,
+  sessionId,
   onBack,
   onLoad,
 }: {
-  session: UnderwritingSession;
+  sessionId: string;
   onBack: () => void;
   onLoad: () => void;
 }) {
+  const { data: session, isLoading, error } = useUnderwritingSession(sessionId);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 -ml-1"
+            onClick={onBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Loading session
+            </h3>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground">
+          Loading session details...
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !session) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 -ml-1"
+            onClick={onBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Session unavailable
+            </h3>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-6 text-xs text-red-500 dark:text-red-400 text-center">
+          {error?.message || "Failed to load session details."}
+        </div>
+      </div>
+    );
+  }
+
   const riskFactors = safeParseJsonArray<string>(session.risk_factors);
   const recommendations = safeParseJsonArray<
     CarrierRecommendation | RateTableRecommendation

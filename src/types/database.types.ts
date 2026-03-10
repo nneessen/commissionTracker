@@ -16761,6 +16761,54 @@ export type Database = {
         };
         Returns: Json;
       };
+      list_agency_underwriting_sessions_v1: {
+        Args: {
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string;
+        };
+        Returns: {
+          client_age: number;
+          client_gender: string | null;
+          client_name: string | null;
+          client_state: string | null;
+          created_at: string;
+          eligibility_summary: Json;
+          health_tier: string | null;
+          requested_face_amount: number | null;
+          requested_face_amounts: Json;
+          requested_product_types: string[] | null;
+          result_source: string;
+          selected_term_years: number | null;
+          session_id: string;
+          top_recommendation: Json;
+          total_count: number;
+        }[];
+      };
+      list_my_underwriting_sessions_v1: {
+        Args: {
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string;
+        };
+        Returns: {
+          client_age: number;
+          client_gender: string | null;
+          client_name: string | null;
+          client_state: string | null;
+          created_at: string;
+          eligibility_summary: Json;
+          health_tier: string | null;
+          requested_face_amount: number | null;
+          requested_face_amounts: Json;
+          requested_product_types: string[] | null;
+          result_source: string;
+          selected_term_years: number | null;
+          session_id: string;
+          top_recommendation: Json;
+          total_count: number;
+        }[];
+      };
       record_uw_wizard_run: {
         Args: {
           p_imo_id: string;
