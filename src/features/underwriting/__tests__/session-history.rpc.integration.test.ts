@@ -62,8 +62,8 @@ async function beginTestTransaction() {
 
 async function rollbackTestTransaction() {
   const db = getClient();
-  await db.query("RESET ROLE");
   await db.query("ROLLBACK");
+  await db.query("RESET ROLE");
 }
 
 async function setAuthenticatedUser(userId: string) {
@@ -95,7 +95,13 @@ async function queryAsUser(
   const db = getClient();
   await setAuthenticatedUser(userId);
   const result = await db.query<SessionSummaryRow>(sql, values);
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    total_count:
+      typeof row.total_count === "string"
+        ? Number.parseInt(row.total_count, 10)
+        : row.total_count,
+  }));
 }
 
 function readTopRecommendation(
@@ -136,8 +142,8 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
     `
       INSERT INTO public.imos (id, name, code)
       VALUES
-        ($1, 'IMO A', 'IMO_A_' || substr($1::text, 1, 6)),
-        ($2, 'IMO B', 'IMO_B_' || substr($2::text, 1, 6))
+        ($1::uuid, 'IMO A', 'IMO_A_' || substr(($1::uuid)::text, 1, 6)),
+        ($2::uuid, 'IMO B', 'IMO_B_' || substr(($2::uuid)::text, 1, 6))
     `,
     [imoA, imoB],
   );
@@ -146,9 +152,9 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
     `
       INSERT INTO public.agencies (id, imo_id, name, code, owner_id)
       VALUES
-        ($1, $2, 'Agency A', 'AGENCY_A', NULL),
-        ($3, $2, 'Agency A2', 'AGENCY_A2', NULL),
-        ($4, $5, 'Agency B', 'AGENCY_B', NULL)
+        ($1::uuid, $2::uuid, 'Agency A', 'AGENCY_A', NULL),
+        ($3::uuid, $2::uuid, 'Agency A2', 'AGENCY_A2', NULL),
+        ($4::uuid, $5::uuid, 'Agency B', 'AGENCY_B', NULL)
     `,
     [agencyA, imoA, agencyA2, agencyB, imoB],
   );
@@ -173,80 +179,80 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
       )
       VALUES
         (
-          $1,
+          $1::uuid,
           'owner-a@example.com',
           'approved',
           false,
           'pro',
           true,
-          $2,
-          $3,
+          $2::uuid,
+          $3::uuid,
           ARRAY['imo_admin']::text[],
-          $1::text,
+          ($1::uuid)::text,
           0,
           NULL,
           'Owner',
           'A'
         ),
         (
-          $4,
+          $4::uuid,
           'agent-a@example.com',
           'approved',
           false,
           'pro',
           true,
-          $2,
-          $3,
+          $2::uuid,
+          $3::uuid,
           ARRAY['agent']::text[],
-          $1::text || '.' || $4::text,
+          ($1::uuid)::text || '.' || ($4::uuid)::text,
           1,
-          $1,
+          $1::uuid,
           'Agent',
           'A'
         ),
         (
-          $5,
+          $5::uuid,
           'peer-a@example.com',
           'approved',
           false,
           'pro',
           true,
-          $2,
-          $3,
+          $2::uuid,
+          $3::uuid,
           ARRAY['agent']::text[],
-          $1::text || '.' || $5::text,
+          ($1::uuid)::text || '.' || ($5::uuid)::text,
           1,
-          $1,
+          $1::uuid,
           'Peer',
           'A'
         ),
         (
-          $6,
+          $6::uuid,
           'other-agency@example.com',
           'approved',
           false,
           'pro',
           true,
-          $2,
-          $7,
+          $2::uuid,
+          $7::uuid,
           ARRAY['agent']::text[],
-          $6::text,
+          ($6::uuid)::text,
           0,
           NULL,
           'Other',
           'Agency'
         ),
         (
-          $8,
+          $8::uuid,
           'tenant-b@example.com',
           'approved',
           false,
           'pro',
           true,
-          $9,
-          $10,
+          $9::uuid,
+          $10::uuid,
           ARRAY['agent']::text[],
-          $8::text,
+          ($8::uuid)::text,
           0,
           NULL,
           'Tenant',
@@ -271,11 +277,11 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
     `
       UPDATE public.agencies
       SET owner_id = CASE id
-        WHEN $1 THEN $2
-        WHEN $3 THEN $4
-        WHEN $5 THEN $6
+        WHEN $1::uuid THEN $2::uuid
+        WHEN $3::uuid THEN $4::uuid
+        WHEN $5::uuid THEN $6::uuid
       END
-      WHERE id IN ($1, $3, $5)
+      WHERE id IN ($1::uuid, $3::uuid, $5::uuid)
     `,
     [
       agencyA,
@@ -290,7 +296,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
   await db.query(
     `
       INSERT INTO public.carriers (id, imo_id, name, code, is_active)
-      VALUES ($1, $2, 'Carrier A', 'CARRIER_A', true)
+      VALUES ($1::uuid, $2::uuid, 'Carrier A', 'CARRIER_A', true)
     `,
     [carrierA, imoA],
   );
@@ -306,7 +312,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
         product_type,
         is_active
       )
-      VALUES ($1, $2, $3, 'Product A', 'PRODUCT_A', 'term_life', true)
+      VALUES ($1::uuid, $2::uuid, $3::uuid, 'Product A', 'PRODUCT_A', 'term_life', true)
     `,
     [productA, carrierA, imoA],
   );
@@ -340,7 +346,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
       )
       VALUES
         (
-          $1, $2, $3, $4, 'Owner Client', 54, 'male', 'TX', 70, 190, 27.3,
+          $1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Owner Client', 54, 'male', 'TX', 70, 190, 27.3,
           '{}'::jsonb, 100000, '[100000]'::jsonb, ARRAY['term_life']::text[],
           '{"eligible": 1, "unknown": 0, "ineligible": 0}'::jsonb,
           '[]'::jsonb, 'backend_authoritative', 20,
@@ -348,7 +354,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
           '2026-03-10T12:00:00Z'::timestamptz
         ),
         (
-          $5, $2, $3, $6, 'Agent Client', 47, 'female', 'FL', 65, 145, 24.1,
+          $5::uuid, $2::uuid, $3::uuid, $6::uuid, 'Agent Client', 47, 'female', 'FL', 65, 145, 24.1,
           '{}'::jsonb, 150000, '[150000,200000]'::jsonb, ARRAY['term_life']::text[],
           '{"eligible": 1, "unknown": 1, "ineligible": 0}'::jsonb,
           '[]'::jsonb, 'backend_authoritative', 15,
@@ -356,7 +362,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
           '2026-03-10T13:00:00Z'::timestamptz
         ),
         (
-          $7, $2, $3, $8, 'Peer Client', 39, 'female', 'GA', 64, 138, 23.7,
+          $7::uuid, $2::uuid, $3::uuid, $8::uuid, 'Peer Client', 39, 'female', 'GA', 64, 138, 23.7,
           '{}'::jsonb, 200000, '[200000]'::jsonb, ARRAY['term_life']::text[],
           '{"eligible": 0, "unknown": 1, "ineligible": 0}'::jsonb,
           '[]'::jsonb, 'backend_authoritative', 10,
@@ -364,7 +370,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
           '2026-03-10T14:00:00Z'::timestamptz
         ),
         (
-          $9, $2, $10, $11, 'Other Agency Client', 41, 'male', 'AL', 71, 180, 25.1,
+          $9::uuid, $2::uuid, $10::uuid, $11::uuid, 'Other Agency Client', 41, 'male', 'AL', 71, 180, 25.1,
           '{}'::jsonb, 120000, '[120000]'::jsonb, ARRAY['term_life']::text[],
           '{"eligible": 1, "unknown": 0, "ineligible": 0}'::jsonb,
           '[]'::jsonb, 'backend_authoritative', 15,
@@ -372,7 +378,7 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
           '2026-03-10T15:00:00Z'::timestamptz
         ),
         (
-          $12, $13, $14, $15, 'Tenant B Client', 44, 'male', 'NC', 69, 175, 25.8,
+          $12::uuid, $13::uuid, $14::uuid, $15::uuid, 'Tenant B Client', 44, 'male', 'NC', 69, 175, 25.8,
           '{}'::jsonb, 180000, '[180000]'::jsonb, ARRAY['term_life']::text[],
           '{"eligible": 1, "unknown": 0, "ineligible": 0}'::jsonb,
           '[]'::jsonb, 'backend_authoritative', 20,
@@ -415,10 +421,10 @@ async function seedSessionHistoryFixtures(): Promise<FixtureIds> {
         recommendation_reason
       )
       VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
+        $1::uuid,
+        $2::uuid,
+        $3::uuid,
+        $4::uuid,
         'eligible',
         'preferred',
         82.50,
@@ -519,7 +525,7 @@ describeDb("underwriting session history RPCs", () => {
     );
   });
 
-  it("does not expose peer sessions through agency summary to a non-admin peer", async () => {
+  it("returns same-agency sessions to a non-admin peer without leaking other agency or tenant rows", async () => {
     const fixture = await seedSessionHistoryFixtures();
 
     const result = await queryAsUser(
@@ -530,9 +536,18 @@ describeDb("underwriting session history RPCs", () => {
       `,
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.session_id).toBe(fixture.peerSessionId);
-    expect(result[0]?.total_count).toBe(1);
+    expect(result.map((row) => row.session_id)).toEqual([
+      fixture.peerSessionId,
+      fixture.agentSessionId,
+      fixture.ownerSessionId,
+    ]);
+    expect(result[0]?.total_count).toBe(3);
+    expect(result.map((row) => row.session_id)).not.toContain(
+      fixture.otherAgencySessionId,
+    );
+    expect(result.map((row) => row.session_id)).not.toContain(
+      fixture.otherTenantSessionId,
+    );
   });
 
   it("applies search and pagination to the agency summary read model", async () => {
