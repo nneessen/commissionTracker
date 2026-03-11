@@ -1,6 +1,6 @@
 // supabase/functions/gmail-oauth-init/index.ts
 // Generates a Google OAuth URL for Gmail API authentication
-// Required scopes: gmail.send, gmail.readonly, gmail.modify, userinfo.email
+// Required scopes: gmail.send, gmail.readonly, userinfo.email
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSignedState } from "../_shared/hmac.ts";
@@ -24,7 +24,8 @@ serve(async (req) => {
 
     const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
     // Use custom domain if set, otherwise fall back to default Supabase URL
-    const SUPABASE_URL = Deno.env.get("CUSTOM_DOMAIN_URL") || Deno.env.get("SUPABASE_URL");
+    const SUPABASE_URL =
+      Deno.env.get("CUSTOM_DOMAIN_URL") || Deno.env.get("SUPABASE_URL");
 
     if (!GOOGLE_CLIENT_ID) {
       console.error("[gmail-oauth-init] GOOGLE_CLIENT_ID not configured");
@@ -83,12 +84,10 @@ serve(async (req) => {
     // Gmail API scopes
     // gmail.send - Send emails
     // gmail.readonly - Read emails
-    // gmail.modify - Modify labels, mark read/unread
     // userinfo.email - Get user's email address
     const scopes = [
       "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/gmail.readonly",
-      "https://www.googleapis.com/auth/gmail.modify",
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
     ].join(" ");
