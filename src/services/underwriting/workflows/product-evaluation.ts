@@ -180,9 +180,9 @@ export async function batchFetchPremiumMatrices(
   const matrixMap = new Map<string, PremiumMatrix[]>();
   if (productIds.length === 0) return matrixMap;
 
-  // Supabase project caps at 5000 rows per request (PostgREST db_max_rows).
-  // We paginate with .range() to fetch everything.
-  const PAGE_SIZE = 5000;
+  // Supabase PostgREST max_rows = 1000 (config.toml). PAGE_SIZE must match
+  // so the pagination guard triggers correctly for remaining pages.
+  const PAGE_SIZE = 1000;
   const tobaccoClass: TobaccoClass = tobaccoUse ? "tobacco" : "non_tobacco";
 
   const selectQuery = `
@@ -215,37 +215,45 @@ export async function batchFetchPremiumMatrices(
   let allData = (firstPage || []) as PremiumMatrix[];
   const totalRows = count ?? allData.length;
 
-  // Fetch remaining pages in parallel if we hit the page limit
+  // Fetch remaining pages in batches of PARALLEL_PAGES to avoid overwhelming
+  // the connection pool (10K-40K rows = 10-40 pages at 1000 rows each).
   if (allData.length >= PAGE_SIZE && totalRows > PAGE_SIZE) {
     const totalPages = Math.ceil(totalRows / PAGE_SIZE);
-    const remainingPromises = Array.from({ length: totalPages - 1 }, (_, i) =>
-      supabase
-        .from("premium_matrix")
-        .select(selectQuery)
-        .in("product_id", productIds)
-        .eq("imo_id", imoId)
-        .eq("gender", gender)
-        .eq("tobacco_class", tobaccoClass)
-        .order("product_id", { ascending: true })
-        .order("age", { ascending: true })
-        .order("face_amount", { ascending: true })
-        .range((i + 1) * PAGE_SIZE, (i + 2) * PAGE_SIZE - 1),
-    );
-
-    const remainingResults = await Promise.all(remainingPromises);
-    for (const result of remainingResults) {
-      if (result.error) {
-        console.error("Error fetching batch page:", result.error);
-        // Continue with what we have — fallback will cover missing products
-        break;
+    const PARALLEL_PAGES = 5;
+    for (let batch = 1; batch < totalPages; batch += PARALLEL_PAGES) {
+      const batchEnd = Math.min(batch + PARALLEL_PAGES, totalPages);
+      const pagePromises = Array.from({ length: batchEnd - batch }, (_, i) =>
+        supabase
+          .from("premium_matrix")
+          .select(selectQuery)
+          .in("product_id", productIds)
+          .eq("imo_id", imoId)
+          .eq("gender", gender)
+          .eq("tobacco_class", tobaccoClass)
+          .order("product_id", { ascending: true })
+          .order("age", { ascending: true })
+          .order("face_amount", { ascending: true })
+          .range((batch + i) * PAGE_SIZE, (batch + i + 1) * PAGE_SIZE - 1),
+      );
+      const results = await Promise.all(pagePromises);
+      for (const result of results) {
+        if (result.error) {
+          console.error("Error fetching batch page:", result.error);
+          break;
+        }
+        allData = allData.concat((result.data || []) as PremiumMatrix[]);
       }
-      allData = allData.concat((result.data || []) as PremiumMatrix[]);
     }
   }
 
   console.log(
     `[BatchFetch] Fetched ${allData.length}/${totalRows} rows for ${productIds.length} products (gender=${gender}, tobacco=${tobaccoClass})`,
   );
+  if (allData.length < totalRows) {
+    console.warn(
+      `[BatchFetch] INCOMPLETE: fetched ${allData.length}/${totalRows} rows — fallback will cover missing products`,
+    );
+  }
 
   // Group by productId
   for (const row of allData) {
