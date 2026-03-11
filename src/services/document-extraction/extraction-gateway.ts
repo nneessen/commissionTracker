@@ -8,28 +8,35 @@ import { UwTextAdapter } from "./adapters/uw-text-adapter";
 import { TrainingRailwayAdapter } from "./adapters/training-railway-adapter";
 
 class ExtractionGateway {
-  private adapters: ExtractionAdapter[] = [];
+  private adapters: ExtractionAdapter[] | null = null;
 
-  constructor() {
-    // Register adapters in priority order (first match wins)
-    this.adapters = [new UwTextAdapter(), new TrainingRailwayAdapter()];
+  private getAdapters(): ExtractionAdapter[] {
+    if (!this.adapters) {
+      // Deferred construction — adapters are only instantiated on first use,
+      // not at module load time. Import is static (ESM-safe) but construction
+      // is lazy so pages that never call extract() pay no init cost.
+      this.adapters = [new UwTextAdapter(), new TrainingRailwayAdapter()];
+    }
+    return this.adapters;
   }
 
   /** Register an additional adapter (e.g. PaddleOCR). */
   registerAdapter(adapter: ExtractionAdapter): void {
-    this.adapters.unshift(adapter); // Higher priority than defaults
+    const adapters = this.getAdapters();
+    adapters.unshift(adapter); // Higher priority than defaults
   }
 
   /** Route a request to the first matching adapter and return the result. */
   async extract(request: ExtractionRequest): Promise<GatewayResult> {
-    const adapter = this.adapters.find((a) => a.canHandle(request));
+    const adapters = this.getAdapters();
+    const adapter = adapters.find((a) => a.canHandle(request));
     if (!adapter) {
       throw new Error(
         `[ExtractionGateway] No adapter found for mode="${request.mode}"`,
       );
     }
 
-    console.log(
+    console.debug(
       `[ExtractionGateway] Routing mode="${request.mode}" → adapter="${adapter.name}"`,
     );
 
@@ -37,7 +44,7 @@ class ExtractionGateway {
     const result = await adapter.extract(request);
     const durationMs = Math.round(performance.now() - start);
 
-    console.log(
+    console.debug(
       `[ExtractionGateway] Completed in ${durationMs}ms — ${result.pages.length} pages, ${result.tables.length} tables, confidence=${result.confidence}`,
     );
 
@@ -45,5 +52,5 @@ class ExtractionGateway {
   }
 }
 
-/** Singleton gateway instance. */
+/** Singleton gateway instance. Adapters are lazily created on first extract(). */
 export const extractionGateway = new ExtractionGateway();

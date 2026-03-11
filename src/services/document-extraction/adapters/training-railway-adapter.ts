@@ -21,6 +21,9 @@ import type {
 /** Proxied through Vite dev server + Vercel rewrite to avoid CORS. */
 const EXTRACTOR_URL = "/api/pdf-extract";
 
+/** Default timeout for Railway API calls (2 minutes). */
+const DEFAULT_TIMEOUT_MS = 120_000;
+
 export class TrainingRailwayAdapter implements ExtractionAdapter {
   readonly name = "training-railway";
 
@@ -40,10 +43,28 @@ export class TrainingRailwayAdapter implements ExtractionAdapter {
     formData.append("mode", "ocr_layout");
     formData.append("output_format", "training");
 
-    const response = await fetch(EXTRACTOR_URL, {
-      method: "POST",
-      body: formData,
-    });
+    // Enforce timeout — Railway is an external service that can hang
+    const timeoutMs = request.options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response: Response;
+    try {
+      response = await fetch(EXTRACTOR_URL, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error(
+          `[TrainingRailwayAdapter] Railway API timed out after ${timeoutMs}ms`,
+        );
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const text = await response.text().catch(() => "unknown");
@@ -125,12 +146,16 @@ export class TrainingRailwayAdapter implements ExtractionAdapter {
     // Assemble full text from all pages
     const fullText = pages.map((p) => p.text).join("\n\n");
 
-    // Calculate overall confidence from table confidences
+    // Confidence: blend table confidence with section quality scores
     const tableConfidences = tables.map((t) => t.confidence);
-    const avgTableConfidence =
-      tableConfidences.length > 0
-        ? tableConfidences.reduce((a, b) => a + b, 0) / tableConfidences.length
-        : 0.7; // default if no tables
+    const sectionScores = (raw.sections ?? [])
+      .filter((s) => !s.is_trivial)
+      .map((s) => s.quality_score);
+    const allScores = [...tableConfidences, ...sectionScores];
+    const confidence =
+      allScores.length > 0
+        ? allScores.reduce((a, b) => a + b, 0) / allScores.length
+        : 0.7;
 
     // Warn about trivial sections
     const trivialSections = (raw.sections ?? []).filter((s) => s.is_trivial);
@@ -157,7 +182,7 @@ export class TrainingRailwayAdapter implements ExtractionAdapter {
       fullText,
       tables,
       warnings,
-      confidence: avgTableConfidence,
+      confidence,
       extractedAt: new Date().toISOString(),
       context,
     };

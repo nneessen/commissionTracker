@@ -33,6 +33,14 @@ interface ParseEdgeFunctionResponse {
   characterCount: number;
 }
 
+/** Heuristic patterns that suggest a PDF page contains tabular data. */
+const TABLE_HINT_PATTERNS = [
+  /\b(height|weight|bmi)\b.*\b(class|rate|preferred)\b/i,
+  /\|\s*\w+\s*\|/,
+  /\t{2,}/,
+  /\d+\s{2,}\d+\s{2,}\d+/,
+];
+
 export class UwTextAdapter implements ExtractionAdapter {
   readonly name = "uw-text-layer";
 
@@ -51,6 +59,21 @@ export class UwTextAdapter implements ExtractionAdapter {
     if (!guideId) {
       throw new Error(
         "[UwTextAdapter] Missing guideId in request.context — guide must be pre-uploaded",
+      );
+    }
+
+    // SECURITY: Pre-validate IMO ownership before triggering the edge function.
+    // The edge function uses service_role and could parse any guide. RLS on this
+    // SELECT ensures we only proceed if the guide belongs to the current user's IMO.
+    const { data: ownershipCheck, error: ownershipError } = await supabase
+      .from("underwriting_guides")
+      .select("id")
+      .eq("id", guideId)
+      .single();
+
+    if (ownershipError || !ownershipCheck) {
+      throw new Error(
+        `[UwTextAdapter] Guide ${guideId} not found or not accessible — RLS blocked`,
       );
     }
 
@@ -90,10 +113,15 @@ export class UwTextAdapter implements ExtractionAdapter {
       );
     }
 
-    const parsed: UwParsedContent =
-      typeof guide.parsed_content === "string"
-        ? JSON.parse(guide.parsed_content)
-        : guide.parsed_content;
+    // parsed_content is TEXT in DB — always a string. Parse with error handling.
+    let parsed: UwParsedContent;
+    try {
+      parsed = JSON.parse(guide.parsed_content as string);
+    } catch {
+      throw new Error(
+        `[UwTextAdapter] Corrupt parsed_content JSON for guide ${guideId}`,
+      );
+    }
 
     return this.normalize(parsed, guideId, request.context);
   }
@@ -135,12 +163,17 @@ export class UwTextAdapter implements ExtractionAdapter {
       });
     }
 
-    // Warn about missing table extraction
-    warnings.push({
-      code: "NO_TABLE_EXTRACTION",
-      message:
-        "UW text-layer parser does not extract tables — consider OCR adapter for table-heavy documents",
-    });
+    // Only warn about missing table extraction if the content suggests tables
+    const hasTableHints = TABLE_HINT_PATTERNS.some((pattern) =>
+      pattern.test(parsed.fullText),
+    );
+    if (hasTableHints) {
+      warnings.push({
+        code: "NO_TABLE_EXTRACTION",
+        message:
+          "Document appears to contain tables but text-layer parser cannot extract them — consider OCR adapter",
+      });
+    }
 
     return {
       documentId: guideId,
