@@ -5,6 +5,7 @@
 import type { ExtractionRequest } from "../../types/document-extraction.types";
 import type { ExtractionAdapter, GatewayResult } from "./core/types";
 import { UwTextAdapter } from "./adapters/uw-text-adapter";
+import { PaddleOcrAdapter } from "./adapters/paddle-ocr-adapter";
 import { TrainingRailwayAdapter } from "./adapters/training-railway-adapter";
 
 class ExtractionGateway {
@@ -15,7 +16,13 @@ class ExtractionGateway {
       // Deferred construction — adapters are only instantiated on first use,
       // not at module load time. Import is static (ESM-safe) but construction
       // is lazy so pages that never call extract() pay no init cost.
-      this.adapters = [new UwTextAdapter(), new TrainingRailwayAdapter()];
+      // PaddleOCR before UwText — it handles uw_guide only when OCR/table/layout
+      // features are requested; UwText handles the default text-only path.
+      this.adapters = [
+        new PaddleOcrAdapter(),
+        new UwTextAdapter(),
+        new TrainingRailwayAdapter(),
+      ];
     }
     return this.adapters;
   }

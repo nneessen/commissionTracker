@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Clock,
   Pencil,
+  ScanEye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -114,10 +115,14 @@ export function GuideList() {
     }
   };
 
-  const handleParseClick = async (guide: UnderwritingGuide) => {
+  const handleParseClick = async (guide: UnderwritingGuide, useOcr = false) => {
     setParsingGuideId(guide.id);
     try {
-      await parseMutation.mutateAsync(guide.id);
+      await parseMutation.mutateAsync({
+        guideId: guide.id,
+        storagePath: guide.storage_path,
+        useOcr,
+      });
     } finally {
       setParsingGuideId(null);
     }
@@ -394,6 +399,18 @@ export function GuideList() {
                           {guide.parsing_status === "completed"
                             ? "Re-parse"
                             : "Parse"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleParseClick(guide, true)}
+                          disabled={isGuideBeingParsed(guide.id)}
+                          className="text-[11px]"
+                        >
+                          {isGuideBeingParsed(guide.id) ? (
+                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                          ) : (
+                            <ScanEye className="h-3 w-3 mr-2" />
+                          )}
+                          Parse with OCR
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

@@ -65,6 +65,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace("/api/pdf-extract", "/api/extract"),
       },
+      "/api/paddle-ocr": {
+        target: process.env.PADDLEOCR_SERVICE_URL || "http://localhost:8000",
+        changeOrigin: true,
+        rewrite: (p) => p.replace("/api/paddle-ocr", "/api/extract"),
+      },
     },
   },
   build: {

@@ -1,53 +1,76 @@
-// src/features/underwriting/hooks/useParseGuide.ts
+// src/features/underwriting/hooks/guides/useParseGuide.ts
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
+import { extractionGateway } from "@/services/document-extraction";
+import type {
+  ExtractionRequest,
+  ExtractionFeatures,
+} from "@/types/document-extraction.types";
 import { guideQueryKeys } from "./useUnderwritingGuides";
 
-interface ParseGuideResult {
-  success: boolean;
+export interface ParseGuideInput {
   guideId: string;
+  storagePath: string;
+  /** When true, routes to PaddleOCR adapter (tables + layout + OCR). */
+  useOcr?: boolean;
+}
+
+export interface ParseGatewayResult {
   pageCount: number;
   sectionCount: number;
   characterCount: number;
-  elapsed: number;
-}
-
-interface ParseGuideError {
-  success: false;
-  error: string;
+  tableCount: number;
+  durationMs: number;
+  adapterUsed: string;
 }
 
 /**
- * Trigger PDF parsing for an underwriting guide
- * Calls the parse-underwriting-guide edge function
+ * Trigger PDF parsing for an underwriting guide via the extraction gateway.
+ * Default: text-layer extraction. With useOcr: true, routes to PaddleOCR.
  */
 export function useParseGuide() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (guideId: string): Promise<ParseGuideResult> => {
-      const { data, error } = await supabase.functions.invoke<
-        ParseGuideResult | ParseGuideError
-      >("parse-underwriting-guide", {
-        body: { guideId },
-      });
+    mutationFn: async ({
+      guideId,
+      storagePath,
+      useOcr,
+    }: ParseGuideInput): Promise<ParseGatewayResult> => {
+      const features: ExtractionFeatures | undefined = useOcr
+        ? { ocr: true, tables: true, layout: true }
+        : undefined;
 
-      if (error) {
-        throw new Error(`Failed to parse guide: ${error.message}`);
-      }
+      const request: ExtractionRequest = {
+        source: {
+          type: "storage_path",
+          bucket: "underwriting-guides",
+          path: storagePath,
+        },
+        mode: "uw_guide",
+        features,
+        context: { guideId },
+      };
 
-      if (!data || !data.success) {
-        throw new Error((data as ParseGuideError)?.error || "Parsing failed");
-      }
+      const { result, adapterUsed, durationMs } =
+        await extractionGateway.extract(request);
 
-      return data as ParseGuideResult;
+      return {
+        pageCount: result.metadata.pageCount,
+        sectionCount: result.pages.length,
+        characterCount: result.fullText.length,
+        tableCount: result.tables.length,
+        durationMs,
+        adapterUsed,
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: guideQueryKeys.all });
+      const adapter = data.adapterUsed === "paddle-ocr" ? " (OCR)" : " (text)";
+      const tables = data.tableCount > 0 ? `, ${data.tableCount} tables` : "";
       toast.success(
-        `Guide parsed successfully: ${data.pageCount} pages, ${data.sectionCount} sections`,
+        `Guide parsed${adapter}: ${data.pageCount} pages, ${data.sectionCount} sections${tables}`,
       );
     },
     onError: (error) => {
