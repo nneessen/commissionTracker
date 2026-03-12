@@ -526,11 +526,27 @@ export function useUpdateBotConfig() {
       dailyMessageLimit?: number | null;
       maxMessagesPerConversation?: number | null;
     }) => chatBotApi<{ success: boolean }>("update_config", config),
+    onMutate: async (config) => {
+      await queryClient.cancelQueries({ queryKey: chatBotKeys.agent() });
+      const previous = queryClient.getQueryData<ChatBotAgent | null>(
+        chatBotKeys.agent(),
+      );
+      if (previous) {
+        queryClient.setQueryData<ChatBotAgent>(chatBotKeys.agent(), {
+          ...previous,
+          ...config,
+        });
+      }
+      return { previous };
+    },
     onSuccess: () => {
       toast.success("Bot configuration updated.");
       queryClient.invalidateQueries({ queryKey: chatBotKeys.agent() });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _config, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(chatBotKeys.agent(), context.previous);
+      }
       toast.error(error.message || "Failed to update bot configuration.");
     },
   });

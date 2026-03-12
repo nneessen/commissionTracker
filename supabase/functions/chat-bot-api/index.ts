@@ -390,6 +390,7 @@ serve(async (req) => {
           website: agentData.website || null,
           location: agentData.location || null,
           businessHours: agentData.businessHours || null,
+          remindersEnabled: agentData.remindersEnabled ?? false,
           billingExempt: agentData.billingExempt ?? false,
           dailyMessageLimit: agentData.dailyMessageLimit ?? null,
           maxMessagesPerConversation:
