@@ -825,6 +825,23 @@ export interface ExtractedCriteria {
     availableStates: string[];
     unavailableStates: string[];
   };
+  coverageOptions?: {
+    productTypes?: string[];
+    availableTerms?: number[];
+    ratingClasses?: string[];
+    conversionPrivilege?: {
+      allowed: boolean;
+      maxAge?: number;
+      maxYears?: number;
+    };
+    riders?: Array<{
+      name: string;
+      description?: string;
+      included: boolean;
+    }>;
+    underwritingType?: string;
+    acceleratedUnderwriting?: boolean;
+  };
 }
 
 export interface SourceExcerpt {

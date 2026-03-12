@@ -137,6 +137,37 @@ const stateAvailabilitySchema = z.object({
 });
 
 /**
+ * Schema for coverage option riders
+ */
+const riderSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  included: z.boolean(),
+});
+
+/**
+ * Schema for conversion privilege
+ */
+const conversionPrivilegeSchema = z.object({
+  allowed: z.boolean(),
+  maxAge: z.number().optional(),
+  maxYears: z.number().optional(),
+});
+
+/**
+ * Schema for coverage options
+ */
+const coverageOptionsSchema = z.object({
+  productTypes: z.array(z.string()).optional(),
+  availableTerms: z.array(z.number()).optional(),
+  ratingClasses: z.array(z.string()).optional(),
+  conversionPrivilege: conversionPrivilegeSchema.optional(),
+  riders: z.array(riderSchema).optional(),
+  underwritingType: z.string().optional(),
+  acceleratedUnderwriting: z.boolean().optional(),
+});
+
+/**
  * Complete schema for extracted criteria
  */
 export const extractedCriteriaSchema = z.object({
@@ -147,6 +178,7 @@ export const extractedCriteriaSchema = z.object({
   tobaccoRules: tobaccoRulesSchema.optional(),
   medicationRestrictions: medicationRestrictionsSchema.optional(),
   stateAvailability: stateAvailabilitySchema.optional(),
+  coverageOptions: coverageOptionsSchema.optional(),
 });
 
 /**
@@ -255,6 +287,13 @@ export function parseExtractedCriteria(
   ) {
     partialData.stateAvailability =
       coerced.stateAvailability as ExtractedCriteria["stateAvailability"];
+  }
+  if (
+    coerced.coverageOptions &&
+    coverageOptionsSchema.safeParse(coerced.coverageOptions).success
+  ) {
+    partialData.coverageOptions =
+      coerced.coverageOptions as ExtractedCriteria["coverageOptions"];
   }
 
   return { success: false, data: partialData, errors };

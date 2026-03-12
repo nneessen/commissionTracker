@@ -18,6 +18,7 @@ const fieldLabels: Record<string, string> = {
   tobaccoRules: "Tobacco Rules",
   medicationRestrictions: "Medication Restrictions",
   stateAvailability: "State Availability",
+  coverageOptions: "Coverage Options",
 };
 
 export function SourceExcerptsPanel({

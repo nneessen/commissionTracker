@@ -76,6 +76,19 @@ interface ExtractedCriteria {
     availableStates: string[];
     unavailableStates: string[];
   };
+  coverageOptions?: {
+    productTypes?: string[];
+    availableTerms?: number[];
+    ratingClasses?: string[];
+    conversionPrivilege?: {
+      allowed: boolean;
+      maxAge?: number;
+      maxYears?: number;
+    };
+    riders?: Array<{ name: string; description?: string; included: boolean }>;
+    underwritingType?: string;
+    acceleratedUnderwriting?: boolean;
+  };
 }
 
 // Source excerpt for audit trail
@@ -505,6 +518,7 @@ EXTRACTION TARGETS:
 5. TOBACCO RULES - Smoking classifications and clean period requirements
 6. MEDICATION RESTRICTIONS - Rules for insulin, blood thinners, opioids, BP meds, antidepressants
 7. STATE AVAILABILITY - States where the product is available or unavailable
+8. COVERAGE OPTIONS - Product types (term, whole life, ROP), available term lengths, rating classes, conversion privileges, available riders, underwriting type (simplified/full/guaranteed), and accelerated underwriting availability
 
 EXTRACTION GUIDELINES:
 - Only extract information explicitly stated in the document
@@ -547,6 +561,15 @@ Return ONLY a JSON object with this exact structure:
     "stateAvailability": {
       "availableStates": ["string"],
       "unavailableStates": ["string"]
+    } | null,
+    "coverageOptions": {
+      "productTypes": ["term", "whole_life", "rop"] | null,
+      "availableTerms": [10, 15, 20, 25, 30] | null,
+      "ratingClasses": ["preferred_plus", "preferred", "standard_plus", "standard"] | null,
+      "conversionPrivilege": { "allowed": boolean, "maxAge": number | null, "maxYears": number | null } | null,
+      "riders": [{ "name": "string", "description": "string", "included": boolean }] | null,
+      "underwritingType": "simplified" | "full" | "guaranteed" | null,
+      "acceleratedUnderwriting": boolean | null
     } | null
   },
   "sourceExcerpts": [
