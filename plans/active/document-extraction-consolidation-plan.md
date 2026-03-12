@@ -220,15 +220,21 @@ Deployment options:
 - worker/container service with HTTP API
 - internal extraction service that can route between providers
 
-### Phase 4: Training parity decision
+### Phase 4: Training parity decision — RESOLVED (2026-03-11)
 
-After UW is stable:
+**Decision: Keep the Railway training extractor. Do not consolidate.**
 
-- compare PaddleOCR-backed training extraction against the current external training extractor
-- keep the current training extractor if it remains better
-- consolidate only if PaddleOCR reaches parity or better on lesson/table outputs
+The Railway training extractor is an AI-enriched document understanding service, not just OCR. It produces:
+- Pre-identified lessons with learning objectives
+- AI-generated quizzes with questions, options, and explanations
+- Pre-formatted HTML content blocks
+- Section quality scores and key topics
 
-This phase is optional. Consolidation is desirable, but not at the expense of training import quality.
+PaddleOCR only produces raw OCR text + table structure. The training module pipeline (`pdfModuleService.ts`) depends on the enriched `PdfExtraction` format (`lessons[]`, `quizzes[]`, `content_blocks[].html`) that PaddleOCR cannot provide.
+
+Consolidation would require building a separate AI enrichment layer on top of PaddleOCR output — a different project with no clear benefit since the Railway extractor already works well.
+
+The `TrainingRailwayAdapter` remains in the gateway for architectural completeness but the actual training import flow (`useCreateModuleFromPdf`) correctly bypasses the gateway to access the enriched format.
 
 ### Phase 5: Canonical parsed document format
 

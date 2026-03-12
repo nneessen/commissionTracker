@@ -37,3 +37,5 @@ plans/continuation-prompts/
 .claude/hooks/pre-compact.log
 build.log
 dev.log
+.vercel
+.env*.local

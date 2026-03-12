@@ -35,6 +35,10 @@
       "destination": "https://pdf-extractor-web-production.up.railway.app/api/extract"
     },
     {
+      "source": "/api/paddle-ocr",
+      "destination": "https://bubbly-manifestation-production-f87d.up.railway.app/api/extract"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
