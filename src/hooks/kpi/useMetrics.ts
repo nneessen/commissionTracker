@@ -15,6 +15,7 @@ import {
 import { ProductType } from "../../types/product.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { parseLocalDate } from "../../lib/date";
+import { ANALYTICS_CONSTANTS } from "../../constants/financial";
 
 export function useMetrics() {
   const { data: policies = [], isLoading: policiesLoading } = usePolicies();
@@ -305,8 +306,12 @@ export function useMetrics() {
     const pendingCommissions = totalPending;
     const totalEarnedCommission = totalEarned;
 
-    // commissionRate was removed from Commission type (not in DB)
-    const averageCommissionRate = 0;
+    const averageCommissionRate =
+      policies.length > 0
+        ? (policies.reduce((sum, p) => sum + (p.commissionPercentage || 0), 0) /
+            policies.length) *
+          100
+        : 0;
 
     const averageCommissionPerPolicy =
       policies.length > 0 ? totalEarned / policies.length : 0;
@@ -355,10 +360,17 @@ export function useMetrics() {
         .reduce((sum, c) => sum + (c.amount ?? 0), 0),
     };
 
-    // Commission by carrier
-    // carrierId was removed from Commission type (policy field, not commission field)
-    // Carrier grouping for commissions is not available without joining through policy
+    // Commission by carrier — join through policy to get carrierId
     const carrierCommissions = new Map<string, number>();
+    commissions.forEach((c) => {
+      const policy = policies.find((p) => p.id === c.policyId);
+      if (policy?.carrierId) {
+        carrierCommissions.set(
+          policy.carrierId,
+          (carrierCommissions.get(policy.carrierId) || 0) + (c.amount ?? 0),
+        );
+      }
+    });
 
     const commissionByCarrier = Array.from(carrierCommissions.entries())
       .map(([carrierId, amount]) => ({
@@ -369,12 +381,24 @@ export function useMetrics() {
       }))
       .sort((a, b) => b.amount - a.amount);
 
-    // Commission by product - product was removed from Commission type (policy field)
-    // Without joining through policy, we can't group commissions by product
+    // Commission by product — join through policy to get product
     const productCommissions = new Map<
       ProductType,
       { amount: number; count: number }
     >();
+    commissions.forEach((c) => {
+      const policy = policies.find((p) => p.id === c.policyId);
+      if (policy?.product) {
+        const existing = productCommissions.get(policy.product) || {
+          amount: 0,
+          count: 0,
+        };
+        productCommissions.set(policy.product, {
+          amount: existing.amount + (c.amount ?? 0),
+          count: existing.count + 1,
+        });
+      }
+    });
 
     const commissionByProduct = Array.from(productCommissions.entries())
       .map(([product, data]) => ({
@@ -419,10 +443,36 @@ export function useMetrics() {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    // expectedDate was removed from Commission type (not in DB)
-    // Use total pending as fallback since we can't filter by expected date
-    const expectedCommissionsNext30Days = totalPending;
-    const expectedCommissionsNext90Days = totalPending;
+    // Estimate expected commissions by time horizon using policy effective date + payment cycle
+    let expectedNext30 = 0;
+    let expectedNext90 = 0;
+    const futureNow = new Date();
+    const future30 = new Date(futureNow.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const future90 = new Date(futureNow.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+    commissions
+      .filter((c) => c.status === "pending")
+      .forEach((c) => {
+        const policy = policies.find((p) => p.id === c.policyId);
+        if (policy?.effectiveDate) {
+          const policyDate = parseLocalDate(policy.effectiveDate);
+          const estimatedPayment = new Date(
+            policyDate.getTime() + 30 * 24 * 60 * 60 * 1000,
+          );
+          if (estimatedPayment <= future30) {
+            expectedNext30 += c.amount ?? 0;
+          }
+          if (estimatedPayment <= future90) {
+            expectedNext90 += c.amount ?? 0;
+          }
+        } else {
+          expectedNext30 += c.amount ?? 0;
+          expectedNext90 += c.amount ?? 0;
+        }
+      });
+
+    const expectedCommissionsNext30Days = expectedNext30;
+    const expectedCommissionsNext90Days = expectedNext90;
 
     // Year-over-year growth
     const currentYear = new Date().getFullYear();
@@ -496,9 +546,13 @@ export function useMetrics() {
       const averagePremium =
         productPolicies.length > 0 ? totalPremium / productPolicies.length : 0;
 
-      // product was removed from Commission type (policy field)
-      // Revenue from commissions can't be grouped by product without joining through policy
-      const totalRevenue = 0;
+      // Join commissions through policy to calculate product revenue
+      const totalRevenue = commissions
+        .filter((c) => {
+          const p = policies.find((pol) => pol.id === c.policyId);
+          return p?.product === product;
+        })
+        .reduce((sum, c) => sum + (c.amount ?? 0), 0);
 
       return {
         product,
@@ -620,11 +674,17 @@ export function useMetrics() {
       }
     }
 
-    const avgGrowthRate =
+    const rawAvgGrowthRate =
       monthlyGrowthRates.length > 0
         ? monthlyGrowthRates.reduce((sum, rate) => sum + rate, 0) /
           monthlyGrowthRates.length
         : 0.05; // Default to 5% growth if no data
+
+    // Cap growth rate to prevent unrealistic projections
+    const avgGrowthRate = Math.max(
+      ANALYTICS_CONSTANTS.MIN_GROWTH_RATE,
+      Math.min(rawAvgGrowthRate, ANALYTICS_CONSTANTS.MAX_GROWTH_RATE),
+    );
 
     // Calculate current run rate
     const lastThreeMonthsCommissions = commissions
@@ -663,13 +723,12 @@ export function useMetrics() {
     const expectedRenewals = policies
       .filter((p) => p.lifecycleStatus === "active")
       .reduce((sum, p) => {
-        // Assume 50% of commission rate for renewals (ongoing monthly commissions)
         const advance = calculateCommissionAdvance(
           p.annualPremium,
           p.commissionPercentage,
           9,
         );
-        return sum + advance * 0.5;
+        return sum + advance * ANALYTICS_CONSTANTS.RENEWAL_RATE_MULTIPLIER;
       }, 0);
 
     // Growth opportunities
@@ -754,7 +813,7 @@ export function useMetrics() {
           p.commissionPercentage,
           9,
         );
-        return sum + advance * 0.5; // Assume 50% commission on renewals
+        return sum + advance * ANALYTICS_CONSTANTS.RENEWAL_RATE_MULTIPLIER;
       }, 0);
 
       renewalForecast.push({

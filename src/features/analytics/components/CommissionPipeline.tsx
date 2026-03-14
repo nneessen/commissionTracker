@@ -49,8 +49,11 @@ export function CommissionPipeline() {
   const _totalPaid = 0;
   let totalPending = 0;
 
+  // Build policy map for O(1) lookups
+  const policyMap = new Map(raw.policies.map((p) => [p.id, p]));
+
   raw.commissions.forEach((commission) => {
-    const policy = raw.policies.find((p) => p.id === commission.policyId);
+    const policy = policyMap.get(commission.policyId || "");
 
     if (commission.status === "paid") {
       // _totalPaid += commission.amount || 0;
@@ -100,8 +103,18 @@ export function CommissionPipeline() {
     }).format(value);
   };
 
-  // Calculate cash flow velocity
-  const avgDailyEarnings = totalPending > 0 ? totalPending / 90 : 0;
+  // Calculate cash flow velocity from actual historical payment data (not circular pending math)
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const paidLast90Days = raw.commissions
+    .filter((c) => {
+      if (c.status !== "paid") return false;
+      const payDate = c.paymentDate
+        ? new Date(c.paymentDate as string)
+        : new Date(c.createdAt);
+      return payDate >= ninetyDaysAgo;
+    })
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+  const avgDailyEarnings = paidLast90Days / 90;
   const projectedQuarterly = avgDailyEarnings * 90;
 
   return (

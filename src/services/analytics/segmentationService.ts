@@ -2,6 +2,7 @@
 
 import { Policy } from "../../types";
 import { parseLocalDate } from "../../lib/date";
+import { differenceInMonths } from "date-fns";
 
 /**
  * Client Segmentation Service
@@ -97,10 +98,7 @@ export function segmentClientsByValue(
     const latestPolicyDate = new Date(
       Math.max(...policyDates.map((d) => d.getTime())),
     );
-    const monthsAsClient = Math.floor(
-      (new Date().getTime() - firstPolicyDate.getTime()) /
-        (1000 * 60 * 60 * 24 * 30),
-    );
+    const monthsAsClient = differenceInMonths(new Date(), firstPolicyDate);
 
     const clientName = clientPolicies[0]?.client?.name || "Unknown";
 

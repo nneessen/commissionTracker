@@ -64,10 +64,7 @@ export function PaceMetrics() {
 
   // Calculate days elapsed in period
   const msElapsed = now.getTime() - dateRange.startDate.getTime();
-  const daysElapsed = Math.max(
-    1,
-    Math.ceil(msElapsed / (24 * 60 * 60 * 1000)),
-  );
+  const daysElapsed = Math.max(1, Math.ceil(msElapsed / (24 * 60 * 60 * 1000)));
 
   // Total days in period
   const totalDaysInPeriod = Math.ceil(
@@ -83,11 +80,15 @@ export function PaceMetrics() {
     currentPolicyPace * totalDaysInPeriod,
   );
 
-  // Breakeven target (rough estimate: need enough commissions to cover expenses)
+  // Breakeven target — use actual avg commission per policy, not hardcoded 50% ratio
   const totalDaysRemaining = daysRemaining + hoursRemaining / 24;
   const deficitAmount = Math.max(0, -surplusDeficit);
+  const avgCommissionPerPolicy =
+    policyCount > 0 ? totalCommissions / policyCount : 0;
   const policiesNeeded =
-    averagePremium > 0 ? Math.ceil(deficitAmount / (averagePremium * 0.5)) : 0;
+    avgCommissionPerPolicy > 0
+      ? Math.ceil(deficitAmount / avgCommissionPerPolicy)
+      : 0;
   const dailyTarget =
     policiesNeeded > 0 && totalDaysRemaining > 0
       ? Math.ceil(policiesNeeded / totalDaysRemaining)

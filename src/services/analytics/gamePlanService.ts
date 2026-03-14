@@ -3,6 +3,7 @@
 import type { Policy, Commission } from "../../types";
 import type { UserTargets } from "../targets/userTargetsService";
 import { parseLocalDate } from "../../lib/date";
+import { ANALYTICS_CONSTANTS } from "../../constants/financial";
 
 export interface GamePlanData {
   // Current Status
@@ -153,7 +154,9 @@ class GamePlanService {
 
     // Calculate average commission per policy
     const avgPolicyCommission =
-      mtdPolicies.length > 0 ? mtdCommissions / mtdPolicies.length : 800; // Fallback estimate if no policies yet
+      mtdPolicies.length > 0
+        ? mtdCommissions / mtdPolicies.length
+        : ANALYTICS_CONSTANTS.DEFAULT_AVG_COMMISSION_FALLBACK;
 
     // Calculate current pace (policies per week)
     const daysIntoMonth = now.getDate();
@@ -496,7 +499,9 @@ class GamePlanService {
 
     // Calculate average commission per policy YTD
     const avgCommissionPerPolicy =
-      ytdPolicies.length > 0 ? ytdCommissions / ytdPolicies.length : 1500; // Fallback estimate
+      ytdPolicies.length > 0
+        ? ytdCommissions / ytdPolicies.length
+        : ANALYTICS_CONSTANTS.DEFAULT_AVG_COMMISSION_FALLBACK;
 
     // Calculate policies needed per month to hit annual goal
     const policiesNeededPerMonth =

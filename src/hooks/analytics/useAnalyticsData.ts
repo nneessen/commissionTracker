@@ -61,7 +61,11 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
     !startDate || !endDate
       ? allCommissions
       : allCommissions.filter((c) => {
-          const date = new Date(c.createdAt);
+          // Use paymentDate for paid commissions, createdAt as fallback
+          const date =
+            c.status === "paid" && c.paymentDate
+              ? new Date(c.paymentDate as string)
+              : new Date(c.createdAt);
           return date >= startDate && date <= endDate;
         });
 
@@ -107,7 +111,8 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
 
   // Performance Attribution - decomposition analysis
   // Derive current/previous period from the selected date range
-  const rangeStart = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const rangeStart =
+    startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const rangeEnd = endDate || new Date();
   const rangeLengthMs = rangeEnd.getTime() - rangeStart.getTime();
   const prevPeriodStart = new Date(rangeStart.getTime() - rangeLengthMs);

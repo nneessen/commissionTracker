@@ -34,7 +34,7 @@ export const FINANCIAL_CONSTANTS = {
 export const BREAKEVEN_RATES = {
   OPTIMISTIC_CHARGEBACK_RATE: 0.05, // 5% optimistic scenario
   PESSIMISTIC_CHARGEBACK_RATE: 0.25, // 25% pessimistic scenario
-  MINIMUM_REALISTIC_RATE: 0.10, // Minimum 10% for realistic scenario
+  MINIMUM_REALISTIC_RATE: 0.1, // Minimum 10% for realistic scenario
 } as const;
 
 // Emergency Fund Scenarios
@@ -49,4 +49,13 @@ export const EMERGENCY_FUND = {
 export const RISK_LEVELS = {
   LOW_THRESHOLD: 1, // Risk score <= 1 is low
   MEDIUM_THRESHOLD: 4, // Risk score <= 4 is medium, > 4 is high
+} as const;
+
+// Analytics Constants
+export const ANALYTICS_CONSTANTS = {
+  RENEWAL_RATE_MULTIPLIER: 0.25, // 25% of first year commission for renewals
+  DEFAULT_AVG_COMMISSION_FALLBACK: 1125, // $1500 avg premium × 75% commission rate
+  DEFAULT_ADVANCE_MONTHS: 9,
+  MAX_GROWTH_RATE: 1.0, // Cap annual growth at 100%
+  MIN_GROWTH_RATE: -0.5, // Cap decline at -50%
 } as const;

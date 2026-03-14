@@ -136,8 +136,26 @@ export function useMetricsWithDateRange(
       dateRangeForFiltering.start &&
       parseLocalDate(dateRangeForFiltering.start).getFullYear() === currentYear
     ) {
-      // System is in 2025 but data is from 2024 - show all data
-      return commissions;
+      // Find most recent year with data instead of returning everything
+      const mostRecentYear = commissions.reduce((maxYear, c) => {
+        const d =
+          c.status === "paid" && c.paymentDate ? c.paymentDate : c.createdAt;
+        if (!d) return maxYear;
+        const dateObj = typeof d === "string" ? parseLocalDate(d) : d;
+        return Math.max(maxYear, dateObj.getFullYear());
+      }, 0);
+
+      return mostRecentYear > 0
+        ? commissions.filter((c) => {
+            const d =
+              c.status === "paid" && c.paymentDate
+                ? c.paymentDate
+                : c.createdAt;
+            if (!d) return false;
+            const dateObj = typeof d === "string" ? parseLocalDate(d) : d;
+            return dateObj.getFullYear() === mostRecentYear;
+          })
+        : commissions;
     }
 
     return commissions.filter((commission) => {
@@ -165,8 +183,22 @@ export function useMetricsWithDateRange(
       dateRangeForFiltering.start &&
       parseLocalDate(dateRangeForFiltering.start).getFullYear() === currentYear
     ) {
-      // System is in 2025 but data is from 2024 - show all data
-      return expenses;
+      // Find most recent year with data instead of returning everything
+      const mostRecentYear = expenses.reduce((maxYear, e) => {
+        const d = e.date || e.created_at;
+        if (!d) return maxYear;
+        const dateObj = typeof d === "string" ? parseLocalDate(d) : d;
+        return Math.max(maxYear, dateObj.getFullYear());
+      }, 0);
+
+      return mostRecentYear > 0
+        ? expenses.filter((e) => {
+            const d = e.date || e.created_at;
+            if (!d) return false;
+            const dateObj = typeof d === "string" ? parseLocalDate(d) : d;
+            return dateObj.getFullYear() === mostRecentYear;
+          })
+        : expenses;
     }
 
     return expenses.filter((expense) => {
@@ -191,8 +223,22 @@ export function useMetricsWithDateRange(
       dateRangeForFiltering.start &&
       parseLocalDate(dateRangeForFiltering.start).getFullYear() === currentYear
     ) {
-      // System is in 2025 but data is from 2024 - show all data
-      return policies;
+      // Find most recent year with data instead of returning everything
+      const mostRecentYear = policies.reduce((maxYear, p) => {
+        const d = p.effectiveDate || p.createdAt;
+        if (!d) return maxYear;
+        const dateObj = typeof d === "string" ? parseLocalDate(d) : d;
+        return Math.max(maxYear, dateObj.getFullYear());
+      }, 0);
+
+      return mostRecentYear > 0
+        ? policies.filter((p) => {
+            const d = p.effectiveDate || p.createdAt;
+            if (!d) return false;
+            const dateObj = typeof d === "string" ? parseLocalDate(d) : d;
+            return dateObj.getFullYear() === mostRecentYear;
+          })
+        : policies;
     }
 
     return policies.filter((policy) => {

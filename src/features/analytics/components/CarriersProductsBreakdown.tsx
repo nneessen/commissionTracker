@@ -66,6 +66,17 @@ export function CarriersProductsBreakdown() {
       .join(" ");
   };
 
+  // Build commission totals map — sum ALL commissions per policy (not just first)
+  const commissionsByPolicy = new Map<string, number>();
+  raw.commissions.forEach((c) => {
+    if (c.policyId) {
+      commissionsByPolicy.set(
+        c.policyId,
+        (commissionsByPolicy.get(c.policyId) || 0) + (c.amount || 0),
+      );
+    }
+  });
+
   // Group data by carrier and product
   const carrierMap = new Map<string, CarrierProductData>();
 
@@ -76,7 +87,7 @@ export function CarriersProductsBreakdown() {
     const product = policy.product
       ? formatProductName(policy.product)
       : "Unknown Product";
-    const commission = raw.commissions.find((c) => c.policyId === policy.id);
+    const commissionTotal = commissionsByPolicy.get(policy.id) || 0;
 
     if (!carrierMap.has(carrierName)) {
       carrierMap.set(carrierName, {
@@ -107,19 +118,16 @@ export function CarriersProductsBreakdown() {
     // Update product metrics
     productData.policyCount++;
     productData.totalPremium += policy.annualPremium || 0;
-
-    if (commission) {
-      productData.totalCommissions += commission.amount || 0;
-      if (productData.totalPremium > 0) {
-        productData.avgCommissionRate =
-          (productData.totalCommissions / productData.totalPremium) * 100;
-      }
+    productData.totalCommissions += commissionTotal;
+    if (productData.totalPremium > 0) {
+      productData.avgCommissionRate =
+        (productData.totalCommissions / productData.totalPremium) * 100;
     }
 
     // Update carrier totals
     carrierData.totalPolicies++;
     carrierData.totalPremium += policy.annualPremium || 0;
-    carrierData.totalCommissions += commission?.amount || 0;
+    carrierData.totalCommissions += commissionTotal;
   });
 
   // Calculate carrier average commission rates

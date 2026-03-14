@@ -71,18 +71,24 @@ export function calculateContribution(
   previousPeriodPolicies: Policy[],
   previousPeriodCommissions: Commission[],
 ): ContributionBreakdown {
+  // Build policy maps for O(1) lookups (commission → policy via policyId)
+  const currentPolicyMap = new Map(currentPeriodPolicies.map((p) => [p.id, p]));
+  const previousPolicyMap = new Map(
+    previousPeriodPolicies.map((p) => [p.id, p]),
+  );
+
   // Current period metrics
   const currentPolicies = currentPeriodPolicies.length;
   const currentCommission = currentPeriodCommissions.reduce(
     (sum, c) => sum + (c.amount || 0),
     0,
   );
-  // Commission rate is already stored as decimal (0.95 for 95%) in database
-  // FIX: Divide by commission count, not policy count for accurate average
   const currentAvgRate =
     currentPeriodCommissions.length > 0
-      ? currentPeriodCommissions.reduce((sum, _c) => sum + 0, 0) /
-        currentPeriodCommissions.length
+      ? currentPeriodCommissions.reduce((sum, c) => {
+          const policy = currentPolicyMap.get(c.policyId || "");
+          return sum + (policy?.commissionPercentage || 0);
+        }, 0) / currentPeriodCommissions.length
       : 0;
   const currentAvgPremium =
     currentPolicies > 0
@@ -98,12 +104,12 @@ export function calculateContribution(
     (sum, c) => sum + (c.amount || 0),
     0,
   );
-  // Commission rate is already stored as decimal (0.95 for 95%) in database
-  // FIX: Divide by commission count, not policy count for accurate average
   const previousAvgRate =
     previousPeriodCommissions.length > 0
-      ? previousPeriodCommissions.reduce((sum, _c) => sum + 0, 0) /
-        previousPeriodCommissions.length
+      ? previousPeriodCommissions.reduce((sum, c) => {
+          const policy = previousPolicyMap.get(c.policyId || "");
+          return sum + (policy?.commissionPercentage || 0);
+        }, 0) / previousPeriodCommissions.length
       : 0;
   const previousAvgPremium =
     previousPolicies > 0
@@ -238,8 +244,12 @@ export function calculateCarrierROI(
     carrierMetrics.get(policy.carrierId)!.policies.push(policy);
   });
 
+  // Build policy map for looking up carrierId from commission's policyId
+  const policyMap = new Map(policies.map((p) => [p.id, p]));
+
   commissions.forEach((commission) => {
-    const commCarrierId = "";
+    const policy = policyMap.get(commission.policyId || "");
+    const commCarrierId = policy?.carrierId || "";
     if (!carrierMetrics.has(commCarrierId)) {
       carrierMetrics.set(commCarrierId, {
         policies: [],
@@ -263,10 +273,13 @@ export function calculateCarrierROI(
       (sum, c) => sum + (c.amount || 0),
       0,
     );
-    // Commission rate stored as decimal (0.95 for 95%), multiply by 100 for display as percentage
     const avgCommissionRate =
       totalPolicies > 0
-        ? (data.commissions.reduce((sum, _c) => sum + 0, 0) / totalPolicies) *
+        ? (data.policies.reduce(
+            (sum, p) => sum + (p.commissionPercentage || 0),
+            0,
+          ) /
+            totalPolicies) *
           100
         : 0;
     const roi = totalPremium > 0 ? (totalCommission / totalPremium) * 100 : 0;
@@ -327,14 +340,23 @@ export function getTopMovers(
   const currentCarrierCommission = new Map<string, number>();
   const previousCarrierCommission = new Map<string, number>();
 
+  // Build policy map for looking up carrier/product from commission's policyId
+  const allPoliciesForMap = [
+    ...currentPeriodPolicies,
+    ...previousPeriodPolicies,
+  ];
+  const policyLookup = new Map(allPoliciesForMap.map((p) => [p.id, p]));
+
   currentPeriodCommissions.forEach((c) => {
-    const cCarrierId = "";
+    const policy = policyLookup.get(c.policyId || "");
+    const cCarrierId = policy?.carrierId || "";
     const current = currentCarrierCommission.get(cCarrierId) || 0;
     currentCarrierCommission.set(cCarrierId, current + (c.amount || 0));
   });
 
   previousPeriodCommissions.forEach((c) => {
-    const cCarrierId = "";
+    const policy = policyLookup.get(c.policyId || "");
+    const cCarrierId = policy?.carrierId || "";
     const previous = previousCarrierCommission.get(cCarrierId) || 0;
     previousCarrierCommission.set(cCarrierId, previous + (c.amount || 0));
   });
@@ -376,13 +398,15 @@ export function getTopMovers(
   const previousProductCommission = new Map<ProductType, number>();
 
   currentPeriodCommissions.forEach((c) => {
-    const cProduct = "unknown" as ProductType;
+    const policy = policyLookup.get(c.policyId || "");
+    const cProduct = (policy?.product || "unknown") as ProductType;
     const current = currentProductCommission.get(cProduct) || 0;
     currentProductCommission.set(cProduct, current + (c.amount || 0));
   });
 
   previousPeriodCommissions.forEach((c) => {
-    const cProduct = "unknown" as ProductType;
+    const policy = policyLookup.get(c.policyId || "");
+    const cProduct = (policy?.product || "unknown") as ProductType;
     const previous = previousProductCommission.get(cProduct) || 0;
     previousProductCommission.set(cProduct, previous + (c.amount || 0));
   });

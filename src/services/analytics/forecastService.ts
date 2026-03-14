@@ -3,6 +3,7 @@
 import { Policy, Commission } from "../../types";
 import { format, addMonths, differenceInMonths } from "date-fns";
 import { parseLocalDate } from "../../lib/date";
+import { ANALYTICS_CONSTANTS } from "../../constants/financial";
 
 /**
  * Forecast Service
@@ -69,7 +70,8 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
 
     // Find policies that will be up for renewal this month
     const renewalPolicies = policies.filter((policy) => {
-      if (policy.lifecycleStatus !== "active" || !policy.termLength) return false;
+      if (policy.lifecycleStatus !== "active" || !policy.termLength)
+        return false;
 
       // Calculate renewal date
       const effectiveDate = parseLocalDate(policy.effectiveDate);
@@ -81,10 +83,8 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
 
     const expectedRenewals = renewalPolicies.length;
 
-    // FIX: Make renewal commission rate configurable and clearly marked as an estimate
-    // Most insurance products pay reduced commissions on renewals (typically 10-50% of first year)
-    // This should ideally come from actual commission settings in the database
-    const ESTIMATED_RENEWAL_RATE_MULTIPLIER = 0.25; // 25% of first year commission (more realistic)
+    const ESTIMATED_RENEWAL_RATE_MULTIPLIER =
+      ANALYTICS_CONSTANTS.RENEWAL_RATE_MULTIPLIER;
     const expectedRevenue = renewalPolicies.reduce((sum, p) => {
       // Note: This is an ESTIMATE - actual renewal rates vary by carrier and product
       const estimatedRenewalCommission =
@@ -335,16 +335,18 @@ export function detectSeasonality(policies: Policy[]): SeasonalityPattern[] {
     monthlyData[month].revenue.push(policy.annualPremium || 0);
   });
 
-  // Calculate averages for each month
+  // Calculate averages per month, accounting for multiple years of data
   const seasonalPatterns: SeasonalityPattern[] = [];
-  const overallAvgPolicies = policies.length / 12;
-  const _overallAvgRevenue =
-    policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / 12;
+  const distinctYears =
+    new Set(policies.map((p) => parseLocalDate(p.effectiveDate).getFullYear()))
+      .size || 1;
+  const overallAvgPolicies = policies.length / (12 * distinctYears);
 
   for (let month = 1; month <= 12; month++) {
     const data = monthlyData[month];
-    const avgPolicies = data.policies.length;
-    const avgRevenue = data.revenue.reduce((sum, r) => sum + r, 0);
+    const avgPolicies = data.policies.length / distinctYears;
+    const avgRevenue =
+      data.revenue.reduce((sum, r) => sum + r, 0) / distinctYears;
 
     // Calculate seasonal index (1.0 = average)
     const seasonalIndex =
